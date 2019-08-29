@@ -134,7 +134,12 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 	clusterID := clusterInstance.GetName()
-	log.Info("cluster id", clusterID)
+	log.Info("reconciling cluster", "clusterID", clusterID)
+
+	err = watchmanager.AddCluster(clusterID)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	// Get targetClient for targetCluster
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
@@ -200,10 +205,6 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
 				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
-				return reconcile.Result{}, err
-			}
-			err = watchmanager.AddCluster(clusterID)
-			if err != nil {
 				return reconcile.Result{}, err
 			}
 			return reconcile.Result{}, nil

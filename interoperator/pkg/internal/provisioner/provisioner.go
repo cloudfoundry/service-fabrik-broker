@@ -6,14 +6,16 @@ import (
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("provisioner.internal")
 
 // Provisioner fetches provisioner stateful set
 //go:generate mockgen -source provisioner.go -destination ./mock_provisioner/mock_provisioner.go
@@ -66,8 +68,8 @@ func (sfs *provisioner) FetchStatefulset() error {
 	if err != nil {
 		return err
 	}
-	log.Info("Successfully fetched statefulset ", "name ", sfset.Name,
-		" namespace ", sfset.Namespace)
+	log.Info("Successfully fetched statefulset", "name ", sfset.Name,
+		"namespace", sfset.Namespace)
 	sfs.statefulSet = sfset
 	return nil
 }

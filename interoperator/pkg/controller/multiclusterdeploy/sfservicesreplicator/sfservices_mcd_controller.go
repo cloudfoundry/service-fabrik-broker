@@ -22,7 +22,6 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
-	"github.com/prometheus/common/log"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+var log = logf.Log.WithName("service.replicator")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -105,66 +107,66 @@ func (r *ReconcileSFServices) Reconcile(request reconcile.Request) (reconcile.Re
 	clusterInstance := &resourcev1alpha1.SFCluster{}
 	err := r.Get(context.TODO(), request.NamespacedName, clusterInstance)
 	if err != nil {
-		log.Error("Failed to get SFCluster", err)
+		log.Error(err, "Failed to get SFCluster")
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
 	clusterID := clusterInstance.GetName()
-	log.Info("Reconcile started for cluster : ", clusterID)
+	log.Info("Reconcile started for cluster", "clusterID", clusterID)
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
-		log.Error("Following error occurred while getting client for cluster ", clusterID, " : ", err)
+		log.Error(err, "Following error occurred while getting client for cluster ", "clusterID", clusterID)
 		return reconcile.Result{}, err
 	}
 
-	log.Info("Trying to list all the services in namespace ", request.NamespacedName.Namespace)
+	log.Info("Trying to list all the services", "namespace", request.NamespacedName.Namespace)
 	options := kubernetes.InNamespace(request.NamespacedName.Namespace)
 	services := &osbv1alpha1.SFServiceList{}
 	err = r.List(context.TODO(), options, services)
 	if err != nil {
-		log.Error("error while fetching services while processing cluster id ", clusterID)
+		log.Error(err, "error while fetching services while processing cluster id ", "clusterID", clusterID)
 		return reconcile.Result{}, err
 	}
-	log.Info("No of services fetched ", len(services.Items), " for cluster ", clusterID)
+	log.Info("services fetched ", "count", len(services.Items), "clusterID", clusterID)
 	for _, obj := range services.Items {
-		log.Info("Service ", obj.Spec.ID, " is fetched from master cluster..")
+		log.Info("Service is fetched from master cluster", "serviceID", obj.Spec.ID)
 		service := &osbv1alpha1.SFService{}
 		serviceKey := types.NamespacedName{
 			Name:      obj.GetName(),
 			Namespace: obj.GetNamespace(),
 		}
-		log.Info("Checking if service", obj.Spec.ID, " already exists on target cluster ", clusterID)
+		log.Info("Checking if service already exists on target cluster", "serviceID", obj.Spec.ID, "clusterID", clusterID)
 		err = targetClient.Get(context.TODO(), serviceKey, service)
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
 				replicateSFServiceResourceData(&obj, service)
 				err = targetClient.Create(context.TODO(), service)
 				if err != nil {
-					log.Error("Creating new service on sister cluster failed due to following error: ", err)
+					log.Error(err, "Creating new service on sister cluster failed due to following error: ")
 					return reconcile.Result{}, err
 				}
-				log.Info("Creating service ", obj.Spec.Name, " on cluster ", clusterID, " succeeded")
+				log.Info("Created service on cluster", "serviceName", service.Spec.Name, "clusterID", clusterID)
 				err := r.handleServicePlans(service, clusterID, &targetClient)
 				if err != nil {
-					log.Error("Error while replicating plans for service ", service.Spec.Name, " : ", err)
+					log.Error(err, "Error while replicating plans for service ", "serviceName", service.Spec.Name)
 					return reconcile.Result{}, err
 				}
 			} else {
-				log.Error("Getting the service from sister cluster ", clusterID, " failed: ", err)
+				log.Error(err, "Getting the service from sister cluster ", "clusterID", clusterID)
 				return reconcile.Result{}, err
 			}
 		} else {
 			replicateSFServiceResourceData(&obj, service)
 			err = targetClient.Update(context.TODO(), service)
 			if err != nil {
-				log.Error("Updating service on sister cluster failed due to following error: ", err)
+				log.Error(err, "Updating service on sister cluster failed due to following error: ")
 				return reconcile.Result{}, err
 			}
-			log.Info("Updating service ", obj.Spec.Name, " on cluster ", clusterID, " succeeded")
+			log.Info("Updated service on cluster", "serviceName", service.Spec.Name, "clusterID", clusterID)
 			err = r.handleServicePlans(service, clusterID, &targetClient)
 			if err != nil {
-				log.Error("Error while replicating plans for service ", service.Spec.Name, " : ", err)
+				log.Error(err, "Error while replicating plans for service ", "serviceName", service.Spec.Name)
 				return reconcile.Result{}, err
 			}
 		}
@@ -173,7 +175,7 @@ func (r *ReconcileSFServices) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService, clusterID string, targetClient *kubernetes.Client) error {
-	log.Info("Trying  to list all the plans for service ", service.Spec.Name, " in the master cluster..")
+	log.Info("Trying  to list all the plans for service in the master cluster", "serviceName", service.Spec.Name)
 	plans := &osbv1alpha1.SFPlanList{}
 	searchLabels := make(map[string]string)
 	searchLabels["serviceId"] = service.Spec.ID
@@ -181,18 +183,18 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 	options.Namespace = service.GetNamespace()
 	err := r.List(context.TODO(), options, plans)
 	if err != nil {
-		log.Error("error while fetching plans while processing cluster id ", clusterID)
+		log.Error(err, "error while fetching plans while processing cluster id ", "clusterID", clusterID)
 		return err
 	}
-	log.Info("No of plans fetched ", len(plans.Items), " for cluster ", clusterID)
+	log.Info("plans fetched for cluster", "count", len(plans.Items), "clusterID", clusterID)
 	for _, obj := range plans.Items {
-		log.Info("Plan ", obj.Spec.ID, " is fetched from master cluster..")
+		log.Info("Plan is fetched from master cluster", "planID", obj.Spec.ID)
 		plan := &osbv1alpha1.SFPlan{}
 		planKey := types.NamespacedName{
 			Name:      obj.GetName(),
 			Namespace: obj.GetNamespace(),
 		}
-		log.Info("Checking if plan", obj.Spec.ID, " already exists on target cluster ", clusterID)
+		log.Info("Checking if plan already exists on target cluster", "clusterID", clusterID, "planID", obj.Spec.ID)
 		err = (*targetClient).Get(context.TODO(), planKey, plan)
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
@@ -203,10 +205,10 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 				}
 				err = (*targetClient).Create(context.TODO(), plan)
 				if err != nil {
-					log.Error("Creating new plan on sister cluster failed due to following error: ", err)
+					log.Error(err, "Creating new plan on sister cluster failed")
 					return err
 				}
-				log.Info("Creating plan ", obj.Spec.Name, " on cluster ", clusterID, " succeeded")
+				log.Info("Created plan on cluster", "clusterID", clusterID, "planName", plan.Spec.Name)
 			}
 		} else {
 			replicateSFPlanResourceData(&obj, plan)
@@ -216,10 +218,10 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 			}
 			err = (*targetClient).Update(context.TODO(), plan)
 			if err != nil {
-				log.Error("Updating plan on sister cluster failed due to following error: ", err)
+				log.Error(err, "Updating plan on sister cluster failed")
 				return err
 			}
-			log.Info("Updating plan ", obj.Spec.Name, " on cluster ", clusterID, " succeeded")
+			log.Info("Updated plan on cluster ", "clusterID", clusterID, "planName", plan.Spec.Name)
 		}
 	}
 	return nil

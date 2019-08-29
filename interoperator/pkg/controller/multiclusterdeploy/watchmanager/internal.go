@@ -46,6 +46,7 @@ func (wm *watchManager) addCluster(clusterID string) error {
 	for _, cw := range wm.clusterWatchers {
 		if cw.sfCluster.GetName() == clusterID {
 			// already watching on cluster
+			log.Info("Already watching on cluster", "clusterID", clusterID)
 			return nil
 		}
 	}
@@ -73,6 +74,7 @@ func (wm *watchManager) addCluster(clusterID string) error {
 	wm.mux.Lock()
 	defer wm.mux.Unlock()
 	wm.clusterWatchers = append(wm.clusterWatchers, cw)
+	log.Info("Added cluster to watch manager", "clusterID", clusterID)
 	return nil
 }
 
@@ -85,9 +87,12 @@ func (wm *watchManager) removeCluster(clusterID string) {
 			close(cw.stop)
 			wm.clusterWatchers[i] = wm.clusterWatchers[l-1]
 			wm.clusterWatchers = wm.clusterWatchers[:l-1]
+			log.Info("Removed cluster from watch manager", "clusterID", clusterID)
 			return
 		}
 	}
 	// Not found
+	log.Info("Cluster not watched by watch manager. Ignoring remove",
+		"clusterID", clusterID)
 	return
 }

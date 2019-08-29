@@ -147,15 +147,21 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
-	if !instance.GetDeletionTimestamp().IsZero() {
+	if !instance.GetDeletionTimestamp().IsZero() && state == "delete" {
 		replica.SetName(instance.GetName())
 		replica.SetNamespace(instance.GetNamespace())
 		err := targetClient.Delete(context.TODO(), replica)
 		if err != nil {
-			return reconcile.Result{}, err
+			log.Error(err, "Failed to delete SFServiceInstance from target cluster", "instance", instanceID,
+				"clusterID", clusterID, "state", state)
+			if !apiErrors.IsNotFound(err) {
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
+	log.Info("SFServiceInstance from target cluster", "instance", instanceID,
+		"clusterID", clusterID, "state", state)
 	if state == "in_queue" || state == "update" || state == "delete" {
 		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
 		if err != nil {
@@ -199,6 +205,8 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	if state == "in progress" {
 		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
 		if err != nil {
+			log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
+				"clusterID", clusterID, "state", state)
 			if apiErrors.IsNotFound(err) && lastOperation == "delete" {
 				instance.SetState("succeeded")
 			} else {
@@ -208,6 +216,12 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 				return reconcile.Result{}, err
 			}
 		} else {
+			replicaState := replica.GetState()
+			if replicaState == "in_queue" || replicaState == "update" || replicaState == "delete" {
+				// replica not processed up by provisioner in target cluster
+				// ignore for now
+				return reconcile.Result{}, nil
+			}
 			copyObject(replica, instance)
 		}
 
@@ -237,7 +251,7 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 			log.Info("creating namespace in target cluster", "clusterID", clusterID,
 				"namespace", namespace)
 			ns.SetName(namespace)
-			err = r.Create(context.TODO(), ns)
+			err = targetClient.Create(context.TODO(), ns)
 			if err != nil {
 				log.Error(err, "Failed to create namespace in target cluster", "namespace", namespace,
 					"clusterID", clusterID)
@@ -256,8 +270,13 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 	if delete {
 		err = targetClient.Delete(context.TODO(), ns)
 		if err != nil {
+			if apiErrors.IsConflict(err) {
+				// delete triggered
+				return nil
+			}
 			log.Error(err, "Failed to delete namespace from target cluster", "namespace", namespace,
 				"clusterID", clusterID)
+
 			return err
 		}
 	}
@@ -269,6 +288,12 @@ func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alph
 	instanceID := instance.GetName()
 	state := instance.GetState()
 	instance.SetState("in progress")
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[constants.LastOperationKey] = state
+	instance.SetLabels(labels)
 	err := r.Update(context.TODO(), instance)
 	if err != nil {
 		if retryCount < constants.ErrorThreshold {

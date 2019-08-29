@@ -29,6 +29,7 @@ func GetWatchChannel(resource string) (<-chan event.GenericEvent, error) {
 	if manager == nil {
 		return nil, errors.NewPreconditionError("GetWatchChannel", "watch manager not setup", nil)
 	}
+	log.Info("Getting watch channel", "resource", resource)
 	return manager.getWatchChannel(resource)
 }
 
@@ -81,6 +82,7 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 	}
 
 	manager = wm
+	log.Info("Watch Manager initialized")
 	return nil
 }
 
@@ -98,6 +100,8 @@ func RemoveCluster(clusterID string) error {
 	if manager == nil {
 		return errors.NewPreconditionError("RemoveCluster", "watch manager not setup", nil)
 	}
+
+	log.Info("Removing cluster from watch manager", "clusterID", clusterID)
 
 	// Call the removeCluster async as there is chance to get
 	// blocked. This will block the caller of RemoveCluster if
