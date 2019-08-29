@@ -28,6 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -116,6 +117,17 @@ type ReconcileProvisioner struct {
 // and what is in the SFDefaultScheduler.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
+/* Functions of this method
+1. Add watches on resources in target sfcluster
+2. Get target cluster client
+3. Get statefulset instance deployed in master cluster
+4. Register SF CRDs in target cluster
+5. Namespace creation in target cluster
+6. SFCluster deploy in target cluster
+7. Kubeconfig secret in target cluster
+8. Deploy provisioner in target cluster
+9. Create clusterrolebinding in target cluster
+*/
 func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFCluster
 	clusterInstance := &resourcev1alpha1.SFCluster{}
@@ -149,6 +161,45 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 
 	// Get statefulSetInstance for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
+
+	// Register sf CRDs
+	SFCrdNames := []string{
+		"sfplans.osb.servicefabrik.io",
+		"sfservice.osb.servicefabrik.io",
+		"sfserviceinstance.osb.servicefabrik.io",
+		"sfservicebinding.osb.servicefabrik.io",
+		"sfcluster.osb.servicefabrik.io",
+	}
+	for _, sfcrdname := range SFCrdNames {
+		// Get crd registered in master cluster
+		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+		err = r.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		// Create/Update CRD in target cluster
+		targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+		targetCRDInstance.SetName(sfCRDInstance.GetName())
+		targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
+		// copy spec
+		sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
+
+		log.Info("Updating CRD in target cluster", "Cluster", clusterID, "CRD", sfcrdname)
+		err = targetClient.Update(context.TODO(), targetCRDInstance)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				log.Info("CRD in target cluster not found, Creating...", "clusterId", clusterID, "CRD", sfcrdname)
+				err = targetClient.Create(context.TODO(), targetCRDInstance)
+				if err != nil {
+					log.Error(err, "Error occurred while creating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+					return reconcile.Result{}, err
+				}
+			} else {
+				log.Error(err, "Error occurred while updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+				return reconcile.Result{}, err
+			}
+		}
+	}
 
 	// Create/Update Namespace in target cluster for provisioner
 	ns := &corev1.Namespace{}
