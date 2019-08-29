@@ -12,7 +12,7 @@ const (
 	NamespaceEnvKey    = "POD_NAMESPACE"
 	OwnClusterIDEnvKey = "CLUSTER_ID"
 	MasterClusterID    = "1"
-	StatefulSetName    = "web"
+	StatefulSetName    = "provisioner"
 
 	MultiClusterWatchTimeout = 28800 // 8 hours in seconds
 
@@ -20,6 +20,7 @@ const (
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
+	ProvisionerWorkerCount        = 10
 	DefaultSchedulerType          = "bosh"
 	RoundRobinSchedulerType       = "round-robin"
 )
