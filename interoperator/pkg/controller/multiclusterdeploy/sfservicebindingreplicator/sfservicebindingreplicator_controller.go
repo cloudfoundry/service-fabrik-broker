@@ -80,16 +80,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	/*
-		watchEvents, err := getWatchChannel("sfservicebindings")
-		if err != nil {
-			return err
-		}
-		err = c.Watch(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{})
-		if err != nil {
-			return err
-		}
-	*/
+	watchEvents, err := getWatchChannel("sfservicebindings")
+	if err != nil {
+		return err
+	}
+	err = c.Watch(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -319,6 +317,12 @@ func (r *ReconcileSFServiceBindingReplicator) setInProgress(binding *osbv1alpha1
 	bindingID := binding.GetName()
 	state := binding.GetState()
 	binding.SetState("in progress")
+	labels := binding.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[constants.LastOperationKey] = state
+	binding.SetLabels(labels)
 	log.Info("Trying to update binding ", bindingID, " to state ", binding.GetState())
 	err := r.Update(context.TODO(), binding)
 	if err != nil {
