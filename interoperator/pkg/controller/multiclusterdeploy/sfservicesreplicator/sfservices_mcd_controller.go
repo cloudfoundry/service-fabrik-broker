@@ -86,6 +86,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	//TODO watch on sfplans and sfservices and trigger reconcile on all sfclusters
+
 	return nil
 }
 
