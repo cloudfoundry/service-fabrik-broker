@@ -32,4 +32,7 @@ const (
 	GoTemplateType             = "gotemplate"
 
 	PlanWatchDrainTimeout = time.Second * 2
+
+	WebhookPort                      = 9876
+	MutatingSFServiceInstanceWebhook = "mutating-create-update-sfserviceinstance"
 )
