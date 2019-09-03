@@ -22,6 +22,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -86,7 +87,31 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	//TODO watch on sfplans and sfservices and trigger reconcile on all sfclusters
+	reconcileSFServices, ok := r.(*ReconcileSFServices)
+	if !ok {
+		return errors.NewInputError("add", "Reconciler", nil)
+	}
+
+	// Define a mapping from the object in the event to one or more
+	// objects to Reconcile
+	mapFn := handler.ToRequestsFunc(
+		func(a handler.MapObject) []reconcile.Request {
+			return reconcileSFServices.enqueueRequestForAllClusters()
+		})
+
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFService{}}, &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: mapFn,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFPlan{}}, &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: mapFn,
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -227,6 +252,23 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 		}
 	}
 	return nil
+}
+
+func (r *ReconcileSFServices) enqueueRequestForAllClusters() []reconcile.Request {
+	clusterList, err := r.clusterRegistry.ListClusters(nil)
+	if err != nil {
+		return nil
+	}
+	reconcileRequests := make([]reconcile.Request, len(clusterList.Items))
+	for i, cluster := range clusterList.Items {
+		reconcileRequests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      cluster.GetName(),
+				Namespace: cluster.GetNamespace(),
+			},
+		}
+	}
+	return reconcileRequests
 }
 
 func replicateSFServiceResourceData(source *osbv1alpha1.SFService, dest *osbv1alpha1.SFService) {
