@@ -2,6 +2,12 @@ codecov:
   notify:
     require_ci_to_pass: yes
 
+ignore:
+  - "interoperator/pkg/client/**/*"  # ignore folders and all its contents
+  - "interoperator/pkg/cluster/registry/mock_registry/"
+  - "interoperator/pkg/internal/resources/mock_resources/"
+
+
 coverage:
   precision: 2
   round: down
