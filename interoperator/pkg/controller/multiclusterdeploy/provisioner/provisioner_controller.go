@@ -157,7 +157,52 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	// Get statefulSetInstance for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
 
-	// Register sf CRDs
+	// 1. Register sf CRDs
+	err = r.registerSFCrds(clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = watchmanager.AddCluster(clusterID)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// 2. Create/Update Namespace in target cluster for provisioner
+	namespace := statefulSetInstance.GetNamespace()
+	err = r.reconcileNamespace(namespace, clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// 3. Creating/Updating sfcluster in target cluster
+	err = r.reconcileSfClusterCrd(clusterInstance, clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// 4. Creating/Updating kubeconfig secret for sfcluster in target cluster
+	err = r.reconcileSfClusterSecret(request.NamespacedName.Name, namespace, clusterInstance, clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// 5. Create Statefulset in target cluster for provisioner
+	err = r.reconcileStatefulSet(statefulSetInstance, clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// 6. Deploy cluster rolebinding
+	err = r.reconcileClusterRoleBinding(namespace, clusterID, targetClient)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient client.Client) error {
 	SFCrdNames := []string{
 		"sfplans.osb.servicefabrik.io",
 		"sfservices.osb.servicefabrik.io",
@@ -168,10 +213,10 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	for _, sfcrdname := range SFCrdNames {
 		// Get crd registered in master cluster
 		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
-		err = r.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
+		err := r.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 		if err != nil {
 			log.Error(err, "Error occurred geeting CRD in master cluster", "CRD", sfcrdname)
-			return reconcile.Result{}, err
+			return err
 		}
 		// Create/Update CRD in target cluster
 		targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
@@ -189,11 +234,11 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 				err = targetClient.Create(context.TODO(), targetCRDInstance)
 				if err != nil {
 					log.Error(err, "Error occurred while creating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
-					return reconcile.Result{}, err
+					return err
 				}
 			} else {
 				log.Error(err, "Error occurred while getting CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
-				return reconcile.Result{}, err
+				return err
 			}
 		} else {
 			targetCRDInstance.SetName(sfCRDInstance.GetName())
@@ -206,21 +251,16 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			err = targetClient.Update(context.TODO(), targetCRDInstance)
 			if err != nil {
 				log.Error(err, "Error occurred while updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
-				return reconcile.Result{}, err
+				return err
 			}
 		}
 	}
+	return nil
+}
 
-	err = watchmanager.AddCluster(clusterID)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Create/Update Namespace in target cluster for provisioner
+func (r *ReconcileProvisioner) reconcileNamespace(namespace string, clusterID string, targetClient client.Client) error {
 	ns := &corev1.Namespace{}
-	namespace := statefulSetInstance.GetNamespace()
-
-	err = targetClient.Get(context.TODO(), types.NamespacedName{
+	err := targetClient.Get(context.TODO(), types.NamespacedName{
 		Name: namespace,
 	}, ns)
 	if err != nil {
@@ -233,20 +273,22 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 				log.Error(err, "Failed to create namespace in target cluster", "namespace", namespace,
 					"clusterID", clusterID)
 				// Error updating the object - requeue the request.
-				return reconcile.Result{}, err
+				return err
 			}
 			log.Info("Created namespace in target cluster", "namespace", namespace,
 				"clusterID", clusterID)
 		} else {
 			log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
 				"clusterID", clusterID)
-			return reconcile.Result{}, err
+			return err
 		}
 	}
+	return nil
+}
 
-	// Creating/Updating sfcluster in target cluster
+func (r *ReconcileProvisioner) reconcileSfClusterCrd(clusterInstance *resourcev1alpha1.SFCluster, clusterID string, targetClient client.Client) error {
 	targetSFCluster := &resourcev1alpha1.SFCluster{}
-	err = targetClient.Get(context.TODO(), types.NamespacedName{
+	err := targetClient.Get(context.TODO(), types.NamespacedName{
 		Name:      clusterInstance.GetName(),
 		Namespace: clusterInstance.GetNamespace(),
 	}, targetSFCluster)
@@ -262,12 +304,12 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			if err != nil {
 				log.Error(err, "Error occurred while creating sfcluster", "clusterId", clusterID)
 				// Error updating the object - requeue the request.
-				return reconcile.Result{}, err
+				return err
 			}
 			log.Info("Created SFCluster in target cluster", "clusterID", clusterID)
 		} else {
 			log.Error(err, "Error occurred while sfcluster provisioner", "clusterId", clusterID)
-			return reconcile.Result{}, err
+			return err
 		}
 	} else {
 		targetSFCluster.SetName(clusterInstance.GetName())
@@ -279,16 +321,18 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 		err = targetClient.Update(context.TODO(), targetSFCluster)
 		if err != nil {
 			log.Error(err, "Error occurred while updating sfcluster provisioner", "clusterId", clusterID)
-			return reconcile.Result{}, err
+			return err
 		}
 	}
+	return nil
+}
 
-	// Creating/Updating kubeconfig secret for sfcluster in target cluster
+func (r *ReconcileProvisioner) reconcileSfClusterSecret(sourceClusterID string, namespace string, clusterInstance *resourcev1alpha1.SFCluster, clusterID string, targetClient client.Client) error {
 	clusterInstanceSecret := &corev1.Secret{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: clusterInstance.Spec.SecretRef, Namespace: namespace}, clusterInstanceSecret)
+	err := r.Get(context.TODO(), types.NamespacedName{Name: clusterInstance.Spec.SecretRef, Namespace: namespace}, clusterInstanceSecret)
 	if err != nil {
-		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", request.NamespacedName.Name, "kubeconfig-secret", clusterInstance.Spec.SecretRef)
-		return reconcile.Result{}, err
+		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", sourceClusterID, "kubeconfig-secret", clusterInstance.Spec.SecretRef)
+		return err
 	}
 	targetSFClusterSecret := &corev1.Secret{}
 	targetSFClusterSecret.SetName(clusterInstanceSecret.GetName())
@@ -307,15 +351,17 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			err = targetClient.Create(context.TODO(), targetSFClusterSecret)
 			if err != nil {
 				log.Error(err, "Error occurred while creating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
-				return reconcile.Result{}, err
+				return err
 			}
 		} else {
 			log.Error(err, "Error occurred while updating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
-			return reconcile.Result{}, err
+			return err
 		}
 	}
+	return nil
+}
 
-	// Create Statefulset in target cluster for provisioner
+func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.StatefulSet, clusterID string, targetClient client.Client) error {
 	provisionerInstance := &appsv1.StatefulSet{}
 	provisionerInstance.SetName(statefulSetInstance.GetName())
 	provisionerInstance.SetNamespace(statefulSetInstance.GetNamespace())
@@ -336,22 +382,24 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	log.Info("Updating provisioner", "Cluster", clusterID)
-	err = targetClient.Update(context.TODO(), provisionerInstance)
+	err := targetClient.Update(context.TODO(), provisionerInstance)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("Provisioner not found, Creating...", "clusterId", clusterID)
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
 				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
-				return reconcile.Result{}, err
+				return err
 			}
 		} else {
 			log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
-			return reconcile.Result{}, err
+			return err
 		}
 	}
+	return nil
+}
 
-	// Deploy cluster rolebinding
+func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clusterID string, targetClient client.Client) error {
 	clusterRoleBinding := &v1.ClusterRoleBinding{}
 	clusterRoleBinding.SetName("provisioner-clusterrolebinding")
 	clusterRoleBindingSubject := &v1.Subject{
@@ -367,20 +415,19 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, *clusterRoleBindingSubject)
 	clusterRoleBinding.RoleRef = *clusterRoleRef
 	log.Info("Updating clusterRole", "clusterId", clusterID)
-	err = targetClient.Update(context.TODO(), clusterRoleBinding)
+	err := targetClient.Update(context.TODO(), clusterRoleBinding)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("ClusterRoleBinding not found, creating role binding", "clusterId", clusterID)
 			err = targetClient.Create(context.TODO(), clusterRoleBinding)
 			if err != nil {
 				log.Error(err, "Error occurred while creating ClusterRoleBinding", "clusterId", clusterID)
-				return reconcile.Result{}, err
+				return err
 			}
-			return reconcile.Result{}, nil
+			return nil
 		}
 		log.Error(err, "Error occurred while updating ClusterRoleBinding", "clusterId", clusterID)
-		return reconcile.Result{}, err
+		return err
 	}
-
-	return reconcile.Result{}, nil
+	return nil
 }
