@@ -21,6 +21,9 @@ import (
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,11 +50,28 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
 
+	sfcluster1 := &resourcev1alpha1.SFCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "1",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		},
+	}
+
+	sfcluster2 := &resourcev1alpha1.SFCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "2",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		},
+	}
+
+	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), sfcluster2)).NotTo(gomega.HaveOccurred())
+
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 	defer close(StartTestManager(mgr, g))
 
-	// Create the SFDefaultScheduler object and expect the Reconcile
+	// Create the SFServiceInstance object and expect the Reconcile
 	err = c.Create(context.TODO(), instance)
 	// The instance object may not be a valid object because it might be missing some required fields.
 	// Please modify the instance object by adding required fields and then remove the following if statement.
@@ -60,7 +80,10 @@ func TestReconcile(t *testing.T) {
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	err = c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, instance)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(instance.Spec.ClusterID).To(gomega.Equal("1"))
 	defer c.Delete(context.TODO(), instance)
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 
 }

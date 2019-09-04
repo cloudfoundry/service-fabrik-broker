@@ -119,6 +119,9 @@ func (r *ReconcileSFRoundRobinScheduler) Reconcile(request reconcile.Request) (r
 		}
 		items := clusters.Items
 		sort.Slice(items, func(i, j int) bool {
+			if items[i].GetCreationTimestamp().Time == items[j].GetCreationTimestamp().Time {
+				return items[i].Name < items[j].Name
+			}
 			return !items[i].GetCreationTimestamp().After(items[j].GetCreationTimestamp().Time)
 		})
 		if len(items) <= lastProvisionedClusterIndex {
