@@ -24,7 +24,7 @@ matrix:
         - pushd webhooks
         - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
         - popd
-        - cat interoperator/coverage.txt webhooks/coverage.txt > coverage.txt
+        - cat interoperator/coverage.txt webhooks/coverage.txt | grep -v "/pkg/client/" > coverage.txt
       after_success:
         - bash <(curl -s https://codecov.io/bash)
     - language: go
