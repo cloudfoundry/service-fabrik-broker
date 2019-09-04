@@ -131,9 +131,11 @@ instanceContollerWatchList:
 		Namespace: constants.DefaultServiceFabrikNamespace,
 	}
 	interoperatorConfig := &InteroperatorConfig{
-		BindingWorkerCount:   constants.DefaultBindingWorkerCount,
-		InstanceWorkerCount:  constants.DefaultInstanceWorkerCount,
-		SchedulerWorkerCount: constants.DefaultSchedulerWorkerCount,
+		BindingWorkerCount:     constants.DefaultBindingWorkerCount,
+		InstanceWorkerCount:    constants.DefaultInstanceWorkerCount,
+		SchedulerWorkerCount:   constants.DefaultSchedulerWorkerCount,
+		ProvisionerWorkerCount: constants.ProvisionerWorkerCount,
+		SchedulerType:          constants.DefaultSchedulerType,
 		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
 			osbv1alpha1.APIVersionKind{
 				APIVersion: "kubedb.com/v1alpha1",

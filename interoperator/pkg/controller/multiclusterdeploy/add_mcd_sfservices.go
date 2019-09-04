@@ -1,5 +1,3 @@
-// +build multiclusterdeploy
-
 /*
 Copyright 2018 The Service Fabrik Authors.
 
