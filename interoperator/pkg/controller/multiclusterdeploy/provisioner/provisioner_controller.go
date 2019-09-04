@@ -94,7 +94,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SFDefaultScheduler
+	// Watch for changes to SFCluster
 	err = c.Watch(&source.Kind{Type: &resourcev1alpha1.SFCluster{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// 4. Creating/Updating kubeconfig secret for sfcluster in target cluster
-	err = r.reconcileSfClusterSecret(request.NamespacedName.Name, namespace, clusterInstance, clusterID, targetClient)
+	err = r.reconcileSfClusterSecret(request.NamespacedName.Name, namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -327,11 +327,11 @@ func (r *ReconcileProvisioner) reconcileSfClusterCrd(clusterInstance *resourcev1
 	return nil
 }
 
-func (r *ReconcileProvisioner) reconcileSfClusterSecret(sourceClusterID string, namespace string, clusterInstance *resourcev1alpha1.SFCluster, clusterID string, targetClient client.Client) error {
+func (r *ReconcileProvisioner) reconcileSfClusterSecret(sourceClusterID string, namespace string, secretName string, clusterID string, targetClient client.Client) error {
 	clusterInstanceSecret := &corev1.Secret{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: clusterInstance.Spec.SecretRef, Namespace: namespace}, clusterInstanceSecret)
+	err := r.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, clusterInstanceSecret)
 	if err != nil {
-		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", sourceClusterID, "kubeconfig-secret", clusterInstance.Spec.SecretRef)
+		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", sourceClusterID, "kubeconfig-secret", secretName)
 		return err
 	}
 	targetSFClusterSecret := &corev1.Secret{}
