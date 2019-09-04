@@ -36,15 +36,54 @@ import (
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
+var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 
 const timeout = time.Second * 5
 
-func TestReconcile(t *testing.T) {
+var serviceInstance = &osbv1alpha1.SFServiceInstance{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "instance-id",
+		Namespace: "default",
+		Labels: map[string]string{
+			"state": "in_queue",
+		},
+	},
+	Spec: osbv1alpha1.SFServiceInstanceSpec{
+		ServiceID:        "service-id",
+		PlanID:           "plan-id",
+		RawContext:       nil,
+		OrganizationGUID: "organization-guid",
+		SpaceGUID:        "space-guid",
+		RawParameters:    nil,
+		PreviousValues:   nil,
+		ClusterID:        "1",
+	},
+}
+
+var binding = &osbv1alpha1.SFServiceBinding{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "binding-id",
+		Namespace: "default",
+		Labels: map[string]string{
+			"state": "in_queue",
+		},
+	},
+	Spec: osbv1alpha1.SFServiceBindingSpec{
+		ID:                "binding-id",
+		InstanceID:        "instance-id",
+		PlanID:            "plan-id",
+		ServiceID:         "service-id",
+		AcceptsIncomplete: true,
+	},
+	Status: osbv1alpha1.SFServiceBindingStatus{
+		State: "in_queue",
+	},
+}
+
+func TestReconcileMasterCluster(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	binding := &osbv1alpha1.SFServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -55,14 +94,15 @@ func TestReconcile(t *testing.T) {
 	getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
 		return make(chan event.GenericEvent), nil
 	}
-
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
 
+	c = mgr.GetClient()
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	recFn, requests := SetupTestReconcile(newReconciler(mgr, mockClusterRegistry))
+	reconciler := newReconciler(mgr, mockClusterRegistry)
+	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), serviceInstance)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -80,7 +120,29 @@ func TestReconcile(t *testing.T) {
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), binding)
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	// Reconciler recives the request and updates status and labels
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
+	// Get the serviceBinding
+	serviceBinding := &osbv1alpha1.SFServiceBinding{}
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), bindingKey, serviceBinding)
+		if err != nil {
+			return err
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+
+	// Testing that replication doesn't happen for master cluster
+	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("in_queue"))
+}
+
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
+	// Drain all requests
+	select {
+	case <-requests:
+		return 1 + drainAllRequests(requests, remainingTime)
+	case <-time.After(remainingTime):
+		return 0
+	}
 }
