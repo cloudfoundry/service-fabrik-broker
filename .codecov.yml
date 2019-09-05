@@ -6,6 +6,7 @@ ignore:
   - "interoperator/pkg/client/**/*"  # ignore folders and all its contents
   - "interoperator/pkg/cluster/registry/mock_registry/"
   - "interoperator/pkg/internal/resources/mock_resources/"
+  - "interoperator/pkg/internal/provisioner/mock_provisioner/"
 
 
 coverage:

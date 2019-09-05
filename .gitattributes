@@ -1,1 +1,4 @@
 interoperator/pkg/client/**/* linguist-generated
+interoperator/pkg/cluster/registry/mock_registry/* linguist-generated
+interoperator/pkg/internal/resources/mock_resources/* linguist-generated
+interoperator/pkg/internal/provisioner/mock_provisioner/* linguist-generated
