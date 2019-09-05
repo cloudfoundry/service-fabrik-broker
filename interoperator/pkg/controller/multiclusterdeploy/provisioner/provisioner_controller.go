@@ -42,6 +42,8 @@ import (
 )
 
 var log = logf.Log.WithName("provisioner.controller")
+var addClusterToWatch = watchmanager.AddCluster
+var removeClusterFromWatch = watchmanager.RemoveCluster
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -135,7 +137,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.
-			err = watchmanager.RemoveCluster(request.Name)
+			err = removeClusterFromWatch(request.Name)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -163,7 +165,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	err = watchmanager.AddCluster(clusterID)
+	err = addClusterToWatch(clusterID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -182,7 +184,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// 4. Creating/Updating kubeconfig secret for sfcluster in target cluster
-	err = r.reconcileSfClusterSecret(request.NamespacedName.Name, namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
+	err = r.reconcileSfClusterSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -327,11 +329,11 @@ func (r *ReconcileProvisioner) reconcileSfClusterCrd(clusterInstance *resourcev1
 	return nil
 }
 
-func (r *ReconcileProvisioner) reconcileSfClusterSecret(sourceClusterID string, namespace string, secretName string, clusterID string, targetClient client.Client) error {
+func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secretName string, clusterID string, targetClient client.Client) error {
 	clusterInstanceSecret := &corev1.Secret{}
 	err := r.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, clusterInstanceSecret)
 	if err != nil {
-		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", sourceClusterID, "kubeconfig-secret", secretName)
+		log.Error(err, "Failed to get the kubeconfig secret for sfcluster in master...", "clusterId", clusterID, "kubeconfig-secret", secretName)
 		return err
 	}
 	targetSFClusterSecret := &corev1.Secret{}
@@ -414,7 +416,7 @@ func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clu
 	}
 	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, *clusterRoleBindingSubject)
 	clusterRoleBinding.RoleRef = *clusterRoleRef
-	log.Info("Updating clusterRole", "clusterId", clusterID)
+	log.Info("Updating clusterRoleBinding", "clusterId", clusterID)
 	err := targetClient.Update(context.TODO(), clusterRoleBinding)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {

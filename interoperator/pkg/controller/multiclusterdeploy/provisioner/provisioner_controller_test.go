@@ -1,5 +1,3 @@
-// +build provisioner
-
 /*
 Copyright 2018 The Service Fabrik Authors.
 
@@ -26,10 +24,12 @@ import (
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/provisioner/mock_provisioner"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,6 +51,9 @@ var clusterInstance = &resourcev1alpha1.SFCluster{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "2",
 		Namespace: "default",
+	},
+	Spec: resourcev1alpha1.SFClusterSpec{
+		SecretRef: "my-secret",
 	},
 }
 
@@ -80,33 +83,78 @@ var statefulSetInstance = &appsv1.StatefulSet{
 	},
 }
 
-// func TestReconcile(t *testing.T) {
-// 	g := gomega.NewGomegaWithT(t)
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
-// 	logf.SetLogger(logf.ZapLogger(true))
+func TestReconcile_HAHA(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	logf.SetLogger(logf.ZapLogger(true))
 
-// 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
-// 	// channel when it is finished.
-// 	mgr, err := manager.New(cfg, manager.Options{})
-// 	g.Expect(err).NotTo(gomega.HaveOccurred())
-// 	c = mgr.GetClient()
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c = mgr.GetClient()
+	c2, err := client.New(cfg2, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
-// 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
-// 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-// 	reconciler := newReconciler(mgr, mockClusterRegistry, mockProvisioner)
+	targetReconciler := &ReconcileProvisioner{
+		Client:          c2,
+		scheme:          mgr.GetScheme(),
+		clusterRegistry: mockClusterRegistry,
+		provisioner:     mockProvisioner,
+	}
 
-// 	mockClusterRegistry.EXPECT().GetClient("1").Return(reconciler, nil).AnyTimes()
-// 	mockProvisioner.EXPECT().GetStatefulSet().Return(statefulSetInstance).Times(1)
+	reconciler := newReconciler(mgr, mockClusterRegistry, mockProvisioner)
 
-// 	recFn, requests := SetupTestReconcile(reconciler)
-// 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-// 	defer close(StartTestManager(mgr, g))
+	_addClusterToWatch := addClusterToWatch
+	defer func() {
+		addClusterToWatch = _addClusterToWatch
+	}()
+	addClusterToWatch = func(string) error {
+		return nil
+	}
 
-// 	err = c.Create(context.TODO(), clusterInstance)
-// 	// g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	_removeClusterFromWatch := removeClusterFromWatch
+	defer func() {
+		removeClusterFromWatch = _removeClusterFromWatch
+	}()
+	removeClusterFromWatch = func(string) error {
+		return nil
+	}
 
-// }
+	// Create cluster secret in master cluster
+	clusterSecret.Data = make(map[string][]byte)
+	clusterSecret.Data["foo"] = []byte("bar")
+	c.Create(context.TODO(), clusterSecret)
+
+	// create provisioner statefulset in master cluster
+
+	labels := make(map[string]string)
+	labels["foo"] = "bar"
+	statefulSetInstance.Spec.Template.SetLabels(labels)
+	statefulSetInstance.Spec.Selector.MatchLabels = labels
+	c.Create(context.TODO(), statefulSetInstance)
+
+	mockClusterRegistry.EXPECT().GetClient("2").Return(targetReconciler, nil).AnyTimes()
+	mockProvisioner.EXPECT().GetStatefulSet().Return(statefulSetInstance).Times(1)
+
+	recFn, requests := SetupTestReconcile(reconciler)
+	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	defer close(StartTestManager(mgr, g))
+
+	// Create SFCluster
+	err = c.Create(context.TODO(), clusterInstance)
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Delete SFCluster
+	c.Delete(context.TODO(), clusterInstance)
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+}
 
 func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 
@@ -265,6 +313,13 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 		Mapper: mgr.GetRESTMapper(),
 	})
 
+	// Delete sfcluster from target cluster
+	sfTargetCluster := &resourcev1alpha1.SFCluster{}
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2"}, sfTargetCluster)
+	if err == nil {
+		c2.Delete(context.TODO(), sfTargetCluster)
+	}
+
 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
@@ -331,7 +386,13 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
-	// Create cluster secret in c
+
+	// Delete sfcluster from target cluster
+	clusterInstanceSecret := &corev1.Secret{}
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)
+	if err == nil {
+		c2.Delete(context.TODO(), clusterInstanceSecret)
+	}
 
 	clusterSecret.Data = make(map[string][]byte)
 	clusterSecret.Data["foo"] = []byte("bar")
@@ -348,11 +409,10 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 	}
 
 	type args struct {
-		sourceClusterID string
-		namespace       string
-		secretName      string
-		clusterID       string
-		targetClient    client.Client
+		namespace    string
+		secretName   string
+		clusterID    string
+		targetClient client.Client
 	}
 	tests := []struct {
 		name    string
@@ -362,29 +422,27 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		{
 			name: "Create if Secret not found",
 			args: args{
-				sourceClusterID: "1",
-				namespace:       "default",
-				secretName:      "my-secret",
-				clusterID:       "2",
-				targetClient:    c2,
+				namespace:    "default",
+				secretName:   "my-secret",
+				clusterID:    "2",
+				targetClient: c2,
 			},
 			wantErr: false,
 		},
 		{
 			name: "Update if secret already exists",
 			args: args{
-				sourceClusterID: "1",
-				namespace:       "default",
-				secretName:      "my-secret",
-				clusterID:       "2",
-				targetClient:    c2,
+				namespace:    "default",
+				secretName:   "my-secret",
+				clusterID:    "2",
+				targetClient: c2,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := r.reconcileSfClusterSecret(tt.args.sourceClusterID, tt.args.namespace, tt.args.secretName, tt.args.clusterID, tt.args.targetClient); (err != nil) != tt.wantErr {
+			if err := r.reconcileSfClusterSecret(tt.args.namespace, tt.args.secretName, tt.args.clusterID, tt.args.targetClient); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileProvisioner.reconcileSfClusterSecret() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -410,6 +468,17 @@ func TestReconcileProvisioner_reconcileStatefulSet(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+
+	// Delete provisioner statefulset in target cluster if present
+
+	targetProvisionerInstance := &appsv1.StatefulSet{}
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)
+	if err == nil {
+		c2.Delete(context.TODO(), targetProvisionerInstance)
+	}
+
+	// Create provisioner stateful set in master cluster
+
 	labels := make(map[string]string)
 	labels["foo"] = "bar"
 	statefulSetInstance.Spec.Template.SetLabels(labels)
@@ -482,6 +551,14 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+
+	// Delete clusterrolebinding in target cluster if present
+
+	targetClusterRoleBinding := &v1.ClusterRoleBinding{}
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)
+	if err == nil {
+		c2.Delete(context.TODO(), targetClusterRoleBinding)
+	}
 
 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
