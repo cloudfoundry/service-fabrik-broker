@@ -327,7 +327,7 @@ func (r *ReconcileSFServiceBindingReplicator) setInProgress(binding *osbv1alpha1
 	}
 	labels[constants.LastOperationKey] = state
 	binding.SetLabels(labels)
-	log.Info("Trying to update binding ", bindingID, " to state ", binding.GetState())
+	log.Info("Trying to update binding ", "bindingID", bindingID, "state", binding.GetState())
 	err := r.Update(context.TODO(), binding)
 	if err != nil {
 		if retryCount < constants.ErrorThreshold {
