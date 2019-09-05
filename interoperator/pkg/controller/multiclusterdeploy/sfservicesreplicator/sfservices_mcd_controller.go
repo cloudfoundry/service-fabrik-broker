@@ -22,7 +22,6 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -87,16 +86,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	reconcileSFServices, ok := r.(*ReconcileSFServices)
-	if !ok {
-		return errors.NewInputError("add", "Reconciler", nil)
+	clusterRegistry, err := registry.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
 	}
 
 	// Define a mapping from the object in the event to one or more
 	// objects to Reconcile
 	mapFn := handler.ToRequestsFunc(
 		func(a handler.MapObject) []reconcile.Request {
-			return reconcileSFServices.enqueueRequestForAllClusters()
+			return enqueueRequestForAllClusters(clusterRegistry)
 		})
 
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFService{}}, &handler.EnqueueRequestsFromMapFunc{
@@ -254,8 +253,8 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 	return nil
 }
 
-func (r *ReconcileSFServices) enqueueRequestForAllClusters() []reconcile.Request {
-	clusterList, err := r.clusterRegistry.ListClusters(nil)
+func enqueueRequestForAllClusters(clusterRegistry registry.ClusterRegistry) []reconcile.Request {
+	clusterList, err := clusterRegistry.ListClusters(nil)
 	if err != nil {
 		return nil
 	}
