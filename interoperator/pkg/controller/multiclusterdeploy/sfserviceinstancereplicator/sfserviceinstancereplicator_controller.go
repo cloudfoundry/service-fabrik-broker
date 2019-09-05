@@ -42,11 +42,6 @@ var log = logf.Log.WithName("instance.replicator")
 // To the function mock
 var getWatchChannel = watchmanager.GetWatchChannel
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new SFServiceInstanceReplicator Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -74,12 +69,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SFServiceInstanceReplicator
+	// Watch for changes to SFServiceInstance
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
+	// Watch for changes to SFServiceInstance in sister clusters
 	watchEvents, err := getWatchChannel("sfserviceinstances")
 	if err != nil {
 		return err
@@ -94,18 +90,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileSFServiceInstanceReplicator{}
 
-// ReconcileSFServiceInstanceReplicator reconciles a SFServiceInstanceReplicator object
+// ReconcileSFServiceInstanceReplicator replicates a SFServiceInstance object to sister cluster
 type ReconcileSFServiceInstanceReplicator struct {
 	client.Client
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 }
 
-// Reconcile reads that state of the cluster for a SFServiceInstanceReplicator object and makes changes based on the state read
-// and what is in the SFServiceInstanceReplicator.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=*,verbs=*
+// Reconcile reads that state of the cluster for a SFServiceInstance object on master and sister cluster
+// and replicates it.
 func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFServiceInstanceReplicator instance
 	instance := &osbv1alpha1.SFServiceInstance{}
@@ -113,8 +106,7 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
-			// Object not found, return.  Created objects are automatically garbage collected.
-			// For additional cleanup logic use finalizers.
+			// Object not found, return.
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
