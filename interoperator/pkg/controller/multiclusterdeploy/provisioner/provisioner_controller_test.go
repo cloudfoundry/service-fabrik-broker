@@ -83,7 +83,7 @@ var statefulSetInstance = &appsv1.StatefulSet{
 	},
 }
 
-func TestReconcile_HAHA(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -231,6 +231,18 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.registerSFCrds() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		sfcrdnames := []string{
+			"sfplans.osb.servicefabrik.io",
+			"sfservices.osb.servicefabrik.io",
+			"sfserviceinstances.osb.servicefabrik.io",
+			"sfservicebindings.osb.servicefabrik.io",
+			"sfclusters.resource.servicefabrik.io",
+		}
+		for _, sfcrdname := range sfcrdnames {
+			sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+			g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)).NotTo(gomega.HaveOccurred())
+
+		}
 	}
 }
 
@@ -290,6 +302,10 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.reconcileNamespace() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		ns := &corev1.Namespace{}
+		g.Expect(c2.Get(context.TODO(), types.NamespacedName{
+			Name: "test-namespace",
+		}, ns)).NotTo(gomega.HaveOccurred())
 	}
 }
 
@@ -315,7 +331,7 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 
 	// Delete sfcluster from target cluster
 	sfTargetCluster := &resourcev1alpha1.SFCluster{}
-	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2"}, sfTargetCluster)
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)
 	if err == nil {
 		c2.Delete(context.TODO(), sfTargetCluster)
 	}
@@ -365,6 +381,8 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.reconcileSfClusterCrd() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		sfTargetCluster := &resourcev1alpha1.SFCluster{}
+		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)).NotTo(gomega.HaveOccurred())
 	}
 }
 
@@ -446,6 +464,8 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.reconcileSfClusterSecret() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		clusterInstanceSecret := &corev1.Secret{}
+		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)).NotTo(gomega.HaveOccurred())
 	}
 }
 
@@ -530,6 +550,8 @@ func TestReconcileProvisioner_reconcileStatefulSet(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.reconcileStatefulSet() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		targetProvisionerInstance := &appsv1.StatefulSet{}
+		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)).NotTo(gomega.HaveOccurred())
 	}
 }
 
@@ -605,5 +627,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 				t.Errorf("ReconcileProvisioner.reconcileClusterRoleBinding() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		targetClusterRoleBinding := &v1.ClusterRoleBinding{}
+		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)).NotTo(gomega.HaveOccurred())
 	}
 }
