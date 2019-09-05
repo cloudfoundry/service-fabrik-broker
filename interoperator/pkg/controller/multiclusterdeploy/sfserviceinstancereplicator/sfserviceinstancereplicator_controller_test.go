@@ -17,6 +17,7 @@ limitations under the License.
 package sfserviceinstancereplicator
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
-	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,17 +39,18 @@ import (
 var c, c2 client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
-var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 
 const timeout = time.Second * 5
 
 var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
-		Namespace: "default",
+		Namespace: "sf-instance-id",
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
+		Finalizers: []string{"foo"},
 	},
 	Spec: osbv1alpha1.SFServiceInstanceSpec{
 		ServiceID:        "service-id",
@@ -65,6 +67,9 @@ var instance = &osbv1alpha1.SFServiceInstance{
 }
 
 func TestReconcile(t *testing.T) {
+	instance2 := &osbv1alpha1.SFServiceInstance{}
+	watchChannel := make(chan event.GenericEvent)
+
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -74,7 +79,7 @@ func TestReconcile(t *testing.T) {
 		getWatchChannel = _getWatchChannel
 	}()
 	getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
-		return make(chan event.GenericEvent), nil
+		return watchChannel, nil
 	}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
@@ -102,23 +107,210 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
+	// Create a new namespace
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "sf-instance-id",
+		},
+	}
+	g.Expect(c.Create(context.TODO(), ns)).NotTo(gomega.HaveOccurred())
+
 	// Create the SFServiceInstance object with not ClusterID
+	instance.SetFinalizers([]string{"foo"})
+	instance.SetNamespace("sf-instance-id")
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(utils.DrainAllRequests(requests, timeout)).To(gomega.Equal(1))
 
+	// Set clusterID as MasterClusterID
 	instance.Spec.ClusterID = constants.MasterClusterID
 	g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	g.Expect(utils.DrainAllRequests(requests, timeout)).To(gomega.Equal(1))
 
+	// Set valid ClusterID
 	instance.Spec.ClusterID = "2"
 	g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
+	// State should be updated in master cluster
 	g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
 	g.Expect(instance.GetState()).To(gomega.Equal("in progress"))
 
-	defer c.Delete(context.TODO(), instance)
-	//g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	// Fetch from sister cluster
+	g.Expect(c2.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+	g.Expect(instance2.Spec).To(gomega.Equal(instance.Spec))
+	g.Expect(instance2.GetAnnotations()).To(gomega.Equal(instance.GetAnnotations()))
 
+	instance2.SetState("succeeded")
+	instance2.SetFinalizers([]string{"foo"})
+	g.Expect(c2.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+	// Trigger watch
+	watchChannel <- event.GenericEvent{
+		Meta:   instance2,
+		Object: instance2,
+	}
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// State should be updated in master cluster
+	g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(instance.GetState()).To(gomega.Equal("succeeded"))
+
+	// Delete from master
+	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+	instance.SetState("delete")
+	g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Expect state to be delete and deletiontimestamp to be set for replica
+	g.Expect(c2.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+	g.Expect(instance2.GetState()).To(gomega.Equal("delete"))
+	g.Expect(instance2.GetDeletionTimestamp()).NotTo(gomega.BeZero())
+
+	// Remove finalizer from replica
+	instance2.SetFinalizers([]string{})
+	g.Expect(c2.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+	watchChannel <- event.GenericEvent{
+		Meta:   instance2,
+		Object: instance2,
+	}
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(instance.GetState()).To(gomega.Equal("succeeded"))
+
+	instance.SetFinalizers([]string{})
+	g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+}
+
+func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var instance = &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "instance-id",
+			Namespace: "default",
+		},
+		Spec: osbv1alpha1.SFServiceInstanceSpec{
+			ServiceID:        "service-id",
+			PlanID:           "plan-id",
+			RawContext:       nil,
+			OrganizationGUID: "organization-guid",
+			SpaceGUID:        "space-guid",
+			RawParameters:    nil,
+			PreviousValues:   nil,
+		},
+		Status: osbv1alpha1.SFServiceInstanceStatus{
+			State: "in_queue",
+		},
+	}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+	instance2 := &osbv1alpha1.SFServiceInstance{}
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c, err = client.New(cfg2, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	r := &ReconcileSFServiceInstanceReplicator{
+		Client:          c,
+		scheme:          mgr.GetScheme(),
+		clusterRegistry: nil,
+	}
+	type args struct {
+		instance   *osbv1alpha1.SFServiceInstance
+		retryCount int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		setup   func()
+		wantErr bool
+		cleanup func()
+	}{
+		{
+			name: "retry and succeed if object is outdated",
+			args: args{
+				instance:   instance,
+				retryCount: 0,
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("in_queue")
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+				//Modify it on api server and pass outdated value
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+				instance2.Spec.ServiceID = "foo"
+				g.Expect(c.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+			},
+			wantErr: false,
+			cleanup: func() {
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance2.GetState()).To(gomega.Equal("in progress"))
+				g.Expect(instance2.Spec.ServiceID).To(gomega.Equal("foo"))
+				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).To(gomega.HaveOccurred())
+			},
+		},
+		{
+			name: "fail if retry count is too large",
+			args: args{
+				instance:   instance,
+				retryCount: constants.ErrorThreshold,
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("in_queue")
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+				//Modify it on api server and pass outdated value
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+				instance2.Spec.ServiceID = "bar"
+				g.Expect(c.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+			},
+			wantErr: true,
+			cleanup: func() {
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance2.GetState()).NotTo(gomega.Equal("in progress"))
+				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+			},
+		},
+		{
+			name: "fail if instance is gone",
+			args: args{
+				instance:   instance,
+				retryCount: 0,
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("in_queue")
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+				//Modify it on api server and pass outdated value
+				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			if tt.cleanup != nil {
+				defer tt.cleanup()
+			}
+			if err := r.setInProgress(tt.args.instance, tt.args.retryCount); (err != nil) != tt.wantErr {
+				t.Errorf("ReconcileSFServiceInstanceReplicator.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
