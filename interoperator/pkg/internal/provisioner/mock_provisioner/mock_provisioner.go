@@ -48,11 +48,12 @@ func (mr *MockProvisionerMockRecorder) FetchStatefulset() *gomock.Call {
 }
 
 // GetStatefulSet mocks base method
-func (m *MockProvisioner) GetStatefulSet() *v1.StatefulSet {
+func (m *MockProvisioner) GetStatefulSet() (*v1.StatefulSet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatefulSet")
 	ret0, _ := ret[0].(*v1.StatefulSet)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetStatefulSet indicates an expected call of GetStatefulSet

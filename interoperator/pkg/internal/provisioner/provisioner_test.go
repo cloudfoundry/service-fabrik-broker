@@ -23,7 +23,7 @@ func TestNew(t *testing.T) {
 		want    Provisioner
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -50,7 +50,7 @@ func Test_provisioner_FetchStatefulset(t *testing.T) {
 		fields  fields
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -73,11 +73,12 @@ func Test_provisioner_GetStatefulSet(t *testing.T) {
 		namespace   string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   *appsv1.StatefulSet
+		name    string
+		fields  fields
+		want    *appsv1.StatefulSet
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,7 +87,12 @@ func Test_provisioner_GetStatefulSet(t *testing.T) {
 				statefulSet: tt.fields.statefulSet,
 				namespace:   tt.fields.namespace,
 			}
-			if got := sfs.GetStatefulSet(); !reflect.DeepEqual(got, tt.want) {
+			got, err := sfs.GetStatefulSet()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("provisioner.GetStatefulSet() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("provisioner.GetStatefulSet() = %v, want %v", got, tt.want)
 			}
 		})

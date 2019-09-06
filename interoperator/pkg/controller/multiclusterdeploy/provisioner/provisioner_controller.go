@@ -149,7 +149,10 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// Get statefulSetInstance for provisioner
-	statefulSetInstance := r.provisioner.GetStatefulSet()
+	statefulSetInstance, err := r.provisioner.GetStatefulSet()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	// 3. Register sf CRDs
 	err = r.registerSFCrds(clusterID, targetClient)
