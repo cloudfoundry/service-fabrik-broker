@@ -47,13 +47,12 @@ func TestMain(m *testing.M) {
 		loge.Fatal(err)
 	}
 
-	defer t.Stop()
-
 	if cfg2, err = t2.Start(); err != nil {
 		loge.Fatal(err)
 	}
 	defer t2.Stop()
 	code := m.Run()
+	t.Stop()
 	os.Exit(code)
 }
 

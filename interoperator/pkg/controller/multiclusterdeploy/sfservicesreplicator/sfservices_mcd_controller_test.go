@@ -68,8 +68,9 @@ func createAndTestSFServiceAndPlans(serviceName string, planName string, service
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(plan.GetName()).To(gomega.Equal(planName))
 
-	defer c.Delete(context.TODO(), service)
-	defer c.Delete(context.TODO(), plan)
+	c.Delete(context.TODO(), service)
+	c.Delete(context.TODO(), plan)
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 }
 
 func TestReconcile(t *testing.T) {
