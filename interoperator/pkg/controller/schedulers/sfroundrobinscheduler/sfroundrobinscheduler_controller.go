@@ -19,6 +19,7 @@ package sfroundrobinscheduler
 import (
 	"context"
 	"sort"
+	"sync"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
@@ -37,6 +38,7 @@ import (
 )
 
 var (
+	l                           sync.Mutex
 	lastProvisionedClusterIndex = 0
 )
 
@@ -124,11 +126,13 @@ func (r *ReconcileSFRoundRobinScheduler) Reconcile(request reconcile.Request) (r
 			}
 			return !items[i].GetCreationTimestamp().After(items[j].GetCreationTimestamp().Time)
 		})
+		l.Lock()
 		if len(items) <= lastProvisionedClusterIndex {
 			lastProvisionedClusterIndex = 0
 		}
 		currentlyProvisionedCluster := items[lastProvisionedClusterIndex]
 		lastProvisionedClusterIndex++
+		l.Unlock()
 		instance.Spec.ClusterID = currentlyProvisionedCluster.ObjectMeta.Name
 		if err := r.Update(context.Background(), instance); err != nil {
 			log.Error(err, "failed to update cluster id for ", "sfroundrobincontroller", instance.GetName())
