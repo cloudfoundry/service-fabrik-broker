@@ -341,7 +341,10 @@ func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secret
 		targetSFClusterSecret.Data[key] = val
 	}
 	log.Info("Updating kubeconfig secret for sfcluster in target cluster", "Cluster", clusterID)
-	err = targetClient.Update(context.TODO(), targetSFClusterSecret)
+	err = targetClient.Get(context.TODO(), types.NamespacedName{
+		Name:      targetSFClusterSecret.GetName(),
+		Namespace: targetSFClusterSecret.GetNamespace(),
+	}, targetSFClusterSecret)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("kubeconfig secret for sfcluster in target cluster not found, Creating...", "clusterId", clusterID)
@@ -351,6 +354,12 @@ func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secret
 				return err
 			}
 		} else {
+			log.Error(err, "Error occurred while creating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+			return err
+		}
+	} else {
+		err = targetClient.Update(context.TODO(), targetSFClusterSecret)
+		if err != nil {
 			log.Error(err, "Error occurred while updating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
 			return err
 		}
@@ -379,7 +388,10 @@ func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.
 	}
 
 	log.Info("Updating provisioner", "Cluster", clusterID)
-	err := targetClient.Update(context.TODO(), provisionerInstance)
+	err := targetClient.Get(context.TODO(), types.NamespacedName{
+		Name:      provisionerInstance.GetName(),
+		Namespace: provisionerInstance.GetNamespace(),
+	}, provisionerInstance)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("Provisioner not found, Creating...", "clusterId", clusterID)
@@ -389,6 +401,12 @@ func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.
 				return err
 			}
 		} else {
+			log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
+			return err
+		}
+	} else {
+		err = targetClient.Update(context.TODO(), provisionerInstance)
+		if err != nil {
 			log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
 			return err
 		}
@@ -412,7 +430,10 @@ func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clu
 	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, *clusterRoleBindingSubject)
 	clusterRoleBinding.RoleRef = *clusterRoleRef
 	log.Info("Updating clusterRoleBinding", "clusterId", clusterID)
-	err := targetClient.Update(context.TODO(), clusterRoleBinding)
+	err := targetClient.Get(context.TODO(), types.NamespacedName{
+		Name:      clusterRoleBinding.GetName(),
+		Namespace: clusterRoleBinding.GetNamespace(),
+	}, clusterRoleBinding)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("ClusterRoleBinding not found, creating role binding", "clusterId", clusterID)
@@ -421,10 +442,16 @@ func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clu
 				log.Error(err, "Error occurred while creating ClusterRoleBinding", "clusterId", clusterID)
 				return err
 			}
-			return nil
+		} else {
+			log.Error(err, "Error occurred while creating ClusterRoleBinding", "clusterId", clusterID)
+			return err
 		}
-		log.Error(err, "Error occurred while updating ClusterRoleBinding", "clusterId", clusterID)
-		return err
+	} else {
+		err = targetClient.Update(context.TODO(), clusterRoleBinding)
+		if err != nil {
+			log.Error(err, "Error occurred while updating ClusterRoleBinding", "clusterId", clusterID)
+			return err
+		}
 	}
 	return nil
 }
