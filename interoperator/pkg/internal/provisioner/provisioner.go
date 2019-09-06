@@ -21,7 +21,7 @@ var log = logf.Log.WithName("provisioner.internal")
 //go:generate mockgen -source provisioner.go -destination ./mock_provisioner/mock_provisioner.go
 type Provisioner interface {
 	FetchStatefulset() error
-	GetStatefulSet() *appsv1.StatefulSet
+	GetStatefulSet() (*appsv1.StatefulSet, error)
 }
 
 type provisioner struct {
@@ -74,6 +74,12 @@ func (sfs *provisioner) FetchStatefulset() error {
 	return nil
 }
 
-func (sfs *provisioner) GetStatefulSet() *appsv1.StatefulSet {
-	return sfs.statefulSet
+func (sfs *provisioner) GetStatefulSet() (*appsv1.StatefulSet, error) {
+	if sfs.statefulSet == nil {
+		err := sfs.FetchStatefulset()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sfs.statefulSet, nil
 }

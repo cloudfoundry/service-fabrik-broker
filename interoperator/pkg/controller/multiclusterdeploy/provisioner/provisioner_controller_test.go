@@ -140,7 +140,7 @@ func TestReconcile(t *testing.T) {
 	c.Create(context.TODO(), statefulSetInstance)
 
 	mockClusterRegistry.EXPECT().GetClient("2").Return(targetReconciler, nil).AnyTimes()
-	mockProvisioner.EXPECT().GetStatefulSet().Return(statefulSetInstance).Times(1)
+	mockProvisioner.EXPECT().GetStatefulSet().Return(statefulSetInstance, nil).Times(1)
 
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
