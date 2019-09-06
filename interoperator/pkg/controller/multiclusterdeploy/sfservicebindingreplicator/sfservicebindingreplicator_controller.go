@@ -28,6 +28,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -190,7 +191,9 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 			}
 		}
 
-		err = r.setInProgress(binding, 0)
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return r.setInProgress(binding)
+		})
 		if err != nil {
 			log.Error(err, "Error occurred while setting SFServiceBinding to in progress on master cluster ",
 				"bindingID", bindingID, "state", state)
@@ -317,9 +320,21 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileSFServiceBindingReplicator) setInProgress(binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
+func (r *ReconcileSFServiceBindingReplicator) setInProgress(binding *osbv1alpha1.SFServiceBinding) error {
 	bindingID := binding.GetName()
 	state := binding.GetState()
+
+	err := r.Get(context.TODO(), types.NamespacedName{
+		Name:      bindingID,
+		Namespace: binding.GetNamespace(),
+	}, binding)
+	if err != nil {
+		log.Error(err, "Failed to fetch sfservicebinding for setInProgress", "operation", state,
+			"bindingId ", bindingID)
+		return err
+	}
+
+	state = binding.GetState()
 	binding.SetState("in progress")
 	labels := binding.GetLabels()
 	if labels == nil {
@@ -328,21 +343,8 @@ func (r *ReconcileSFServiceBindingReplicator) setInProgress(binding *osbv1alpha1
 	labels[constants.LastOperationKey] = state
 	binding.SetLabels(labels)
 	log.Info("Trying to update binding ", "bindingID", bindingID, "state", binding.GetState())
-	err := r.Update(context.TODO(), binding)
+	err = r.Update(context.TODO(), binding)
 	if err != nil {
-		if retryCount < constants.ErrorThreshold {
-			log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", bindingID)
-			err := r.Get(context.TODO(), types.NamespacedName{
-				Name:      bindingID,
-				Namespace: binding.GetNamespace(),
-			}, binding)
-			if err != nil {
-				log.Error(err, "Failed to fetch sfservicebinding for setInProgress", "operation", state,
-					"bindingId ", bindingID)
-				return err
-			}
-			return r.setInProgress(binding, retryCount+1)
-		}
 		log.Error(err, "Updating status to in progress failed", "operation", state, "bindingId ", bindingID)
 		return err
 	}
