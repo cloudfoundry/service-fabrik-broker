@@ -130,7 +130,7 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	if clusterID == constants.MasterClusterID {
+	if clusterID == constants.DefaultMasterClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
 		log.Info("Target cluster is master cluster itself, replication not needed..")

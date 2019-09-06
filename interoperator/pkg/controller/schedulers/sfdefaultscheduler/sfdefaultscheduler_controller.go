@@ -105,7 +105,7 @@ func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 	if instance.Spec.ClusterID == "" {
-		instance.Spec.ClusterID = constants.MasterClusterID
+		instance.Spec.ClusterID = constants.DefaultMasterClusterID
 		if err := r.Update(context.Background(), instance); err != nil {
 			log.Error(err, "failed to update cluster id for ", "instance", instance.GetName())
 			return reconcile.Result{}, err

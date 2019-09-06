@@ -78,7 +78,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	ownClusterID = os.Getenv(constants.OwnClusterIDEnvKey)
 	if ownClusterID == "" {
-		ownClusterID = constants.MasterClusterID
+		ownClusterID = constants.DefaultMasterClusterID
 	}
 
 	// Create a new controller

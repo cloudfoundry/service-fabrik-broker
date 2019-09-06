@@ -46,7 +46,7 @@ func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorC
 		interoperatorConfig.SchedulerWorkerCount = constants.DefaultSchedulerWorkerCount
 	}
 	if interoperatorConfig.ProvisionerWorkerCount == 0 {
-		interoperatorConfig.ProvisionerWorkerCount = constants.ProvisionerWorkerCount
+		interoperatorConfig.ProvisionerWorkerCount = constants.DefaultProvisionerWorkerCount
 	}
 	if interoperatorConfig.SchedulerType == "" {
 		interoperatorConfig.SchedulerType = constants.DefaultSchedulerType

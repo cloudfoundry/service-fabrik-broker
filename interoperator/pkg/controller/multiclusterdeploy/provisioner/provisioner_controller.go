@@ -45,14 +45,8 @@ var log = logf.Log.WithName("provisioner.controller")
 var addClusterToWatch = watchmanager.AddCluster
 var removeClusterFromWatch = watchmanager.RemoveCluster
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
-// Add creates a new SFDefaultScheduler Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new MCD Provisioner Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this osb.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	clusterRegistry, err := registry.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {
@@ -107,7 +101,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileProvisioner{}
 
-// ReconcileProvisioner reconciles a SFDefaultScheduler object
+// ReconcileProvisioner reconciles a SFCluster object
 type ReconcileProvisioner struct {
 	client.Client
 	scheme          *runtime.Scheme
@@ -115,15 +109,13 @@ type ReconcileProvisioner struct {
 	provisioner     provisioner.Provisioner
 }
 
-// Reconcile reads that state of the cluster for a SFDefaultScheduler object and makes changes based on the state read
-// and what is in the SFDefaultScheduler.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
+// Reconcile reads the SFCluster object and makes changes based on the state read
+// and what is actual state of components deployed in the sister cluster
 /* Functions of this method
-1. Add watches on resources in target sfcluster
-2. Get target cluster client
-3. Get statefulset instance deployed in master cluster
-4. Register SF CRDs in target cluster
+1. Get target cluster client
+2. Get statefulset instance deployed in master cluster
+3. Register SF CRDs in target cluster (Must be done before registering watches)
+4. Add watches on resources in target sfcluster
 5. Namespace creation in target cluster
 6. SFCluster deploy in target cluster
 7. Kubeconfig secret in target cluster
