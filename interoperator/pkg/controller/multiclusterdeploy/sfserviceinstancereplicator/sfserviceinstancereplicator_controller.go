@@ -28,6 +28,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -181,7 +182,9 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 			}
 		}
 
-		err = r.setInProgress(instance, 0)
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return r.setInProgress(instance)
+		})
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -276,9 +279,20 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 	return nil
 }
 
-func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
+func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance) error {
 	instanceID := instance.GetName()
 	state := instance.GetState()
+	err := r.Get(context.TODO(), types.NamespacedName{
+		Name:      instanceID,
+		Namespace: instance.GetNamespace(),
+	}, instance)
+	if err != nil {
+		log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "operation", state,
+			"instanceId", instanceID)
+		return err
+	}
+
+	state = instance.GetState()
 	instance.SetState("in progress")
 	labels := instance.GetLabels()
 	if labels == nil {
@@ -286,21 +300,8 @@ func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alph
 	}
 	labels[constants.LastOperationKey] = state
 	instance.SetLabels(labels)
-	err := r.Update(context.TODO(), instance)
+	err = r.Update(context.TODO(), instance)
 	if err != nil {
-		if retryCount < constants.ErrorThreshold {
-			log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", instanceID)
-			err := r.Get(context.TODO(), types.NamespacedName{
-				Name:      instanceID,
-				Namespace: instance.GetNamespace(),
-			}, instance)
-			if err != nil {
-				log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "operation", state,
-					"instanceId", instanceID)
-				return err
-			}
-			return r.setInProgress(instance, retryCount+1)
-		}
 		log.Error(err, "Updating status to in progress failed", "operation", state, "instanceId", instanceID)
 		return err
 	}

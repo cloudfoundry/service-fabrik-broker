@@ -208,7 +208,6 @@ func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
 		},
 	}
 	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
-	instance2 := &osbv1alpha1.SFServiceInstance{}
 
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -224,8 +223,7 @@ func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
 		clusterRegistry: nil,
 	}
 	type args struct {
-		instance   *osbv1alpha1.SFServiceInstance
-		retryCount int
+		instance *osbv1alpha1.SFServiceInstance
 	}
 	tests := []struct {
 		name    string
@@ -235,58 +233,27 @@ func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
 		cleanup func()
 	}{
 		{
-			name: "retry and succeed if object is outdated",
+			name: "Set the state to in progress",
 			args: args{
-				instance:   instance,
-				retryCount: 0,
+				instance: instance,
 			},
 			setup: func() {
 				instance.SetResourceVersion("")
 				instance.SetState("in_queue")
 				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-
-				//Modify it on api server and pass outdated value
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
-				instance2.Spec.ServiceID = "foo"
-				g.Expect(c.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
 			},
 			wantErr: false,
 			cleanup: func() {
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
-				g.Expect(instance2.GetState()).To(gomega.Equal("in progress"))
-				g.Expect(instance2.Spec.ServiceID).To(gomega.Equal("foo"))
-				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).To(gomega.HaveOccurred())
-			},
-		},
-		{
-			name: "fail if retry count is too large",
-			args: args{
-				instance:   instance,
-				retryCount: constants.ErrorThreshold,
-			},
-			setup: func() {
-				instance.SetResourceVersion("")
-				instance.SetState("in_queue")
-				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-
-				//Modify it on api server and pass outdated value
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
-				instance2.Spec.ServiceID = "bar"
-				g.Expect(c.Update(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
-			},
-			wantErr: true,
-			cleanup: func() {
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
-				g.Expect(instance2.GetState()).NotTo(gomega.Equal("in progress"))
-				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance.GetState()).To(gomega.Equal("in progress"))
+				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).To(gomega.HaveOccurred())
 			},
 		},
 		{
 			name: "fail if instance is gone",
 			args: args{
-				instance:   instance,
-				retryCount: 0,
+				instance: instance,
 			},
 			setup: func() {
 				instance.SetResourceVersion("")
@@ -294,8 +261,8 @@ func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
 				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 
 				//Modify it on api server and pass outdated value
-				g.Expect(c.Get(context.TODO(), instanceKey, instance2)).NotTo(gomega.HaveOccurred())
-				g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 			},
 			wantErr: true,
 		},
@@ -308,7 +275,7 @@ func TestReconcileSFServiceInstanceReplicator_setInProgress(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup()
 			}
-			if err := r.setInProgress(tt.args.instance, tt.args.retryCount); (err != nil) != tt.wantErr {
+			if err := r.setInProgress(tt.args.instance); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileSFServiceInstanceReplicator.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
