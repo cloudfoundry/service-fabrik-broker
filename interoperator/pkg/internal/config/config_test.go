@@ -134,7 +134,7 @@ instanceContollerWatchList:
 		BindingWorkerCount:     constants.DefaultBindingWorkerCount,
 		InstanceWorkerCount:    constants.DefaultInstanceWorkerCount,
 		SchedulerWorkerCount:   constants.DefaultSchedulerWorkerCount,
-		ProvisionerWorkerCount: constants.ProvisionerWorkerCount,
+		ProvisionerWorkerCount: constants.DefaultProvisionerWorkerCount,
 		SchedulerType:          constants.DefaultSchedulerType,
 		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
 			osbv1alpha1.APIVersionKind{

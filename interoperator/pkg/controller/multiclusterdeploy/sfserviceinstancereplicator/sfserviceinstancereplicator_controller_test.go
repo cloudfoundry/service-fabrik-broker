@@ -122,8 +122,8 @@ func TestReconcile(t *testing.T) {
 
 	g.Expect(utils.DrainAllRequests(requests, timeout)).To(gomega.Equal(1))
 
-	// Set clusterID as MasterClusterID
-	instance.Spec.ClusterID = constants.MasterClusterID
+	// Set clusterID as DefaultMasterClusterID
+	instance.Spec.ClusterID = constants.DefaultMasterClusterID
 	g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	g.Expect(utils.DrainAllRequests(requests, timeout)).To(gomega.Equal(1))
 
