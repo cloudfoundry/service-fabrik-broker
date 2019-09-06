@@ -119,8 +119,8 @@ type ReconcileProvisioner struct {
 5. Namespace creation in target cluster
 6. SFCluster deploy in target cluster
 7. Kubeconfig secret in target cluster
-8. Deploy provisioner in target cluster
-9. Create clusterrolebinding in target cluster
+8. Create clusterrolebinding in target cluster
+9. Deploy provisioner in target cluster
 */
 func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFCluster
@@ -151,44 +151,47 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	// Get statefulSetInstance for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
 
-	// 1. Register sf CRDs
+	// 3. Register sf CRDs
 	err = r.registerSFCrds(clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	// 4. Add watches on resources in target sfcluster. Must be done after
+	// registering sf crds, since we are trying to watch on sfserviceinstance
+	// and sfservicebinding.
 	err = addClusterToWatch(clusterID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// 2. Create/Update Namespace in target cluster for provisioner
+	// 5. Create/Update Namespace in target cluster for provisioner
 	namespace := statefulSetInstance.GetNamespace()
 	err = r.reconcileNamespace(namespace, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// 3. Creating/Updating sfcluster in target cluster
+	// 6. Creating/Updating sfcluster in target cluster
 	err = r.reconcileSfClusterCrd(clusterInstance, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// 4. Creating/Updating kubeconfig secret for sfcluster in target cluster
+	// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
 	err = r.reconcileSfClusterSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// 5. Create Statefulset in target cluster for provisioner
-	err = r.reconcileStatefulSet(statefulSetInstance, clusterID, targetClient)
+	// 8. Deploy cluster rolebinding
+	err = r.reconcileClusterRoleBinding(namespace, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// 6. Deploy cluster rolebinding
-	err = r.reconcileClusterRoleBinding(namespace, clusterID, targetClient)
+	// 9. Create Statefulset in target cluster for provisioner
+	err = r.reconcileStatefulSet(statefulSetInstance, clusterID, targetClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
