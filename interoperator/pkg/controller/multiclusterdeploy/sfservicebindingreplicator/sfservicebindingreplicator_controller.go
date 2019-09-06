@@ -291,7 +291,10 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 				}
 				log.Info("bind on sister cluster completed, replicating secret to master cluster..",
 					"clusterID", clusterID, "bindingID", bindingID, "state", state)
-				err = r.Update(context.TODO(), bindingSecret)
+				err = r.Get(context.TODO(), types.NamespacedName{
+					Name:      bindingSecret.GetName(),
+					Namespace: bindingSecret.GetNamespace(),
+				}, bindingSecret)
 				if err != nil {
 					if apiErrors.IsNotFound(err) {
 						err = r.Create(context.TODO(), bindingSecret)
@@ -301,6 +304,13 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 							return reconcile.Result{}, err
 						}
 					} else {
+						log.Error(err, "Error occurred while replicating secret to master cluster ",
+							"bindingID ", bindingID, "state", state)
+						return reconcile.Result{}, err
+					}
+				} else {
+					err = r.Update(context.TODO(), bindingSecret)
+					if err != nil {
 						log.Error(err, "Error occurred while replicating secret to master cluster ",
 							"bindingID ", bindingID, "state", state)
 						return reconcile.Result{}, err
