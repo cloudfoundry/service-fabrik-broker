@@ -163,7 +163,11 @@ func (whsvr *WebhookServer) meter(evt EventInterface, a APIServerInterface) *v1b
 func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 	var body []byte
 	if r.Body != nil {
-		if data, err := ioutil.ReadAll(r.Body); err == nil {
+		if data, err := ioutil.ReadAll(r.Body); err != nil {
+			glog.Errorf("Can't read request body: %v", err)
+			http.Error(w, fmt.Sprintf("could not read request body: %v", err), http.StatusInternalServerError)
+			return
+		} else {
 			body = data
 		}
 	}
