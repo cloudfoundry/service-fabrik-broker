@@ -1,6 +1,6 @@
 'use strict';
 
-const ajv = require('ajv');
+const Ajv = require('ajv');
 const _ = require('lodash');
 const errors = require('../../common/errors');
 const logger = require('../../common/logger');
@@ -56,7 +56,7 @@ exports.validateSchemaForRequest = function (target, operation) {
       const parameters = _.get(req, 'body.parameters', {});
 
       const schemaVersion = schema['$schema'] || '';
-      const validator = new ajv({ schemaId: 'auto' });
+      const validator = new Ajv({ schemaId: 'auto' });
       if (schemaVersion.includes('draft-06')) {
         validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
       } else if (schemaVersion.includes('draft-04')) {
