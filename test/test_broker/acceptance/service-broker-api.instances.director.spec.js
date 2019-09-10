@@ -205,6 +205,35 @@ describe('service-broker-api', function () {
 
       });
 
+      it('returns 400 BadRequest when the parameters are invalid', function () {
+        return chai.request(app)
+          .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+          .set('X-Broker-API-Version', api_version)
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .send({
+            service_id: service_id,
+            plan_id: plan_id,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            parameters: {
+              enum_foo: 'not_bar',
+            },
+            accepts_incomplete: accepts_incomplete
+          })
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+            expect(res.body.error).to.be.eql('Bad Request');
+            expect(res.body.description).to.be.eql('Failed to validate service parameters, reason: .enum_foo should be equal to one of the allowed values');
+          });
+      });
+
     });
   });
 });
