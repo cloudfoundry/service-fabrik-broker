@@ -46,6 +46,16 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [SFServiceInstance](#sfserviceinstance)
       * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     * [SFServiceBinding](#sfservicebinding)
+  * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-support)
+    * [Context](#context)
+    * [Components](#components)
+      * [Broker](#broker)
+      * [MultiClusterDeployer](#multiclusterdeployer)
+      * [Schedulers](#schedulers)
+        * [DefaultScheduler](#defaultscheduler)
+        * [Round Robin Scheduler](#roundrobinscheduler)
+      * [Provisioner](#provisioner)
+
 
 ## Context
 
