@@ -76,6 +76,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Init watch manager
+	err = watchmanager.Initialize(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+
 	// Watch for changes to SFServiceInstance in sister clusters
 	watchEvents, err := getWatchChannel("sfserviceinstances")
 	if err != nil {

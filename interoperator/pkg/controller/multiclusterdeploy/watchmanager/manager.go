@@ -1,5 +1,3 @@
-// +build multiclusterdeploy
-
 package watchmanager
 
 import (

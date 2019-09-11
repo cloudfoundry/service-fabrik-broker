@@ -31,7 +31,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	controllermanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var cfg1, cfg2 *rest.Config
@@ -62,7 +62,7 @@ func TestMain(m *testing.M) {
 }
 
 func setupClients(g *gomega.GomegaWithT) {
-	mgr, err := manager.New(cfg1, manager.Options{})
+	mgr, err := controllermanager.New(cfg1, controllermanager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c1, err = client.New(cfg1, client.Options{
 		Scheme: mgr.GetScheme(),
