@@ -137,7 +137,7 @@ type ReconcileSFServiceInstance struct {
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=*
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=*
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
-// TODO dynamically setup rbac rules and watches
+// TODO dynamically setup rbac rules
 func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance
 	instance := &osbv1alpha1.SFServiceInstance{}

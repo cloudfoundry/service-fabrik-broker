@@ -7,6 +7,7 @@ ignore:
   - "interoperator/pkg/cluster/registry/mock_registry/"
   - "interoperator/pkg/internal/resources/mock_resources/"
   - "interoperator/pkg/internal/provisioner/mock_provisioner/"
+  - "interoperator/pkg/apis/resource/v1alpha1/mock_sfcluster/"
 
 
 coverage:

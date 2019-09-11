@@ -104,9 +104,6 @@ type ReconcileSFServiceBindingReplicator struct {
 
 // Reconcile reads that state of the cluster for a SFServiceInstanceReplicator object and makes changes based on the state read
 // and what is in the SFServiceInstanceReplicator.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=*,verbs=*
 func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFServiceInstanceReplicator instance
 	binding := &osbv1alpha1.SFServiceBinding{}

@@ -22,8 +22,7 @@ type watchManager struct {
 	bindingEvents  chan event.GenericEvent
 
 	// close this channel to stop watch manager
-	stop      chan struct{}
-	waitgroup *sync.WaitGroup
+	stop chan struct{}
 }
 
 func (wm *watchManager) getWatchChannel(resource string) (<-chan event.GenericEvent, error) {
@@ -44,7 +43,7 @@ func (wm *watchManager) getWatchChannel(resource string) (<-chan event.GenericEv
 
 func (wm *watchManager) addCluster(clusterID string) error {
 	for _, cw := range wm.clusterWatchers {
-		if cw.sfCluster.GetName() == clusterID {
+		if cw.clusterID == clusterID {
 			// already watching on cluster
 			log.Info("Already watching on cluster", "clusterID", clusterID)
 			return nil
@@ -56,14 +55,20 @@ func (wm *watchManager) addCluster(clusterID string) error {
 		return err
 	}
 
+	cfg, err := cluster.GetKubeConfig(wm.defaultCluster)
+	if err != nil {
+		log.Error(err, "unable to get sfcluster config", "clusterID", clusterID)
+		return err
+	}
+
 	stopCh := make(chan struct{})
+
 	cw := &clusterWatcher{
-		sfCluster:      cluster,
-		defaultCluster: wm.defaultCluster,
+		clusterID:      clusterID,
+		cfg:            cfg,
 		instanceEvents: wm.instanceEvents,
 		bindingEvents:  wm.bindingEvents,
 		stop:           stopCh,
-		waitgroup:      wm.waitgroup,
 	}
 	err = cw.start()
 	if err != nil {
@@ -83,7 +88,7 @@ func (wm *watchManager) removeCluster(clusterID string) {
 	defer wm.mux.Unlock()
 	l := len(wm.clusterWatchers)
 	for i, cw := range wm.clusterWatchers {
-		if cw.sfCluster.GetName() == clusterID {
+		if cw.clusterID == clusterID {
 			close(cw.stop)
 			wm.clusterWatchers[i] = wm.clusterWatchers[l-1]
 			wm.clusterWatchers = wm.clusterWatchers[:l-1]

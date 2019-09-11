@@ -1,56 +1,39 @@
 package watchmanager
 
 import (
-	"sync"
-
-	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/rest"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 type clusterWatcher struct {
-	sfCluster      *resourcev1alpha1.SFCluster
-	defaultCluster kubernetes.Client
+	clusterID      string
+	cfg            *rest.Config
+	timeoutSeconds int64
 
 	instanceEvents chan event.GenericEvent
 	bindingEvents  chan event.GenericEvent
 
 	// close this channel to stop watch for this cluster
-	stop      chan struct{}
-	waitgroup *sync.WaitGroup
+	stop chan struct{}
 }
 
 func (cw *clusterWatcher) start() error {
 	opts := metav1.ListOptions{}
-	var timeoutSeconds int64
-	timeoutSeconds = constants.MultiClusterWatchTimeout
-	opts.TimeoutSeconds = &timeoutSeconds
-
-	cluster := cw.sfCluster
-
-	configBytes, err := cluster.GetKubeConfig(cw.defaultCluster)
-	if err != nil {
-		log.Error(err, "unable to fetch kubeconfig. Not watching on cluster.",
-			"clusterID", cluster.GetName(), "namespace", cluster.GetNamespace())
-		return err
-	}
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
-	if err != nil {
-		log.Error(err, "unable to decode kubeconfig. Not watching on cluster.",
-			"clusterID", cluster.GetName())
-		return err
+	if cw.timeoutSeconds == 0 {
+		cw.timeoutSeconds = constants.MultiClusterWatchTimeout
 	}
 
-	clientset, err := versioned.NewForConfig(cfg)
+	opts.TimeoutSeconds = &cw.timeoutSeconds
+
+	clientset, err := versioned.NewForConfig(cw.cfg)
 	if err != nil {
 		log.Error(err, "unable to create client. Not watching on cluster.",
-			"clusterID", cluster.GetName())
+			"clusterID", cw.clusterID)
 		return err
 	}
 	instanceClient := clientset.OsbV1alpha1().SFServiceInstances("")
@@ -59,32 +42,30 @@ func (cw *clusterWatcher) start() error {
 	instanceWatch, err := instanceClient.Watch(opts)
 	if err != nil {
 		log.Error(err, "failed to establish watch for sfserviceinstance",
-			"clusterID", cluster.GetName())
+			"clusterID", cw.clusterID)
 		return err
 	}
 
 	bindingWatch, err := bindingClient.Watch(opts)
 	if err != nil {
 		log.Error(err, "failed to establish watch for sfservicebinding",
-			"clusterID", cluster.GetName())
+			"clusterID", cw.clusterID)
 		return err
 	}
 
-	log.Info("watch channels created", "clusterID", cluster.GetName())
-	cw.waitgroup.Add(1)
+	log.Info("watch channels created", "clusterID", cw.clusterID)
 	go func() {
-		defer cw.waitgroup.Done()
 		for {
 			select {
 			case instanceEvent, ok := <-instanceWatch.ResultChan():
 				if !ok {
 					instanceWatch, err = instanceClient.Watch(opts)
 					if err != nil {
-						log.Error(err, "failed to re-establish watch for sfserviceinstance", "clusterID", cluster.GetName())
-						_ = RemoveCluster(cluster.GetName())
+						log.Error(err, "failed to re-establish watch for sfserviceinstance", "clusterID", cw.clusterID)
+						_ = RemoveCluster(cw.clusterID)
 						return
 					}
-					log.V(1).Info("watch refreshed for sfserviceinstance", "clusterID", cluster.GetName())
+					log.V(1).Info("watch refreshed for sfserviceinstance", "clusterID", cw.clusterID)
 				}
 				if instanceEvent.Object == nil {
 					continue
@@ -92,7 +73,7 @@ func (cw *clusterWatcher) start() error {
 				metaObject, err := meta.Accessor(instanceEvent.Object)
 				if err != nil {
 					log.Error(err, "failed to process watch event for sfserviceinstance", "clusterID",
-						cluster.GetName(), "instanceEvent", instanceEvent)
+						cw.clusterID, "instanceEvent", instanceEvent)
 					continue
 				}
 				cw.instanceEvents <- event.GenericEvent{
@@ -103,11 +84,11 @@ func (cw *clusterWatcher) start() error {
 				if !ok {
 					bindingWatch, err = bindingClient.Watch(opts)
 					if err != nil {
-						log.Error(err, "failed to re-establish watch for sfservicebinding", "clusterID", cluster.GetName())
-						_ = RemoveCluster(cluster.GetName())
+						log.Error(err, "failed to re-establish watch for sfservicebinding", "clusterID", cw.clusterID)
+						_ = RemoveCluster(cw.clusterID)
 						return
 					}
-					log.V(1).Info("watch refreshed for sfservicebinding", "clusterID", cluster.GetName())
+					log.V(1).Info("watch refreshed for sfservicebinding", "clusterID", cw.clusterID)
 				}
 				if bindingEvent.Object == nil {
 					continue
@@ -115,7 +96,7 @@ func (cw *clusterWatcher) start() error {
 				metaObject, err := meta.Accessor(bindingEvent.Object)
 				if err != nil {
 					log.Error(err, "failed to process watch event for sfservicebinding", "clusterID",
-						cluster.GetName(), "bindingEvent", bindingEvent)
+						cw.clusterID, "bindingEvent", bindingEvent)
 					continue
 				}
 				cw.bindingEvents <- event.GenericEvent{
@@ -125,7 +106,7 @@ func (cw *clusterWatcher) start() error {
 			case _, ok := <-cw.stop:
 				if !ok {
 					log.V(1).Info("stop called for cluster watch. forcefully closing", "clusterID",
-						cluster.GetName())
+						cw.clusterID)
 					instanceWatch.Stop()
 					bindingWatch.Stop()
 					return

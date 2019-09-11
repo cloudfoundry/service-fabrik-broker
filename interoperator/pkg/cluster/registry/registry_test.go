@@ -167,7 +167,7 @@ func Test_clusterRegistry_GetCluster(t *testing.T) {
 		name    string
 		setup   func()
 		args    args
-		want    *resourceV1alpha1.SFCluster
+		want    resourceV1alpha1.SFClusterInterface
 		wantErr bool
 		cleanup func()
 	}{

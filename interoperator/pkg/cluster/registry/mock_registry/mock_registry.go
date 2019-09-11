@@ -50,10 +50,10 @@ func (mr *MockClusterRegistryMockRecorder) GetClient(clusterID interface{}) *gom
 }
 
 // GetCluster mocks base method
-func (m *MockClusterRegistry) GetCluster(clusterID string) (*v1alpha1.SFCluster, error) {
+func (m *MockClusterRegistry) GetCluster(clusterID string) (v1alpha1.SFClusterInterface, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCluster", clusterID)
-	ret0, _ := ret[0].(*v1alpha1.SFCluster)
+	ret0, _ := ret[0].(v1alpha1.SFClusterInterface)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

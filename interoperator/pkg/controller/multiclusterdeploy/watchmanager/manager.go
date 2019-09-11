@@ -4,7 +4,6 @@ package watchmanager
 
 import (
 	"os"
-	"sync"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
@@ -68,7 +67,6 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 	instanceEvents := make(chan event.GenericEvent, 1024)
 	bindingEvents := make(chan event.GenericEvent, 1024)
 	stopCh := make(chan struct{})
-	var waitgroup sync.WaitGroup
 
 	wm := &watchManager{
 		sfNamespace:     sfNamespace,
@@ -78,7 +76,6 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 		instanceEvents:  instanceEvents,
 		bindingEvents:   bindingEvents,
 		stop:            stopCh,
-		waitgroup:       &waitgroup,
 	}
 
 	manager = wm
