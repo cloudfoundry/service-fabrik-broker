@@ -47,7 +47,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
       * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     * [SFServiceBinding](#sfservicebinding)
   * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
-    * [Context](#context)
+    * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
     * [Components within Interoperator](#components-within-interoperator)
       * [Broker](#broker)
       * [MultiClusterDeployer](#multiclusterdeployer)
@@ -548,7 +548,7 @@ The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/
 
 # Multi-Cluster provisioning Support for Interoperator
 
-## Context
+## Why Multi Cluster Support is needed
 ## Components within Interoperator
 ### Broker
 ### MultiClusterDeployer
