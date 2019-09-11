@@ -46,9 +46,9 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [SFServiceInstance](#sfserviceinstance)
       * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     * [SFServiceBinding](#sfservicebinding)
-  * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-support)
+  * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
     * [Context](#context)
-    * [Components](#components)
+    * [Components within Interoperator](#components-within-interoperator)
       * [Broker](#broker)
       * [MultiClusterDeployer](#multiclusterdeployer)
       * [Schedulers](#schedulers)
@@ -544,3 +544,15 @@ status:
 The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Unbind` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
+
+
+# Multi-Cluster provisioning Support for Interoperator
+
+## Context
+## Components within Interoperator
+### Broker
+### MultiClusterDeployer
+### Schedulers
+### DefaultScheduler
+### Round Robin Scheduler
+### Provisioner
