@@ -6,7 +6,7 @@ This document describes the basic architecture and scope for the Service Fabrik 
 
 ## Target Audience
 
-Architects, Developers, Product Owners, Development Managers who are interested in understanding/using Service Fabrik's inter-operator to expose Kubernetes-based services as [OSB](https://www.openservicebrokerapi.org/)-compliant service brokers and integrate with [Service Manager](https://github.com/Peripli/service-manager).
+Architects, Developers, Product Owners, Development Managers who are interested in understanding/using Service Fabrik inter-operator to expose Kubernetes-based services as [OSB](https://www.openservicebrokerapi.org/)-compliant service brokers and integrate with [Service Manager](https://github.com/Peripli/service-manager).
 
 ## Table of Content
 * [Service Fabrik Inter\-operator Basic Architecture](#service-fabrik-inter-operator-basic-architecture)
@@ -15,24 +15,24 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   * [Table of Content](#table-of-content)
   * [Context](#context)
   * [Integration with Service Manager](#integration-with-service-manager)
-    * [Service Fabrik Broker](#service-fabrik-broker)
-    * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator)
+    * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker)
+    * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner)
   * [Basic Control\-flow](#basic-control-flow)
     * [Catalog](#catalog)
       * [Service and Plan registration](#service-and-plan-registration)
-      * [Service Fabrik Broker Catalog Cache](#service-fabrik-broker-catalog-cache)
+      * [Service Fabrik Broker Catalog Cache](#service-fabrik-inter-operator-broker-catalog-cache)
       * [Integration with Service Manager](#integration-with-service-manager-1)
     * [Provision](#provision)
-      * [Service Fabrik Broker](#service-fabrik-broker-1)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-1)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-1)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-1)
       * [Service Operator](#service-operator)
     * [Last Operation](#last-operation)
       * [Service Operator](#service-operator-1)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-2)
-      * [Service Fabrik Broker](#service-fabrik-broker-2)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-2)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-2)
     * [Bind](#bind)
-      * [Service Fabrik Broker](#service-fabrik-broker-3)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-3)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-3)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-3)
       * [Service Operator](#service-operator-2)
   * [Service Fabrik Inter\-operator Custom Resources](#service-fabrik-inter-operator-custom-resources)
     * [SFService](#sfservice)
@@ -82,15 +82,15 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 
 ![Inter-operator Design](images/inter-operator.png)
 
-### Service Fabrik Broker
+### Service Fabrik Inter-operator Broker
 
 The Service Fabrik Broker would act as the OSB API Adapter and is the component that integrates with the Service Manager. It is a lean component that serves OSB API requests and records the requests in a set of OSB-equivalent custom resources [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding).
 
 These custom resources capture all the data sent in their corresponding OSB requests and act as a point of co-ordination between the inter-operator component that would then work to reconcile these OSB resources with the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) based on the templates supplied in the catalog resources [`SFService`](#sfservice) and [`SFPlan`](#sfplan).
 
-### Service Fabrik Inter-operator
+### Service Fabrik Inter-operator Provisioner
 
-The inter-operator is a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
+The inter-operator provisioner is a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
 
 ## Basic Control-flow
 
@@ -131,7 +131,7 @@ This section presumes that the `SFService` and `sfplans` are already registered 
 
 ![Service Fabrik Inter-operator Basic Control-flow Provision](images/basic-control-flow-provision.png)
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `provision` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service and plan that was published by the Service Fabrik Broker.
@@ -139,9 +139,9 @@ The Service Manager adds some relevant additional context into the request.
 1. The Service Fabrik Broker creates an `SFServiceInstance` capturing all the details passed in the `provision` request from the Service Manager.
 The Service Fabrik Broker returns an asynchronous response.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfserviceinstances` and notices a newly created `SFServiceInstance`.
+1. The inter-operator provisioner watches for `sfserviceinstances` and notices a newly created `SFServiceInstance`.
 1. It loads the correct `provision` action template from the `SFPlan` corresponding to the `SFServiceInstance`.
 1. It renders and applies the rendered template and creates the individual service's resources as specified in the template.
 
@@ -166,13 +166,13 @@ This section presumes the following steps have already been performed.
 1. It notices a change in the status of any of the lower level resources and checks if the change in status is significant enough to be propagated to one of its own Kubernetes API resources.
 1. It updates its corresponding Kubernetes API resources.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template). It notices that some of the resources have been updated.
+1. The inter-operator provisioner watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template). It notices that some of the resources have been updated.
 1. It uses the `status` template to extract the status information relevant to be propagated to the `SFServiceInstance`.
 1. It updates the `SFServiceInstance`'s `status`.
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `last_operation` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service instance that was provisioned by the Service Fabrik Broker.
@@ -188,7 +188,7 @@ This section presumes the following steps have already been performed.
 
 ![Service Fabrik Inter-operator Basic Control-flow Bind](images/basic-control-flow-bind.png)
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `bind` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `bind` call was for a service, plan and the instance that was provisioned by the Service Fabrik Broker.
@@ -196,9 +196,9 @@ The Service Manager adds some relevant additional context into the request.
 1. The Service Fabrik Broker creates an `SFServiceBinding` capturing all the details passed in the `bind` request from the Service Manager.
 The Service Fabrik Broker returns an asynchronous response.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfservicebindings` and notices a newly created `SFServiceBinding`.
+1. The inter-operator provisioner watches for `sfservicebindings` and notices a newly created `SFServiceBinding`.
 1. It loads the correct `bind` action template from the `SFPlan` corresponding to the `SFServiceBinding`.
 1. It renders and applies the rendered template and creates the individual service's resources as specified in the template.
 
@@ -376,12 +376,12 @@ Deregistration of `sfplans` is handled using Kubernetes [finalizers](https://kub
 
 #### Templates
 
-Service Fabrik inter-operator, currently, assumes that API of the individual service's operator would be Kubernetes Resources.
-Service Fabrik inter-operator does not make any assumptions about the individual service operator's API apart from this.
+Service Fabrik inter-operator's provisioner, currently, assumes that API of the individual service's operator would be Kubernetes Resources.
+Service Fabrik inter-operator provisioner does not make any assumptions about the individual service operator's API apart from this.
 Usually, they would be some [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/),
 which would give the service operator implementation the full flexibility to implement and expose their functionality.
 
-To enable this independence of API for the service operators, Service Fabrik inter-operator relies on the templates supplied in the [`sfplans`](#sfplan) to map the OSB actions to the specific CRDs or the individual service operators.
+To enable this independence of API for the service operators, Service Fabrik inter-operator provisioner relies on the templates supplied in the [`sfplans`](#sfplan) to map the OSB actions to the specific CRDs or the individual service operators.
 
 ##### Template Variables
 
@@ -489,14 +489,14 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+The inter-operator provisioner as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Deprovision` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
 
 #### Rationale behind introducing the `SFServiceInstance` resource
 
-Technically, the functionality of the Service Fabrik inter-operator can be implemented without using the `SFServiceInstance` resource for simpler use-cases.
-For example, in the [`provision`] control-flow, the Service Fabrik Broker can directly lookup the [`SFPlan`] and apply the right template and create the actual service-specific resources directly without having to create an intermediate `SFServiceIntance` resource first to be picked up by the `Service Fabrik inter-operator.
+Technically, the functionality of the Service Fabrik inter-operator provisioner can be implemented without using the `SFServiceInstance` resource for simpler use-cases.
+For example, in the [`provision`] control-flow, the Service Fabrik Broker can directly lookup the [`SFPlan`] and apply the right template and create the actual service-specific resources directly without having to create an intermediate `SFServiceIntance` resource first to be picked up by the `Service Fabrik inter-operator provisioner.
 This might work well for the scenario where the Service Fabrik in provisioned on the same Kubernetes cluster as where the service operator and it's instances are also eventually provisioned.
 But as discussed in the [cluster landscape document](cluster-landscape.md), there are [reasons](cluster-landscape.md#tree-dimensions-for-comparison) to [recommend](cluster-landscape.md#recommended-landscape-scenario) more dynamic scenarios involving multiple Kubernetes clusters where the Kubernetes cluster where Service Fabrik is provisioned would be different from the Kubernetes cluster where the service operator and the instances are provisioned.
 This would lead to a [design](cluster-landscape.md#service-instance-scheduling) where there a scheduler to provide loose coupling between the scheduling decision (in which Kubernetes cluster a particular service instance is to be provisioned) and the actual details of provisioning.
@@ -543,7 +543,7 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+The inter-operator provisioner as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Unbind` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
 
