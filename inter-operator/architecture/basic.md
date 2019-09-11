@@ -48,6 +48,8 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [SFServiceBinding](#sfservicebinding)
   * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
     * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
+    * [New Custom Resources Introduced](#New Custom Resources Introduced)
+      * [SFCluster](#sfcluster)
     * [Components within Interoperator](#components-within-interoperator)
       * [Broker](#broker)
       * [MultiClusterDeployer](#multiclusterdeployer)
@@ -549,6 +551,8 @@ The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/
 # Multi-Cluster provisioning Support for Interoperator
 
 ## Why Multi Cluster Support is needed
+## New Custom Resources Introduced
+### SFCluster
 ## Components within Interoperator
 ### Broker
 ### MultiClusterDeployer
