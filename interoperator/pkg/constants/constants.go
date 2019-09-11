@@ -21,6 +21,6 @@ const (
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
 	DefaultProvisionerWorkerCount = 10
-	DefaultSchedulerType          = "bosh"
+	DefaultSchedulerType          = "default"
 	RoundRobinSchedulerType       = "round-robin"
 )
