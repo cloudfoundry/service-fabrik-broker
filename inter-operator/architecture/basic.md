@@ -579,8 +579,6 @@ metadata:
 data:
   kubeconfig: <REDACTED_KUBECONFIG>
 ```
-## Deployment Flow and Runtime Flow
-
 ## Components within Interoperator
 Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already intruduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
 ### Broker
@@ -605,3 +603,14 @@ As the name suggests, round robin scheduler schedules instances in round robin f
 This scheduler schedules instance in the least filled cluster.
 ### Provisioner
 Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner)
+## Deployment Flow
+Following are the flow for a deployment of Interoperator.
+1. When Interoperator is deployed initially, one deploys the [broker](#broker), [MultiClusterDeployer](#multiclusterdeployer) and the [Scheduler](#schedulers) component in a cluster, called as master cluster.
+2. After this, the operator should create the `SFServices`, `SFPlans` and `SFClusters` in the master cluster. `SFClusters` is simply the list/registry of all clusters where you want to provision the instances. We also refer to them as sister cluster interchangebly. Master cluster can also be part of the cluster registry and be a sister cluster in itself, if someone wants to use it for service provisioning as well.
+3. [Provisioner Controller](#provisioner-controller) then takes care of replicating the provisioner component to all sister clusters and [Service Replicator](#service-replicator) takes care of replicating the SFServices and SFPlans in all the clusters.
+
+Now the setup is ready for taking requests. We depict this in the picture below.
+![Inter-operator Deployment Flow](images/Deployment Flow.png)
+
+ ## Runtime Flow
+ After 
