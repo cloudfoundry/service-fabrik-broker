@@ -613,4 +613,5 @@ Following are the flow for a deployment of Interoperator.
 Now the setup is ready for taking requests. We depict this in the picture below.
 ![Inter-operator Deployment Flow](images/Deployment%20Flow.png)
 ## Runtime Flow
-After 
+After the interoperator is ready and setup across multiple clusters as described [above](#deployment-flow), service instance and service binding can be created. When in the master cluster, broker creates an `SFServiceInstance`, Scheduler picks it up first and schedules/assigns a cluster where service needs to be provisioned. Then [Service Instance Reconciler](#service-instance-reconciler) reconciles that `SFServiceInstance` in the sister cluster where it is scheduled. Once that is done, [provisioner](#provisioner) residing in the sister cluster takes over and from then onwards, the process described in [service provisioning](#service-fabrik-inter-operator-provisioner-1) is followed. For another `SFServiceInstance`, it is again scheduled in one of the sister cluster and provisioner provisions the service there. The picture below describes the steps.
+![Inter-operator Runtime Flow](images/Runtime%20Flow.png)
