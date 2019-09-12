@@ -8,6 +8,7 @@ ignore:
   - "interoperator/pkg/internal/resources/mock_resources/"
   - "interoperator/pkg/internal/provisioner/mock_provisioner/"
   - "interoperator/pkg/apis/resource/v1alpha1/mock_sfcluster/"
+  - "interoperator/pkg/controller/multiclusterdeploy/watchmanager/mock_manager.go"
 
 
 coverage:

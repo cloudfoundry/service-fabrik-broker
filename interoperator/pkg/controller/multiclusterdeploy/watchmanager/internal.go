@@ -11,7 +11,6 @@ import (
 )
 
 type watchManager struct {
-	sfNamespace     string
 	defaultCluster  kubernetes.Client
 	clusterRegistry registry.ClusterRegistry
 
@@ -42,12 +41,10 @@ func (wm *watchManager) getWatchChannel(resource string) (<-chan event.GenericEv
 }
 
 func (wm *watchManager) addCluster(clusterID string) error {
-	for _, cw := range wm.clusterWatchers {
-		if cw.clusterID == clusterID {
-			// already watching on cluster
-			log.Info("Already watching on cluster", "clusterID", clusterID)
-			return nil
-		}
+	if wm.isWatchingOnCluster(clusterID) {
+		// already watching on cluster
+		log.Info("Already watching on cluster", "clusterID", clusterID)
+		return nil
 	}
 	cluster, err := wm.clusterRegistry.GetCluster(clusterID)
 	if err != nil {
@@ -100,4 +97,15 @@ func (wm *watchManager) removeCluster(clusterID string) {
 	log.Info("Cluster not watched by watch manager. Ignoring remove",
 		"clusterID", clusterID)
 	return
+}
+
+func (wm *watchManager) isWatchingOnCluster(clusterID string) bool {
+	wm.mux.Lock()
+	defer wm.mux.Unlock()
+	for _, cw := range wm.clusterWatchers {
+		if cw.clusterID == clusterID {
+			return true
+		}
+	}
+	return false
 }

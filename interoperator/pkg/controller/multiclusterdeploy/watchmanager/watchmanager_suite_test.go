@@ -26,16 +26,18 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 
 	"github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	controllermanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var cfg1, cfg2 *rest.Config
 var c1, c2 client.Client
+var mapper1, mapper2 meta.RESTMapper
 
 func TestMain(m *testing.M) {
 	t1 := &envtest.Environment{
@@ -62,16 +64,22 @@ func TestMain(m *testing.M) {
 }
 
 func setupClients(g *gomega.GomegaWithT) {
-	mgr, err := controllermanager.New(cfg1, controllermanager.Options{})
+	var err error
+	mapper1, err = apiutil.NewDiscoveryRESTMapper(cfg1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	c1, err = client.New(cfg1, client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
+		Scheme: scheme.Scheme,
+		Mapper: mapper1,
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	mapper2, err = apiutil.NewDiscoveryRESTMapper(cfg2)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	c2, err = client.New(cfg2, client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
+		Scheme: scheme.Scheme,
+		Mapper: mapper2,
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 }

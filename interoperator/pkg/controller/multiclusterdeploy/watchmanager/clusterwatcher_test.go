@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -14,8 +13,6 @@ const timeout = time.Second * 2
 
 func Test_clusterWatcher_start(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	setupClients(g)
 
