@@ -50,6 +50,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
     * [New Custom Resources Introduced](#new-custom-resources-introduced)
       * [SFCluster](#sfcluster)
+    * [Deployment Flow and Runtime Flow](#deployment-flow-and-runtime-flow)
     * [Components within Interoperator](#components-within-interoperator)
       * [Broker](#broker)
       * [MultiClusterDeployer](#multiclusterdeployer)
@@ -578,11 +579,29 @@ metadata:
 data:
   kubeconfig: <REDACTED_KUBECONFIG>
 ```
+## Deployment Flow and Runtime Flow
 
 ## Components within Interoperator
+Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already intruduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
 ### Broker
+Broker was already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-broker)
 ### MultiClusterDeployer
+This component is a set of [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers). Below are the list of controllers it comprises of.
+#### Provisioner Controller
+Provisioner Controller is the custom controller which watches on the `SFCluster` of the master cluster and deploys the [Provisioner](#provisioner) component in those clusters.
+#### Service Replicator
+Service Replicator is the custom controller which watches on the `SFClusters`, `SFServices` and `SFPlans` of the master cluster and copies the `SFServices` and `SFPlans` from master cluster to sister clusters.
+#### Service Instance Reconciler
+Service Instance Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceInstance` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
+#### Service Binding Reconciler
+Service Binding Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceBinding` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
 ### Schedulers
-### DefaultScheduler
-### Round Robin Scheduler
+Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
+#### DefaultScheduler
+This is just a sample scheduler if one does not want multiple clusters in the setup. In that case, it schedules all the instances in the one cluster which is part of the setup.
+#### Round Robin Scheduler
+As the name suggests, round robin scheduler schedules instances in round robin fashion. At this point, it does not take care of capacity and if interoperator restarts, it starts scheduling from the beginning. 
+#### Least filled Scheduler
+This scheduler schedules instance in the least filled cluster.
 ### Provisioner
+Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner)
