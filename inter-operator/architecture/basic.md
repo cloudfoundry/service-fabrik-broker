@@ -50,7 +50,8 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
     * [New Custom Resources Introduced](#new-custom-resources-introduced)
       * [SFCluster](#sfcluster)
-    * [Deployment Flow and Runtime Flow](#deployment-flow-and-runtime-flow)
+    * [Deployment Flow](#deployment-flow)
+    * [Runtime Flow](#runtime-flow)
     * [Components within Interoperator](#components-within-interoperator)
       * [Broker](#broker)
       * [MultiClusterDeployer](#multiclusterdeployer)
@@ -610,7 +611,6 @@ Following are the flow for a deployment of Interoperator.
 3. [Provisioner Controller](#provisioner-controller) then takes care of replicating the provisioner component to all sister clusters and [Service Replicator](#service-replicator) takes care of replicating the SFServices and SFPlans in all the clusters.
 
 Now the setup is ready for taking requests. We depict this in the picture below.
-![Inter-operator Deployment Flow](images/Deployment Flow.png)
-
- ## Runtime Flow
- After 
+![Inter-operator Deployment Flow](images/Deployment%20Flow.png)
+## Runtime Flow
+After 
