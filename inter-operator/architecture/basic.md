@@ -575,13 +575,13 @@ where the secretRef looks like the following
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vivek2-kubeconfig
+  name: 1-kubeconfig
   namespace: interoperator
 data:
   kubeconfig: <REDACTED_KUBECONFIG>
 ```
 ## Components within Interoperator
-Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already intruduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
+Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already introduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
 ### Broker
 Broker was already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-broker)
 ### MultiClusterDeployer
