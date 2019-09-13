@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-interoperator-webhook-server-secret
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: {{ .Release.Name }}-controller-manager
+    controller-tools.k8s.io: "1.0"
+  name: {{ .Release.Name }}-interoperator-controller-manager-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - port: 443
+  selector:
+    control-plane: {{ .Release.Name }}-controller-manager
+    controller-tools.k8s.io: "1.0"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    control-plane: {{ .Release.Name }}-controller-manager
+    controller-tools.k8s.io: "1.0"
+  name: {{ .Release.Name }}-interoperator-controller-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      control-plane: {{ .Release.Name }}-controller-manager
+      controller-tools.k8s.io: "1.0"
+  serviceName: {{ .Release.Name }}-interoperator-controller-manager-service
+  template:
+    metadata:
+      labels:
+        control-plane: {{ .Release.Name }}-controller-manager
+        controller-tools.k8s.io: "1.0"
+    spec:
+      containers:
+      - command:
+        - /manager
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: SECRET_NAME
+          value: {{ .Release.Name }}-interoperator-webhook-server-secret
+        image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
+        imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
+        name: manager
+        ports:
+        - containerPort: 9876
+          name: webhook-server
+          protocol: TCP
+        resources:
+          limits:
+            cpu: {{ .Values.interoperator.resources.limits.cpu }}
+            memory: {{ .Values.interoperator.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.interoperator.resources.requests.cpu }}
+            memory: {{ .Values.interoperator.resources.requests.memory }}
+        volumeMounts:
+        - mountPath: /tmp/cert
+          name: cert
+          readOnly: true
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ .Release.Name }}-interoperator-webhook-server-secret
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: inter-operator-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    # Reference to upper's `metadata.name`
+    name: {{ .Release.Namespace }}
+    # Reference to upper's `metadata.namespace`
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io

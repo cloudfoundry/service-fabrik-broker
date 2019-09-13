@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  interoperator:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: 2019-09-13T09:55:38.047259+05:30
+    description: A Helm chart for Interoperator for Kubernetes
+    digest: 341b36c0a36961b3ce8cdd035bbddd530f08c34d80919fc1f178199ff3381262
+    name: interoperator
+    urls:
+    - https://cloudfoundry-incubator.github.io/service-fabrik-broker/deployment/k8s/interoperator-0.1.0.tgz
+    version: 0.1.0
+generated: 2019-09-13T09:55:38.044391+05:30
