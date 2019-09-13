@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
@@ -230,8 +229,6 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
-
-	logf.SetLogger(logf.ZapLogger(true))
 
 	defer func() {
 		close(stopMgr)

@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var c client.Client
@@ -87,7 +86,6 @@ func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logf.SetLogger(logf.ZapLogger(true))
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -157,8 +155,6 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
-
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -247,8 +243,6 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 }
 
 func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
-
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -310,8 +304,6 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 }
 
 func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
-
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -387,7 +379,6 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 }
 
 func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -470,8 +461,6 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 }
 
 func TestReconcileProvisioner_reconcileStatefulSet(t *testing.T) {
-
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -556,7 +545,6 @@ func TestReconcileProvisioner_reconcileStatefulSet(t *testing.T) {
 }
 
 func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
-	logf.SetLogger(logf.ZapLogger(true))
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

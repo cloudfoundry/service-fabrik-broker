@@ -20,10 +20,33 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    Provisioner
+		want    bool
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "fail if kubeConfig is not passed",
+			args:    args{},
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name: "fail if scheme is not passed",
+			args: args{
+				kubeConfig: kubeConfig,
+			},
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name: "return provisioner",
+			args: args{
+				kubeConfig: kubeConfig,
+				scheme:     sch,
+				mapper:     mapper,
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -32,7 +55,7 @@ func TestNew(t *testing.T) {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if _, ok := got.(Provisioner); ok != tt.want {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
 		})

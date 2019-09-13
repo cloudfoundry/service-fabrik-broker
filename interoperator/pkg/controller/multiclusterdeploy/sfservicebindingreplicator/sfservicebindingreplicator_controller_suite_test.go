@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var cfg, cfg2 *rest.Config
@@ -42,7 +41,6 @@ func TestMain(m *testing.M) {
 	t2 := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crds")},
 	}
-	logf.SetLogger(logf.ZapLogger(false))
 	apis.AddToScheme(scheme.Scheme)
 	var err error
 	if cfg, err = t.Start(); err != nil {
