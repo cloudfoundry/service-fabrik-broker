@@ -9,6 +9,7 @@ ignore:
   - "interoperator/pkg/internal/provisioner/mock_provisioner/"
   - "interoperator/pkg/apis/resource/v1alpha1/mock_sfcluster/"
   - "interoperator/pkg/controller/multiclusterdeploy/watchmanager/mock_manager.go"
+  - "interoperator/pkg/**/zz_generated.deepcopy.go"
 
 
 coverage:
