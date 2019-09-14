@@ -120,6 +120,10 @@ func (r *ReconcileSFServices) Reconcile(request reconcile.Request) (reconcile.Re
 	clusterInstance := &resourcev1alpha1.SFCluster{}
 	err := r.Get(context.TODO(), request.NamespacedName, clusterInstance)
 	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// Object not found, return.
+			return reconcile.Result{}, nil
+		}
 		log.Error(err, "Failed to get SFCluster")
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
