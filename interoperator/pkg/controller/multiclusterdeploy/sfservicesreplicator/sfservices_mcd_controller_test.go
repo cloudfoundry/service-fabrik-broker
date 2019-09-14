@@ -40,7 +40,7 @@ var c, c2 client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 func createAndTestSFServiceAndPlans(serviceName string, planName string, service *osbv1alpha1.SFService, plan *osbv1alpha1.SFPlan, t *testing.T, g *gomega.GomegaWithT, requests chan reconcile.Request) {
 	err := c.Create(context.TODO(), service)
@@ -68,13 +68,12 @@ func createAndTestSFServiceAndPlans(serviceName string, planName string, service
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(plan.GetName()).To(gomega.Equal(planName))
 
-	c.Delete(context.TODO(), service)
-	c.Delete(context.TODO(), plan)
+	g.Expect(c.Delete(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), service)).NotTo(gomega.HaveOccurred())
 	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 }
 
 func TestReconcile(t *testing.T) {
-	t.Skip("Failing in travis, hence skipping now.")
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -136,12 +135,18 @@ func TestReconcile(t *testing.T) {
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
+
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	c2, err = client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	sfcluster1 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -157,10 +162,6 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
-	<-time.After(time.Second)
-	g.Expect(c.Create(context.TODO(), sfcluster2)).NotTo(gomega.HaveOccurred())
-
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	recFn, requests := SetupTestReconcile(newReconciler(mgr, mockClusterRegistry))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
@@ -169,5 +170,13 @@ func TestReconcile(t *testing.T) {
 
 	defer close(StartTestManager(mgr, g))
 
+	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
+	<-time.After(time.Second)
+	g.Expect(c.Create(context.TODO(), sfcluster2)).NotTo(gomega.HaveOccurred())
+
 	createAndTestSFServiceAndPlans("foo", "bar", service1, plan1, t, g, requests)
+
+	g.Expect(c.Delete(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), sfcluster2)).NotTo(gomega.HaveOccurred())
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 }
