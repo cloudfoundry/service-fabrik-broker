@@ -55,7 +55,7 @@ exports.validateSchemaForRequest = function (target, operation) {
     if (schema) {
       const parameters = _.get(req, 'body.parameters', {});
 
-      const schemaVersion = schema['$schema'] || '';
+      const schemaVersion = schema.$schema || '';
       const validator = new Ajv({ schemaId: 'auto' });
       if (schemaVersion.includes('draft-06')) {
         validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
