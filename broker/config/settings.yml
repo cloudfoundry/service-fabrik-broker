@@ -754,6 +754,20 @@ defaults: &defaults
       - action: bind
         type: gotemplate
         contentEncoded: <%=base64_template('samples/templates/gotemplates/director/bind.yaml') %>
+      schemas: &blueprint_schemas
+        service_instance:
+          create:
+            parameters:
+              "$schema": "http://json-schema.org/draft-04/schema#"
+              additionalProperties: true
+              properties:
+                enum_foo:
+                  description: A property of the blueprint plan
+                  type: string
+                  enum:
+                  - bar
+                  - baz
+                  default: bar
     - &blueprint_plan4
       id: 'bc158c9a-7934-401e-94ab-057082a5073e'
       name: 'v1.0-small'
@@ -828,6 +842,7 @@ defaults: &defaults
       - cf
       - sm
       templates: *director_templates
+      schemas: *blueprint_schemas
     - &blueprint_plan8
       id: 'gd158c9a-7934-401e-94ab-057082a5073e'
       name: 'v2.0-xsmall'
@@ -898,6 +913,7 @@ defaults: &defaults
         - '2 GB Memory'
         - '2 GB Disk'
       templates: *director_templates
+      schemas: *blueprint_schemas
   ####################
   # RABBITMQ SERVICE #
   ####################

@@ -135,6 +135,13 @@ class BadRequest extends HttpClientError {
 }
 exports.BadRequest = BadRequest;
 
+class InvalidServiceParameters extends BadRequest {
+  constructor(message) {
+    super(message);
+  }
+}
+exports.InvalidServiceParameters = InvalidServiceParameters;
+
 class Unauthorized extends HttpClientError {
   constructor(message) {
     super(CONST.HTTP_STATUS_CODE.UNAUTHORIZED, 'Unauthorized', message || 'The request requires user authentication');
