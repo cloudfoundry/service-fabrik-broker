@@ -587,7 +587,7 @@ Below, we discuss about the components of Service Fabrik Interoperator. Some com
 ### Broker
 Broker was already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-broker)
 ### MultiClusterDeployer
-This component is a set of [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers). Below are the list of controllers it comprises of.
+This component is a set of [custom controllers](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers). Below are the list of controllers it comprises of.
 #### Provisioner Controller
 Provisioner Controller is the custom controller which watches on the `SFCluster` of the master cluster and deploys the [Provisioner](#provisioner) component in those clusters.
 #### Service Replicator
