@@ -593,7 +593,7 @@ Provisioner Controller is the custom controller which watches on the `SFCluster`
 #### Service Replicator
 Service Replicator is the custom controller which watches on the `SFClusters`, `SFServices` and `SFPlans` of the master cluster and copies the `SFServices` and `SFPlans` from master cluster to sister clusters.
 #### Service Instance Reconciler
-Service Instance Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceInstance` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
+Service Instance Reconciler is the custom controller which watches across multiple clusters that are part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceInstance` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
 #### Service Binding Reconciler
 Service Binding Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceBinding` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
 ### Schedulers
