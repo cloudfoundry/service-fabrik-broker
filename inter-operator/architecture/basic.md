@@ -557,7 +557,7 @@ Scalability is the main reason why one should use Multi-Cluster support. It give
 
 Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-filled scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
 ## New Custom Resources Introduced
-Along with the new custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
+Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
 ### SFCluster
 `SFCluster` is the CRD which stores the details of the cluster where provisioning of the service is needed. Depending on how many clusters need to be onboarded, we need to add resources for those. The structure of a sample resource look like the following.
 
