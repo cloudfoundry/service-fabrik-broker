@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -25,7 +24,7 @@ var log = logf.Log.WithName("cluster.registry")
 //go:generate mockgen -source registry.go -destination ./mock_registry/mock_registry.go
 type ClusterRegistry interface {
 	GetClient(clusterID string) (kubernetes.Client, error)
-	GetCluster(clusterID string) (*resourceV1alpha1.SFCluster, error)
+	GetCluster(clusterID string) (resourceV1alpha1.SFClusterInterface, error)
 	ListClusters(options *kubernetes.ListOptions) (*resourceV1alpha1.SFClusterList, error)
 }
 
@@ -70,11 +69,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 	return r, nil
 }
 
-func (r *clusterRegistry) createClient(configBytes []byte) (kubernetes.Client, error) {
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
-	if err != nil {
-		return nil, err
-	}
+func (r *clusterRegistry) createClient(cfg *rest.Config) (kubernetes.Client, error) {
 	c, err := client.New(cfg, client.Options{
 		Scheme: r.scheme,
 		Mapper: r.mapper,
@@ -91,13 +86,13 @@ func (r *clusterRegistry) GetClient(clusterID string) (kubernetes.Client, error)
 	if err != nil {
 		return nil, err
 	}
-	configBytes, err := cluster.GetKubeConfig(r.c)
+	cfg, err := cluster.GetKubeConfig(r.c)
 	if err != nil {
 		log.Error(err, "unable to get kubeconfig", "clusterID", clusterID)
 		return nil, err
 	}
 
-	c, err := r.createClient(configBytes)
+	c, err := r.createClient(cfg)
 	if err != nil {
 		log.Error(err, "unable to create k8s client", "clusterID", clusterID)
 		return nil, err
@@ -106,7 +101,7 @@ func (r *clusterRegistry) GetClient(clusterID string) (kubernetes.Client, error)
 }
 
 // GetCluster returns a cluster detail
-func (r *clusterRegistry) GetCluster(clusterID string) (*resourceV1alpha1.SFCluster, error) {
+func (r *clusterRegistry) GetCluster(clusterID string) (resourceV1alpha1.SFClusterInterface, error) {
 	cluster := &resourceV1alpha1.SFCluster{}
 	var clusterKey = types.NamespacedName{
 		Name:      clusterID,

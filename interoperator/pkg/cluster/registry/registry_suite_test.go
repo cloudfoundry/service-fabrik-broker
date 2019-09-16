@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var kubeConfig *rest.Config
@@ -62,7 +61,6 @@ func TestMain(m *testing.M) {
 	}
 	sch = scheme.Scheme
 
-	logf.SetLogger(logf.ZapLogger(false))
 	code := m.Run()
 	t.Stop()
 	os.Exit(code)

@@ -1,3 +1,5 @@
+// +build provisioners default
+
 /*
 Copyright 2018 The Service Fabrik Authors.
 
@@ -17,7 +19,7 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/sfservice"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/provisioners/sfservice"
 )
 
 func init() {
