@@ -605,7 +605,7 @@ As the name suggests, round robin scheduler schedules instances in round robin f
 #### Least filled Scheduler
 This scheduler schedules instance in the least filled cluster.
 ### Provisioner
-Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner)
+Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.
 ## Deployment Flow
 Following are the flow for a deployment of Interoperator.
 1. When Interoperator is deployed initially, one deploys the [broker](#broker), [MultiClusterDeployer](#multiclusterdeployer) and the [Scheduler](#schedulers) component in a cluster, called as master cluster.
