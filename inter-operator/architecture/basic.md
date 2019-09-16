@@ -559,7 +559,7 @@ Regarding the type of scheduling algorithms which are supported, we currently su
 ## New Custom Resources Introduced
 Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
 ### SFCluster
-`SFCluster` is the CRD which stores the details of the cluster where provisioning of the service is needed. Depending on how many clusters need to be onboarded, we need to add resources for those. The structure of a sample resource look like the following.
+`SFCluster` is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The structure of a sample resource look like the following.
 
 ```yaml
 apiVersion: resource.servicefabrik.io/v1alpha1
