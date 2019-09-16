@@ -597,7 +597,7 @@ Service Instance Reconciler is the custom controller which watches across multip
 #### Service Binding Reconciler
 Service Binding Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceBinding` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
 ### Schedulers
-Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
+Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` (the name of the corresponding `SFCluster` instance) of the cluster where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
 #### DefaultScheduler
 This is just a sample scheduler if one does not want multiple clusters in the setup. In that case, it schedules all the instances in the one cluster which is part of the setup.
 #### Round Robin Scheduler
