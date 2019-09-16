@@ -599,7 +599,7 @@ Service Binding Reconciler is the custom controller which watches across multipl
 ### Schedulers
 Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` (the name of the corresponding `SFCluster` instance) of the cluster where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
 #### DefaultScheduler
-This is just a sample scheduler if one does not want multiple clusters in the setup. In that case, it schedules all the instances in the one cluster which is part of the setup.
+This is just a sample scheduler suitable only for the single cluster setup. In that case, it schedules all the instances in the one cluster which is part of the setup. It is not suitable for the multi-cluster setup.
 #### Round Robin Scheduler
 As the name suggests, round robin scheduler schedules instances in round robin fashion. At this point, it does not take care of capacity and if interoperator restarts, it starts scheduling from the beginning. 
 #### Least filled Scheduler
