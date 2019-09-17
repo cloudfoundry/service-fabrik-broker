@@ -73,7 +73,7 @@ matrix:
       node_js:
         - "8.14"
       before_install:
-        - pip install --user truffleHog==2.0.89
+        # - pip install --user truffleHog==2.0.89
         - |
           pushd /tmp
           git clone --depth 1 https://github.com/awslabs/git-secrets
@@ -88,12 +88,12 @@ matrix:
         - |
           git secrets --scan-history || exit 1
         - |
-          echo "Full repo scan of truffleHog"
+          # echo "Full repo scan of truffleHog"
           # truffleHog only scans git endpoints which have a ref.
           # truffleHog check fails to detect changed because travis merge creates a detached HEAD
           # Creating a branch to fix this issue
-          git checkout -b travis-merge
-          INITIAL_COMMIT="a1206f7a64978e70441460f9f907c2904909a531"
-          high_entropy=$(trufflehog --json --entropy true --max_depth 1 --regex "$TRAVIS_BUILD_DIR")
-          echo "Truffle hog output : $high_entropy"
-          if [[ "$high_entropy" != "" ]] ; then exit 1; fi
+          # git checkout -b travis-merge
+          # INITIAL_COMMIT="a1206f7a64978e70441460f9f907c2904909a531"
+          # high_entropy=$(trufflehog --json --entropy true --max_depth 1 --regex "$TRAVIS_BUILD_DIR")
+          # echo "Truffle hog output : $high_entropy"
+          # if [[ "$high_entropy" != "" ]] ; then exit 1; fi
