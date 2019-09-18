@@ -181,10 +181,8 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	}
 
-	if reconciledFinalizer, err := r.reconcileFinalizers(instance, 0); err != nil {
+	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
-	} else if reconciledFinalizer {
-		return reconcile.Result{}, nil
 	}
 
 	targetClient := r
@@ -251,7 +249,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	return r.handleError(instance, reconcile.Result{}, nil, lastOperation, 0)
 }
 
-func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFServiceInstance, retryCount int) (bool, error) {
+func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFServiceInstance, retryCount int) error {
 	objectID := object.GetName()
 	namespace := object.GetNamespace()
 	// Fetch object again before updating
@@ -259,7 +257,6 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 		Name:      objectID,
 		Namespace: namespace,
 	}
-	reconciledFinalizer := false
 	err := r.Get(context.TODO(), namespacedName, object)
 	if err != nil {
 		if retryCount < constants.ErrorThreshold {
@@ -267,7 +264,7 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 			return r.reconcileFinalizers(object, retryCount+1)
 		}
 		log.Error(err, "failed to fetch object", "objectID", objectID)
-		return reconciledFinalizer, err
+		return err
 	}
 	if object.GetDeletionTimestamp().IsZero() {
 		if !utils.ContainsString(object.GetFinalizers(), constants.FinalizerName) {
@@ -280,13 +277,12 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 					return r.reconcileFinalizers(object, retryCount+1)
 				}
 				log.Error(err, "failed to add finalizer", "objectID", objectID)
-				return reconciledFinalizer, err
+				return err
 			}
-			reconciledFinalizer = true
 			log.Info("added finalizer", "objectID", objectID)
 		}
 	}
-	return reconciledFinalizer, nil
+	return nil
 }
 
 func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.NamespacedName, state string, resources []osbv1alpha1.Source, retryCount int) error {
