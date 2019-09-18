@@ -187,7 +187,8 @@ func TestReconcile(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	reconciler := newReconciler(mgr, mockResourceManager, mockClusterRegistry)
+	reconciler, err := newReconciler(mgr, mockResourceManager, mockClusterRegistry)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()

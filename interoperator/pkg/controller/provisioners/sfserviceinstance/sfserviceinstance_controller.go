@@ -55,17 +55,29 @@ func Add(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
-	return add(mgr, newReconciler(mgr, resources.New(), clusterRegistry))
+	reconciler, err := newReconciler(mgr, resources.New(), clusterRegistry)
+	if err != nil {
+		return err
+	}
+	return add(mgr, reconciler)
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterRegistry registry.ClusterRegistry) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterRegistry registry.ClusterRegistry) (reconcile.Reconciler, error) {
+	uncachedClient, err := client.New(mgr.GetConfig(), client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &ReconcileSFServiceInstance{
 		Client:          mgr.GetClient(),
+		uncachedClient:  uncachedClient,
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: clusterRegistry,
 		resourceManager: resourceManager,
-	}
+	}, nil
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -123,6 +135,7 @@ var _ reconcile.Reconciler = &ReconcileSFServiceInstance{}
 // ReconcileSFServiceInstance reconciles a SFServiceInstance object
 type ReconcileSFServiceInstance struct {
 	client.Client
+	uncachedClient  client.Client
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	resourceManager resources.ResourceManager
@@ -158,14 +171,28 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	instanceID := instance.GetName()
 	bindingID := ""
 	state := instance.GetState()
+
+	if state == "succeeded" || state == "failed" {
+		return reconcile.Result{}, nil
+	}
+
+	// Fetch again using uncachedClient to read the state again
+	err = r.uncachedClient.Get(context.TODO(), request.NamespacedName, instance)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// Object not found, return.  Created objects are automatically garbage collected.
+			// For additional cleanup logic use finalizers.
+			log.Info("instance deleted", "instance", request.NamespacedName.Name)
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return r.handleError(instance, reconcile.Result{}, err, state, 0)
+	}
+	state = instance.GetState()
 	labels := instance.GetLabels()
 	lastOperation, ok := labels[constants.LastOperationKey]
 	if !ok {
 		lastOperation = "in_queue"
-	}
-
-	if state == "succeeded" || state == "failed" {
-		return reconcile.Result{}, nil
 	}
 
 	clusterID, err := instance.GetClusterID()
