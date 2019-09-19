@@ -1,5 +1,9 @@
 package constants
 
+import (
+	"time"
+)
+
 // Constants used by interoperator
 const (
 	FinalizerName    = "interoperator.servicefabrik.io"
@@ -23,4 +27,6 @@ const (
 	DefaultProvisionerWorkerCount = 10
 	DefaultSchedulerType          = "default"
 	RoundRobinSchedulerType       = "round-robin"
+
+	PlanWatchDrainTimeout = time.Second * 2
 )

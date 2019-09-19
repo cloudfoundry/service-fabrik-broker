@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -49,7 +51,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	initWatches := make(chan struct{})
+	initWatches := make(chan struct{}, 100)
 	stopWatches := make(chan struct{})
 	go restartOnWatchUpdate(mgr, initWatches, stopWatches)
 	return &ReconcileSfPlan{
@@ -80,6 +82,21 @@ func restartOnWatchUpdate(mgr manager.Manager, initWatches, stop <-chan struct{}
 	for {
 		select {
 		case <-initWatches:
+			drainTimeout := time.After(constants.PlanWatchDrainTimeout)
+		DrainLoop:
+			for {
+				select {
+				case <-initWatches:
+					// NOP
+					// Since the InitWatchConfig performs the same computation
+					// regardless of which plan has changed, drain all the
+					// events occuring in a 2 second window and call
+					// InitWatchConfig only once. This significantly improves
+					// startup and watch refreshes.
+				case <-drainTimeout:
+					break DrainLoop
+				}
+			}
 			toUpdate, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 			if err != nil {
 				log.Error(err, "unable initializing interoperator watch list")
