@@ -27,6 +27,25 @@ sudo mv kubebuilder_${version}_darwin_${arch} /usr/local/kubebuilder
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
+
+
+# install mockgen
+go get github.com/golang/mock/gomock
+go get github.com/golang/mock/mockgen
+go install github.com/golang/mock/mockgen
+
+# update your PATH to include $GOPATH/bin
+export PATH=$PATH:$GOPATH/bin
+```
+### Generate the clients for crds
+```
+vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis osb:v1alpha1
+```
+
+Generating crds and mocks
+
+```
+make generate manifests
 ```
 
 ### Installing
@@ -50,7 +69,6 @@ In a new terminal, create an instance of the CRD and check if controller picks i
 ```
 kubectl apply -f config/samples/interoperator_v1alpha1_serviceinstance.yaml
 ```
-
 
 ## Deployment
 

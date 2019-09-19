@@ -16,10 +16,11 @@ const (
 	CodeClusterRegistryError = "ClusterRegistryError"
 	CodeClusterIDNotSet      = "ClusterIDNotSet"
 
-	CodeInputError     = "CodeInputError"
-	CodeMarshalError   = "CodeMarshalError"
-	CodeUnmarshalError = "CodeUnmarshalError"
-	CodeConvertError   = "CodeConvertError"
+	CodeInputError        = "CodeInputError"
+	CodeMarshalError      = "CodeMarshalError"
+	CodeUnmarshalError    = "CodeUnmarshalError"
+	CodeConvertError      = "CodeConvertError"
+	CodePreconditionError = "CodePreconditionError"
 
 	CodeUnknown = "Unknown"
 )

@@ -26,6 +26,8 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -69,7 +71,7 @@ func init() {
 }
 
 // GetKubeConfig return the kubeconfig of the cluster
-func (cluster *SFCluster) GetKubeConfig(c kubernetes.Client) ([]byte, error) {
+func (cluster *SFCluster) GetKubeConfig(c kubernetes.Client) (*rest.Config, error) {
 	var secretKey = types.NamespacedName{
 		Name:      cluster.Spec.SecretRef,
 		Namespace: cluster.GetNamespace(),
@@ -90,5 +92,19 @@ func (cluster *SFCluster) GetKubeConfig(c kubernetes.Client) ([]byte, error) {
 			"key kubeconfig not found in cluster secret %s for cluster %s",
 			cluster.Spec.SecretRef, cluster.GetName()), nil)
 	}
-	return configBytes, nil
+
+	cfg, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
+
+// SFClusterInterface is defined so that and SFCluster can be mocked in tests
+//go:generate mockgen -source sfcluster_types.go -destination ./mock_sfcluster/mock_sfcluster.go
+type SFClusterInterface interface {
+	metav1.Object
+	GetKubeConfig(c kubernetes.Client) (*rest.Config, error)
+}
+
+var _ SFClusterInterface = &SFCluster{}

@@ -1,0 +1,7 @@
+interoperator/pkg/client/**/* linguist-generated
+interoperator/pkg/cluster/registry/mock_registry/* linguist-generated
+interoperator/pkg/internal/resources/mock_resources/* linguist-generated
+interoperator/pkg/internal/provisioner/mock_provisioner/* linguist-generated
+interoperator/pkg/apis/resource/v1alpha1/mock_sfcluster/* linguist-generated
+interoperator/pkg/controller/multiclusterdeploy/watchmanager/mock_manager.go linguist-generated
+interoperator/pkg/**/zz_generated.deepcopy.go linguist-generated

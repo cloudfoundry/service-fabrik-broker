@@ -1,3 +1,5 @@
+// +build schedulers default
+
 /*
 Copyright 2018 The Service Fabrik Authors.
 
@@ -17,7 +19,7 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/sfdefaultscheduler"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/schedulers/sfdefaultscheduler"
 )
 
 func init() {
