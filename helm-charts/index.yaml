@@ -1,0 +1,22 @@
+apiVersion: v1
+entries:
+  interoperator:
+  - apiVersion: v1
+    appVersion: 0.4.0
+    created: "2019-09-20T16:39:34.317651583+05:30"
+    description: A Helm chart for Interoperator for Kubernetes
+    digest: 862fb6daedcb0bf385da3325044fe8da309609c19eb59201ebc14d890efa1d19
+    name: interoperator
+    urls:
+    - https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts/interoperator-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v1
+    appVersion: 0.3.0
+    created: "2019-09-20T16:39:34.316592428+05:30"
+    description: A Helm chart for Interoperator for Kubernetes
+    digest: b6fddb67fb4cb20ac602957d1316b573b416dfda79be10d7f11ea3a86391aa35
+    name: interoperator
+    urls:
+    - https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts/interoperator-0.3.0.tgz
+    version: 0.3.0
+generated: "2019-09-20T16:39:34.315735333+05:30"
