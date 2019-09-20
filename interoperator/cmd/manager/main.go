@@ -34,7 +34,7 @@ import (
 
 func main() {
 	var metricsAddr string
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-addr", ":9877", "The address the metric endpoint binds to.")
 	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(false))
 	log := logf.Log.WithName("entrypoint")
@@ -55,7 +55,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionID:        constants.LeaderElectionID,
 		LeaderElectionNamespace: leaderElectionNamespace,
-		//MetricsBindAddress:      metricsAddr,
+		MetricsBindAddress:      metricsAddr,
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
