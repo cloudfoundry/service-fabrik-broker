@@ -6,7 +6,7 @@ This document describes the basic architecture and scope for the Service Fabrik 
 
 ## Target Audience
 
-Architects, Developers, Product Owners, Development Managers who are interested in understanding/using Service Fabrik's inter-operator to expose Kubernetes-based services as [OSB](https://www.openservicebrokerapi.org/)-compliant service brokers and integrate with [Service Manager](https://github.com/Peripli/service-manager).
+Architects, Developers, Product Owners, Development Managers who are interested in understanding/using Service Fabrik inter-operator to expose Kubernetes-based services as [OSB](https://www.openservicebrokerapi.org/)-compliant service brokers and integrate with [Service Manager](https://github.com/Peripli/service-manager).
 
 ## Table of Content
 * [Service Fabrik Inter\-operator Basic Architecture](#service-fabrik-inter-operator-basic-architecture)
@@ -15,24 +15,24 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   * [Table of Content](#table-of-content)
   * [Context](#context)
   * [Integration with Service Manager](#integration-with-service-manager)
-    * [Service Fabrik Broker](#service-fabrik-broker)
-    * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator)
+    * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker)
+    * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner)
   * [Basic Control\-flow](#basic-control-flow)
     * [Catalog](#catalog)
       * [Service and Plan registration](#service-and-plan-registration)
-      * [Service Fabrik Broker Catalog Cache](#service-fabrik-broker-catalog-cache)
+      * [Service Fabrik Broker Catalog Cache](#service-fabrik-inter-operator-broker-catalog-cache)
       * [Integration with Service Manager](#integration-with-service-manager-1)
     * [Provision](#provision)
-      * [Service Fabrik Broker](#service-fabrik-broker-1)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-1)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-1)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-1)
       * [Service Operator](#service-operator)
     * [Last Operation](#last-operation)
       * [Service Operator](#service-operator-1)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-2)
-      * [Service Fabrik Broker](#service-fabrik-broker-2)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-2)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-2)
     * [Bind](#bind)
-      * [Service Fabrik Broker](#service-fabrik-broker-3)
-      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-3)
+      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-3)
+      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-3)
       * [Service Operator](#service-operator-2)
   * [Service Fabrik Inter\-operator Custom Resources](#service-fabrik-inter-operator-custom-resources)
     * [SFService](#sfservice)
@@ -46,6 +46,20 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [SFServiceInstance](#sfserviceinstance)
       * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     * [SFServiceBinding](#sfservicebinding)
+  * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
+    * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
+    * [New Custom Resources Introduced](#new-custom-resources-introduced)
+      * [SFCluster](#sfcluster)
+    * [Deployment Flow](#deployment-flow)
+    * [Runtime Flow](#runtime-flow)
+    * [Components within Interoperator](#components-within-interoperator)
+      * [Broker](#broker)
+      * [MultiClusterDeployer](#multiclusterdeployer)
+      * [Schedulers](#schedulers)
+        * [DefaultScheduler](#defaultscheduler)
+        * [Round Robin Scheduler](#roundrobinscheduler)
+      * [Provisioner](#provisioner)
+
 
 ## Context
 
@@ -70,15 +84,15 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 
 ![Inter-operator Design](images/inter-operator.png)
 
-### Service Fabrik Broker
+### Service Fabrik Inter-operator Broker
 
 The Service Fabrik Broker would act as the OSB API Adapter and is the component that integrates with the Service Manager. It is a lean component that serves OSB API requests and records the requests in a set of OSB-equivalent custom resources [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding).
 
 These custom resources capture all the data sent in their corresponding OSB requests and act as a point of co-ordination between the inter-operator component that would then work to reconcile these OSB resources with the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) based on the templates supplied in the catalog resources [`SFService`](#sfservice) and [`SFPlan`](#sfplan).
 
-### Service Fabrik Inter-operator
+### Service Fabrik Inter-operator Provisioner
 
-The inter-operator is a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
+The inter-operator provisioner is a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
 
 ## Basic Control-flow
 
@@ -119,7 +133,7 @@ This section presumes that the `SFService` and `sfplans` are already registered 
 
 ![Service Fabrik Inter-operator Basic Control-flow Provision](images/basic-control-flow-provision.png)
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `provision` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service and plan that was published by the Service Fabrik Broker.
@@ -127,9 +141,9 @@ The Service Manager adds some relevant additional context into the request.
 1. The Service Fabrik Broker creates an `SFServiceInstance` capturing all the details passed in the `provision` request from the Service Manager.
 The Service Fabrik Broker returns an asynchronous response.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfserviceinstances` and notices a newly created `SFServiceInstance`.
+1. The inter-operator provisioner watches for `sfserviceinstances` and notices a newly created `SFServiceInstance`.
 1. It loads the correct `provision` action template from the `SFPlan` corresponding to the `SFServiceInstance`.
 1. It renders and applies the rendered template and creates the individual service's resources as specified in the template.
 
@@ -154,13 +168,13 @@ This section presumes the following steps have already been performed.
 1. It notices a change in the status of any of the lower level resources and checks if the change in status is significant enough to be propagated to one of its own Kubernetes API resources.
 1. It updates its corresponding Kubernetes API resources.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template). It notices that some of the resources have been updated.
+1. The inter-operator provisioner watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template). It notices that some of the resources have been updated.
 1. It uses the `status` template to extract the status information relevant to be propagated to the `SFServiceInstance`.
 1. It updates the `SFServiceInstance`'s `status`.
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `last_operation` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service instance that was provisioned by the Service Fabrik Broker.
@@ -176,7 +190,7 @@ This section presumes the following steps have already been performed.
 
 ![Service Fabrik Inter-operator Basic Control-flow Bind](images/basic-control-flow-bind.png)
 
-#### Service Fabrik Broker
+#### Service Fabrik Inter-operator Broker
 
 1. An OSB client makes a `bind` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `bind` call was for a service, plan and the instance that was provisioned by the Service Fabrik Broker.
@@ -184,9 +198,9 @@ The Service Manager adds some relevant additional context into the request.
 1. The Service Fabrik Broker creates an `SFServiceBinding` capturing all the details passed in the `bind` request from the Service Manager.
 The Service Fabrik Broker returns an asynchronous response.
 
-#### Service Fabrik Inter-operator
+#### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator watches for `sfservicebindings` and notices a newly created `SFServiceBinding`.
+1. The inter-operator provisioner watches for `sfservicebindings` and notices a newly created `SFServiceBinding`.
 1. It loads the correct `bind` action template from the `SFPlan` corresponding to the `SFServiceBinding`.
 1. It renders and applies the rendered template and creates the individual service's resources as specified in the template.
 
@@ -364,12 +378,12 @@ Deregistration of `sfplans` is handled using Kubernetes [finalizers](https://kub
 
 #### Templates
 
-Service Fabrik inter-operator, currently, assumes that API of the individual service's operator would be Kubernetes Resources.
-Service Fabrik inter-operator does not make any assumptions about the individual service operator's API apart from this.
+Service Fabrik inter-operator's provisioner, currently, assumes that API of the individual service's operator would be Kubernetes Resources.
+Service Fabrik inter-operator provisioner does not make any assumptions about the individual service operator's API apart from this.
 Usually, they would be some [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/),
 which would give the service operator implementation the full flexibility to implement and expose their functionality.
 
-To enable this independence of API for the service operators, Service Fabrik inter-operator relies on the templates supplied in the [`sfplans`](#sfplan) to map the OSB actions to the specific CRDs or the individual service operators.
+To enable this independence of API for the service operators, Service Fabrik inter-operator provisioner relies on the templates supplied in the [`sfplans`](#sfplan) to map the OSB actions to the specific CRDs or the individual service operators.
 
 ##### Template Variables
 
@@ -477,14 +491,14 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+The inter-operator provisioner as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Deprovision` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
 
 #### Rationale behind introducing the `SFServiceInstance` resource
 
-Technically, the functionality of the Service Fabrik inter-operator can be implemented without using the `SFServiceInstance` resource for simpler use-cases.
-For example, in the [`provision`] control-flow, the Service Fabrik Broker can directly lookup the [`SFPlan`] and apply the right template and create the actual service-specific resources directly without having to create an intermediate `SFServiceIntance` resource first to be picked up by the `Service Fabrik inter-operator.
+Technically, the functionality of the Service Fabrik inter-operator provisioner can be implemented without using the `SFServiceInstance` resource for simpler use-cases.
+For example, in the [`provision`] control-flow, the Service Fabrik Broker can directly lookup the [`SFPlan`] and apply the right template and create the actual service-specific resources directly without having to create an intermediate `SFServiceIntance` resource first to be picked up by the `Service Fabrik inter-operator provisioner.
 This might work well for the scenario where the Service Fabrik in provisioned on the same Kubernetes cluster as where the service operator and it's instances are also eventually provisioned.
 But as discussed in the [cluster landscape document](cluster-landscape.md), there are [reasons](cluster-landscape.md#tree-dimensions-for-comparison) to [recommend](cluster-landscape.md#recommended-landscape-scenario) more dynamic scenarios involving multiple Kubernetes clusters where the Kubernetes cluster where Service Fabrik is provisioned would be different from the Kubernetes cluster where the service operator and the instances are provisioned.
 This would lead to a [design](cluster-landscape.md#service-instance-scheduling) where there a scheduler to provide loose coupling between the scheduling decision (in which Kubernetes cluster a particular service instance is to be provisioned) and the actual details of provisioning.
@@ -531,6 +545,75 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+The inter-operator provisioner as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Unbind` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
+
+
+# Multi-Cluster provisioning Support for Interoperator
+Multi-cluster provisioning support enables provisioning and distribution of the service instances into multiple clusters. From the list of multiple clusters, one is selected based on the chosen scheduler and the `SFServiceInstance` updated with the `clusterId` value. The `SFServiceInstance` is then also copied to the cluster it is scheduled to. Every cluster should have the service operator already installed within it. The service fabrik inter-operator provisioner would then pick up the event generated by the creation of the `SFServiceInstnce` which in turn creates the service specific CRDs which service operator listens to.
+## Why Multi Cluster Support is needed
+Scalability is the main reason why one should use Multi-Cluster support. It gives you an option to add new clusters into your set of clusters and scale horizontally. There could be many limitations with the number of resources you can spawn in a cluster such as finite capacity of the worker nodes constraining the number of services that can be scheduled on a given worker node, some finite maximum number of nodes per cluster due to some constraints in the cluster control plane or infrastructure. Hence, for a production scenario, multi-cluster support will be required so that services can be scheduled and spread across multiple clusters and can be scaled horizontally.
+
+Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-filled scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
+## New Custom Resources Introduced
+Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
+### SFCluster
+`SFCluster` is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The structure of a sample resource look like the following.
+
+```yaml
+apiVersion: resource.servicefabrik.io/v1alpha1
+kind: SFCluster
+metadata:
+  name: "1"
+  namespace: interoperator
+spec:
+  secretRef: 1-kubeconfig
+```
+where the secretRef looks like the following
+
+```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: 1-kubeconfig
+  namespace: interoperator
+data:
+  kubeconfig: <REDACTED_KUBECONFIG>
+```
+## Components within Interoperator
+Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already introduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
+### Broker
+Broker was already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-broker)
+### MultiClusterDeployer
+This component is a set of [custom controllers](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers). Below are the list of controllers it comprises of.
+#### Provisioner Controller
+Provisioner Controller is the custom controller which watches on the `SFCluster` of the master cluster and deploys the [Provisioner](#provisioner) component in those clusters.
+#### Service Replicator
+Service Replicator is the custom controller which watches on the `SFClusters`, `SFServices` and `SFPlans` of the master cluster and copies the `SFServices` and `SFPlans` from master cluster to sister clusters.
+#### Service Instance Reconciler
+Service Instance Reconciler is the custom controller which watches across multiple clusters that are part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceInstance` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
+#### Service Binding Reconciler
+Service Binding Reconciler is the custom controller which watches across multiple clusters, part of the cluster registry(set of `SFClusters`) and reconciles a `SFServiceBinding` between master cluster and its assigned cluster, assigned by [Scheduler](#schedulers).
+### Schedulers
+Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` (the name of the corresponding `SFCluster` instance) of the cluster where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
+#### DefaultScheduler
+This is just a sample scheduler suitable only for the single cluster setup. In that case, it schedules all the instances in the one cluster which is part of the setup. It is not suitable for the multi-cluster setup.
+#### Round Robin Scheduler
+As the name suggests, round robin scheduler schedules instances in round robin fashion. At this point, it does not take care of capacity and if interoperator restarts, it loses the state about the next cluster to be scheduled and starts scheduling from the beginning. 
+#### Least filled Scheduler
+This scheduler schedules instance in the least filled cluster.
+### Provisioner
+Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.
+## Deployment Flow
+Following are the flow for a deployment of Interoperator.
+1. When Interoperator is deployed initially, one deploys the [broker](#broker), [MultiClusterDeployer](#multiclusterdeployer) and the [Scheduler](#schedulers) component in a cluster, called as master cluster.
+2. After this, the operator should create the `SFServices`, `SFPlans` and `SFClusters` in the master cluster. `SFClusters` is simply the list/registry of all clusters where you want to provision the instances. We also refer to them as sister cluster interchangebly. Master cluster can also be part of the cluster registry and be a sister cluster in itself, if someone wants to use it for service provisioning as well.
+3. [Provisioner Controller](#provisioner-controller) then takes care of replicating the provisioner component to all sister clusters and [Service Replicator](#service-replicator) takes care of replicating the SFServices and SFPlans in all the clusters.
+
+Now the setup is ready for taking requests. We depict this in the picture below.
+![Inter-operator Deployment Flow](images/Deployment%20Flow%20Updated.png)
+## Runtime Flow
+After the interoperator is ready and setup across multiple clusters as described [above](#deployment-flow), service instance and service binding can be created. When in the master cluster, broker creates an `SFServiceInstance`, Scheduler picks it up first and schedules/assigns a cluster where service needs to be provisioned. Then [Service Instance Reconciler](#service-instance-reconciler) reconciles that `SFServiceInstance` in the sister cluster where it is scheduled. Once that is done, [provisioner](#provisioner) residing in the sister cluster takes over and from then onwards, the process described in [service provisioning](#service-fabrik-inter-operator-provisioner-1) is followed. For another `SFServiceInstance`, it is again scheduled in one of the sister cluster and provisioner provisions the service there. The picture below describes the steps.
+![Inter-operator Runtime Flow](images/Runtime%20Flow%20Updated.png)
