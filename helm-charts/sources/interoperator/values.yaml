@@ -1,0 +1,39 @@
+# Default values for service-fabrik-broker.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+cluster:
+  host: sf.ingress.sf21-intop.interop.shoot.canary.k8s-hana.ondemand.com
+  ssl: true
+  sslsecret: wildcard-cert-ssl-tls        
+
+broker:
+  port: 9293
+  node_env: kubernetes
+  settings_filename: settings.yml
+  settings_mount_path: /opt/sf-config
+  image:
+    repository: servicefabrikjenkins/service-fabrik-broker
+    tag: 0.4.0
+    pullPolicy: Always
+
+interoperator:
+  image:
+    repository: servicefabrikjenkins/service-fabrik-interoperator
+    tag: 0.4.0
+    pullPolicy: Always
+  resources:
+    limits:
+      cpu: 200m
+      memory: 60Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+  config:
+    instanceWorkerCount: 10
+    bindingWorkerCount: 20
+    schedulerWorkerCount: 10
+    provisionerWorkerCount: 10
+    schedulerType: default

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: interoperator-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config: |-
+    instanceWorkerCount: "{{ .Values.interoperator.config.instanceWorkerCount }}"
+    bindingWorkerCount: "{{ .Values.interoperator.config.bindingWorkerCount }}"
+    schedulerWorkerCount: "{{ .Values.interoperator.config.schedulerWorkerCount }}"
+    provisionerWorkerCount: "{{ .Values.interoperator.config.provisionerWorkerCount }}"
+    schedulerType: "{{ .Values.interoperator.config.schedulerType }}"

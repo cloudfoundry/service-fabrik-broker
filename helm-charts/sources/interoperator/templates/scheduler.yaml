@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-scheduler-controller-manager
+  labels:
+    app: {{ .Release.Name }}-controller-manager
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-controller-manager
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-controller-manager
+    spec:
+      containers:
+      - name: scheduler
+        image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
+        imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        command:
+        - /scheduler
+        resources:
+          limits:
+            cpu: {{ .Values.interoperator.resources.limits.cpu }}
+            memory: {{ .Values.interoperator.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.interoperator.resources.requests.cpu }}
+            memory: {{ .Values.interoperator.resources.requests.memory }}
+      restartPolicy: Always
