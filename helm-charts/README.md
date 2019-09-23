@@ -15,12 +15,15 @@ helm install --set cluster.host=sf-broker.ingress.< clusterdomain > --name inter
 ## Managing the helm repo
 
 Create a new helm package
+Clone Broker twice. One with master branch and one with gh-pages branch
 
 ```shell
-helm package sources/interoperator
+helm package -d <path to gh-pages clone>/helm-charts <path to master clone>helm-charts/interoperator
 ```
 
 Update the index
+
 ```shell
+cd <path to gh-pages clone>/helm-charts
 helm repo index --url https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts .
 ```
