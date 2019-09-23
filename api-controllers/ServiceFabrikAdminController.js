@@ -130,7 +130,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(result => result.diff);
   }
 
-  getDeployments(req, res, onlySummary) {
+  getDeployments(req, res, onlySummary, fetchFromApiServer) {
     function assignOrgAndSpace(deployments, organizations, spaces) {
       spaces = _
         .chain(spaces)
@@ -162,7 +162,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
     return Promise
       .all([
-        this.findAllDeployments(),
+        this.findAllDeployments(fetchFromApiServer),
         this.cloudController.getOrganizations(),
         this.cloudController.getSpaces()
       ])
@@ -206,7 +206,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getDeploymentsSummary(req, res) {
-    this.getDeployments(req, res, true);
+    this.getDeployments(req, res, true, true);
   }
 
   getDeploymentDirectorConfig(req, res) {
@@ -322,11 +322,17 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       });
   }
 
-  findAllDeployments() {
+  findAllDeployments(fetchFromApiServer) {
     return Promise
       .all([
         this.getServiceFabrikDeployments(),
-        this.getServiceInstancesForServiceBroker(this.serviceBrokerName)
+        Promise.try(() => {
+          if (fetchFromApiServer) {
+            return this.getServiceInstancesFromApiServer();
+          } else {
+            return this.getServiceInstancesForServiceBroker(this.serviceBrokerName);
+          }
+        })
       ])
       .spread((deployments, instances) => _
         .chain(_.keyBy(deployments, 'guid'))
@@ -413,6 +419,46 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               );
           });
       });
+  }
+
+  getServiceInstancesFromApiServer() {
+    return eventmesh.apiServerClient.getResourceListByState({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      stateList: [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED]
+    })
+    .then(directors => {
+      directors = _
+      .chain(directors)
+      .map(director => {
+        const deployment_guid = _.get(director, 'metadata.name');
+        const space_guid = _.get(director, 'spec.options.context.space_guid');
+        return _
+        .chain(director)
+        .set('metadata.guid', deployment_guid)
+        .set('entity.space_guid', space_guid)
+        .set('entity.spec', director.spec)
+        .set('entity.last_operation', director.status.lastOperation)
+        .value()
+      })
+      .value();
+      return directors;
+    })
+    .map(director => {
+      const plan = catalog.getPlan(director.spec.options.plan_id)
+      return Promise.try(() => DirectorService.createInstance(_.get(director, 'metadata.guid'), {
+        plan_id: plan.id,
+        context: {
+          platform: CONST.PLATFORM.CF
+        }
+      }))
+        .then(service => _
+          .chain(director)
+          .set('directorService', service)
+          .set('entity.service_plan_id', plan.id)
+          .value()
+        );
+    });
   }
 
   getListOfBackups(req, res) {
