@@ -427,38 +427,38 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
       stateList: [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED]
     })
-    .then(directors => {
-      directors = _
-      .chain(directors)
-      .map(director => {
-        const deployment_guid = _.get(director, 'metadata.name');
-        const space_guid = _.get(director, 'spec.options.context.space_guid');
-        return _
-        .chain(director)
-        .set('metadata.guid', deployment_guid)
-        .set('entity.space_guid', space_guid)
-        .set('entity.spec', director.spec)
-        .set('entity.last_operation', director.status.lastOperation)
-        .value()
+      .then(directors => {
+        directors = _
+          .chain(directors)
+          .map(director => {
+            const deployment_guid = _.get(director, 'metadata.name');
+            const space_guid = _.get(director, 'spec.options.context.space_guid');
+            return _
+              .chain(director)
+              .set('metadata.guid', deployment_guid)
+              .set('entity.space_guid', space_guid)
+              .set('entity.spec', director.spec)
+              .set('entity.last_operation', director.status.lastOperation)
+              .value();
+          })
+          .value();
+        return directors;
       })
-      .value();
-      return directors;
-    })
-    .map(director => {
-      const plan = catalog.getPlan(director.spec.options.plan_id)
-      return Promise.try(() => DirectorService.createInstance(_.get(director, 'metadata.guid'), {
-        plan_id: plan.id,
-        context: {
-          platform: CONST.PLATFORM.CF
-        }
-      }))
-        .then(service => _
-          .chain(director)
-          .set('directorService', service)
-          .set('entity.service_plan_id', plan.id)
-          .value()
-        );
-    });
+      .map(director => {
+        const plan = catalog.getPlan(director.spec.options.plan_id);
+        return Promise.try(() => DirectorService.createInstance(_.get(director, 'metadata.guid'), {
+          plan_id: plan.id,
+          context: {
+            platform: CONST.PLATFORM.CF
+          }
+        }))
+          .then(service => _
+            .chain(director)
+            .set('directorService', service)
+            .set('entity.service_plan_id', plan.id)
+            .value()
+          );
+      });
   }
 
   getListOfBackups(req, res) {

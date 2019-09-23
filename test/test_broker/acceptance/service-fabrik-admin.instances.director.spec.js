@@ -5,6 +5,7 @@ const Repository = require('../../../common/db').Repository;
 const apps = require('../support/apps');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 
 describe('service-fabrik-admin', function () {
   describe('instances', function () {
@@ -114,11 +115,29 @@ describe('service-fabrik-admin', function () {
             capacity: numberOfDeployments,
             customParam: 'customValue'
           });
-          mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
           mocks.cloudController.getSpaces(broker_guid, space_guid);
           mocks.cloudController.getOrganizations(broker_guid, org_guid);
-          mocks.cloudController.getPlans(broker_guid, plan_guid, plan_unique_id);
-          mocks.cloudController.getServiceInstances(plan_guid, space_guid, org_guid);
+          const apiServerResponse = _
+          .chain(mocks.director.getDeploymentNames(numberOfDeployments))
+          .map(deployment => ({
+            metadata: {
+              name: _.nth(DirectorService.parseDeploymentName(deployment.name), 2)
+            },
+            spec: {
+              options: {
+                context : {
+                  space_guid: space_guid
+                },
+                service_plan_guid: plan_guid,                
+                plan_id: plan_unique_id
+              }
+            },
+            status: {
+              lastOperation: {}
+            }
+          }))
+          .value();
+          mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED], apiServerResponse, 1, 200);
           return chai
             .request(apps.internal)
             .get(`${base_url}/deployments/summary`)
