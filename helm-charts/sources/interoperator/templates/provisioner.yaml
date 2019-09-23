@@ -37,6 +37,26 @@ spec:
           requests:
             cpu: {{ .Values.interoperator.resources.requests.cpu }}
             memory: {{ .Values.interoperator.resources.requests.memory }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /metrics
+            port: 9877
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /metrics
+            port: 9877
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 1
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
