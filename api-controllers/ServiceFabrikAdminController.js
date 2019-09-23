@@ -130,7 +130,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(result => result.diff);
   }
 
-  getDeployments(req, res, onlySummary) {
+  getDeployments(req, res, onlySummary, fetchFromApiServer) {
     function assignOrgAndSpace(deployments, organizations, spaces) {
       spaces = _
         .chain(spaces)
@@ -162,7 +162,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
     return Promise
       .all([
-        this.findAllDeployments(),
+        this.findAllDeployments(fetchFromApiServer),
         this.cloudController.getOrganizations(),
         this.cloudController.getSpaces()
       ])
@@ -206,7 +206,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getDeploymentsSummary(req, res) {
-    this.getDeployments(req, res, true);
+    this.getDeployments(req, res, true, true);
   }
 
   getDeploymentDirectorConfig(req, res) {
@@ -322,11 +322,17 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       });
   }
 
-  findAllDeployments() {
+  findAllDeployments(fetchFromApiServer) {
     return Promise
       .all([
         this.getServiceFabrikDeployments(),
-        this.getServiceInstancesForServiceBroker(this.serviceBrokerName)
+        Promise.try(() => {
+          if (fetchFromApiServer) {
+            return this.getServiceInstancesFromApiServer();
+          } else {
+            return this.getServiceInstancesForServiceBroker(this.serviceBrokerName);
+          }
+        })
       ])
       .spread((deployments, instances) => _
         .chain(_.keyBy(deployments, 'guid'))
@@ -412,6 +418,46 @@ class ServiceFabrikAdminController extends FabrikBaseController {
                 .value()
               );
           });
+      });
+  }
+
+  getServiceInstancesFromApiServer() {
+    return eventmesh.apiServerClient.getResourceListByState({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      stateList: [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED]
+    })
+      .then(directors => {
+        directors = _
+          .chain(directors)
+          .map(director => {
+            const instance_guid = _.get(director, 'metadata.name');
+            const space_guid = _.get(director, 'spec.options.context.space_guid');
+            const instance_name = _.get(director, 'spec.options.context.instance_name');
+            return _
+              .chain(director)
+              .set('metadata.guid', instance_guid)
+              .set('entity.space_guid', space_guid)
+              .set('entity.name', instance_name)
+              .value();
+          })
+          .value();
+        return directors;
+      })
+      .map(director => {
+        const plan = catalog.getPlan(director.spec.options.plan_id);
+        return Promise.try(() => DirectorService.createInstance(_.get(director, 'metadata.guid'), {
+          plan_id: plan.id,
+          context: {
+            platform: CONST.PLATFORM.CF
+          }
+        }))
+          .then(service => _
+            .chain(director)
+            .set('directorService', service)
+            .set('entity.service_plan_id', plan.id)
+            .value()
+          );
       });
   }
 
