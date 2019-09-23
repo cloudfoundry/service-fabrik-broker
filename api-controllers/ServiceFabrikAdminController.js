@@ -431,14 +431,14 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         directors = _
           .chain(directors)
           .map(director => {
-            const deployment_guid = _.get(director, 'metadata.name');
+            const instance_guid = _.get(director, 'metadata.name');
             const space_guid = _.get(director, 'spec.options.context.space_guid');
+            const instance_name = _.get(director, 'spec.options.context.instance_name');
             return _
               .chain(director)
-              .set('metadata.guid', deployment_guid)
+              .set('metadata.guid', instance_guid)
               .set('entity.space_guid', space_guid)
-              .set('entity.spec', director.spec)
-              .set('entity.last_operation', director.status.lastOperation)
+              .set('entity.name', instance_name)
               .value();
           })
           .value();
