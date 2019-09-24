@@ -18,6 +18,8 @@ broker:
     repository: servicefabrikjenkins/service-fabrik-broker
     tag: 0.4.0
     pullPolicy: Always
+  service:
+    type: LoadBalancer
 
 interoperator:
   image:
