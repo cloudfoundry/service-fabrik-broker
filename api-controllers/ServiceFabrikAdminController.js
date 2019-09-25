@@ -152,9 +152,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .value();
       _.each(deployments, deployment => {
         if (_.isObject(deployment.metadata)) {
-          deployment.entity.guid = deployment.metadata.guid;
-          deployment.space = spaces[deployment.entity.space_guid];
-          deployment.organization = organizations[deployment.space.organization_guid];
+          deployment.entity.guid = _.get(deployment, 'metadata.guid');
+          deployment.space = spaces[_.get(deployment, 'entity.space_guid')];
+          deployment.organization = organizations[_.get(deployment, 'space.organization_guid')];
         }
       });
       return deployments;
