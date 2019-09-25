@@ -372,6 +372,13 @@ func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secret
 
 func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.StatefulSet, clusterID string, targetClient client.Client) error {
 	provisionerInstance := &appsv1.StatefulSet{}
+
+	log.Info("Updating provisioner", "Cluster", clusterID)
+	getStatefulSetErr := targetClient.Get(context.TODO(), types.NamespacedName{
+		Name:      statefulSetInstance.GetName(),
+		Namespace: statefulSetInstance.GetNamespace(),
+	}, provisionerInstance)
+
 	provisionerInstance.SetName(statefulSetInstance.GetName())
 	provisionerInstance.SetNamespace(statefulSetInstance.GetNamespace())
 	provisionerInstance.SetLabels(statefulSetInstance.GetLabels())
@@ -382,33 +389,35 @@ func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.
 	provisionerInstance.Spec.Replicas = &replicaCount
 
 	// set env CLUSTER_ID for containers
+ContainersLoop:
 	for i := range provisionerInstance.Spec.Template.Spec.Containers {
 		clusterIDEnv := &corev1.EnvVar{
 			Name:  constants.OwnClusterIDEnvKey,
 			Value: clusterID,
 		}
+		for key, val := range provisionerInstance.Spec.Template.Spec.Containers[i].Env {
+			if val.Name == constants.OwnClusterIDEnvKey {
+				provisionerInstance.Spec.Template.Spec.Containers[i].Env[key].Value = clusterID
+				continue ContainersLoop
+			}
+		}
 		provisionerInstance.Spec.Template.Spec.Containers[i].Env = append(provisionerInstance.Spec.Template.Spec.Containers[i].Env, *clusterIDEnv)
 	}
 
-	log.Info("Updating provisioner", "Cluster", clusterID)
-	err := targetClient.Get(context.TODO(), types.NamespacedName{
-		Name:      provisionerInstance.GetName(),
-		Namespace: provisionerInstance.GetNamespace(),
-	}, provisionerInstance)
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
+	if getStatefulSetErr != nil {
+		if apiErrors.IsNotFound(getStatefulSetErr) {
 			log.Info("Provisioner not found, Creating...", "clusterId", clusterID)
-			err = targetClient.Create(context.TODO(), provisionerInstance)
+			err := targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
 				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
 				return err
 			}
 		} else {
-			log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
-			return err
+			log.Error(getStatefulSetErr, "Error occurred while creating provisioner", "clusterId", clusterID)
+			return getStatefulSetErr
 		}
 	} else {
-		err = targetClient.Update(context.TODO(), provisionerInstance)
+		err := targetClient.Update(context.TODO(), provisionerInstance)
 		if err != nil {
 			log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
 			return err
