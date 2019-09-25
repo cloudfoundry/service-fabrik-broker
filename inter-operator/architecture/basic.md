@@ -621,5 +621,6 @@ After the interoperator is ready and setup across multiple clusters as described
 
 ## Limitations with Multi-Cluster deployment
 1. Interoperator currently does not take care of the cluster off-boarding.
-2. Service Operator in each sister cluster is assumed to be already deployed and version update-upgrade is managed/maintained by the service operator. Inter-operator does not do anything about it.
+2. Service Operator in each sister cluster is assumed to be already deployed and its version update/upgrade is managed/maintained by the service operator. Inter-operator does not do anything about it.
+3. Interoperator does not take care of the Kubernetes and OS updates to the onboarded clusters.
 
