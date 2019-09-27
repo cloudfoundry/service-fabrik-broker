@@ -144,7 +144,7 @@ func (r *ReconcileSFLeastUtilizedScheduler) Reconcile(request reconcile.Request)
 		}
 
 		if clusterID != "" {
-			log.Info("setting clusterID", "counts", counts, "leastCount", leastCount, "clusterID", clusterID)
+			log.Info("setting clusterID", "instanceID", instance.GetName(), "clusterID", clusterID, "leastCount", leastCount)
 			instance.Spec.ClusterID = clusterID
 			if err := r.Update(ctx, instance); err != nil {
 				log.Error(err, "failed to set cluster id", "instanceID", instance.GetName(), "clusterID", clusterID)
