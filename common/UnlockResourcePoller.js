@@ -5,6 +5,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const eventmesh = require('../data-access-layer/eventmesh');
 const CONST = require('./constants');
+const config = require('./config');
 const logger = require('./logger');
 const lockManager = eventmesh.lockManager;
 const errors = require('./errors');
@@ -98,7 +99,7 @@ class UnlockResourcePoller {
 UnlockResourcePoller.pollers = {};
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
-  if (eventInfo.type === 'internal') {
+  if (eventInfo.type === 'internal' && _.get(config, `apiserver.crds['${CONST.APISERVER.RESOURCE_GROUPS.LOCK}_${CONST.APISERVER.API_VERSION}_${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}.yaml']`)) {
     return eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS)
       .then(() => UnlockResourcePoller.start());
   }

@@ -251,6 +251,9 @@ class ApiServerClient {
   registerCrds(resourceGroup, resourceType) {
     logger.info(`Registering CRDs for ${resourceGroup}, ${resourceType}`);
     const crdJson = this.getCrdJson(resourceGroup, resourceType);
+    if (!crdJson) {
+      return Promise.resolve();
+    };
     return Promise.try(() => apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
       body: crdJson,
       headers: {
@@ -272,9 +275,11 @@ class ApiServerClient {
   }
 
   getCrdJson(resourceGroup, resourceType) {
-    const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
-    logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
-    return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
+    const crdEncodedTemplate = _.get(config, `apiserver.crds['${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml']`);
+    if (crdEncodedTemplate) {
+      logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
+      return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
+    }
   }
 
   /**
