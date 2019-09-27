@@ -11,6 +11,8 @@ cluster:
 
 broker:
   port: 9293
+  username: broker
+  password: secret
   node_env: kubernetes
   settings_filename: settings.yml
   settings_mount_path: /opt/sf-config
