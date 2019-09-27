@@ -10,6 +10,9 @@ spec:
   - JSONPath: .status.state
     name: state
     type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
   group: osb.servicefabrik.io
   names:
     kind: SFServiceInstance

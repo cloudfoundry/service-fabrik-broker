@@ -37,12 +37,13 @@ go install github.com/golang/mock/mockgen
 # update your PATH to include $GOPATH/bin
 export PATH=$PATH:$GOPATH/bin
 ```
-### Generate the clients for crds
+
+#### Get dependencies
 ```
-vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis osb:v1alpha1
+dep ensure -v
 ```
 
-Generating crds and mocks
+### Generate the crds, clients for crds and mocks
 
 ```
 make generate manifests
