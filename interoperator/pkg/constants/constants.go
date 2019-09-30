@@ -25,8 +25,10 @@ const (
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
 	DefaultProvisionerWorkerCount = 10
-	DefaultSchedulerType          = "default"
-	RoundRobinSchedulerType       = "round-robin"
+
+	DefaultSchedulerType       = "default"
+	RoundRobinSchedulerType    = "round-robin"
+	LeastUtilizedSchedulerType = "least-utilized"
 
 	PlanWatchDrainTimeout = time.Second * 2
 )

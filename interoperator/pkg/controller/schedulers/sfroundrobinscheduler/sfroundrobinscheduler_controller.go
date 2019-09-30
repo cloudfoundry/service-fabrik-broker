@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -114,7 +113,7 @@ func (r *ReconcileSFRoundRobinScheduler) Reconcile(request reconcile.Request) (r
 	}
 	if instance.Spec.ClusterID == "" {
 		clusters := &resourcev1alpha1.SFClusterList{}
-		options := &kubernetes.ListOptions{}
+		options := &client.ListOptions{}
 		err := r.List(context.TODO(), options, clusters)
 		if err != nil {
 			return reconcile.Result{}, err

@@ -1,4 +1,4 @@
-// +build schedulers default
+// +build schedulers
 
 /*
 Copyright 2018 The Service Fabrik Authors.
@@ -16,13 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package schedulers
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/schedulers/sfdefaultscheduler"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/schedulers/sfleastutilizedscheduler"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, sfdefaultscheduler.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, sfleastutilizedscheduler.Add)
 }
