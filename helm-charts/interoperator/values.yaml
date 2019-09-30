@@ -17,7 +17,7 @@ broker:
   settings_mount_path: /opt/sf-config
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
-    tag: 0.4.0
+    tag: 0.4.1
     pullPolicy: Always
   service:
     type: LoadBalancer
