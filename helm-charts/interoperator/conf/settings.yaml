@@ -7,8 +7,6 @@ defaults: &defaults
   # GENERAL SETTINGS #
   ####################
   broker_name: interoperator-broker
-  username: broker
-  password: secret
   skip_ssl_validation: true
   log_path: /opt/service-fabrik-broker/logs/kubernetes.log
   log_level: silly
@@ -37,9 +35,6 @@ defaults: &defaults
     ip: 10.0.2.3
     protocol: http
     host: 10.0.2.3:9293
-    #    ssl:
-    #      key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAnVFPUJ3rw5oHc9lFA1XgB1RImVMEO1awbL91nZI6/J4owvzj\nBearsDJSRKPQxebWCaDAjHp1Q06jaK6s57gJTYbULb6C0xyHJoigKvjI8H5dTWMY\nPFrhWckSaHqwAwZVc9GMBFynBT1pOmDGOcUgDBoSlPqnyxcjbX816JxajQel3IMC\n/XZoLbiJ+OIK1vpvQFIg/fO6O5gUxWbTZEI7v+wTd5CHXbT6Zf/LPK5k5E8xGAR9\nk85bYOVh38Km/02DaWgQJwmL45t1lpL2suiSc+U8RXnfYm9mzySgYsK9cYRQ/qFj\ntQ0J4PwaYzr32r8VH/zKQ+jEVD0GSRba4C2DTwIDAQABAoIBAFlMe1pGmjrI5ywS\ni8Mt7uIaLK+j2QYZ2kGQmKHeDM+ys26jf/asjo6QsfQ2jN6ZfquubT4QkRmovMdC\nR/GsnNM+Epj4yGgvjGQKL+jUmbMx96Ji+rHf4IVHxsQ5yEmfQchhjTo4obIuvtmd\nb0gBpoRYFG4uripxMvIHwMEOZ7QfXE8qZQfZvMNsHsnEhc7batMrRD7tslqzzNHt\nivy+yHzCKEF1kmMXAWwjC5E3G8WKg2c28TaK4nrJu09NmOyo/dS5FUqRgIZzjWUa\nARHIN2IKOk+wcQ6lCarQYjBPFJoxe2mlGL4un79hdMlnrp80UACJoS3vqCq30pJ6\nuIkg6LECgYEAzsUXET4EhhfsvMj2F+/7ywDuCqpv7QNFD536zIQz2ecU7TSs5Oyw\n615XFmyPsM+H2XxPBzj/VQNiFVV46kwTNhzTDBYX6mwyn5tBOdGdqalMnsro1mq4\ncyrGwBNMHXyXO+0tgytzkZ0nETW4EjL/wRUEuEkX4Nv8Y05SfXdAOYkCgYEAwsYJ\nKJXJH36vbXAzMH1MtToq0PO+suGyzrkRMrOk8tgZg8+/n+CB/oGhiau7jCgrPCcc\n07FJzFXmhCuXhH1tsJvKBjVwJak7NlwpD1RGM4QnDbsfubSctdVHwknTVyJrWrOZ\nSE8jaSAko+q8jqqjWLdouREAz5RbU/+DZzCHmBcCgYEAipFqtBNr1LGT5bCHu+MI\nSzOEU4GFIMFgNucYfJbcaNuEGrOCaqh0qEfA9TYr1cI+uHGmRKDd/IsX4FQ3hE0X\nUtxeU2s6+88m3e+d9rGTh2/9+SzifU9n7UZti6tjBx/H+lEofw9Pk/ZNiCsIAKpM\n24jKcPYLGpZSvfpvLcYNNIECgYEAo1eTPK8JAVmr4xqSQ1sBZoaGe7++MKQo4UbB\nDoUrkuD53Nnv+TM9sWOjRiJ4YV0ajRK8ESiAHFX5wOQR6HGL+O1dqoFMMLlQyBDX\n+lwRl4h/e/tu6r12IuPfjyd8jnl2EJXHuaVsq+/h6nmkcfzWikMeFv4UcQEY6kPB\nPlurizcCgYBFuE89e8JWVEuLgARpJeBfqUE67e9ilr4sdPIOb4GLYK+ATMk6GNOP\nOEeEd+naCijGm0yXOEcgAdenUol9yVGJ0PMQp6ochiLgsdYYVAll73X+XjBIbnT/\niIKUoPg+RySnfce2Ua1kXPzY+C9xDkCPY6vWKkHk4udFcZIHIIuMjg==\n-----END RSA PRIVATE KEY-----\n"
-    #      cert: "-----BEGIN CERTIFICATE-----\nMIIEozCCAougAwIBAgIQe/3/qaSDDijRC7SigxbVBTANBgkqhkiG9w0BAQsFADAa\nMRgwFgYDVQQDEw9TZXJ2aWNlRmFicmlrQ0EwHhcNMTcwODAzMTYwNDIxWhcNMTkw\nODAzMTYwNDIxWjAtMSswKQYDVQQDEyJzZXJ2aWNlLWZhYnJpay1icm9rZXIud2Rm\nLnNhcC5jb3JwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnVFPUJ3r\nw5oHc9lFA1XgB1RImVMEO1awbL91nZI6/J4owvzjBearsDJSRKPQxebWCaDAjHp1\nQ06jaK6s57gJTYbULb6C0xyHJoigKvjI8H5dTWMYPFrhWckSaHqwAwZVc9GMBFyn\nBT1pOmDGOcUgDBoSlPqnyxcjbX816JxajQel3IMC/XZoLbiJ+OIK1vpvQFIg/fO6\nO5gUxWbTZEI7v+wTd5CHXbT6Zf/LPK5k5E8xGAR9k85bYOVh38Km/02DaWgQJwmL\n45t1lpL2suiSc+U8RXnfYm9mzySgYsK9cYRQ/qFjtQ0J4PwaYzr32r8VH/zKQ+jE\nVD0GSRba4C2DTwIDAQABo4HRMIHOMA4GA1UdDwEB/wQEAwIDuDAdBgNVHSUEFjAU\nBggrBgEFBQcDAQYIKwYBBQUHAwIwHQYDVR0OBBYEFDshYe8noKXZdbxpdCmax6kj\nlIFsMB8GA1UdIwQYMBaAFJYjframqnLNhZuAl5biTgkY+O0RMF0GA1UdEQRWMFSC\nInNlcnZpY2UtZmFicmlrLWJyb2tlci53ZGYuc2FwLmNvcnCHBAoL/AqHBAr0BAGH\nBAr0BAKHBAr0BAOHBAr0BASHBAr0BAWHBH8AAAGHBAAAAAAwDQYJKoZIhvcNAQEL\nBQADggIBAKgDZ73ZFnon7o+OqCdBmLjx4IrQjaKrd/CsKWotDura4oGhfIQW++VA\nw3QS5qrWJkXb08dM0ly4fUX3C4tfcsBLcs0xJbHiDYcfRVRJ1sG91x6giY2hdYIG\njhRt1DiEfmIBL8FsQCAEl253tmsCXWL1//FokpVCXmZXbIOatzj+GoL0ZEovKqjK\nFKcBi1Lrdybc18LlzVMV09fUGXr+IErrv6+ddW1aY9iWKTnsSMdEGvlkwjfTsWVW\nfTAScEsd10CpHBVupWQXDf74N/DaHydXyBoNdc//TL4LvP0Gjx6c0c0wQZLBXCfN\ncxDCo45UPjVWJ4HplRTijvaDXmaF0wHJu/KsXI4rVHUi+fSbXYTkMpSunKeKQv9u\nex67Byvol8tn79tF3Pe/2gQ5nuqi4N/dNfwQXiYWxiPj7Z2qoiT1H2gqupv4EF0f\nWLE3lRvKZoPw+vjPSwdCv8bCALMUJzcmA2ok7rFZd+3npHkvNhAW7S7tt0pCdBhS\npr3GwiQkc7Jo76+R18A83B5nRYyZ4+mcr0WTbtoXvwguoT+mOVQxSI42HI9spYYH\naXuIKvniVTRAn9nUff9bM2yB0HxeSw9KBRhuu2sy2EL8uYlNPyj5CI0izu8f/Bie\nPiD2Aq1Ej7En7fQ9xJ1KZ+C0z4AIxtotA7jZM9w4an8babxTv79C\n-----END CERTIFICATE-----\n"
 
   ##############################
   # APISERVER SETTINGS #
@@ -105,12 +100,6 @@ defaults: &defaults
 #    password: <pwd>
 #    identity_provider: uaa
 
-development: &development
+development:
   <<: *defaults
   log_level: debug
-  password: 'secret'
-
-kubernetes:
-  <<: *development
-  log_level: debug
-  password: 'secret'
