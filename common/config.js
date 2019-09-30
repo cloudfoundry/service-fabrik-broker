@@ -55,6 +55,13 @@ if (config.enable_circuit_breaker) {
   console.log('circuit breaker is disabled');
 }
 
+if (process.env.BROKER_USERNAME) {
+  config.username = process.env.BROKER_USERNAME;
+}
+if (process.env.BROKER_PASSWORD) {
+  config.password = process.env.BROKER_PASSWORD;
+}
+
 function updateLogFileConfig(logPath) {
   const logSuffix = `-worker-${process.env.worker}.log`;
   config.log_path = logPath.indexOf('.log') !== -1 ? logPath.replace('.log', logSuffix) : `${logPath}-${logSuffix}`;

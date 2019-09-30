@@ -70,6 +70,10 @@ spec:
         env:
         - name: NODE_ENV
           value: {{ .Values.broker.node_env }}
+        - name: BROKER_USERNAME
+          value: {{ .Values.broker.username }}
+        - name: BROKER_PASSWORD
+          value: {{ .Values.broker.password }}
         - name: SETTINGS_PATH
           value: {{ .Values.broker.settings_mount_path }}/{{ .Values.broker.settings_filename }}
         volumeMounts:
