@@ -68,6 +68,8 @@ spec:
           containerPort: {{ .Values.broker.port }}
           protocol: TCP
         env:
+        - name: NODE_ENV
+          value: {{ .Values.broker.node_env }}
         - name: BROKER_USERNAME
           value: {{ .Values.broker.username }}
         - name: BROKER_PASSWORD
