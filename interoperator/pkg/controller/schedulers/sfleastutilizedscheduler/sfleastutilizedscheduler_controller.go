@@ -23,9 +23,10 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -101,7 +102,7 @@ func (r *ReconcileSFLeastUtilizedScheduler) Reconcile(request reconcile.Request)
 	instance := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
@@ -111,40 +112,13 @@ func (r *ReconcileSFLeastUtilizedScheduler) Reconcile(request reconcile.Request)
 	}
 
 	if instance.Spec.ClusterID == "" {
-		clusters, err := r.clusterRegistry.ListClusters(&client.ListOptions{})
+		clusterID, err := r.schedule()
 		if err != nil {
 			return reconcile.Result{}, err
-		}
-
-		sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
-		err = r.List(ctx, &client.ListOptions{}, sfserviceinstances)
-		if err != nil {
-			log.Error(err, "failed to list all sfserviceinstances")
-			return reconcile.Result{}, err
-		}
-
-		counts := make(map[string]int64)
-		for _, item := range sfserviceinstances.Items {
-			if item.Spec.ClusterID != "" {
-				counts[item.Spec.ClusterID] = counts[item.Spec.ClusterID] + 1
-			}
-		}
-
-		leastCount := int64(math.MaxInt64)
-		var clusterID string
-		for _, cluster := range clusters.Items {
-			count := counts[cluster.GetName()]
-			if count < leastCount {
-				leastCount = count
-				clusterID = cluster.GetName()
-				if count == 0 {
-					break
-				}
-			}
 		}
 
 		if clusterID != "" {
-			log.Info("setting clusterID", "instanceID", instance.GetName(), "clusterID", clusterID, "leastCount", leastCount)
+			log.Info("setting clusterID", "instanceID", instance.GetName(), "clusterID", clusterID)
 			instance.Spec.ClusterID = clusterID
 			if err := r.Update(ctx, instance); err != nil {
 				log.Error(err, "failed to set cluster id", "instanceID", instance.GetName(), "clusterID", clusterID)
@@ -154,4 +128,45 @@ func (r *ReconcileSFLeastUtilizedScheduler) Reconcile(request reconcile.Request)
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileSFLeastUtilizedScheduler) schedule() (string, error) {
+	clusters, err := r.clusterRegistry.ListClusters(&client.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	if len(clusters.Items) == 0 {
+		return "", errors.NewClusterRegistryError("no sfcluster found", nil)
+	} else if len(clusters.Items) == 1 {
+		return clusters.Items[0].GetName(), nil
+	}
+
+	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
+	err = r.List(context.TODO(), &client.ListOptions{}, sfserviceinstances)
+	if err != nil {
+		log.Error(err, "failed to list all sfserviceinstances")
+		return "", err
+	}
+
+	counts := make(map[string]int64)
+	for _, item := range sfserviceinstances.Items {
+		if item.Spec.ClusterID != "" {
+			counts[item.Spec.ClusterID] = counts[item.Spec.ClusterID] + 1
+		}
+	}
+
+	leastCount := int64(math.MaxInt64)
+	var clusterID string
+	for _, cluster := range clusters.Items {
+		count := counts[cluster.GetName()]
+		if count < leastCount {
+			leastCount = count
+			clusterID = cluster.GetName()
+			if count == 0 {
+				break
+			}
+		}
+	}
+	return clusterID, nil
 }

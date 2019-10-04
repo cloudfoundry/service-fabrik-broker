@@ -77,9 +77,12 @@ func TestReconcile(t *testing.T) {
 	// First error
 	call1 := mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
 		Return(nil, fmt.Errorf("some error")).Times(1)
-	// For first 4 instance only 2 Clusters
+	// Second time no clusters
 	call2 := mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
-		Return(_getSFClusterList(sfcluster1, sfcluster2), nil).Times(4).After(call1)
+		Return(_getSFClusterList(), nil).Times(1).After(call1)
+	// For first 4 instance only 2 Clusters
+	call3 := mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
+		Return(_getSFClusterList(sfcluster1, sfcluster2), nil).Times(4).After(call2)
 
 	instance1 := _getDummySFServiceInstance("foo1")
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(gomega.HaveOccurred())
@@ -114,8 +117,8 @@ func TestReconcile(t *testing.T) {
 	g.Expect(instance4.Spec.ClusterID).To(gomega.Equal(sfcluster2.GetName()))
 
 	// Next two instances three clusters
-	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
-		Return(_getSFClusterList(sfcluster1, sfcluster2, sfcluster3), nil).Times(2).After(call2)
+	call4 := mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
+		Return(_getSFClusterList(sfcluster1, sfcluster2, sfcluster3), nil).Times(2).After(call3)
 
 	instance5 := _getDummySFServiceInstance("foo5")
 	g.Expect(c.Create(context.TODO(), instance5)).NotTo(gomega.HaveOccurred())
@@ -132,6 +135,18 @@ func TestReconcile(t *testing.T) {
 	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 	g.Expect(c.Get(context.TODO(), _getKey(instance6), instance6)).NotTo(gomega.HaveOccurred())
 	g.Expect(instance6.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
+
+	// Next instance only one cluster
+	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).
+		Return(_getSFClusterList(sfcluster3), nil).Times(1).After(call4)
+
+	instance7 := _getDummySFServiceInstance("foo7")
+	g.Expect(c.Create(context.TODO(), instance7)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance7)
+
+	g.Expect(utils.DrainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), _getKey(instance7), instance7)).NotTo(gomega.HaveOccurred())
+	g.Expect(instance7.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 }
 
 func _getDummySFServiceInstance(name string) *osbv1alpha1.SFServiceInstance {
