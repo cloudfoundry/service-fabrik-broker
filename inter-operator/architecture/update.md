@@ -10,7 +10,7 @@ helm repo update
 
 To update to 0.3.0 version
 ```shell
-helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version 0.3.0 interoperator sf-charts/interoperator --force
+helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version 0.3.0 interoperator sf-charts/interoperator --force --recreate-pods
 ```
 
 
@@ -30,7 +30,7 @@ kubectl delete ClusterRole interoperator-interoperator-manager-role
 kubectl -n interoperator delete ConfigMap interoperator-config
 
 # Assuming current helm release name is interoperator 
-helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version 0.4.0 interoperator sf-charts/interoperator --force
+helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version 0.4.0 interoperator sf-charts/interoperator --force --recreate-pods
 ```
 Once the ClusterRole is deleted the existing deployment stops working and there is downtime till helm upgrade is completed.
 
