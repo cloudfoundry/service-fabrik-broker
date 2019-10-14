@@ -422,6 +422,15 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getServiceInstancesFromApiServer() {
+    function filterFaultyResources(director) {
+      if (!_.get(director, 'spec.options.context.space_guid') 
+      || !_.get(director, 'spec.options.context.instance_name')
+      || !_.get(director, 'spec.options.plan_id')) {
+        logger.info(`Faulty director resource found in deployment summary: ${_.get(director, 'metadata.name')}`);
+        return false;
+      }
+      return true;
+    }
     return eventmesh.apiServerClient.getResourceListByState({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -430,6 +439,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(directors => {
         directors = _
           .chain(directors)
+          .filter(filterFaultyResources)
           .map(director => {
             const instance_guid = _.get(director, 'metadata.name');
             const space_guid = _.get(director, 'spec.options.context.space_guid');
