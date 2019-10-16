@@ -60,6 +60,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Deployment Flow](#deployment-flow)
     * [Runtime Flow](#runtime-flow)
     * [Limitations with Multi-Cluster deployment](#limitations-with-multi-cluster-deployment)
+  * [Mass Update of Custom Resources for Interoperator Custom Resource changes](mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
 
 
 ## Context
@@ -211,7 +212,7 @@ The Service Fabrik Broker returns an asynchronous response.
 1. It takes the required action to create the service instance.
 1. It updates its Kubernetes API resources to reflect the status.
 
-The binding response would follow a flow similar to the [`last_operation](#last-operation) flow above.
+The binding response would follow a flow similar to the [`last_operation`](#last-operation) flow above.
 
 ## Service Fabrik Inter-operator Custom Resources
 
@@ -625,3 +626,15 @@ After the interoperator is ready and setup across multiple clusters as described
 3. Interoperator does not take care of the Kubernetes and OS updates to the onboarded clusters.
 4. Service owners will have to monitor the clusters and their resource situations and add additional sister clusters if required.
 
+# Mass Update of Custom Resources for Interoperator Custom Resource changes
+
+## Context
+Interoperator has custom resources like SFPlans and SFServices which one has to provide and deploy before working with interoperator. This was already described in [here](#service-fabrik-inter-operator-custom-resources). Based on the templates defined in `SFPlan`, service specific custom resources are rendered and with that, service instance creation takes place. So, in a way, `SFPlan` and also `SFService` CRs are used as references when the service specific CRs created. However, when these reference CRs like `SFPlans` and `SFServices` change, the changes are not automatically reflected on the service specific CRs. Because of that, when a service owner changes `SFPlans` and some of its attributes and templates, older service CRs are not automatically changed.
+              The situation is similar if a service broker updates its catalog and any of it's metadata, which is used by service to configure a specific service instance. Should the broker trigger an update of all the service instances immediately or should it wait for an user initiated update operation ?
+              
+## Solution
+There are no generic guideline from the OSB spec as well and the solution to this would entirely depend on the service broker implementation. The problem with having immediate trigger of an update for all affected service instances would be that updates can cause downtime depending on how services are handling it.
+
+## Proposal
+Interoperator being a generic broker, it should not trigger update blindly as well. We can provide a flag which can be turned on if services can afford to have blind/immediate update. In that case, a controller will reconcile all `SFServiceInstances` with update status, which would render the templates again and CRs updated again. However, this would not take care of the deleted/removed CRs if any, and the service operator will have to take care of obsolete CRs.
+    Along with this, Interoperator will provide an admin API which can be triggered to update all service instances. In that case, even if the automatic and immediate update is turned off, service operators can trigger a bulk update of all service instances if needed.
