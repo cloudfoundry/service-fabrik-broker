@@ -1501,7 +1501,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC = timeout;
-              expect(res).to.have.status(500);
+              expect(res).to.have.status(429);
               mocks.verify();
               done();
             });

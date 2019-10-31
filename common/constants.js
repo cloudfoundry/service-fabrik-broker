@@ -66,7 +66,7 @@ module.exports = Object.freeze({
     PROCESSING: 'processing'
   },
   OSB_OPERATION: {
-    OSB_SYNC_OPERATION_TIMEOUT_IN_SEC: 55 // in sec
+    OSB_SYNC_OPERATION_TIMEOUT_IN_SEC: 50 // in sec
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   POLLER_RELAXATION_TIME: 5000, // in ms
@@ -130,6 +130,7 @@ module.exports = Object.freeze({
     GONE: 410,
     PRECONDITION_FAILED: 412,
     UNPROCESSABLE_ENTITY: 422,
+    TOO_MANY_REQUESTS: 429,
     INTERNAL_SERVER_ERROR: 500,
     TIMEOUT: 504
   },
