@@ -14,6 +14,7 @@ const PreconditionFailed = errors.PreconditionFailed;
 const NotFound = errors.NotFound;
 const ContinueWithNext = errors.ContinueWithNext;
 const Conflict = errors.Conflict;
+const Timeout = errors.Timeout;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const formatUrl = require('url').format;
@@ -384,7 +385,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
           .then(secret => done(secret.data.response));
       })
-      .catch(Conflict, conflict);
+      .catch(Conflict, conflict)
+      .catch(Timeout, err => {
+        res.status(CONST.HTTP_STATUS_CODE.TOO_MANY_REQUESTS).send({});
+      });
   }
 
   deleteBinding(req, res) {
@@ -434,7 +438,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
       }))
       .then(done.bind(this))
-      .catch(NotFound, gone);
+      .catch(NotFound, gone)
+      .catch(Timeout, err => {
+        res.status(CONST.HTTP_STATUS_CODE.TOO_MANY_REQUESTS).send({});
+      });
   }
 
   getDashboardUrl(context) {
