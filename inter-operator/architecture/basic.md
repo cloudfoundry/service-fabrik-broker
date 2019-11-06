@@ -56,6 +56,8 @@ Architects, Developers, Product Owners, Development Managers who are interested 
       * [Schedulers](#schedulers)
         * [DefaultScheduler](#defaultscheduler)
         * [Round Robin Scheduler](#roundrobinscheduler)
+        * [Least Utilized Scheduler](#leastutilizedscheduler)
+        * [Label Selector Based Scheduler](#labelselectorbasedscheduler)
       * [Provisioner](#provisioner)
     * [Deployment Flow](#deployment-flow)
     * [Runtime Flow](#runtime-flow)
@@ -556,7 +558,7 @@ Multi-cluster provisioning support enables provisioning and distribution of the 
 ## Why Multi Cluster Support is needed
 Scalability is the main reason why one should use Multi-Cluster support. It gives you an option to add new clusters into your set of clusters and scale horizontally. There could be many limitations with the number of resources you can spawn in a cluster such as finite capacity of the worker nodes constraining the number of services that can be scheduled on a given worker node, some finite maximum number of nodes per cluster due to some constraints in the cluster control plane or infrastructure. Hence, for a production scenario, multi-cluster support will be required so that services can be scheduled and spread across multiple clusters and can be scaled horizontally.
 
-Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-filled scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
+Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-utilized scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
 ## New Custom Resources Introduced
 Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
 ### SFCluster
@@ -603,8 +605,21 @@ Schedulers are basically custom controller running on master cluster watching on
 This is just a sample scheduler suitable only for the single cluster setup. In that case, it schedules all the instances in the one cluster which is part of the setup. It is not suitable for the multi-cluster setup.
 #### Round Robin Scheduler
 As the name suggests, round robin scheduler schedules instances in round robin fashion. At this point, it does not take care of capacity and if interoperator restarts, it loses the state about the next cluster to be scheduled and starts scheduling from the beginning. 
-#### Least filled Scheduler
-This scheduler schedules instance in the least filled cluster.
+#### Least Utilized Scheduler
+This scheduler schedules instance in the least utilized cluster.
+#### Label Selector based Scheduler
+Label selector based scheduler chooses clusters for a service instance based on the label selector defined. Label selector is a go template defined within the `SFPlan`, The template can be evaluated to a label selector string which the scheduler uses to choose cluster for the service instance provisioning. An example of such a template can be the following.
+```yaml
+  - action: clusterlabel
+    type: gotemplate
+    content: |
+      {{- $organizationGuid := "" }}
+      {{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}
+      organization={{ $organizationGuid }}
+```
+
+In the above template, when evaluated, gives a label selector string which looks like `organization=<ord-id>`. If there are any cluster which are meant for scheduling instances from a specific organization, then that appropriate label can be applied on that `SFCluster` and this scheduler will ensure all such instances are scheduled in that cluster. Similar to the example above, label selectors can be written using go template for specific scheduling criteria.
+
 ### Provisioner
 Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.
 ## Deployment Flow
