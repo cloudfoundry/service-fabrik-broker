@@ -1299,11 +1299,13 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 		name    string
 		r       resourceManager
 		args    args
+		setup   func()
+		cleanup func()
 		want    []osbv1alpha1.Source
 		wantErr bool
 	}{
 		{
-			name: "Test1",
+			name: "Set state to delete for Director",
 			r:    resourceManager{},
 			args: args{
 				client: c,
@@ -1316,7 +1318,61 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 					},
 				},
 			},
-			want:    nil,
+			setup: func() {
+				resource := &unstructured.Unstructured{}
+				resource.SetKind("Director")
+				resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+				resource.SetName("instance-id")
+				resource.SetNamespace("default")
+				err := c.Create(context.TODO(), resource)
+				if err != nil {
+					t.Errorf("Failed to create Director %v", err)
+				}
+			},
+			cleanup: func() {
+				resource := &unstructured.Unstructured{}
+				resource.SetKind("Director")
+				resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+				resource.SetName("instance-id")
+				resource.SetNamespace("default")
+
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "instance-id", Namespace: "default"}, resource)
+				if err != nil {
+					t.Errorf("Failed to get Director %v", err)
+					return
+				}
+				content := resource.UnstructuredContent()
+				statusInt, ok := content["status"]
+				var status map[string]interface{}
+				if ok {
+					status, ok = statusInt.(map[string]interface{})
+					if !ok {
+						t.Errorf("status field not map for resource %v", resource)
+						return
+					}
+				} else {
+					t.Errorf("Failed to get read status of director %v", err)
+					return
+				}
+
+				if status["state"] != "delete" {
+					t.Errorf("state not set to delete for director. current state %s", status["state"])
+					return
+				}
+
+				err = c.Delete(context.TODO(), resource)
+				if err != nil {
+					t.Errorf("Failed to delete Director %v", err)
+				}
+			},
+			want: []osbv1alpha1.Source{
+				{
+					APIVersion: "deployment.servicefabrik.io/v1alpha1",
+					Kind:       "Director",
+					Name:       "instance-id",
+					Namespace:  "default",
+				},
+			},
 			wantErr: false,
 		},
 		{
@@ -1370,6 +1426,12 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
+			if tt.setup != nil {
+				tt.setup()
+			}
+			if tt.cleanup != nil {
+				defer tt.cleanup()
+			}
 			got, err := r.DeleteSubResources(tt.args.client, tt.args.subResources)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.DeleteSubResources() error = %v, wantErr %v", err, tt.wantErr)
@@ -1377,29 +1439,6 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("resourceManager.DeleteSubResources() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_resourceManager_deleteSubResource(t *testing.T) {
-	type args struct {
-		client   kubernetes.Client
-		resource *unstructured.Unstructured
-	}
-	tests := []struct {
-		name    string
-		r       resourceManager
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := resourceManager{}
-			if err := r.deleteSubResource(tt.args.client, tt.args.resource); (err != nil) != tt.wantErr {
-				t.Errorf("resourceManager.deleteSubResource() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

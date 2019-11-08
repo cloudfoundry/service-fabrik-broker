@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -491,26 +492,33 @@ func (r resourceManager) deleteSubResource(client kubernetes.Client, resource *u
 				Name:      resource.GetName(),
 				Namespace: resource.GetNamespace(),
 			}
-			err := client.Get(context.TODO(), namespacedName, resource)
-			if err != nil {
-				return err
-			}
-			content := resource.UnstructuredContent()
-			statusInt, ok := content["status"]
-			var status map[string]interface{}
-			if ok {
-				status, ok = statusInt.(map[string]interface{})
-				if !ok {
-					return fmt.Errorf("status field not map for resource %v", resource)
-				}
-			} else {
-				status = make(map[string]interface{})
-			}
 
-			status["state"] = "delete"
-			content["status"] = status
-			resource.SetUnstructuredContent(content)
-			err = client.Update(context.TODO(), resource)
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err := client.Get(context.TODO(), namespacedName, resource)
+				if err != nil {
+					return err
+				}
+				content := resource.UnstructuredContent()
+				statusInt, ok := content["status"]
+				var status map[string]interface{}
+				if ok {
+					status, ok = statusInt.(map[string]interface{})
+					if !ok {
+						return fmt.Errorf("status field not map for resource %v", resource)
+					}
+				} else {
+					status = make(map[string]interface{})
+				}
+
+				status["state"] = "delete"
+				content["status"] = status
+				resource.SetUnstructuredContent(content)
+				err = client.Update(context.TODO(), resource)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
 			if err != nil {
 				return err
 			}
