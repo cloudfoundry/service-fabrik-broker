@@ -1,0 +1,7 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SFPlan
+metadata:
+  name: sfplan-sample
+spec:
+  # Add fields here
+  foo: bar

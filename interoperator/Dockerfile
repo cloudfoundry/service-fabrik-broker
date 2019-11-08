@@ -1,24 +1,27 @@
 # Build the manager binary
-FROM golang:1.11.2 as builder
+FROM golang:1.12.5 as builder
 
-# Copy in the go src
-WORKDIR /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
-COPY . .
-# Install dep
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-RUN dep ensure
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags provisioners -a -o manager github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags schedulers -a -o scheduler github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags multiclusterdeploy -a -o multiclusterdeploy github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
 
-# Copy the controller-manager into a thin image
-FROM ubuntu:latest
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot 
 WORKDIR /
-COPY --from=builder /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/manager .
-COPY --from=builder /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/scheduler .
-COPY --from=builder /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/multiclusterdeploy .
-COPY config/samples/templates/ config/samples/templates/
-# Default entrypoint is manager (provisioners)
+COPY --from=builder /workspace/manager .
+USER nonroot:nonroot
+
 ENTRYPOINT ["/manager"]

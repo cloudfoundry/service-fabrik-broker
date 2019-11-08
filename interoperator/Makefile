@@ -1,70 +1,86 @@
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-all: test manager
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
+all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
+	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run_provisioners: generate fmt vet
-	go run -tags provisioners ./cmd/manager/main.go
+run: generate fmt vet manifests
+	go run ./main.go
+
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run_provisioners: generate fmt vet manifests
+	go run -tags provisioners ./main.go
 
 # Run schedulers only in ~/.kube/config
-run_schedulers: generate fmt vet
-	go run -tags schedulers ./cmd/manager/main.go
+run_schedulers: generate fmt vet manifests
+	go run -tags schedulers ./main.go
 
 # Run multiclusterdeploy only in ~/.kube/config
-run_mcd: generate fmt vet
-	go run -tags multiclusterdeploy ./cmd/manager/main.go
+run_mcd: generate fmt vet manifests
+	go run -tags multiclusterdeploy ./main.go
 
-# Run schedulers only in ~/.kube/config
-run_default: generate fmt vet
-	go run -tags default ./cmd/manager/main.go
+# Run default only in ~/.kube/config
+run_default: generate fmt vet manifests
+	go run -tags default ./main.go
 
 # Install CRDs into a cluster
 install: manifests
-	kubectl apply -f config/crds
+	kustomize build config/crd | kubectl apply -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/crds
+	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests:
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
-	go fmt ./pkg/... ./cmd/...
+	go fmt ./...
 
 # Run go vet against code
 vet:
-	go vet ./pkg/... ./cmd/...
+	go vet ./...
 
 # Generate code
-generate:
-ifndef GOPATH
-	$(error GOPATH not defined, please define GOPATH. Run "go help gopath" to learn more about GOPATH)
-endif
-	go generate ./pkg/... ./cmd/...
-	vendor/k8s.io/code-generator/generate-groups.sh client \
-		github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client \
-		github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis osb:v1alpha1
+generate: controller-gen
+	go generate ./internal/... ./pkg/... ./api/... ./controllers/...
+	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image
 docker-build: test
 	docker build . -t ${IMG}
-	@echo "updating kustomize image patch file for manager resource"
-	sed -i'' -e 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
 
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# find or download controller-gen
+# download controller-gen if necessary
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.1
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif

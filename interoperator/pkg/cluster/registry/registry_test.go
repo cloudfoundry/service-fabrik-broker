@@ -7,7 +7,7 @@ import (
 	"testing"
 	"text/template"
 
-	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
+	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
