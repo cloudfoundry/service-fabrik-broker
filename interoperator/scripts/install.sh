@@ -46,7 +46,7 @@ command_exists curl
 command_exists tar
 
 if [ "x${KUBEBUILDER_VERSION}" = "x" ] ; then
-  KUBEBUILDER_VERSION=v1.0.7
+  KUBEBUILDER_VERSION=v2.1.0
   if [ -z "$KUBEBUILDER_VERSION" ]; then
     echo "\nUnable to fetch the latest version tag. This may be due to network access problem"
     exit 0

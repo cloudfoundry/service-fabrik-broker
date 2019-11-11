@@ -5,21 +5,21 @@ matrix:
       os:
         - linux
       go:
-        - "1.11"
+        - "1.13"
       git:
         depth: 3
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
         - cd interoperator
-        - dep ensure -v
+        - go mod download
         - cd ../webhooks
         - dep ensure -v
         - cd ..
       script:
         - pushd interoperator
         - ./scripts/install_test.sh
-        - go test -v -coverpkg=./pkg/... -coverprofile=coverage.txt ./pkg/...
+        - go test -v -coverprofile=coverage.txt ./...
         - popd
         - pushd webhooks
         - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
@@ -31,7 +31,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.11"
+        - "1.13"
       git:
         depth: 3
       before_install:
@@ -39,15 +39,15 @@ matrix:
         - go get golang.org/x/lint/golint
       install:
         - cd interoperator
-        - dep ensure -v
+        - env GO111MODULE=on go mod download
         - cd ../webhooks
         - dep ensure -v
         - cd ..
       script:
         - pushd interoperator
-        - go fmt ./pkg/... ./cmd/...
-        - go vet ./pkg/... ./cmd/...
-        - golint ./pkg/... ./cmd/...
+        - env GO111MODULE=on go fmt ./api/... ./controllers/... ./internal/... ./pkg/... ./
+        - env GO111MODULE=on go vet ./api/... ./controllers/... ./internal/... ./pkg/... ./
+        - env GO111MODULE=on golint ./api/... ./controllers/... ./internal/... ./pkg/... ./
         - popd
         - pushd webhooks
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
