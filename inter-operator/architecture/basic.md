@@ -60,7 +60,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Deployment Flow](#deployment-flow)
     * [Runtime Flow](#runtime-flow)
     * [Limitations with Multi-Cluster deployment](#limitations-with-multi-cluster-deployment)
-  * [Mass Update of Custom Resources for Interoperator Custom Resource changes](mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
+  * [Mass Update of Custom Resources for Interoperator Custom Resource changes](#mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
 
 
 ## Context
