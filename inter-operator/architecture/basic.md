@@ -610,7 +610,7 @@ This scheduler schedules instance in the least utilized cluster.
 #### Label Selector based Scheduler
 Label selector based scheduler chooses clusters for a service instance based on the label selector defined. Label selector is a go template defined within the `SFPlan`, The template can be evaluated to a label selector string which the scheduler uses to choose cluster for the service instance provisioning. An example of such a template can be the following.
 ```yaml
-  - action: clusterlabel
+  - action: clusterSelector
     type: gotemplate
     content: |
       {{- $organizationGuid := "" }}
