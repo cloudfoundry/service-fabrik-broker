@@ -87,6 +87,7 @@ spec:
                     - status
                     - bind
                     - sources
+                    - clusterlabel
                     type: string
                   content:
                     type: string
