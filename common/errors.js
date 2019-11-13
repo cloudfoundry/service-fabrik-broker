@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const CONST = require('./constants');
 
 function createSymbol(name) {
