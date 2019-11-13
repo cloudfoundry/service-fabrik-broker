@@ -781,7 +781,7 @@ class DirectorService extends BaseDirectorService {
       this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
       this.getDeploymentIps(deploymentName),
       (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
-        operation: 'CREATE_CREDENTIAL_AGENT',
+        operation: 'Create Credentials by Service Agent',
         maxAttempts: 2,
         timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
       })
@@ -829,7 +829,7 @@ class DirectorService extends BaseDirectorService {
             this.getCredentials(id)
           ]))
       .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
-        operation: 'DELETE_CREDENTIAL_AGENT',
+        operation: 'Delete Credentials by Service Agent',
         maxAttempts: 2,
         timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
       })
