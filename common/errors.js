@@ -62,11 +62,11 @@ class Timeout extends BaseError {
     }
   }
   static timedOut(time, err, operation) {
-    const msg = `Operation ${operation ? operation + ' ' : ''}timed out after ${time} ms${_.get(err, 'description') ? ' -' + err.description : ''}`;
+    const msg = `Operation ${operation ? operation + ' ' : ''}timed out after ${time} ms${_.get(err, 'description') ? ' Error from Service Agent - ' + err.description : ''}`;
     return new Timeout(msg, err);
   }
   static toManyAttempts(attempts, err, operation) {
-    const msg = `Operation ${operation ? operation + ' ' : ''}failed after ${attempts} attempts${_.get(err, 'description') ? ' -' +  err.description : ''}`;
+    const msg = `Operation ${operation ? operation + ' ' : ''}failed after ${attempts} attempts${_.get(err, 'description') ? ' Error from Service Agent - ' +  err.description : ''}`;
     return new Timeout(msg, err);
   }
 }
