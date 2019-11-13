@@ -27,6 +27,8 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -88,6 +90,14 @@ func main() {
 
 	if err = schedulers.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create schedulers")
+		os.Exit(1)
+	}
+	if err = (&controllers.SfServiceInstanceCleanerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SfServiceInstanceCleaner")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
