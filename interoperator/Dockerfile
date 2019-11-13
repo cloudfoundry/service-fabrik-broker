@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags multiclu
 FROM gcr.io/distroless/static:nonroot 
 WORKDIR /
 COPY --from=builder /workspace/manager .
-COPY --from=builder /workspace/schedulers .
+COPY --from=builder /workspace/scheduler .
 COPY --from=builder /workspace/multiclusterdeploy .
 USER nonroot:nonroot
 

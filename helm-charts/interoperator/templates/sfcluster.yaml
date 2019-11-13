@@ -2,17 +2,18 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: sfclusters.resource.servicefabrik.io
 spec:
   group: resource.servicefabrik.io
   names:
     kind: SFCluster
+    listKind: SFClusterList
     plural: sfclusters
-  scope: Namespaced
+    singular: sfcluster
+  scope: ""
   validation:
     openAPIV3Schema:
+      description: SFCluster is the Schema for the sfclusters API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -27,6 +28,7 @@ spec:
         metadata:
           type: object
         spec:
+          description: SFClusterSpec defines the desired state of SFCluster
           properties:
             secretRef:
               description: Name of the secret containing the kubeconfig required to
@@ -37,8 +39,14 @@ spec:
           - secretRef
           type: object
         status:
+          description: SFClusterStatus defines the observed state of SFCluster
           type: object
+      type: object
   version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""
