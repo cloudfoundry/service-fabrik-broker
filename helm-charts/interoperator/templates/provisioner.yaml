@@ -26,10 +26,7 @@ spec:
         ports:
         - containerPort: 8443
           name: https
-      - args:
-        - --metrics-addr=127.0.0.1:9877
-        - --enable-leader-election
-        command:
+      - command:
         - /manager
         env:
         - name: POD_NAMESPACE

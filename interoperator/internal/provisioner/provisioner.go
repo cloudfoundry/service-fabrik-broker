@@ -20,24 +20,24 @@ var log = logf.Log.WithName("provisioner.internal")
 // Provisioner fetches provisioner stateful set
 //go:generate mockgen -source provisioner.go -destination ./mock_provisioner/mock_provisioner.go
 type Provisioner interface {
-	FetchStatefulset() error
-	GetStatefulSet() (*appsv1.StatefulSet, error)
+	Fetch() error
+	Get() (*appsv1.Deployment, error)
 }
 
 type provisioner struct {
-	c           client.Client
-	statefulSet *appsv1.StatefulSet
-	namespace   string
+	c          client.Client
+	deployment *appsv1.Deployment
+	namespace  string
 }
 
 // New returns stateful using kubernetes client
 func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) (Provisioner, error) {
 	if kubeConfig == nil {
-		return nil, errors.NewInputError("New statefulset", "kubeConfig", nil)
+		return nil, errors.NewInputError("New provisioner", "kubeConfig", nil)
 	}
 
 	if scheme == nil {
-		return nil, errors.NewInputError("New statefulset", "scheme", nil)
+		return nil, errors.NewInputError("New provisioner", "scheme", nil)
 	}
 
 	c, err := client.New(kubeConfig, client.Options{
@@ -47,39 +47,39 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 	if err != nil {
 		return nil, err
 	}
-	statefulsetNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if statefulsetNamespace == "" {
-		statefulsetNamespace = constants.DefaultServiceFabrikNamespace
+	provisionerNamespace := os.Getenv(constants.NamespaceEnvKey)
+	if provisionerNamespace == "" {
+		provisionerNamespace = constants.DefaultServiceFabrikNamespace
 	}
 
 	return &provisioner{
 		c:         c,
-		namespace: statefulsetNamespace,
+		namespace: provisionerNamespace,
 	}, nil
 }
 
-func (sfs *provisioner) FetchStatefulset() error {
-	sfset := &appsv1.StatefulSet{}
-	var sfsKey = types.NamespacedName{
-		Name:      constants.StatefulSetName,
-		Namespace: sfs.namespace,
+func (p *provisioner) Fetch() error {
+	deployment := &appsv1.Deployment{}
+	var deploymentKey = types.NamespacedName{
+		Name:      constants.ProvisionerName,
+		Namespace: p.namespace,
 	}
-	err := sfs.c.Get(context.TODO(), sfsKey, sfset)
+	err := p.c.Get(context.TODO(), deploymentKey, deployment)
 	if err != nil {
 		return err
 	}
-	log.Info("Successfully fetched statefulset", "name ", sfset.Name,
-		"namespace", sfset.Namespace)
-	sfs.statefulSet = sfset
+	log.Info("Successfully fetched deployment", "name ", deployment.Name,
+		"namespace", deployment.Namespace)
+	p.deployment = deployment
 	return nil
 }
 
-func (sfs *provisioner) GetStatefulSet() (*appsv1.StatefulSet, error) {
-	if sfs.statefulSet == nil {
-		err := sfs.FetchStatefulset()
+func (p *provisioner) Get() (*appsv1.Deployment, error) {
+	if p.deployment == nil {
+		err := p.Fetch()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return sfs.statefulSet, nil
+	return p.deployment, nil
 }

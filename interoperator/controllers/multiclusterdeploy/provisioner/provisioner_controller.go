@@ -55,7 +55,7 @@ type ReconcileProvisioner struct {
 // and what is actual state of components deployed in the sister cluster
 /* Functions of this method
 1. Get target cluster client
-2. Get statefulset instance deployed in master cluster
+2. Get deployment instance deployed in master cluster
 3. Register SF CRDs in target cluster (Must be done before registering watches)
 4. Add watches on resources in target sfcluster
 5. Namespace creation in target cluster
@@ -93,8 +93,8 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// Get statefulSetInstance for provisioner
-	statefulSetInstance, err := r.provisioner.GetStatefulSet()
+	// Get deploment instance for provisioner
+	deplomentInstance, err := r.provisioner.Get()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -114,7 +114,7 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	// 5. Create/Update Namespace in target cluster for provisioner
-	namespace := statefulSetInstance.GetNamespace()
+	namespace := deplomentInstance.GetNamespace()
 	err = r.reconcileNamespace(namespace, clusterID, targetClient)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -138,8 +138,8 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// 9. Create Statefulset in target cluster for provisioner
-	err = r.reconcileStatefulSet(statefulSetInstance, clusterID, targetClient)
+	// 9. Create Deployment in target cluster for provisioner
+	err = r.reconcileDeployment(deplomentInstance, clusterID, targetClient)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -327,23 +327,23 @@ func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secret
 	return nil
 }
 
-func (r *ReconcileProvisioner) reconcileStatefulSet(statefulSetInstance *appsv1.StatefulSet, clusterID string, targetClient client.Client) error {
+func (r *ReconcileProvisioner) reconcileDeployment(deploymentInstance *appsv1.Deployment, clusterID string, targetClient client.Client) error {
 	ctx := context.Background()
 	log := r.Log.WithValues("clusterID", clusterID)
 
-	provisionerInstance := &appsv1.StatefulSet{}
+	provisionerInstance := &appsv1.Deployment{}
 
 	log.Info("Updating provisioner", "Cluster", clusterID)
-	getStatefulSetErr := targetClient.Get(ctx, types.NamespacedName{
-		Name:      statefulSetInstance.GetName(),
-		Namespace: statefulSetInstance.GetNamespace(),
+	getDeploymentErr := targetClient.Get(ctx, types.NamespacedName{
+		Name:      deploymentInstance.GetName(),
+		Namespace: deploymentInstance.GetNamespace(),
 	}, provisionerInstance)
 
-	provisionerInstance.SetName(statefulSetInstance.GetName())
-	provisionerInstance.SetNamespace(statefulSetInstance.GetNamespace())
-	provisionerInstance.SetLabels(statefulSetInstance.GetLabels())
+	provisionerInstance.SetName(deploymentInstance.GetName())
+	provisionerInstance.SetNamespace(deploymentInstance.GetNamespace())
+	provisionerInstance.SetLabels(deploymentInstance.GetLabels())
 	// copy spec
-	statefulSetInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
+	deploymentInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
 	// set replicaCount to 1
 	replicaCount := int32(1)
 	provisionerInstance.Spec.Replicas = &replicaCount
@@ -364,8 +364,8 @@ ContainersLoop:
 		provisionerInstance.Spec.Template.Spec.Containers[i].Env = append(provisionerInstance.Spec.Template.Spec.Containers[i].Env, *clusterIDEnv)
 	}
 
-	if getStatefulSetErr != nil {
-		if apiErrors.IsNotFound(getStatefulSetErr) {
+	if getDeploymentErr != nil {
+		if apiErrors.IsNotFound(getDeploymentErr) {
 			log.Info("Provisioner not found, Creating...", "clusterId", clusterID)
 			err := targetClient.Create(ctx, provisionerInstance)
 			if err != nil {
@@ -373,8 +373,8 @@ ContainersLoop:
 				return err
 			}
 		} else {
-			log.Error(getStatefulSetErr, "Error occurred while creating provisioner", "clusterId", clusterID)
-			return getStatefulSetErr
+			log.Error(getDeploymentErr, "Error occurred while creating provisioner", "clusterId", clusterID)
+			return getDeploymentErr
 		}
 	} else {
 		err := targetClient.Update(ctx, provisionerInstance)
@@ -460,7 +460,7 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 		r.provisioner = provisionerMgr
 	}
 
-	err = r.provisioner.FetchStatefulset()
+	err = r.provisioner.Fetch()
 	if err != nil {
 		return err
 	}

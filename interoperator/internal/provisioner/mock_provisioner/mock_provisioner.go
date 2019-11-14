@@ -33,31 +33,31 @@ func (m *MockProvisioner) EXPECT() *MockProvisionerMockRecorder {
 	return m.recorder
 }
 
-// FetchStatefulset mocks base method
-func (m *MockProvisioner) FetchStatefulset() error {
+// Fetch mocks base method
+func (m *MockProvisioner) Fetch() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchStatefulset")
+	ret := m.ctrl.Call(m, "Fetch")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// FetchStatefulset indicates an expected call of FetchStatefulset
-func (mr *MockProvisionerMockRecorder) FetchStatefulset() *gomock.Call {
+// Fetch indicates an expected call of Fetch
+func (mr *MockProvisionerMockRecorder) Fetch() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchStatefulset", reflect.TypeOf((*MockProvisioner)(nil).FetchStatefulset))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockProvisioner)(nil).Fetch))
 }
 
-// GetStatefulSet mocks base method
-func (m *MockProvisioner) GetStatefulSet() (*v1.StatefulSet, error) {
+// Get mocks base method
+func (m *MockProvisioner) Get() (*v1.Deployment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStatefulSet")
-	ret0, _ := ret[0].(*v1.StatefulSet)
+	ret := m.ctrl.Call(m, "Get")
+	ret0, _ := ret[0].(*v1.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetStatefulSet indicates an expected call of GetStatefulSet
-func (mr *MockProvisionerMockRecorder) GetStatefulSet() *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockProvisionerMockRecorder) Get() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatefulSet", reflect.TypeOf((*MockProvisioner)(nil).GetStatefulSet))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockProvisioner)(nil).Get))
 }
