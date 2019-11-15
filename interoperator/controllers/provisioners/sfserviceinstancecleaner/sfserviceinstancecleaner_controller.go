@@ -54,24 +54,24 @@ func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.R
 			log.Info("binding deleted", "binding", req.NamespacedName.Name)
 			return ctrl.Result{}, nil
 		}
-		// TODO: should we requeue the request when unable to read binding ?
+		// TODO: retry when unable to read binding?
 	}
 	if !binding.GetDeletionTimestamp().IsZero() {
 		finalizers := binding.GetFinalizers()
-		hasBrokerFinalizer := false
-		for _, v := range finalizers {
-			if v == constants.BrokerFinalizer {
-				hasBrokerFinalizer = true
-				break
-			}
-		}
-		if hasBrokerFinalizer {
+		if utils.ContainsString(finalizers, constants.BrokerFinalizer) {
 			instance := &osbv1alpha1.SFServiceInstance{}
 			namespacedName := types.NamespacedName{
-				Name:      binding.Spec.InstanceID,
+				Name:      binding.Spec.InstanceID, // TODO: verify!
 				Namespace: binding.GetNamespace(),
 			}
-			if err := r.Get(ctx, namespacedName, instance); errors.SFServiceInstanceNotFound(err) {
+			err := r.Get(ctx, namespacedName, instance)
+			if err != nil {
+				if apiErrors.IsNotFound(err) {
+					return ctrl.Result{}, nil
+				}
+				// TODO: retry?
+			}
+			if errors.SFServiceInstanceNotFound(err) {
 				binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
 			}
 		}
