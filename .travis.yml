@@ -8,25 +8,38 @@ matrix:
         - "1.13"
       git:
         depth: 3
-      before_install:
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
         - cd interoperator
-        - go mod download
-        - cd ../webhooks
-        - dep ensure -v
+        - env GO111MODULE=on go mod download
         - cd ..
       script:
         - pushd interoperator
         - ./scripts/install_test.sh
-        - go test -v -coverprofile=coverage.txt ./...
-        - popd
-        - pushd webhooks
-        - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
+        - env GO111MODULE=on go test -v -coverprofile=coverage.txt ./...
         - popd
         - cat interoperator/coverage.txt webhooks/coverage.txt | grep -v "/pkg/client/" > coverage.txt
       after_success:
         - bash <(curl -s https://codecov.io/bash)
+    - language: go
+      os:
+        - linux
+      go:
+        - "1.11"
+      git:
+        depth: 3
+      before_install:
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      install:
+        - pushd interoperator
+        - env KUBEBUILDER_VERSION=v1.0.7 ./scripts/install_test.sh
+        - popd
+        - cd webhooks
+        - dep ensure -v
+        - cd ..
+      script:
+        - pushd webhooks
+        - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
+        - popd
     - language: go
       os:
         - linux
