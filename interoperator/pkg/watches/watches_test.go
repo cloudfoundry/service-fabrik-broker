@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
-	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
@@ -33,10 +33,21 @@ const timeout = time.Second * 5
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crds")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
-	apis.AddToScheme(scheme.Scheme)
+
 	var err error
+
+	err = osbv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
 	if kubeConfig, err = t.Start(); err != nil {
 		stdlog.Fatal(err)
 	}

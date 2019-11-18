@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
+	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
@@ -120,11 +120,13 @@ func (r *clusterRegistry) GetCluster(clusterID string) (resourceV1alpha1.SFClust
 // ListClusters fetches all the clusters with the given options
 func (r *clusterRegistry) ListClusters(options *kubernetes.ListOptions) (*resourceV1alpha1.SFClusterList, error) {
 	if options == nil {
-		options = kubernetes.InNamespace(r.namespace)
+		options = &kubernetes.ListOptions{
+			Namespace: r.namespace,
+		}
 	}
-	options.InNamespace(r.namespace)
+	options.Namespace = r.namespace
 	clusters := &resourceV1alpha1.SFClusterList{}
-	err := r.c.List(context.TODO(), options, clusters)
+	err := r.c.List(context.TODO(), clusters, options)
 	if err != nil {
 		return nil, err
 	}

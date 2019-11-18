@@ -1,0 +1,7 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SFService
+metadata:
+  name: sfservice-sample
+spec:
+  # Add fields here
+  foo: bar

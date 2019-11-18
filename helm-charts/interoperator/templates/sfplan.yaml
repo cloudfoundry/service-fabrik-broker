@@ -2,17 +2,18 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: sfplans.osb.servicefabrik.io
 spec:
   group: osb.servicefabrik.io
   names:
     kind: SFPlan
+    listKind: SFPlanList
     plural: sfplans
-  scope: Namespaced
+    singular: sfplan
+  scope: ""
   validation:
     openAPIV3Schema:
+      description: SFPlan is the Schema for the sfplans API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -27,6 +28,7 @@ spec:
         metadata:
           type: object
         spec:
+          description: SFPlanSpec defines the desired state of SFPlan
           properties:
             bindable:
               type: boolean
@@ -47,10 +49,15 @@ spec:
             planUpdatable:
               type: boolean
             schemas:
+              description: ServiceSchemas is definitions for Service Instances and
+                Service Bindings for the Service Plan.
               properties:
                 binding:
+                  description: ServiceBindingSchema is the  schema definition for
+                    creating a Service Binding. Used only if the Service Plan is bindable.
                   properties:
                     create:
+                      description: Schema definition for the input parameters.
                       properties:
                         parameters:
                           type: object
@@ -59,8 +66,11 @@ spec:
                       type: object
                   type: object
                 instance:
+                  description: ServiceInstanceSchema is the schema definitions for
+                    creating and updating a Service Instance.
                   properties:
                     create:
+                      description: Schema definition for the input parameters.
                       properties:
                         parameters:
                           type: object
@@ -68,6 +78,7 @@ spec:
                       - parameters
                       type: object
                     update:
+                      description: Schema definition for the input parameters.
                       properties:
                         parameters:
                           type: object
@@ -80,6 +91,7 @@ spec:
               type: string
             templates:
               items:
+                description: TemplateSpec is the specifcation of a template
                 properties:
                   action:
                     enum:
@@ -105,17 +117,23 @@ spec:
                 type: object
               type: array
           required:
-          - name
-          - id
+          - bindable
           - description
           - free
-          - bindable
-          - templates
+          - id
+          - name
           - serviceId
+          - templates
           type: object
         status:
+          description: SFPlanStatus defines the observed state of SFPlan
           type: object
+      type: object
   version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""

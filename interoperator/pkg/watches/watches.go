@@ -4,12 +4,12 @@ import (
 	"context"
 	"os"
 
-	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
+	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
-	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +76,8 @@ func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches
 		return true, cfgManager.UpdateConfig(interoperatorCfg)
 	}
 
-	log.Info("Watch List in configmap up todate", "InstanceContollerWatchList", instanceWatches, "BindingContollerWatchList", bindingWatches)
+	log.Info("Watch List in configmap up todate")
+	log.V(2).Info("Current watch lists", "InstanceContollerWatchList", instanceWatches, "BindingContollerWatchList", bindingWatches)
 	return false, nil
 }
 
@@ -107,9 +108,11 @@ func computeWatchList(c client.Client, sfNamespace string) ([]osbv1alpha1.APIVer
 	serviceBinding := getDummyServiceBinding(sfNamespace)
 
 	plans := &osbv1alpha1.SFPlanList{}
-	options := client.InNamespace(sfNamespace)
+	options := &client.ListOptions{
+		Namespace: sfNamespace,
+	}
 
-	err := c.List(context.TODO(), options, plans)
+	err := c.List(context.TODO(), plans, options)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -10,12 +10,11 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-* Install [dep](https://github.com/golang/dep)
 * Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
 * Install [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 
 ```
-version=1.0.5 # latest stable version
+version=2.1.0 # latest stable version
 arch=amd64
 
 # download the release
@@ -40,13 +39,20 @@ export PATH=$PATH:$GOPATH/bin
 
 #### Get dependencies
 ```
-dep ensure -v
+go mod download
 ```
 
-### Generate the crds, clients for crds and mocks
+### Generate the crds and mocks
 
 ```
 make generate manifests
+```
+
+### Generate clients for crds
+
+```
+go mod vendor
+bash vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api osb:v1alpha1 --go-header-file hack/boilerplate.go.txt
 ```
 
 ### Installing

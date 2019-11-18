@@ -1,0 +1,48 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - osb.servicefabrik.io
+  resources:
+  - sfserviceinstances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - osb.servicefabrik.io
+  resources:
+  - sfserviceinstances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - resource.servicefabrik.io
+  resources:
+  - sfclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - resource.servicefabrik.io
+  resources:
+  - sfclusters/status
+  verbs:
+  - get
+  - patch
+  - update

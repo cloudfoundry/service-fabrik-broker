@@ -22,7 +22,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,9 +42,19 @@ var mapper meta.RESTMapper
 func TestMain(m *testing.M) {
 	var err error
 	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 	}
-	apis.AddToScheme(scheme.Scheme)
+
+	err = osbv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
 	if kubeConfig, err = t.Start(); err != nil {
 		stdlog.Fatal(err)
 	}

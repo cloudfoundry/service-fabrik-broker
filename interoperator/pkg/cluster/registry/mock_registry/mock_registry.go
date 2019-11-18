@@ -5,7 +5,7 @@
 package mock_registry
 
 import (
-	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
+	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	client "sigs.k8s.io/controller-runtime/pkg/client"

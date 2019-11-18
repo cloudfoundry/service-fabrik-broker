@@ -16,7 +16,7 @@ const (
 	NamespaceEnvKey        = "POD_NAMESPACE"
 	OwnClusterIDEnvKey     = "CLUSTER_ID"
 	DefaultMasterClusterID = "1"
-	StatefulSetName        = "provisioner"
+	ProvisionerName        = "provisioner"
 
 	MultiClusterWatchTimeout = 28800 // 8 hours in seconds
 

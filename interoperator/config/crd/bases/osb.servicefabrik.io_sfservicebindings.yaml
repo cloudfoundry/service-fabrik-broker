@@ -1,0 +1,137 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: sfservicebindings.osb.servicefabrik.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: state
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
+  group: osb.servicefabrik.io
+  names:
+    kind: SFServiceBinding
+    listKind: SFServiceBindingList
+    plural: sfservicebindings
+    singular: sfservicebinding
+  scope: ""
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: SFServiceBinding is the Schema for the sfservicebindings API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SFServiceBindingSpec defines the desired state of SFServiceBinding
+          properties:
+            acceptsIncomplete:
+              type: boolean
+            appGuid:
+              type: string
+            bindResource:
+              type: object
+            context:
+              type: object
+            id:
+              type: string
+            instanceId:
+              type: string
+            parameters:
+              type: object
+            planId:
+              type: string
+            serviceId:
+              type: string
+          required:
+          - instanceId
+          - planId
+          - serviceId
+          type: object
+        status:
+          description: SFServiceBindingStatus defines the observed state of SFServiceBinding
+          properties:
+            appliedSpec:
+              description: SFServiceBindingSpec defines the desired state of SFServiceBinding
+              properties:
+                acceptsIncomplete:
+                  type: boolean
+                appGuid:
+                  type: string
+                bindResource:
+                  type: object
+                context:
+                  type: object
+                id:
+                  type: string
+                instanceId:
+                  type: string
+                parameters:
+                  type: object
+                planId:
+                  type: string
+                serviceId:
+                  type: string
+              required:
+              - instanceId
+              - planId
+              - serviceId
+              type: object
+            error:
+              type: string
+            resources:
+              items:
+                description: Source is the details for identifying each resource sources.yaml
+                  file is unmarshalled to a map[string]Source
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - apiVersion
+                - kind
+                - name
+                - namespace
+                type: object
+              type: array
+            response:
+              description: BindingResponse defines the details of the binding response
+              properties:
+                secretRef:
+                  type: string
+              type: object
+            state:
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
