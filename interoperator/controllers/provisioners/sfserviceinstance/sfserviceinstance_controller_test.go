@@ -46,7 +46,7 @@ import (
 
 var c client.Client
 
-const timeout = time.Second * 2
+const timeout = time.Second * 5
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
 	osbv1alpha1.TemplateSpec{

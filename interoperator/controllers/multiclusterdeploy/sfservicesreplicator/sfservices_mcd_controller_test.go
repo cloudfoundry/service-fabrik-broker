@@ -42,7 +42,7 @@ var c, c2 client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
 
-const timeout = time.Second * 2
+const timeout = time.Second * 5
 
 func createAndTestSFServiceAndPlans(serviceName string, planName string, service *osbv1alpha1.SFService, plan *osbv1alpha1.SFPlan, t *testing.T, g *gomega.GomegaWithT) {
 	err := c.Create(context.TODO(), service)
