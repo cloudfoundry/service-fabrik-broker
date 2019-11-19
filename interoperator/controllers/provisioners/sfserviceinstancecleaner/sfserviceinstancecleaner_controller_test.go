@@ -42,7 +42,7 @@ var binding = &osbv1alpha1.SFServiceBinding{
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var c client.Client
 
-const timeout = time.Second * 2
+const timeout = time.Second * 5
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	data := make(map[string]string)
@@ -65,7 +65,6 @@ func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 		Data: data,
 	}
 	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
-	// g.Expect(c.Create(context.TODO(), serviceInstance)).NotTo(gomega.HaveOccurred())
 }
 
 func TestReconcile(t *testing.T) {
@@ -84,15 +83,13 @@ func TestReconcile(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	// err = mgr.Start(ctrl.SetupSignalHandler())
-	// g.Expect(err).ToNot(gomega.HaveOccurred())
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
 
-	// Create the SFServiceBinding object and expect the Reconcile
+	// Create the SFServiceBinding object and expect the Reconcile.
 	err = c.Create(context.TODO(), binding)
 	if apierrors.IsInvalid(err) {
 		t.Logf("failed to create object, got an invalid object error: %v", err)
@@ -100,27 +97,18 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// Get the serviceBinding
+	// Get the serviceBinding.
 	serviceBinding := &osbv1alpha1.SFServiceBinding{}
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), bindingKey, serviceBinding)
 		if err != nil {
 			return err
 		}
-		if state := serviceBinding.GetState(); state != "succeeded" {
-			return fmt.Errorf("state not updated")
-		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
-	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("succeeded"))
+	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("in_queue"))
 
-	secret := &corev1.Secret{}
-	secretRef := serviceBinding.Status.Response.SecretRef
-	secretKey := types.NamespacedName{Name: secretRef, Namespace: "default"}
-	g.Expect(c.Get(context.TODO(), secretKey, secret)).NotTo(gomega.HaveOccurred())
-	g.Expect(secret.Data).Should(gomega.HaveKeyWithValue("response", []byte("foo")))
-
-	// Delete the service binding
+	// Delete the service binding.
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err = c.Get(context.TODO(), bindingKey, serviceBinding)
@@ -130,9 +118,8 @@ func TestReconcile(t *testing.T) {
 		serviceBinding.SetState("delete")
 		return c.Update(context.TODO(), serviceBinding)
 	})
-	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())
 
-	// Binding should disappear from api server
+	// Binding should disappear from api server.
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), bindingKey, serviceBinding)
 		if err != nil {

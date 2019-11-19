@@ -17,18 +17,22 @@ limitations under the License.
 package controllers
 
 import (
+	stdlog "log"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/go-logr/logr"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	// ctrl "sigs.k8s.io/controller-runtime"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -52,6 +56,41 @@ func TestAPIs(t *testing.T) {
 		[]ginkgo.Reporter{envtest.NewlineReporter{}})
 }
 
+var testLog logr.Logger
+
+func TestMain(m *testing.M) {
+	var err error
+	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
+	testLog = ctrl.Log.WithName("test").WithName("sfserviceinstance")
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+	}
+
+	err = osbv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	if cfg, err = testEnv.Start(); err != nil {
+		stdlog.Fatal(err)
+	}
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	code := m.Run()
+	testEnv.Stop()
+	os.Exit(code)
+}
+
+/*
 var _ = ginkgo.BeforeSuite(func(done ginkgo.Done) {
 	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
 
@@ -74,23 +113,22 @@ var _ = ginkgo.BeforeSuite(func(done ginkgo.Done) {
 	// +kubebuilder:scaffold:scheme
 
 	/*
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
-	})
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	err = (&SfServiceInstanceCleanerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	go func() {
-		err = mgr.Start(ctrl.SetupSignalHandler())
+		mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+			Scheme: scheme.Scheme,
+		})
 		gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	}()
-	*/
+
+		err = (&SfServiceInstanceCleanerReconciler{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+		go func() {
+			err = mgr.Start(ctrl.SetupSignalHandler())
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+		}()
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -99,11 +137,14 @@ var _ = ginkgo.BeforeSuite(func(done ginkgo.Done) {
 	close(done)
 }, 60)
 
+
 var _ = ginkgo.AfterSuite(func() {
 	ginkgo.By("tearing down the test environment")
 	err := testEnv.Stop()
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 })
+
+*/
 
 // StartTestManager adds recFn
 func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
