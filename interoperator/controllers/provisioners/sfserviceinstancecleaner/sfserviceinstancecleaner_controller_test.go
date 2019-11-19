@@ -40,7 +40,6 @@ var binding = &osbv1alpha1.SFServiceBinding{
 	},
 }
 
-var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var c client.Client
 
 const timeout = time.Second * 2
@@ -96,6 +95,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	binding := &osbv1alpha1.SFServiceBinding{}
+	bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), bindingKey, binding)
 		if err != nil {
@@ -119,7 +119,6 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), bindingKey, binding)
 		if err != nil {
-			fmt.Println("didn't find the binding")
 			if apierrors.IsNotFound(err) {
 				return nil
 			}

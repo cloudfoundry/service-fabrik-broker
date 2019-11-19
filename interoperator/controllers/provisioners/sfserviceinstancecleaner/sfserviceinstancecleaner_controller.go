@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,7 +42,6 @@ type SfServiceInstanceCleanerReconciler struct {
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfserviceinstancecleaners/status,verbs=get;update;patch
 
 func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	fmt.Println("reconcile triggered")
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstancecleaner", req.NamespacedName)
 	binding := &osbv1alpha1.SFServiceBinding{}
@@ -58,23 +56,24 @@ func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.R
 		// TODO: retry when unable to read binding?
 	}
 	if !binding.GetDeletionTimestamp().IsZero() {
-		fmt.Println("deletion timestamp is set")
 		finalizers := binding.GetFinalizers()
 		if utils.ContainsString(finalizers, constants.BrokerFinalizer) {
-			fmt.Println("found broker finalizer")
 			instance := &osbv1alpha1.SFServiceInstance{}
 			namespacedName := types.NamespacedName{
-				Name:      binding.Spec.InstanceID, // TODO: verify!
+				Name:      binding.Spec.InstanceID,
 				Namespace: binding.GetNamespace(),
 			}
 			err := r.Get(ctx, namespacedName, instance)
 			if err != nil && apiErrors.IsNotFound(err) {
-				fmt.Println("removing broker finalizer")
 				binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
+				err = c.Update(context.TODO(), binding)
+				if err != nil {
+					// TODO: retry on error. A possible workaround is to use
+					// c.Patch() as suggested by @vivekzhere.
+				}
 			}
 		}
 	}
-
 	return ctrl.Result{}, nil
 }
 
