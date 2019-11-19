@@ -26,6 +26,7 @@ var binding = &osbv1alpha1.SFServiceBinding{
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
+		Finalizers: []string{constants.BrokerFinalizer},
 	},
 	Spec: osbv1alpha1.SFServiceBindingSpec{
 		ID:                "binding-id",
@@ -42,7 +43,7 @@ var binding = &osbv1alpha1.SFServiceBinding{
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var c client.Client
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	data := make(map[string]string)
@@ -74,9 +75,7 @@ func TestReconcile(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
-
 	setupInteroperatorConfig(g)
-
 	controller := &SfServiceInstanceCleanerReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
@@ -89,7 +88,6 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create the SFServiceBinding object and expect the Reconcile.
 	err = c.Create(context.TODO(), binding)
 	if apierrors.IsInvalid(err) {
 		t.Logf("failed to create object, got an invalid object error: %v", err)
@@ -97,32 +95,31 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// Get the serviceBinding.
-	serviceBinding := &osbv1alpha1.SFServiceBinding{}
+	binding := &osbv1alpha1.SFServiceBinding{}
 	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, serviceBinding)
+		err := c.Get(context.TODO(), bindingKey, binding)
 		if err != nil {
 			return err
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
-	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("in_queue"))
+	g.Expect(binding.Status.State).Should(gomega.Equal("in_queue"))
 
-	// Delete the service binding.
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), bindingKey, serviceBinding)
+		err = c.Get(context.TODO(), bindingKey, binding)
 		if err != nil {
 			return err
 		}
-		serviceBinding.SetState("delete")
-		return c.Update(context.TODO(), serviceBinding)
+		binding.SetState("delete")
+		return c.Update(context.TODO(), binding)
 	})
 
-	// Binding should disappear from api server.
+	// Service binding should disappear from the apiserver.
 	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, serviceBinding)
+		err := c.Get(context.TODO(), bindingKey, binding)
 		if err != nil {
+			fmt.Println("didn't find the binding")
 			if apierrors.IsNotFound(err) {
 				return nil
 			}

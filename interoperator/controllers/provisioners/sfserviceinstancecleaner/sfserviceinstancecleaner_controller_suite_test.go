@@ -90,62 +90,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-/*
-var _ = ginkgo.BeforeSuite(func(done ginkgo.Done) {
-	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
-
-	ginkgo.By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-	}
-
-	var err error
-	cfg, err = testEnv.Start()
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	gomega.Expect(cfg).ToNot(gomega.BeNil())
-
-	err = osbv1alpha1.AddToScheme(scheme.Scheme)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	// +kubebuilder:scaffold:scheme
-
-	/*
-		mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme: scheme.Scheme,
-		})
-		gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-		err = (&SfServiceInstanceCleanerReconciler{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr)
-		gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-		go func() {
-			err = mgr.Start(ctrl.SetupSignalHandler())
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-		}()
-
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	gomega.Expect(k8sClient).ToNot(gomega.BeNil())
-
-	close(done)
-}, 60)
-
-
-var _ = ginkgo.AfterSuite(func() {
-	ginkgo.By("tearing down the test environment")
-	err := testEnv.Stop()
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-})
-
-*/
-
 // StartTestManager adds recFn
 func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
 	stop := make(chan struct{})

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +28,6 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -43,6 +43,7 @@ type SfServiceInstanceCleanerReconciler struct {
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfserviceinstancecleaners/status,verbs=get;update;patch
 
 func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	fmt.Println("reconcile triggered")
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstancecleaner", req.NamespacedName)
 	binding := &osbv1alpha1.SFServiceBinding{}
@@ -57,21 +58,18 @@ func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.R
 		// TODO: retry when unable to read binding?
 	}
 	if !binding.GetDeletionTimestamp().IsZero() {
+		fmt.Println("deletion timestamp is set")
 		finalizers := binding.GetFinalizers()
 		if utils.ContainsString(finalizers, constants.BrokerFinalizer) {
+			fmt.Println("found broker finalizer")
 			instance := &osbv1alpha1.SFServiceInstance{}
 			namespacedName := types.NamespacedName{
 				Name:      binding.Spec.InstanceID, // TODO: verify!
 				Namespace: binding.GetNamespace(),
 			}
 			err := r.Get(ctx, namespacedName, instance)
-			if err != nil {
-				if apiErrors.IsNotFound(err) {
-					return ctrl.Result{}, nil
-				}
-				// TODO: retry?
-			}
-			if errors.SFServiceInstanceNotFound(err) {
+			if err != nil && apiErrors.IsNotFound(err) {
+				fmt.Println("removing broker finalizer")
 				binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
 			}
 		}
