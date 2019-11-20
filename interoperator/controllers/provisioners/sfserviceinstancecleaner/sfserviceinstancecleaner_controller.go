@@ -39,9 +39,6 @@ type SfServiceInstanceCleanerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfserviceinstancecleaners,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfserviceinstancecleaners/status,verbs=get;update;patch
-
 func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstancecleaner", req.NamespacedName)
