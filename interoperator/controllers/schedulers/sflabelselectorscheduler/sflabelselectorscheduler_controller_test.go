@@ -75,22 +75,52 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	sfcluster1 := _getDummySFCLuster("1")
-	label, _ := labels.Parse("organization=organization-guid")
+	sfcluster1 := _getDummySFCLuster("1", map[string]string{
+		"organization": "organization-guid",
+	})
+	sfcluster3 := _getDummySFCLuster("3", map[string]string{
+		"organization": "organization-guid",
+	})
+	label1, _ := labels.Parse("organization=organization-guid")
 	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
-		LabelSelector: label,
-	}).Return(_getSFClusterList(sfcluster1), nil).Times(1)
-	plan1 := _getDummySFPlan("plan-id")
+		LabelSelector: label1,
+	}).Return(_getSFClusterList(sfcluster1, sfcluster3), nil).Times(2)
+
+	sfcluster2 := _getDummySFCLuster("1", map[string]string{
+		"plan": "plan-id-2",
+	})
+	label2, _ := labels.Parse("plan=plan-id-2")
+	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
+		LabelSelector: label2,
+	}).Return(_getSFClusterList(sfcluster2), nil).Times(1)
+
+	label3, _ := labels.Parse("planId=plan-id-4,serviceId=service-id")
+	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
+		LabelSelector: label3,
+	}).Return(_getSFClusterList(), nil).Times(1)
+
+	clusterSelectorAction1 := "{{- $organizationGuid := \"\" }}\n{{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}\norganization={{ $organizationGuid }}\n"
+	plan1 := _getDummySFPlan("plan-id-1", clusterSelectorAction1)
 	g.Expect(c.Create(context.TODO(), plan1)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), plan1)
+
+	clusterSelectorAction2 := "{{- $planId := \"\" }}\n{{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}\nplan={{ $planId }}\n"
+	plan2 := _getDummySFPlan("plan-id-2", clusterSelectorAction2)
+	g.Expect(c.Create(context.TODO(), plan2)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), plan2)
 
 	service1 := _getDummySFService("service-id")
 	g.Expect(c.Create(context.TODO(), service1)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), service1)
 
-	instance1 := _getDummySFServiceInstance("foo1")
+	// when cluster selector evaluates to single cluster
+	instance1 := _getDummySFServiceInstance("foo1", "plan-id-1")
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), instance1)
+
+	instance2 := _getDummySFServiceInstance("foo2", "plan-id-2")
+	g.Expect(c.Create(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance2)
 
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), _getKey(instance1), instance1)
@@ -101,9 +131,78 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		err = c.Get(context.TODO(), _getKey(instance2), instance2)
+		if err != nil {
+			return err
+		}
+		_, err = instance2.GetClusterID()
+		if err != nil {
+			return err
+		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(instance1.Spec.ClusterID).To(gomega.Equal(sfcluster1.GetName()))
+	g.Expect(instance2.Spec.ClusterID).To(gomega.Equal(sfcluster2.GetName()))
+
+	// when labelSelector action is not present in plan
+	plan3 := _getDummySFPlan("plan-id-3", "")
+	plan3.Spec.Templates = []osbv1alpha1.TemplateSpec{}
+	g.Expect(c.Create(context.TODO(), plan3)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), plan3)
+	instance3 := _getDummySFServiceInstance("foo3", "plan-id-3")
+	g.Expect(c.Create(context.TODO(), instance3)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance3)
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance3), instance3)
+		if err != nil {
+			return err
+		}
+		_, err = instance3.GetClusterID()
+		if err != nil {
+			return err
+		}
+		return nil
+	}, timeout).ShouldNot(gomega.Succeed())
+	g.Expect(instance3.Spec.ClusterID).To(gomega.Equal(""))
+
+	// label selector not selecting any cluster
+	clusterSelectorAction3 := "{{- $planId := \"\" }}\n{{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}\n{{- $serviceId := \"\" }}\n{{- with .instance.spec.serviceId }} {{ $serviceId = . }} {{ end }}\nplanId={{ $planId }},serviceId={{ $serviceId}}\n"
+	plan4 := _getDummySFPlan("plan-id-4", clusterSelectorAction3)
+	g.Expect(c.Create(context.TODO(), plan4)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), plan4)
+	instance4 := _getDummySFServiceInstance("foo4", "plan-id-4")
+	g.Expect(c.Create(context.TODO(), instance4)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance4)
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance4), instance4)
+		if err != nil {
+			return err
+		}
+		_, err = instance4.GetClusterID()
+		if err != nil {
+			return err
+		}
+		return nil
+	}, timeout).ShouldNot(gomega.Succeed())
+	g.Expect(instance4.Spec.ClusterID).To(gomega.Equal(""))
+
+	// label selector selecting multiple clusters
+	instance5 := _getDummySFServiceInstance("foo5", "plan-id-1")
+	g.Expect(c.Create(context.TODO(), instance5)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance5)
+
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance5), instance5)
+		if err != nil {
+			return err
+		}
+		_, err = instance5.GetClusterID()
+		if err != nil {
+			return err
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+	g.Expect(instance5.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 }
 
 func _getDummyConfigMap() *corev1.ConfigMap {
@@ -119,12 +218,12 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func _getDummySFPlan(name string) *osbv1alpha1.SFPlan {
+func _getDummySFPlan(name string, clusterSelector string) *osbv1alpha1.SFPlan {
 	templateSpec := []osbv1alpha1.TemplateSpec{
 		osbv1alpha1.TemplateSpec{
 			Action:  "clusterSelector",
 			Type:    "gotemplate",
-			Content: "{{- $organizationGuid := \"\" }}\n{{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}\norganization={{ $organizationGuid }}\n",
+			Content: clusterSelector,
 		},
 	}
 	return &osbv1alpha1.SFPlan{
@@ -168,10 +267,10 @@ func _getDummySFService(name string) *osbv1alpha1.SFService {
 	}
 }
 
-func _getDummySFServiceInstance(name string) *osbv1alpha1.SFServiceInstance {
+func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServiceInstance {
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "instance-id",
+			Name:      name,
 			Namespace: "default",
 			Labels: map[string]string{
 				"state": "in_queue",
@@ -179,7 +278,7 @@ func _getDummySFServiceInstance(name string) *osbv1alpha1.SFServiceInstance {
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{
 			ServiceID:        "service-id",
-			PlanID:           "plan-id",
+			PlanID:           planID,
 			RawContext:       nil,
 			OrganizationGUID: "organization-guid",
 			SpaceGUID:        "space-guid",
@@ -193,14 +292,12 @@ func _getDummySFServiceInstance(name string) *osbv1alpha1.SFServiceInstance {
 	}
 }
 
-func _getDummySFCLuster(name string) resourcev1alpha1.SFCluster {
+func _getDummySFCLuster(name string, labels map[string]string) resourcev1alpha1.SFCluster {
 	return resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: constants.DefaultServiceFabrikNamespace,
-			Labels: map[string]string{
-				"organization": "organization-guid",
-			},
+			Labels:    labels,
 		},
 	}
 }
