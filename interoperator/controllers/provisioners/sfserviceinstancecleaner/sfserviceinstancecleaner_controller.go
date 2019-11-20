@@ -29,6 +29,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 )
 
 // SfServiceInstanceCleanerReconciler reconciles a SfServiceInstanceCleaner object
@@ -63,14 +64,16 @@ func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.R
 				Name:      binding.Spec.InstanceID,
 				Namespace: binding.GetNamespace(),
 			}
-			err := r.Get(ctx, namespacedName, instance)
-			if err != nil && apiErrors.IsNotFound(err) {
-				binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
-				err = c.Update(context.TODO(), binding)
-				if err != nil {
-					// TODO: retry on error. A possible workaround is to use
-					// c.Patch() as suggested by @vivekzhere.
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err := r.Get(ctx, namespacedName, instance)
+				if err != nil && apiErrors.IsNotFound(err) {
+					binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
+					return c.Update(context.TODO(), binding)
 				}
+				return err
+			})
+			if err != nil {
+				return ctrl.Result{}, err
 			}
 		}
 	}
