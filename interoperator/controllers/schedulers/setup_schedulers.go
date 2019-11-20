@@ -20,6 +20,7 @@ package schedulers
 
 import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfleastutilizedscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfroundrobinscheduler"
 
@@ -52,6 +53,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("schedulers").WithName("roundrobin"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFRoundRobinScheduler")
+		return err
+	}
+
+	if err = (&sflabelselectorscheduler.SFLabelSelectorScheduler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("schedulers").WithName("labelselector"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFLabelSelectorScheduler")
 		return err
 	}
 
