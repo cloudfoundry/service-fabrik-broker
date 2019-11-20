@@ -13,6 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,7 +74,8 @@ func TestReconcile(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
+	c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	setupInteroperatorConfig(g)
 	controller := &SfServiceInstanceCleanerReconciler{
 		Client: mgr.GetClient(),
@@ -97,11 +99,7 @@ func TestReconcile(t *testing.T) {
 	binding := &osbv1alpha1.SFServiceBinding{}
 	bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
 	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, binding)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.Get(context.TODO(), bindingKey, binding)
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(binding.Status.State).Should(gomega.Equal("in_queue"))
 
