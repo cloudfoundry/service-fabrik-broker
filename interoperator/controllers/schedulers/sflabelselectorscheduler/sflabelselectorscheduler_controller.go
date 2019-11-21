@@ -23,15 +23,15 @@ import (
 	"strings"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
+	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/labels"
@@ -50,8 +50,8 @@ type SFLabelSelectorScheduler struct {
 }
 
 // Reconcile schedules the SFServiceInstance to one SFCluster and sets the ClusterID in
-// SFServiceInstance.Spec.ClusterID. It chooses the cluster with least number of
-// SFServiceInstances already deployed
+// SFServiceInstance.Spec.ClusterID. It chooses the destination cluster based on clusterSelector
+// template provided in the plan.
 func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstance", req.NamespacedName)
@@ -69,8 +69,8 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	}
 
 	if instance.Spec.ClusterID == "" {
-		labelSelector, err := getLabelSelectorString(*instance, *r)
-		if err != nil || labelSelector == "" {
+		labelSelector, err := getLabelSelectorString(instance, *r)
+		if err != nil {
 			log.Info("Failed to get labelSelector string..", "error", err, "labelSelector", labelSelector)
 			return ctrl.Result{}, err
 		}
@@ -78,14 +78,20 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 		clusterID, err := r.schedule(labelSelector)
 		if err != nil {
 			log.Error(err, "Failed to schedule ", "labelSelector", labelSelector, "clusterID", clusterID)
+			if errors.SchedulerFailed(err) {
+				return ctrl.Result{}, nil
+			}
 			return ctrl.Result{}, err
 		}
 
 		if clusterID != "" {
-			log.Info("setting clusterID", "clusterID", clusterID)
+			log.Info("Setting clusterID", "clusterID", clusterID)
 			instance.Spec.ClusterID = clusterID
-			if err := r.Update(ctx, instance); err != nil {
-				log.Error(err, "failed to set cluster id", "clusterID", clusterID)
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				return r.Update(ctx, instance)
+			})
+			if err != nil {
+				log.Error(err, "Failed to set cluster id", "clusterID", clusterID)
 				return ctrl.Result{}, err
 			}
 		}
@@ -94,7 +100,7 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	return ctrl.Result{}, nil
 }
 
-func getLabelSelectorString(sfServiceInstance osbv1alpha1.SFServiceInstance, r SFLabelSelectorScheduler) (string, error) {
+func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r SFLabelSelectorScheduler) (string, error) {
 	log := r.Log
 	ctx := context.Background()
 
@@ -122,39 +128,31 @@ func getLabelSelectorString(sfServiceInstance osbv1alpha1.SFServiceInstance, r S
 	}
 
 	labelSelectorTemplate, err := plan.GetTemplate(osbv1alpha1.ClusterLabelSelectorAction)
-	if err != nil || labelSelectorTemplate.Type != "gotemplate" {
-		log.Info("plan does not have clusterlabel template")
+	if err != nil {
+		if errors.TemplateNotFound(err) {
+			log.Info("Plan does not have clusterSelector template")
+			return "", nil
+		}
 		return "", err
 	}
 
-	content := labelSelectorTemplate.Content
-	values := make(map[string]interface{})
-	instanceObj, err := dynamic.ObjectToMapInterface(sfServiceInstance)
-	values["instance"] = instanceObj
+	if labelSelectorTemplate.Type != "gotemplate" {
+		log.Info("Plan does not have clusterSelector gotemplate")
+		return "", nil
+	}
+
+	renderer, err := rendererFactory.GetRenderer(labelSelectorTemplate.Type, nil)
 	if err != nil {
 		return "", err
 	}
-
-	if service != nil {
-		serviceObj, err := dynamic.ObjectToMapInterface(service)
-		values["service"] = serviceObj
-		if err != nil {
-			return "", err
-		}
+	name := types.NamespacedName{
+		Namespace: sfServiceInstance.GetNamespace(),
+		Name:      sfServiceInstance.GetName(),
 	}
-	if plan != nil {
-		planObj, err := dynamic.ObjectToMapInterface(plan)
-		values["plan"] = planObj
-		if err != nil {
-			return "", err
-		}
-	}
-
-	renderer, err := gotemplate.New()
+	rendererInput, err := rendererFactory.GetRendererInput(labelSelectorTemplate, service, plan, sfServiceInstance, nil, name)
 	if err != nil {
 		return "", err
 	}
-	rendererInput := gotemplate.NewInput("", content, "test", values)
 	rendererOutput, err := renderer.Render(rendererInput)
 	if err != nil {
 		return "", err
@@ -170,18 +168,26 @@ func (r *SFLabelSelectorScheduler) schedule(labelSelector string) (string, error
 	ctx := context.Background()
 	log := r.Log.WithValues("labelSelector", labelSelector)
 	labelSelector = strings.TrimSuffix(labelSelector, "\n")
-	label, _ := labels.Parse(labelSelector)
-	log.Info("Parsed Label is: ", "label", label)
-	clusters, err := r.clusterRegistry.ListClusters(&client.ListOptions{
-		LabelSelector: label,
-	})
+	label, err := labels.Parse(labelSelector)
 	if err != nil {
 		return "", err
+	}
+	log.Info("Parsed Label is: ", "label", label)
+	clusters := &resourcev1alpha1.SFClusterList{}
+	if labelSelector == "" {
+		clusters, err = r.clusterRegistry.ListClusters(&client.ListOptions{})
+	} else {
+		clusters, err = r.clusterRegistry.ListClusters(&client.ListOptions{
+			LabelSelector: label,
+		})
+		if err != nil {
+			return "", err
+		}
 	}
 
 	log.Info("Cluster size is", "length", len(clusters.Items))
 	if len(clusters.Items) == 0 {
-		log.Info("no cluster matching the criteria, returning failure")
+		log.Info("No cluster matching the criteria, returning failure")
 		return "", errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, "No clusters found with matching criteria: "+labelSelector, nil)
 	}
 	if len(clusters.Items) == 1 {
@@ -192,7 +198,7 @@ func (r *SFLabelSelectorScheduler) schedule(labelSelector string) (string, error
 	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
 	err = r.List(ctx, sfserviceinstances, &client.ListOptions{})
 	if err != nil {
-		log.Error(err, "failed to list all sfserviceinstances")
+		log.Error(err, "Failed to list all sfserviceinstances")
 		return "", err
 	}
 

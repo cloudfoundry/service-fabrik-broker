@@ -92,12 +92,14 @@ func TestReconcile(t *testing.T) {
 	label2, _ := labels.Parse("plan=plan-id-2")
 	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
 		LabelSelector: label2,
-	}).Return(_getSFClusterList(sfcluster2), nil).Times(1)
+	}).Return(_getSFClusterList(sfcluster2), nil)
 
 	label3, _ := labels.Parse("planId=plan-id-4,serviceId=service-id")
 	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
 		LabelSelector: label3,
-	}).Return(_getSFClusterList(), nil).Times(1)
+	}).Return(_getSFClusterList(), nil)
+
+	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).Return(_getSFClusterList(sfcluster1, sfcluster2, sfcluster3), nil)
 
 	clusterSelectorAction1 := "{{- $organizationGuid := \"\" }}\n{{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}\norganization={{ $organizationGuid }}\n"
 	plan1 := _getDummySFPlan("plan-id-1", clusterSelectorAction1)
@@ -162,8 +164,8 @@ func TestReconcile(t *testing.T) {
 			return err
 		}
 		return nil
-	}, timeout).ShouldNot(gomega.Succeed())
-	g.Expect(instance3.Spec.ClusterID).To(gomega.Equal(""))
+	}, timeout).Should(gomega.Succeed())
+	g.Expect(instance3.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 
 	// label selector not selecting any cluster
 	clusterSelectorAction3 := "{{- $planId := \"\" }}\n{{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}\n{{- $serviceId := \"\" }}\n{{- with .instance.spec.serviceId }} {{ $serviceId = . }} {{ end }}\nplanId={{ $planId }},serviceId={{ $serviceId}}\n"
@@ -233,7 +235,7 @@ func _getDummySFPlan(name string, clusterSelector string) *osbv1alpha1.SFPlan {
 		},
 		Spec: osbv1alpha1.SFPlanSpec{
 			Name:      "plan-name",
-			ID:        "plan-id",
+			ID:        name,
 			Templates: templateSpec,
 		},
 	}
