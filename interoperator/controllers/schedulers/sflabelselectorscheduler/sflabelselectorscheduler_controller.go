@@ -86,8 +86,12 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 		if clusterID != "" {
 			log.Info("Setting clusterID", "clusterID", clusterID)
-			instance.Spec.ClusterID = clusterID
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err = r.Get(ctx, req.NamespacedName, instance)
+				if err != nil {
+					return err
+				}
+				instance.Spec.ClusterID = clusterID
 				return r.Update(ctx, instance)
 			})
 			if err != nil {
@@ -131,6 +135,7 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 	if err != nil {
 		if errors.TemplateNotFound(err) {
 			log.Info("Plan does not have clusterSelector template", "Plan", sfServiceInstance.Spec.PlanID)
+			// don't return error here. In cases when clusterSelector is not provided, scheduling should happen with least utilized cluster strategy
 			return "", nil
 		}
 		return "", err
@@ -138,6 +143,7 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 
 	if labelSelectorTemplate.Type != "gotemplate" {
 		log.Info("Plan does not have clusterSelector gotemplate", "Plan", sfServiceInstance.Spec.PlanID)
+		// don't return error here. In cases when clusterSelector is not of gotemplate, scheduling should happen with least utilized cluster strategy
 		return "", nil
 	}
 
@@ -161,16 +167,15 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 	if err != nil {
 		return "", err
 	}
-	return labelSelector, nil
+	return strings.TrimSuffix(labelSelector, "\n"), nil
 }
 
 func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFServiceInstance, labelSelector string) (string, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("instance", sfServiceInstance.GetName(), "labelSelector", labelSelector)
-	labelSelector = strings.TrimSuffix(labelSelector, "\n")
 	label, err := labels.Parse(labelSelector)
 	if err != nil {
-		return "", err
+		return "", errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, "Parsing failed for labelSelector: "+labelSelector, err)
 	}
 	log.Info("Parsed Label is: ", "label", label)
 	clusters := &resourcev1alpha1.SFClusterList{}
