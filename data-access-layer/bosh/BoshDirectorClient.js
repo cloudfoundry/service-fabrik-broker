@@ -460,7 +460,7 @@ class BoshDirectorClient extends HttpClient {
   }
 
   createOrUpdateDeployment(action, manifest, opts, scheduled) {
-    const query = opts ? _.pick(opts, 'recreate', 'skip_drain', 'context') : undefined;
+    const query = opts ? ((action === CONST.OPERATION_TYPE.CREATE) ? _.pick(opts, 'recreate', 'skip_drain', 'context', 'canaries', 'max_in_flight') : _.pick(opts, 'recreate', 'skip_drain', 'context')) : undefined;
     const deploymentName = yaml.safeLoad(manifest).name;
     const boshDirectorName = _.get(opts, 'bosh_director_name');
     delete this.deploymentIpsCache[deploymentName];

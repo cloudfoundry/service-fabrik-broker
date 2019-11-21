@@ -432,6 +432,14 @@ class DirectorService extends BaseDirectorService {
     const opts = _.omit(params, 'previous_values');
     args = args || {};
     args = _.set(args, 'bosh_director_name', _.get(params, 'parameters.bosh_director_name'));
+    if (action == CONST.OPERATION_TYPE.CREATE) {
+      if (_.has(this.plan, 'manager.settings.canaries')) {
+        _.set(args, 'canaries', this.plan.manager.settings.canaries);
+      }
+      if (_.has(this.plan, 'manager.settings.max_in_flight')) {
+        _.set(args, 'max_in_flight', this.plan.manager.settings.max_in_flight);
+      }
+    }
     const username = _.get(params, 'parameters.username');
     const password = _.get(params, 'parameters.password');
     logger.info(`Starting to ${action} deployment '${deploymentName}'...`);
