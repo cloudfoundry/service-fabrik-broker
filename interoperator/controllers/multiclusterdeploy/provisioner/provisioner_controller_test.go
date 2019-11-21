@@ -38,12 +38,11 @@ import (
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "1", Namespace: "default"}}
+var expectedRequest = ctrlrun.Request{NamespacedName: types.NamespacedName{Name: "1", Namespace: "default"}}
 
 const timeout = time.Second * 5
 
@@ -139,7 +138,7 @@ func TestReconcile(t *testing.T) {
 	// Create cluster secret in master cluster
 	clusterSecret.Data = make(map[string][]byte)
 	clusterSecret.Data["foo"] = []byte("bar")
-	c.Create(context.TODO(), clusterSecret)
+	g.Expect(c.Create(context.TODO(), clusterSecret)).NotTo(gomega.HaveOccurred())
 
 	// create provisioner deployment in master cluster
 
@@ -147,7 +146,7 @@ func TestReconcile(t *testing.T) {
 	labels["foo"] = "bar"
 	deploymentInstance.Spec.Template.SetLabels(labels)
 	deploymentInstance.Spec.Selector.MatchLabels = labels
-	c.Create(context.TODO(), deploymentInstance)
+	g.Expect(c.Create(context.TODO(), deploymentInstance)).NotTo(gomega.HaveOccurred())
 
 	mockProvisioner.EXPECT().Fetch().Return(nil).Times(1)
 	mockClusterRegistry.EXPECT().GetClient("2").Return(targetReconciler, nil).AnyTimes()
@@ -162,7 +161,8 @@ func TestReconcile(t *testing.T) {
 	}()
 
 	// Create SFCluster
-	err = c.Create(context.TODO(), clusterInstance)
+	g.Expect(c.Create(context.TODO(), clusterInstance)).NotTo(gomega.HaveOccurred())
+
 	provisionerInstance := &appsv1.Deployment{}
 	g.Eventually(func() error {
 		err := targetReconciler.Get(context.TODO(), types.NamespacedName{
@@ -176,9 +176,25 @@ func TestReconcile(t *testing.T) {
 	}, timeout).Should(gomega.Succeed())
 
 	// Delete SFCluster
-	c.Delete(context.TODO(), clusterInstance)
+	g.Expect(c.Delete(context.TODO(), clusterInstance)).NotTo(gomega.HaveOccurred())
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
+			Name:      clusterInstance.GetName(),
+			Namespace: clusterInstance.GetNamespace(),
+		}, clusterInstance)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return fmt.Errorf("not deleted")
+	}, timeout).Should(gomega.Succeed())
+
+	// Delete SFCluster from target
+	g.Expect(targetReconciler.Delete(context.TODO(), clusterInstance)).NotTo(gomega.HaveOccurred())
+	g.Eventually(func() error {
+		err := targetReconciler.Get(context.TODO(), types.NamespacedName{
 			Name:      clusterInstance.GetName(),
 			Namespace: clusterInstance.GetNamespace(),
 		}, clusterInstance)

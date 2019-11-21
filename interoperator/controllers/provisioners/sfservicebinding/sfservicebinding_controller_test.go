@@ -163,7 +163,7 @@ var c client.Client
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: "default"}}
 
-const timeout = time.Second * 2
+const timeout = time.Second * 5
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	data := make(map[string]string)

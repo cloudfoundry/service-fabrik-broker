@@ -34,6 +34,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -161,47 +162,56 @@ func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient cli
 	for _, sfcrdname := range SFCrdNames {
 		// Get crd registered in master cluster
 		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
-		err := r.Get(ctx, types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
-		if err != nil {
-			log.Error(err, "Error occurred geeting CRD in master cluster", "CRD", sfcrdname)
-			return err
-		}
-		// Create/Update CRD in target cluster
-		targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
-		err = targetClient.Get(ctx, types.NamespacedName{
-			Name: sfCRDInstance.GetName(),
-		}, targetCRDInstance)
-		if err != nil {
-			if apiErrors.IsNotFound(err) {
-				log.Info("CRD in target cluster not found, Creating...", "clusterId", clusterID, "CRD", sfcrdname)
+
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			err := r.Get(ctx, types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
+			if err != nil {
+				log.Error(err, "Error occurred geeting CRD in master cluster", "CRD", sfcrdname)
+				return err
+			}
+			// Create/Update CRD in target cluster
+			targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+			err = targetClient.Get(ctx, types.NamespacedName{
+				Name: sfCRDInstance.GetName(),
+			}, targetCRDInstance)
+			if err != nil {
+				if apiErrors.IsNotFound(err) {
+					log.Info("CRD in target cluster not found, Creating...", "clusterId", clusterID, "CRD", sfcrdname)
+					targetCRDInstance.SetName(sfCRDInstance.GetName())
+					targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
+					// copy spec
+					sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
+					sfCRDInstance.Status.DeepCopyInto(&targetCRDInstance.Status)
+					err = targetClient.Create(ctx, targetCRDInstance)
+					if err != nil {
+						log.Error(err, "Error occurred while creating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+						return err
+					}
+				} else {
+					log.Error(err, "Error occurred while getting CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+					return err
+				}
+			} else {
 				targetCRDInstance.SetName(sfCRDInstance.GetName())
 				targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
 				// copy spec
 				sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
 				sfCRDInstance.Status.DeepCopyInto(&targetCRDInstance.Status)
-				err = targetClient.Create(ctx, targetCRDInstance)
+
+				log.Info("Updating CRD in target cluster", "Cluster", clusterID, "CRD", sfcrdname)
+				err = targetClient.Update(ctx, targetCRDInstance)
 				if err != nil {
-					log.Error(err, "Error occurred while creating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+					log.Error(err, "Error occurred while updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
 					return err
 				}
-			} else {
-				log.Error(err, "Error occurred while getting CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
-				return err
 			}
-		} else {
-			targetCRDInstance.SetName(sfCRDInstance.GetName())
-			targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
-			// copy spec
-			sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
-			sfCRDInstance.Status.DeepCopyInto(&targetCRDInstance.Status)
-
-			log.Info("Updating CRD in target cluster", "Cluster", clusterID, "CRD", sfcrdname)
-			err = targetClient.Update(ctx, targetCRDInstance)
-			if err != nil {
-				log.Error(err, "Error occurred while updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
-				return err
-			}
+			return nil
+		})
+		if err != nil {
+			log.Error(err, "Error occurred while creating/updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+			return err
 		}
+
 	}
 	return nil
 }
@@ -242,41 +252,48 @@ func (r *ReconcileProvisioner) reconcileSfClusterCrd(clusterInstance *resourcev1
 	log := r.Log.WithValues("clusterID", clusterID)
 
 	targetSFCluster := &resourcev1alpha1.SFCluster{}
-	err := targetClient.Get(ctx, types.NamespacedName{
-		Name:      clusterInstance.GetName(),
-		Namespace: clusterInstance.GetNamespace(),
-	}, targetSFCluster)
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			log.Info("SFCluster not found, Creating...", "clusterId", clusterID)
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err := targetClient.Get(ctx, types.NamespacedName{
+			Name:      clusterInstance.GetName(),
+			Namespace: clusterInstance.GetNamespace(),
+		}, targetSFCluster)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				log.Info("SFCluster not found, Creating...", "clusterId", clusterID)
+				targetSFCluster.SetName(clusterInstance.GetName())
+				targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
+				targetSFCluster.SetLabels(clusterInstance.GetLabels())
+				// copy spec
+				clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
+				err = targetClient.Create(ctx, targetSFCluster)
+				if err != nil {
+					log.Error(err, "Error occurred while creating sfcluster", "clusterId", clusterID)
+					// Error updating the object - requeue the request.
+					return err
+				}
+				log.Info("Created SFCluster in target cluster", "clusterID", clusterID)
+			} else {
+				log.Error(err, "Error occurred while sfcluster provisioner", "clusterId", clusterID)
+				return err
+			}
+		} else {
 			targetSFCluster.SetName(clusterInstance.GetName())
 			targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
 			targetSFCluster.SetLabels(clusterInstance.GetLabels())
 			// copy spec
 			clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
-			err = targetClient.Create(ctx, targetSFCluster)
+			log.Info("Updating SFCluster in target cluster", "Cluster", clusterID)
+			err = targetClient.Update(ctx, targetSFCluster)
 			if err != nil {
-				log.Error(err, "Error occurred while creating sfcluster", "clusterId", clusterID)
-				// Error updating the object - requeue the request.
+				log.Error(err, "Error occurred while updating sfcluster provisioner", "clusterId", clusterID)
 				return err
 			}
-			log.Info("Created SFCluster in target cluster", "clusterID", clusterID)
-		} else {
-			log.Error(err, "Error occurred while sfcluster provisioner", "clusterId", clusterID)
-			return err
 		}
-	} else {
-		targetSFCluster.SetName(clusterInstance.GetName())
-		targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
-		targetSFCluster.SetLabels(clusterInstance.GetLabels())
-		// copy spec
-		clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
-		log.Info("Updating SFCluster in target cluster", "Cluster", clusterID)
-		err = targetClient.Update(ctx, targetSFCluster)
-		if err != nil {
-			log.Error(err, "Error occurred while updating sfcluster provisioner", "clusterId", clusterID)
-			return err
-		}
+		return nil
+	})
+	if err != nil {
+		log.Error(err, "Error occurred while reconciling sfcluster", "clusterId", clusterID)
+		return err
 	}
 	return nil
 }
