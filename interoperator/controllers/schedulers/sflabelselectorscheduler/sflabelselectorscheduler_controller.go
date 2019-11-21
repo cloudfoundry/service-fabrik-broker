@@ -75,7 +75,7 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 			return ctrl.Result{}, err
 		}
 
-		clusterID, err := r.schedule(labelSelector)
+		clusterID, err := r.schedule(instance, labelSelector)
 		if err != nil {
 			log.Error(err, "Failed to schedule ", "labelSelector", labelSelector, "clusterID", clusterID)
 			if errors.SchedulerFailed(err) {
@@ -101,7 +101,7 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 }
 
 func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r SFLabelSelectorScheduler) (string, error) {
-	log := r.Log
+	log := r.Log.WithValues("instance", sfServiceInstance.GetName())
 	ctx := context.Background()
 
 	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
@@ -130,14 +130,14 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 	labelSelectorTemplate, err := plan.GetTemplate(osbv1alpha1.ClusterLabelSelectorAction)
 	if err != nil {
 		if errors.TemplateNotFound(err) {
-			log.Info("Plan does not have clusterSelector template")
+			log.Info("Plan does not have clusterSelector template", "Plan", sfServiceInstance.Spec.PlanID)
 			return "", nil
 		}
 		return "", err
 	}
 
 	if labelSelectorTemplate.Type != "gotemplate" {
-		log.Info("Plan does not have clusterSelector gotemplate")
+		log.Info("Plan does not have clusterSelector gotemplate", "Plan", sfServiceInstance.Spec.PlanID)
 		return "", nil
 	}
 
@@ -164,9 +164,9 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 	return labelSelector, nil
 }
 
-func (r *SFLabelSelectorScheduler) schedule(labelSelector string) (string, error) {
+func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFServiceInstance, labelSelector string) (string, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("labelSelector", labelSelector)
+	log := r.Log.WithValues("instance", sfServiceInstance.GetName(), "labelSelector", labelSelector)
 	labelSelector = strings.TrimSuffix(labelSelector, "\n")
 	label, err := labels.Parse(labelSelector)
 	if err != nil {
