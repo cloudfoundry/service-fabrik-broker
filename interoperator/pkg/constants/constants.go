@@ -30,6 +30,7 @@ const (
 	RoundRobinSchedulerType    = "round-robin"
 	LeastUtilizedSchedulerType = "least-utilized"
 	LabelSelectorSchedulerType = "label-selector"
+	GoTemplateType             = "gotemplate"
 
 	PlanWatchDrainTimeout = time.Second * 2
 )

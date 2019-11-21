@@ -69,7 +69,7 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	}
 
 	if instance.Spec.ClusterID == "" {
-		labelSelector, err := getLabelSelectorString(instance, *r)
+		labelSelector, err := getLabelSelectorString(instance, r)
 		if err != nil {
 			log.Info("Failed to get labelSelector string..", "error", err, "labelSelector", labelSelector)
 			return ctrl.Result{}, err
@@ -104,7 +104,7 @@ func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	return ctrl.Result{}, nil
 }
 
-func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r SFLabelSelectorScheduler) (string, error) {
+func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r *SFLabelSelectorScheduler) (string, error) {
 	log := r.Log.WithValues("instance", sfServiceInstance.GetName())
 	ctx := context.Background()
 
@@ -141,7 +141,7 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 		return "", err
 	}
 
-	if labelSelectorTemplate.Type != "gotemplate" {
+	if labelSelectorTemplate.Type != constants.GoTemplateType {
 		log.Info("Plan does not have clusterSelector gotemplate", "Plan", sfServiceInstance.Spec.PlanID)
 		// don't return error here. In cases when clusterSelector is not of gotemplate, scheduling should happen with least utilized cluster strategy
 		return "", nil
