@@ -51,7 +51,7 @@ func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.R
 			log.Info("binding deleted", "binding", req.NamespacedName.Name)
 			return ctrl.Result{}, nil
 		}
-		// TODO: retry when unable to read binding?
+		return ctrl.Result{}, err  // error reading object, requeue the request
 	}
 	if !binding.GetDeletionTimestamp().IsZero() {
 		finalizers := binding.GetFinalizers()
