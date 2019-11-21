@@ -101,6 +101,7 @@ spec:
                     - status
                     - bind
                     - sources
+                    - clusterSelector
                     type: string
                   content:
                     type: string

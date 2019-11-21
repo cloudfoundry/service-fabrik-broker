@@ -8,6 +8,7 @@ const (
 	CodeSFServiceBindingNotFound  = "SFServiceBindingNotFound"
 	CodeSFClusterNotFound         = "SFClusterNotFound"
 	CodeTemplateNotFound          = "TemplateNotFound"
+	CodeSchedulerFailed           = "CodeSchedulerFailed"
 
 	CodeOperationInProgress = "OperationInProgress"
 

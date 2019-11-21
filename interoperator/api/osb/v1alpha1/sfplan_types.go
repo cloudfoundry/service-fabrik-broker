@@ -25,15 +25,16 @@ import (
 
 // List of templates to be provided for a service plan
 const (
-	ProvisionAction = "provision"
-	StatusAction    = "status"
-	BindAction      = "bind"
-	SourcesAction   = "sources"
+	ProvisionAction            = "provision"
+	StatusAction               = "status"
+	BindAction                 = "bind"
+	SourcesAction              = "sources"
+	ClusterLabelSelectorAction = "clusterSelector"
 )
 
 // TemplateSpec is the specifcation of a template
 type TemplateSpec struct {
-	// +kubebuilder:validation:Enum=provision;status;bind;sources
+	// +kubebuilder:validation:Enum=provision;status;bind;sources;clusterSelector
 	Action string `yaml:"action" json:"action"`
 
 	// +kubebuilder:validation:Enum=gotemplate;helm
