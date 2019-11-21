@@ -613,12 +613,12 @@ Label selector based scheduler chooses clusters for a service instance based on 
   - action: clusterSelector
     type: gotemplate
     content: |
-      {{- $organizationGuid := "" }}
-      {{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}
-      organization={{ $organizationGuid }}
+      {{- $planId := "" }}
+      {{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}
+      plan={{ $planId }}
 ```
 
-In the above template, when evaluated, gives a label selector string which looks like `organization=<ord-id>`. If there are any cluster which are meant for scheduling instances from a specific organization, then that appropriate label can be applied on that `SFCluster` and this scheduler will ensure all such instances are scheduled in that cluster. Similar to the example above, label selectors can be written using go template for specific scheduling criteria.
+In the above template, when evaluated, gives a label selector string which looks like `plan=<plan-id-1>`. If there are any cluster which are meant for scheduling instances from a specific plan, then that appropriate label can be applied on that `SFCluster` and this scheduler will ensure all such instances are scheduled in that cluster. Continuing this example, other plans can have a template evaluating to `plan!=<plan-id-1>`, which will ensure that other clusters are used for those plans. Similar to the example above, label selectors can be written using go template for specific scheduling criteria.
 
 ### Provisioner
 Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.
