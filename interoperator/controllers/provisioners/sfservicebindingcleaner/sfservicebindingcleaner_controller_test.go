@@ -1,4 +1,4 @@
-package controllers
+package sfservicebindingcleaner
 
 import (
 	"context"
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 	c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	setupInteroperatorConfig(g)
-	controller := &SfServiceBindingCleanerReconciler{
+	controller := &ReconcileSFServiceBindingCleaner{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceBindingCleaner"),
 		Scheme: mgr.GetScheme(),

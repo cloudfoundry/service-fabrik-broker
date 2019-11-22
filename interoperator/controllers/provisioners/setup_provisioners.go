@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfplan"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfservice"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfservicebinding"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfservicebindingcleaner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfserviceinstance"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
@@ -71,6 +72,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("provisioners").WithName("binding"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create provisioner", "controller", "ReconcileSFServiceBinding")
+		return err
+	}
+
+	if err = (&sfservicebindingcleaner.ReconcileSFServiceBindingCleaner{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("provisioners").WithName("bindingcleaner"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create provisioner", "controller", "SfServiceBindingCleanerReconciler")
 		return err
 	}
 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package sfservicebindingcleaner
 
 import (
 	"context"
@@ -30,14 +30,14 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 )
 
-// SfServiceBindingCleanerReconciler reconciles a SfServiceBindingCleaner object
-type SfServiceBindingCleanerReconciler struct {
+// ReconcileSFServiceBindingCleaner reconciles a SfServiceBindingCleaner object
+type ReconcileSFServiceBindingCleaner struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
-func (r *SfServiceBindingCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfservicebindingcleaner", req.NamespacedName)
 	binding := &osbv1alpha1.SFServiceBinding{}
@@ -72,7 +72,7 @@ func (r *SfServiceBindingCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Re
 	return ctrl.Result{}, nil
 }
 
-func (r *SfServiceBindingCleanerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ReconcileSFServiceBindingCleaner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osbv1alpha1.SFServiceBinding{}).
 		Complete(r)
