@@ -20,64 +20,59 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/util/retry"
 )
 
-// SfServiceInstanceCleanerReconciler reconciles a SfServiceInstanceCleaner object
-type SfServiceInstanceCleanerReconciler struct {
+// SfServiceBindingCleanerReconciler reconciles a SfServiceBindingCleaner object
+type SfServiceBindingCleanerReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
-func (r *SfServiceInstanceCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *SfServiceBindingCleanerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("sfserviceinstancecleaner", req.NamespacedName)
+	log := r.Log.WithValues("sfservicebindingcleaner", req.NamespacedName)
 	binding := &osbv1alpha1.SFServiceBinding{}
 	err := r.Get(ctx, req.NamespacedName, binding)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return. Created objects are automatically
-			// garbage collected.
+			// garbage collected. For additional cleanup logic use finalizers.
 			log.Info("binding deleted", "binding", req.NamespacedName.Name)
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, err  // error reading object, requeue the request
+		return ctrl.Result{}, err // error reading object, requeue the request
 	}
 	if !binding.GetDeletionTimestamp().IsZero() {
-		finalizers := binding.GetFinalizers()
-		if utils.ContainsString(finalizers, constants.BrokerFinalizer) {
-			instance := &osbv1alpha1.SFServiceInstance{}
-			namespacedName := types.NamespacedName{
-				Name:      binding.Spec.InstanceID,
-				Namespace: binding.GetNamespace(),
+		instance := &osbv1alpha1.SFServiceInstance{}
+		namespacedName := types.NamespacedName{
+			Name:      binding.Spec.InstanceID,
+			Namespace: binding.GetNamespace(),
+		}
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			err := r.Get(ctx, namespacedName, instance)
+			if err != nil && apiErrors.IsNotFound(err) {
+				binding.SetFinalizers([]string{})
+				return c.Update(context.TODO(), binding)
 			}
-			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err := r.Get(ctx, namespacedName, instance)
-				if err != nil && apiErrors.IsNotFound(err) {
-					binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinalizer))
-					return c.Update(context.TODO(), binding)
-				}
-				return err
-			})
-			if err != nil {
-				return ctrl.Result{}, err
-			}
+			return err
+		})
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *SfServiceInstanceCleanerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SfServiceBindingCleanerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osbv1alpha1.SFServiceBinding{}).
 		Complete(r)

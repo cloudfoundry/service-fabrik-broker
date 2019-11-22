@@ -77,9 +77,9 @@ func TestReconcile(t *testing.T) {
 	c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	setupInteroperatorConfig(g)
-	controller := &SfServiceInstanceCleanerReconciler{
+	controller := &SfServiceBindingCleanerReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceInstanceCleaner"),
+		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceBindingCleaner"),
 		Scheme: mgr.GetScheme(),
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
