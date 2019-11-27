@@ -9,6 +9,8 @@ import (
 func TestGoTemplateFunctions(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
+	funcMap := getFuncMap()
+
 	g.Expect(encodeToString("Hello")).To(gomega.Equal("SGVsbG8="))
 	g.Expect(decodeString("SGVsbG8=")).To(gomega.Equal("Hello"))
 
@@ -37,20 +39,34 @@ func TestGoTemplateFunctions(t *testing.T) {
 	g.Expect(invalidObj2).To(gomega.BeNil())
 	g.Expect(err2).To(gomega.HaveOccurred())
 
-	str := `{"hello":"world","hi":"india"}`
-	quotedStr := quote(str)
-	g.Expect(quotedStr).To(gomega.Equal(`"{\"hello\":\"world\",\"hi\":\"india\"}"`))
+	if f, ok := funcMap["quote"].(func(str ...interface{}) string); ok {
+		quote := (func(str ...interface{}) string)(f)
+		str := `{"hello":"world","hi":"india"}`
+		quotedStr := quote(str)
+		g.Expect(quotedStr).To(gomega.Equal(`"{\"hello\":\"world\",\"hi\":\"india\"}"`))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
 
-	str2 := `{"hello":"world","hi":"india"}`
-	quotedStr2 := squote(str2)
-	g.Expect(quotedStr2).To(gomega.Equal(`'{"hello":"world","hi":"india"}'`))
+	if f, ok := funcMap["squote"].(func(str ...interface{}) string); ok {
+		squote := (func(str ...interface{}) string)(f)
+		str2 := `{"hello":"world","hi":"india"}`
+		quotedStr2 := squote(str2)
+		g.Expect(quotedStr2).To(gomega.Equal(`'{"hello":"world","hi":"india"}'`))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
 
-	str3 := "helloWorld"
-	str3Val := strval(str3)
-	g.Expect(str3Val).To(gomega.Equal("helloWorld"))
+	if f, ok := funcMap["toString"].(func(str interface{}) string); ok {
+		strval := (func(str interface{}) string)(f)
+		str3 := "helloWorld"
+		str3Val := strval(str3)
+		g.Expect(str3Val).To(gomega.Equal("helloWorld"))
 
-	int := 10
-	intVal := strval(int)
-	g.Expect(intVal).To(gomega.Equal("10"))
-
+		int := 10
+		intVal := strval(int)
+		g.Expect(intVal).To(gomega.Equal("10"))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
 }

@@ -4,8 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
 )
 
 // encodeToString converts a string to base64 encoded string
@@ -38,39 +39,16 @@ func marshalJSON(src map[string]interface{}) (string, error) {
 	return string(options[:]), err
 }
 
-func quote(str ...interface{}) string {
-	out := make([]string, len(str))
-	for i, s := range str {
-		out[i] = fmt.Sprintf("%q", strval(s))
-	}
-	return strings.Join(out, " ")
-}
-
-func squote(str ...interface{}) string {
-	out := make([]string, len(str))
-	for i, s := range str {
-		out[i] = fmt.Sprintf("'%v'", s)
-	}
-	return strings.Join(out, " ")
-}
-
-func strval(v interface{}) string {
-	switch v := v.(type) {
-	case string:
-		return v
-	default:
-		return fmt.Sprintf("%v", v)
-	}
-}
-
 func getFuncMap() template.FuncMap {
-	funcMap := template.FuncMap{
+	funcMap := sprig.TxtFuncMap()
+	localFuncMap := template.FuncMap{
 		"b64enc":        encodeToString,
 		"b64dec":        decodeString,
 		"unmarshalJSON": unmarshalJSON,
 		"marshalJSON":   marshalJSON,
-		"quote":         quote,
-		"squote":        squote,
+	}
+	for k, v := range localFuncMap {
+		funcMap[k] = v
 	}
 	return funcMap
 }
