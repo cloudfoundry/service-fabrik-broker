@@ -65,7 +65,6 @@ func TestMain(m *testing.M) {
 	if cfg, err = testEnv.Start(); err != nil {
 		log.Fatal(err)
 	}
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
