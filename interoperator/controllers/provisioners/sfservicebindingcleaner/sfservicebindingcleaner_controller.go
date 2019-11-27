@@ -57,16 +57,20 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 			Name:      binding.Spec.InstanceID,
 			Namespace: binding.GetNamespace(),
 		}
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			err := r.Get(ctx, namespacedName, instance)
-			if err != nil && apiErrors.IsNotFound(err) {
-				binding.SetFinalizers([]string{})
-				return c.Update(context.TODO(), binding)
-			}
-			return err
-		})
-		if err != nil {
-			return ctrl.Result{}, err
+		err := r.Get(ctx, namespacedName, instance)
+		if err != nil && apiErrors.IsNotFound(err) {
+			binding.SetFinalizers([]string{})
+			_ = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err := c.Update(context.TODO(), binding)
+				if err != nil {
+					// The binding is possibly outdated, fetch it again and
+					// retry the update operation.
+					_ = r.Get(ctx, req.NamespacedName, binding)
+					return err
+				}
+				return nil
+			})
+
 		}
 	}
 	return ctrl.Result{}, nil
