@@ -20,6 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+const brokerFinalizer = "broker.servicefabrik.io"
+const timeout = time.Second * 2
+
+var c client.Client
+
 var binding = &osbv1alpha1.SFServiceBinding{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "binding-id",
@@ -27,7 +32,7 @@ var binding = &osbv1alpha1.SFServiceBinding{
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
-		Finalizers: []string{constants.BrokerFinalizer},
+		Finalizers: []string{brokerFinalizer},
 	},
 	Spec: osbv1alpha1.SFServiceBindingSpec{
 		ID:                "binding-id",
@@ -40,10 +45,6 @@ var binding = &osbv1alpha1.SFServiceBinding{
 		State: "in_queue",
 	},
 }
-
-var c client.Client
-
-const timeout = time.Second * 2
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	data := make(map[string]string)

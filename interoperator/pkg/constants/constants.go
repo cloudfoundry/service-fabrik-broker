@@ -7,7 +7,6 @@ import (
 // Constants used by interoperator
 const (
 	FinalizerName    = "interoperator.servicefabrik.io"
-	BrokerFinalizer  = "broker.servicefabrik.io"
 	ErrorCountKey    = "interoperator.servicefabrik.io/error"
 	LastOperationKey = "interoperator.servicefabrik.io/lastoperation"
 	ErrorThreshold   = 10

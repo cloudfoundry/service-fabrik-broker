@@ -71,7 +71,7 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 				return nil
 			})
 			if err != nil {
-				log.Error(err, "Error occurred while updating finalizers on binding ", "bindingID", binding.GetName())
+				log.Error(err, "Error occurred while updating finalizers on binding")
 			}
 		}
 	}
