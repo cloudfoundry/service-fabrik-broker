@@ -40,4 +40,4 @@ interoperator:
     bindingWorkerCount: 20
     schedulerWorkerCount: 10
     provisionerWorkerCount: 10
-    schedulerType: least-utilized
+    schedulerType: label-selector

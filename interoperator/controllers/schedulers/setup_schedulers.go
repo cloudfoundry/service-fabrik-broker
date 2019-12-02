@@ -21,8 +21,6 @@ package schedulers
 import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfleastutilizedscheduler"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfroundrobinscheduler"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -37,22 +35,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("schedulers").WithName("default"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFDefaultScheduler")
-		return err
-	}
-
-	if err = (&sfleastutilizedscheduler.SFLeastUtilizedScheduler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("schedulers").WithName("leastutilized"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFLeastUtilizedScheduler")
-		return err
-	}
-
-	if err = (&sfroundrobinscheduler.SFRoundRobinScheduler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("schedulers").WithName("roundrobin"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFRoundRobinScheduler")
 		return err
 	}
 
