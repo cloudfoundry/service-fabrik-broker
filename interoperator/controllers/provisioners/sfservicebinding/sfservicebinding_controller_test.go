@@ -282,6 +282,7 @@ func TestReconcile(t *testing.T) {
 		serviceBinding.SetState("delete")
 		return c.Update(context.TODO(), serviceBinding)
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())
 
 	// Binding should disappear from api server
