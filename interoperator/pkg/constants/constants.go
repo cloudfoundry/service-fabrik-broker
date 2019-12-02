@@ -27,8 +27,6 @@ const (
 	DefaultProvisionerWorkerCount = 10
 
 	DefaultSchedulerType       = "default"
-	RoundRobinSchedulerType    = "round-robin"
-	LeastUtilizedSchedulerType = "least-utilized"
 	LabelSelectorSchedulerType = "label-selector"
 	GoTemplateType             = "gotemplate"
 
