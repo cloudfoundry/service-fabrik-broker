@@ -17,8 +17,6 @@ limitations under the License.
 package sfservicebindingcleaner
 
 import (
-	stdlog "log"
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -26,11 +24,10 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -38,41 +35,43 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-var cfg *rest.Config
-
-func TestMain(m *testing.M) {
-	var err error
-	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
-	testEnv := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-	}
-
-	err = osbv1alpha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		stdlog.Fatal(err)
-	}
-
-	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		stdlog.Fatal(err)
-	}
-
-	if cfg, err = testEnv.Start(); err != nil {
-		stdlog.Fatal(err)
-	}
-
-	code := m.Run()
-	testEnv.Stop()
-	os.Exit(code)
+func TestSFServiceBindingCleaner(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "SFServiceBindingCleaner Suite")
 }
 
+var cfg *rest.Config
+var testEnv *envtest.Environment
+
+var _ = BeforeSuite(func(done Done) {
+	var err error
+	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+	}
+	err = osbv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+
+	close(done)
+}, 60)
+
+var _ = AfterSuite(func() {
+	testEnv.Stop()
+})
+
 // StartTestManager adds recFn
-func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+func StartTestManager(mgr manager.Manager) (chan struct{}, *sync.WaitGroup) {
 	stop := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
+		Expect(mgr.Start(stop)).NotTo(HaveOccurred())
 		wg.Done()
 	}()
 	return stop, wg
