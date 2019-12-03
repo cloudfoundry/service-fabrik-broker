@@ -18,6 +18,7 @@ package sfservicebindingcleaner
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,11 +58,20 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 			Name:      binding.Spec.InstanceID,
 			Namespace: binding.GetNamespace(),
 		}
-		err := r.Get(ctx, namespacedName, instance)
+		err = r.Get(ctx, namespacedName, instance)
 		if err != nil && apiErrors.IsNotFound(err) {
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			mergePatch, err := json.Marshal(map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"finalizers": []string{},
+				},
+			})
+			if err != nil {
+				log.Error(err, "Error occurred while constructing JSON merge patch")
+				return ctrl.Result{}, err
+			}
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				binding.SetFinalizers([]string{})
-				err := r.Update(context.TODO(), binding)
+				err = r.Patch(context.TODO(), binding, client.ConstantPatch(types.MergePatchType, mergePatch))
 				if err != nil {
 					// The binding is possibly outdated, fetch it again and
 					// retry the update operation.
