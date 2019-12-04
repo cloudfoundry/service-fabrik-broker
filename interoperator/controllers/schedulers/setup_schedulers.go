@@ -21,6 +21,7 @@ package schedulers
 import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -29,6 +30,14 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	setupLog := ctrl.Log.WithName("setup").WithName("schedulers")
+
+	if err = (&sfserviceinstancecounter.SFServiceInstanceCounter{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfserviceinstance-counter"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create sfserviceinstance-counter", "scheduler-helper", "SFServiceInstanceCounter")
+		return err
+	}
 
 	if err = (&sfdefaultscheduler.SFDefaultScheduler{
 		Client: mgr.GetClient(),

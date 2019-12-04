@@ -171,7 +171,6 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 }
 
 func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFServiceInstance, labelSelector string) (string, error) {
-	ctx := context.Background()
 	log := r.Log.WithValues("instance", sfServiceInstance.GetName(), "labelSelector", labelSelector)
 	label, err := labels.Parse(labelSelector)
 	if err != nil {
@@ -200,24 +199,11 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 		return clusters.Items[0].GetName(), nil
 	}
 
-	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
-	err = r.List(ctx, sfserviceinstances, &client.ListOptions{})
-	if err != nil {
-		log.Error(err, "Failed to list all sfserviceinstances")
-		return "", err
-	}
-
-	counts := make(map[string]int64)
-	for _, item := range sfserviceinstances.Items {
-		if item.Spec.ClusterID != "" {
-			counts[item.Spec.ClusterID] = counts[item.Spec.ClusterID] + 1
-		}
-	}
-
-	leastCount := int64(math.MaxInt64)
+	leastCount := int(math.MaxInt64)
 	var clusterID string
 	for _, cluster := range clusters.Items {
-		count := counts[cluster.GetName()]
+		log.Info("Cluster Info", "cluster name", cluster.GetName(), "cluster filled", cluster.Status.ServiceInstanceCount)
+		count := cluster.Status.ServiceInstanceCount
 		if count < leastCount {
 			leastCount = count
 			clusterID = cluster.GetName()

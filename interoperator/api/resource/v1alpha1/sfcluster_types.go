@@ -30,11 +30,14 @@ type SFClusterSpec struct {
 
 // SFClusterStatus defines the observed state of SFCluster
 type SFClusterStatus struct {
+	ServiceInstanceCount int `json:"serviceInstanceCount,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
 // SFCluster is the Schema for the sfclusters API
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="numserviceinstance",type=integer,JSONPath=`.status.serviceInstanceCount`
 type SFCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -18,16 +18,16 @@ package sflabelselectorscheduler
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
 
-	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/golang/mock/gomock"
@@ -55,9 +55,11 @@ func TestReconcile(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
-
-	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), configMap)
@@ -67,7 +69,12 @@ func TestReconcile(t *testing.T) {
 		Log:    ctrlrun.Log.WithName("schedulers").WithName("labelselector"),
 	}
 	g.Expect(scheduler.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	scheduler.clusterRegistry = mockClusterRegistry
+	SFServiceInstanceCounter := &sfserviceinstancecounter.SFServiceInstanceCounter{
+		Client: mgr.GetClient(),
+		Log:    ctrlrun.Log.WithName("scheduler-helper").WithName("sfserviceinstance-counter"),
+	}
+	g.Expect(SFServiceInstanceCounter.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
+
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
@@ -78,28 +85,21 @@ func TestReconcile(t *testing.T) {
 	sfcluster1 := _getDummySFCLuster("1", map[string]string{
 		"organization": "organization-guid",
 	})
-	sfcluster3 := _getDummySFCLuster("3", map[string]string{
+	sfcluster2 := _getDummySFCLuster("2", map[string]string{
 		"organization": "organization-guid",
 	})
-	label1, _ := labels.Parse("organization=organization-guid")
-	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
-		LabelSelector: label1,
-	}).Return(_getSFClusterList(sfcluster1, sfcluster3), nil).Times(2)
+	// label1, _ := labels.Parse("organization=organization-guid")
 
-	sfcluster2 := _getDummySFCLuster("1", map[string]string{
+	sfcluster3 := _getDummySFCLuster("3", map[string]string{
 		"plan": "plan-id-2",
 	})
-	label2, _ := labels.Parse("plan=plan-id-2")
-	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
-		LabelSelector: label2,
-	}).Return(_getSFClusterList(sfcluster2), nil)
 
-	label3, _ := labels.Parse("planId=plan-id-4,serviceId=service-id")
-	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{
-		LabelSelector: label3,
-	}).Return(_getSFClusterList(), nil)
+	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), sfcluster2)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), sfcluster3)).NotTo(gomega.HaveOccurred())
+	// label2, _ := labels.Parse("plan=plan-id-2")
 
-	mockClusterRegistry.EXPECT().ListClusters(&client.ListOptions{}).Return(_getSFClusterList(sfcluster1, sfcluster2, sfcluster3), nil)
+	// label3, _ := labels.Parse("planId=plan-id-4,serviceId=service-id")
 
 	clusterSelectorAction1 := "{{- $organizationGuid := \"\" }}\n{{- with .instance.spec.organizationGuid }} {{ $organizationGuid = . }} {{ end }}\norganization={{ $organizationGuid }}\n"
 	plan1 := _getDummySFPlan("plan-id-1", clusterSelectorAction1)
@@ -141,10 +141,32 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Name:      "1",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		}, sfcluster1)
+		if err != nil {
+			return err
+		}
+		serviceInstanceCount := sfcluster1.Status.ServiceInstanceCount
+		if serviceInstanceCount != 1 {
+			return errors.New("service intance count is not 1")
+		}
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Name:      "3",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		}, sfcluster3)
+		if err != nil {
+			return err
+		}
+		serviceInstanceCount = sfcluster3.Status.ServiceInstanceCount
+		if serviceInstanceCount != 1 {
+			return errors.New("service intance count is not 1")
+		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(instance1.Spec.ClusterID).To(gomega.Equal(sfcluster1.GetName()))
-	g.Expect(instance2.Spec.ClusterID).To(gomega.Equal(sfcluster2.GetName()))
+	g.Expect(instance2.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 
 	// when labelSelector action is not present in plan
 	plan3 := _getDummySFPlan("plan-id-3", "")
@@ -163,9 +185,20 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Name:      "2",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		}, sfcluster2)
+		if err != nil {
+			return err
+		}
+		serviceInstanceCount := sfcluster2.Status.ServiceInstanceCount
+		if serviceInstanceCount != 1 {
+			return errors.New("service intance count is not 1")
+		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
-	g.Expect(instance3.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
+	g.Expect(instance3.Spec.ClusterID).To(gomega.Equal(sfcluster2.GetName()))
 
 	// label selector not selecting any cluster
 	clusterSelectorAction3 := "{{- $planId := \"\" }}\n{{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}\n{{- $serviceId := \"\" }}\n{{- with .instance.spec.serviceId }} {{ $serviceId = . }} {{ end }}\nplanId={{ $planId }},serviceId={{ $serviceId}}\n"
@@ -187,24 +220,6 @@ func TestReconcile(t *testing.T) {
 		return nil
 	}, timeout).ShouldNot(gomega.Succeed())
 	g.Expect(instance4.Spec.ClusterID).To(gomega.Equal(""))
-
-	// label selector selecting multiple clusters
-	instance5 := _getDummySFServiceInstance("foo5", "plan-id-1")
-	g.Expect(c.Create(context.TODO(), instance5)).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance5)
-
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), _getKey(instance5), instance5)
-		if err != nil {
-			return err
-		}
-		_, err = instance5.GetClusterID()
-		if err != nil {
-			return err
-		}
-		return nil
-	}, timeout).Should(gomega.Succeed())
-	g.Expect(instance5.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 }
 
 func _getDummyConfigMap() *corev1.ConfigMap {
@@ -294,8 +309,8 @@ func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServi
 	}
 }
 
-func _getDummySFCLuster(name string, labels map[string]string) resourcev1alpha1.SFCluster {
-	return resourcev1alpha1.SFCluster{
+func _getDummySFCLuster(name string, labels map[string]string) *resourcev1alpha1.SFCluster {
+	return &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: constants.DefaultServiceFabrikNamespace,

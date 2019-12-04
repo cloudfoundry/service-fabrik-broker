@@ -6,10 +6,11 @@ import (
 
 // Constants used by interoperator
 const (
-	FinalizerName    = "interoperator.servicefabrik.io"
-	ErrorCountKey    = "interoperator.servicefabrik.io/error"
-	LastOperationKey = "interoperator.servicefabrik.io/lastoperation"
-	ErrorThreshold   = 10
+	FinalizerName                         = "interoperator.servicefabrik.io"
+	SFServiceInstanceCounterFinalizerName = "sfserviceinstancecounter.servicefabrik.io"
+	ErrorCountKey                         = "interoperator.servicefabrik.io/error"
+	LastOperationKey                      = "interoperator.servicefabrik.io/lastoperation"
+	ErrorThreshold                        = 10
 
 	ConfigMapName          = "interoperator-config"
 	ConfigMapKey           = "config"

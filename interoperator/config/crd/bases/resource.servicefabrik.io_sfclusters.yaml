@@ -8,6 +8,10 @@ metadata:
   creationTimestamp: null
   name: sfclusters.resource.servicefabrik.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.serviceInstanceCount
+    name: numserviceinstance
+    type: integer
   group: resource.servicefabrik.io
   names:
     kind: SFCluster
@@ -15,6 +19,8 @@ spec:
     plural: sfclusters
     singular: sfcluster
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: SFCluster is the Schema for the sfclusters API
@@ -44,6 +50,9 @@ spec:
           type: object
         status:
           description: SFClusterStatus defines the observed state of SFCluster
+          properties:
+            serviceInstanceCount:
+              type: integer
           type: object
       type: object
   version: v1alpha1
