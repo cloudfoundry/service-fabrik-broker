@@ -51,6 +51,7 @@ type SFServiceInstanceStatus struct {
 // +genclient:noStatus
 // +kubebuilder:printcolumn:name="state",type=string,JSONPath=`.status.state`
 // +kubebuilder:printcolumn:name="age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="clusterid",type=string,JSONPath=`.spec.clusterId`
 
 // SFServiceInstance is the Schema for the sfserviceinstances API
 type SFServiceInstance struct {

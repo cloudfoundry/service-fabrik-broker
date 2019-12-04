@@ -15,6 +15,9 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: age
     type: date
+  - JSONPath: .spec.clusterId
+    name: clusterid
+    type: string
   group: osb.servicefabrik.io
   names:
     kind: SFServiceInstance

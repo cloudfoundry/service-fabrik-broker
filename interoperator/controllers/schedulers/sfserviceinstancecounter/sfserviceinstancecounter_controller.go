@@ -106,6 +106,7 @@ func (r *SFServiceInstanceCounter) Reconcile(req ctrl.Request) (ctrl.Result, err
 				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 					instance.SetFinalizers(utils.RemoveString(instance.GetFinalizers(), constants.SFServiceInstanceCounterFinalizerName))
 					if err1 := r.Update(ctx, instance); err1 != nil {
+						_ = r.Get(ctx, req.NamespacedName, instance)
 						return err1
 					}
 					return nil

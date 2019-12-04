@@ -6,6 +6,10 @@ metadata:
   creationTimestamp: null
   name: sfclusters.resource.servicefabrik.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.serviceInstanceCount
+    name: numserviceinstance
+    type: integer
   group: resource.servicefabrik.io
   names:
     kind: SFCluster
