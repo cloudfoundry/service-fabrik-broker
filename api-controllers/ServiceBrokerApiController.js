@@ -70,9 +70,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .merge(req.params, req.body)
       .set('plan', plan)
       .value();
-    const dashboardUrl = this.getDashboardUrl(context);
 
-    function done() {
+    function done(sfserviceinstance) {
+      _.set(context, 'instance', sfserviceinstance);
+      const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {};
       if (dashboardUrl) {
@@ -117,7 +118,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         }
       })
-      .then(done)
+      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(req.params.instance_id) : {})
+      .then(done.bind(this))
       .catch(Conflict, conflict);
   }
 
@@ -135,9 +137,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .merge(req.params, req.body)
       .set('plan', plan)
       .value();
-    const dashboardUrl = this.getDashboardUrl(context);
 
-    function done() {
+    function done(sfserviceinstance) {
+      _.set(context, 'instance', sfserviceinstance);
+      const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {
         dashboard_url: dashboardUrl
@@ -215,7 +218,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus(lastOperationState);
         }
       })
-      .then(done);
+      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(req.params.instance_id) : {})
+      .then(done.bind(this));
   }
 
   deleteInstance(req, res) {
