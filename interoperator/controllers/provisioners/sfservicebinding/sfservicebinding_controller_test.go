@@ -275,12 +275,15 @@ func TestReconcile(t *testing.T) {
 	// Delete the service binding
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), bindingKey, serviceBinding)
+		serviceBinding.SetState("delete")
+		err := c.Update(context.TODO(), serviceBinding)
 		if err != nil {
+			// The binding is possibly outdated, fetch it again and retry the
+			// update operation.
+			_ = c.Get(context.TODO(), bindingKey, serviceBinding)
 			return err
 		}
-		serviceBinding.SetState("delete")
-		return c.Update(context.TODO(), serviceBinding)
+		return nil
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())

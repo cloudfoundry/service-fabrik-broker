@@ -101,19 +101,21 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 
 			binding := &osbv1alpha1.SFServiceBinding{}
 			bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
-
 			err = c.Get(context.TODO(), bindingKey, binding)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(binding.Status.State).Should(Equal("in_queue"))
 
 			Expect(c.Delete(context.TODO(), binding)).NotTo(HaveOccurred())
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err = c.Get(context.TODO(), bindingKey, binding)
+				binding.SetState("delete")
+				err := c.Update(context.TODO(), binding)
 				if err != nil {
+					// The binding is possibly outdated, fetch it again and
+					// retry the update operation.
+					_ = c.Get(context.TODO(), bindingKey, binding)
 					return err
 				}
-				binding.SetState("delete")
-				return c.Update(context.TODO(), binding)
+				return nil
 			})
 
 			// Service binding should disappear from the apiserver.
