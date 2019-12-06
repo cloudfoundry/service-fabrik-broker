@@ -72,7 +72,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(sfserviceinstance) {
-      const dashboardUrl = this.getDashboardUrl(context, sfserviceinstance);
+      _.set(context, 'instance', sfserviceinstance);
+      const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {};
       if (dashboardUrl) {
@@ -138,7 +139,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(sfserviceinstance) {
-      const dashboardUrl = this.getDashboardUrl(context, sfserviceinstance);
+      _.set(context, 'instance', sfserviceinstance);
+      const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {
         dashboard_url: dashboardUrl
@@ -446,10 +448,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       });
   }
 
-  getDashboardUrl(context, sfserviceinstance) {
+  getDashboardUrl(context) {
     if (_.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined) {
       const urlTemplate = new Buffer(context.plan.manager.settings.dashboard_url_template, 'base64');
-      const dashboardUrl = encodeURI(_.template(urlTemplate)(sfserviceinstance));
+      const dashboardUrl = encodeURI(_.template(urlTemplate)(context));
       if (CONST.REGEX_PATTERN.URL.test(dashboardUrl)) {
         return dashboardUrl;
       }

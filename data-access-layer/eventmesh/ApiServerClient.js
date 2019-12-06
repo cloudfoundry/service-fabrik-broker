@@ -206,25 +206,40 @@ class ApiServerClient {
         };
       });
   }
-  /**
-     * @description Waits till clusterId is set for sfserviceinstance
-     * @param {string} resourceId - id of resource
-     */
-  waitTillInstanceIsScheduled(resourceId) {
-    assert.ok(resourceId, 'Argument \'resourceId\' is required to get scheduled cluster for instance');
-    logger.debug(`Waiting for scheduler to set ClusterId on ${resourceId}`);
+  checkInstanceScheduleStatus(resourceId, startTime, timeOutinSec) {
     return Promise.delay(CONST.CLUSTER_SCHEDULER_DELAY)
-      .then(() => this.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-        resourceId: resourceId,
-        namespaceId: this.getNamespaceId(resourceId)
-      }))
-      .then(sfserviceinstance => _.get(sfserviceinstance, 'spec.clusterId') ? sfserviceinstance : this.waitTillInstanceIsScheduled(resourceId))
+      .then(() => {
+        const duration = (new Date() - startTime) / 1000;
+        logger.debug(`Checking instance schedule status for instance ${resourceId} for duration: ${duration}`);
+        if(duration > timeOutinSec) {
+          logger.error(`clusterId is not set for ${resourceId} after ${duration}s`);
+          throw new Timeout(`clusterId is not set for ${resourceId} after ${duration}s`);
+        } else{
+          return this.getResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            resourceId: resourceId,
+            namespaceId: this.getNamespaceId(resourceId)
+          });
+        }
+      })
+      .then(sfserviceinstance => _.get(sfserviceinstance, 'spec.clusterId') ? sfserviceinstance : this.checkInstanceScheduleStatus(resourceId, startTime, timeOutinSec))
       .catch(err => {
         logger.error('Error occured while waiting for instance to be scheduled', err);
         return convertToHttpErrorAndThrow(err);
       });;
+  }
+  /**
+     * @description Waits till clusterId is set for sfserviceinstance
+     * @param {string} resourceId - id of resource
+     */
+  waitTillInstanceIsScheduled(resourceId, timeOutinSec) {
+    assert.ok(resourceId, 'Argument \'resourceId\' is required to get scheduled cluster for instance');
+    logger.debug(`Waiting for scheduler to set clusterId on ${resourceId}`);
+    if(timeOutinSec == undefined) {
+      timeOutinSec = CONST.CLUSTER_SCHEDULE_TIMEOUT_IN_SEC;
+    }
+    return this.checkInstanceScheduleStatus(resourceId, new Date(), timeOutinSec);
   }
 
   /**

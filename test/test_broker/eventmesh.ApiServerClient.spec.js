@@ -1,6 +1,7 @@
 'use strict';
 
 const nock = require('nock');
+const _ = require('lodash');
 const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
@@ -164,6 +165,57 @@ describe('eventmesh', () => {
           resourceId: 'sample_director',
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
         });
+      });
+    });
+
+    describe('waitTillInstanceIsScheduled', () => {
+      const instance_id = 'instance_id';
+      const sfserviceinstance = {
+        metadata:{
+          name:  instance_id
+        },
+        spec: {
+          clusterId: 1,
+          planId: 'plan_id',
+          serviceId: 'service_id',
+        }
+      };
+      it('Should return sfserviceinstance object if clusterId is set', () => {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, sfserviceinstance);
+        return apiserver.waitTillInstanceIsScheduled(instance_id)
+        .then(res => {
+          expect(res).to.eql(sfserviceinstance);
+          mocks.verify();
+        })
+      });
+      it('Should return sfserviceinstance object in multiple retries', () => {
+        const sfserviceinstance1 = _.cloneDeep(sfserviceinstance);
+        sfserviceinstance1.spec.clusterId = undefined;
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, sfserviceinstance1);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, sfserviceinstance);
+        return apiserver.waitTillInstanceIsScheduled(instance_id)
+        .then(res => {
+          expect(res).to.eql(sfserviceinstance);
+          mocks.verify();
+        })
+      });
+      it('Throws error if get sfserviceinstance returns error', () => {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, 500);
+        return apiserver.waitTillInstanceIsScheduled(instance_id)
+        .catch(res => {
+          expect(res).to.have.status(500);
+          mocks.verify();
+        })
+      });
+      it('Should throw error in case of timeout', () => {
+        const sfserviceinstance1 = _.cloneDeep(sfserviceinstance);
+        sfserviceinstance1.spec.clusterId = undefined;
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, sfserviceinstance1);
+        return apiserver.waitTillInstanceIsScheduled(instance_id, 0.150)
+        .catch(res => {
+          expect(res).to.have.status(500);
+          mocks.verify();
+        })
       });
     });
 

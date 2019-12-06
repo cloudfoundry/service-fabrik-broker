@@ -153,7 +153,7 @@ describe('service-broker-api-2.0', function () {
 
         it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
           const oldTemp = config.services[0].plans[4].manager.settings.dashboard_url_template;
-          config.services[0].plans[4].manager.settings.dashboard_url_template = new Buffer('${spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+metadata.name+\'?planId=\'+spec.planId+\'&serviceId=\'+spec.serviceId : \'\'}').toString('base64');
+          config.services[0].plans[4].manager.settings.dashboard_url_template = new Buffer('${instance.spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+instance.metadata.name+\'?planId=\'+instance.spec.planId+\'&serviceId=\'+instance.spec.serviceId : \'\'}').toString('base64');
           const testPayload = _.cloneDeep(payload);
           testPayload.spec.plan_id = plan_id_custom_dashboard;
           testPayload.spec = camelcaseKeys(testPayload.spec);
