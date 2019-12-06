@@ -94,7 +94,7 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 
 			err = c.Create(context.TODO(), binding)
 			if apierrors.IsInvalid(err) {
-				// TODO: find an appropriate way of adding a log message here.
+				fmt.Fprintln(GinkgoWriter, "Failed to create object due to invalid object error")
 				return
 			}
 			Expect(err).NotTo(HaveOccurred())
@@ -105,7 +105,8 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(binding.Status.State).Should(Equal("in_queue"))
 
-			Expect(c.Delete(context.TODO(), binding)).NotTo(HaveOccurred())
+			err = c.Delete(context.TODO(), binding)
+			Expect(err).NotTo(HaveOccurred())
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				binding.SetState("delete")
 				err := c.Update(context.TODO(), binding)
