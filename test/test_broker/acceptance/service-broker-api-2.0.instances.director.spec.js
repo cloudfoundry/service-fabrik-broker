@@ -50,7 +50,7 @@ describe('service-broker-api-2.0', function () {
       const protocol = config.external.protocol;
       const host = config.external.host;
       const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
-      const dashboard_url_with_template = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}?planName=v1.0-small&serviceId=${service_id}`;
+      const dashboard_url_with_template = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}?planId=${plan_id}&serviceId=${service_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
@@ -117,6 +117,17 @@ describe('service-broker-api-2.0', function () {
           testPayload.spec = camelcaseKeys(testPayload.spec);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            metadata:{
+              name:  instance_id
+            },
+            spec: {
+              clusterId: 1,
+              planId: plan_id_custom_dashboard,
+              serviceId: service_id,
+            }
+          });
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -135,24 +146,36 @@ describe('service-broker-api-2.0', function () {
             })
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.dashboard_url).to.equal(dashboard_url_with_template);
+              expect(res.body.dashboard_url === dashboard_url_with_template);
               mocks.verify();
             });
         });
 
         it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
+          const oldTemp = config.services[0].plans[4].manager.settings.dashboard_url_template;
+          config.services[0].plans[4].manager.settings.dashboard_url_template = new Buffer('${spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+metadata.name+\'?planId=\'+spec.planId+\'&serviceId=\'+spec.serviceId : \'\'}').toString('base64');
           const testPayload = _.cloneDeep(payload);
-          testPayload.spec.plan_id = 'gd158c9a-7934-401e-94ab-057082a5073e';
+          testPayload.spec.plan_id = plan_id_custom_dashboard;
           testPayload.spec = camelcaseKeys(testPayload.spec);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
-          //mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            metadata:{
+              name:  instance_id
+            },
+            spec: {
+              clusterId: 1,
+              planId: plan_id_custom_dashboard,
+              serviceId: service_id,
+            }
+          });
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
-              plan_id: 'gd158c9a-7934-401e-94ab-057082a5073e',
+              plan_id: plan_id_custom_dashboard,
               context: {
                 platform: 'cloudfoundry',
                 organization_guid: organization_guid,
@@ -164,6 +187,7 @@ describe('service-broker-api-2.0', function () {
             })
             .catch(err => err.response)
             .then(res => {
+              config.services[0].plans[4].manager.settings.dashboard_url_template = oldTemp;
               expect(res).to.have.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
               expect(res.body).to.eql({});
               mocks.verify();
