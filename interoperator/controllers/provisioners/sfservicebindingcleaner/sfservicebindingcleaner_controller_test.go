@@ -3,12 +3,13 @@ package sfservicebindingcleaner
 import (
 	"context"
 	"fmt"
-	"testing"
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/onsi/gomega"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +47,7 @@ var binding = &osbv1alpha1.SFServiceBinding{
 	},
 }
 
-func setupInteroperatorConfig(g *gomega.GomegaWithT) {
+func setupInteroperatorConfig() {
 	data := make(map[string]string)
 	data["instanceWorkerCount"] = "1"
 	data["bindingWorkerCount"] = "1"
@@ -66,63 +67,68 @@ func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 		},
 		Data: data,
 	}
-	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
+	Expect(c.Create(context.TODO(), configMap)).NotTo(HaveOccurred())
 }
 
-func TestReconcile(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
-	})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	setupInteroperatorConfig(g)
-	controller := &ReconcileSFServiceBindingCleaner{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SfServiceBindingCleaner"),
-		Scheme: mgr.GetScheme(),
-	}
-	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
-	defer func() {
-		close(stopMgr)
-		mgrStopped.Wait()
-	}()
+var _ = Describe("SFServiceBindingCleaner controller", func() {
+	Context("Orphaned service bindings", func() {
+		It("should be deleted", func(done Done) {
+			mgr, err := manager.New(cfg, manager.Options{
+				MetricsBindAddress: "0",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+			Expect(err).NotTo(HaveOccurred())
 
-	err = c.Create(context.TODO(), binding)
-	if apierrors.IsInvalid(err) {
-		t.Logf("failed to create object, got an invalid object error: %v", err)
-		return
-	}
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-
-	binding := &osbv1alpha1.SFServiceBinding{}
-	bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
-	g.Eventually(func() error {
-		return c.Get(context.TODO(), bindingKey, binding)
-	}, timeout).Should(gomega.Succeed())
-	g.Expect(binding.Status.State).Should(gomega.Equal("in_queue"))
-
-	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), bindingKey, binding)
-		if err != nil {
-			return err
-		}
-		binding.SetState("delete")
-		return c.Update(context.TODO(), binding)
-	})
-
-	// Service binding should disappear from the apiserver.
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, binding)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil
+			controller := &ReconcileSFServiceBindingCleaner{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("SfServiceBindingCleaner"),
+				Scheme: mgr.GetScheme(),
 			}
-			return err
-		}
-		return fmt.Errorf("not deleted")
-	}, timeout).Should(gomega.Succeed())
-}
+			Expect(controller.SetupWithManager(mgr)).NotTo(HaveOccurred())
+			stopMgr, mgrStopped := StartTestManager(mgr)
+			defer func() {
+				close(stopMgr)
+				mgrStopped.Wait()
+			}()
+
+			err = c.Create(context.TODO(), binding)
+			if apierrors.IsInvalid(err) {
+				// TODO: find an appropriate way of adding a log message here.
+				return
+			}
+			Expect(err).NotTo(HaveOccurred())
+
+			binding := &osbv1alpha1.SFServiceBinding{}
+			bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
+
+			err = c.Get(context.TODO(), bindingKey, binding)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(binding.Status.State).Should(Equal("in_queue"))
+
+			Expect(c.Delete(context.TODO(), binding)).NotTo(HaveOccurred())
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err = c.Get(context.TODO(), bindingKey, binding)
+				if err != nil {
+					return err
+				}
+				binding.SetState("delete")
+				return c.Update(context.TODO(), binding)
+			})
+
+			// Service binding should disappear from the apiserver.
+			Eventually(func() error {
+				err := c.Get(context.TODO(), bindingKey, binding)
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						return nil
+					}
+					return err
+				}
+				return fmt.Errorf("not deleted")
+			}, timeout).Should(Succeed())
+
+			close(done)
+		})
+	})
+})
