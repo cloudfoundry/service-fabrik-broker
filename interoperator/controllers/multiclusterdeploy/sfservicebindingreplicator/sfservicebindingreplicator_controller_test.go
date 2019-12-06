@@ -369,13 +369,8 @@ func TestReconcileMultiClusterUnbind(t *testing.T) {
 	}()
 
 	serviceBinding := &osbv1alpha1.SFServiceBinding{}
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, serviceBinding)
-		if err != nil {
-			return err
-		}
-		return nil
-	}, timeout).Should(gomega.Succeed())
+	err = c.Get(context.TODO(), bindingKey, serviceBinding)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	err = c.Delete(context.TODO(), serviceBinding)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
