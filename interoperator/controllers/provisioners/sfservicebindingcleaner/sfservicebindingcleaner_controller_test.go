@@ -22,7 +22,9 @@ import (
 )
 
 const brokerFinalizer = "broker.servicefabrik.io"
-const timeout = time.Second * 2
+// NOTE: A timeout of 5 seconds has been chosen specifically for the travis
+// builds to run successfully.
+const timeout = time.Second * 5
 
 var c client.Client
 
@@ -132,6 +134,6 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 			}, timeout).Should(Succeed())
 
 			close(done)
-		})
+		}, float64(timeout))
 	})
 })
