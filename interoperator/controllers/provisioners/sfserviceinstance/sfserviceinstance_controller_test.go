@@ -251,12 +251,15 @@ func TestReconcile(t *testing.T) {
 	// Delete the service instance
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), instanceKey, serviceInstance)
+		serviceInstance.SetState("delete")
+		err := c.Update(context.TODO(), serviceInstance)
 		if err != nil {
+			// The service instance is possibly outdated, fetch it again and
+			// retry the update operation.
+			_ = c.Get(context.TODO(), instanceKey, serviceInstance)
 			return err
 		}
-		serviceInstance.SetState("delete")
-		return c.Update(context.TODO(), serviceInstance)
+		return nil
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 

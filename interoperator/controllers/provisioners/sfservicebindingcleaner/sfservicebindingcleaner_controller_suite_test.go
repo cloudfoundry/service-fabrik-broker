@@ -71,8 +71,8 @@ func StartTestManager(mgr manager.Manager) (chan struct{}, *sync.WaitGroup) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		Expect(mgr.Start(stop)).NotTo(HaveOccurred())
-		wg.Done()
 	}()
 	return stop, wg
 }

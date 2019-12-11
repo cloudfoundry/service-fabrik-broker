@@ -74,7 +74,7 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 				err = r.Patch(context.TODO(), binding, client.ConstantPatch(types.MergePatchType, mergePatch))
 				if err != nil {
 					// The binding is possibly outdated, fetch it again and
-					// retry the update operation.
+					// retry the patch operation.
 					_ = r.Get(ctx, req.NamespacedName, binding)
 					return err
 				}

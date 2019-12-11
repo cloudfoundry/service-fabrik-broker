@@ -224,15 +224,18 @@ func TestReconcile(t *testing.T) {
 		return nil
 	}, timeout).Should(gomega.Succeed())
 
-	// Delete from master
+	// Delete instance from master cluster
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), instanceKey, instance)
+		instance.SetState("delete")
+		err := c.Update(context.TODO(), instance)
 		if err != nil {
+			// The instance is possibly outdated, fetch it again and retry the
+			// update operation.
+			_ = c.Get(context.TODO(), instanceKey, instance)
 			return err
 		}
-		instance.SetState("delete")
-		return c.Update(context.TODO(), instance)
+		return nil
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -290,12 +293,15 @@ func TestReconcile(t *testing.T) {
 	}, timeout).Should(gomega.Succeed())
 
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), instanceKey, instance)
+		instance.SetFinalizers([]string{})
+		err := c.Update(context.TODO(), instance)
 		if err != nil {
+			// The instance is possibly outdated, fetch it again and retry the
+			// update operation.
+			_ = c.Get(context.TODO(), instanceKey, instance)
 			return err
 		}
-		instance.SetFinalizers([]string{})
-		return c.Update(context.TODO(), instance)
+		return nil
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 }

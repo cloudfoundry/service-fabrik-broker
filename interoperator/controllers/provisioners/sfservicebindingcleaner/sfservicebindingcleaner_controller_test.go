@@ -22,7 +22,9 @@ import (
 )
 
 const brokerFinalizer = "broker.servicefabrik.io"
-const timeout = time.Second * 2
+// NOTE: A timeout of 5 seconds has been chosen specifically for the travis
+// builds to run successfully.
+const timeout = time.Second * 5
 
 var c client.Client
 
@@ -94,26 +96,29 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 
 			err = c.Create(context.TODO(), binding)
 			if apierrors.IsInvalid(err) {
-				// TODO: find an appropriate way of adding a log message here.
+				fmt.Fprintln(GinkgoWriter, "Failed to create object due to invalid object error")
 				return
 			}
 			Expect(err).NotTo(HaveOccurred())
 
 			binding := &osbv1alpha1.SFServiceBinding{}
 			bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
-
 			err = c.Get(context.TODO(), bindingKey, binding)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(binding.Status.State).Should(Equal("in_queue"))
 
-			Expect(c.Delete(context.TODO(), binding)).NotTo(HaveOccurred())
+			err = c.Delete(context.TODO(), binding)
+			Expect(err).NotTo(HaveOccurred())
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err = c.Get(context.TODO(), bindingKey, binding)
+				binding.SetState("delete")
+				err := c.Update(context.TODO(), binding)
 				if err != nil {
+					// The binding is possibly outdated, fetch it again and
+					// retry the update operation.
+					_ = c.Get(context.TODO(), bindingKey, binding)
 					return err
 				}
-				binding.SetState("delete")
-				return c.Update(context.TODO(), binding)
+				return nil
 			})
 
 			// Service binding should disappear from the apiserver.
@@ -129,6 +134,6 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 			}, timeout).Should(Succeed())
 
 			close(done)
-		})
+		}, float64(timeout))
 	})
 })

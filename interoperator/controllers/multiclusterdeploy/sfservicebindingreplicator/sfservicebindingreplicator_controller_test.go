@@ -369,23 +369,21 @@ func TestReconcileMultiClusterUnbind(t *testing.T) {
 	}()
 
 	serviceBinding := &osbv1alpha1.SFServiceBinding{}
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, serviceBinding)
-		if err != nil {
-			return err
-		}
-		return nil
-	}, timeout).Should(gomega.Succeed())
+	err = c.Get(context.TODO(), bindingKey, serviceBinding)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	err = c.Delete(context.TODO(), serviceBinding)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = c.Get(context.TODO(), bindingKey, serviceBinding)
+		serviceBinding.SetState("delete")
+		err := c.Update(context.TODO(), serviceBinding)
 		if err != nil {
+			// The binding is possibly outdated, fetch it again and retry the
+			// update operation.
+			_ = c.Get(context.TODO(), bindingKey, serviceBinding)
 			return err
 		}
-		serviceBinding.SetState("delete")
-		return c.Update(context.TODO(), serviceBinding)
+		return nil
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 

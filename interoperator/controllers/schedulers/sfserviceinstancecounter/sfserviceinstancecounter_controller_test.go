@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 
 func _getDummyConfigMap() *corev1.ConfigMap {
 	data := make(map[string]string)
-	config := "schedulerType: label-selector"
+	config := "schedulerType: default"
 	data[constants.ConfigMapKey] = config
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
