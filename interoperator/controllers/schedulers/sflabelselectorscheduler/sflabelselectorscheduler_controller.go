@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // SFLabelSelectorScheduler reconciles a SFLabelSelectorScheduler object
@@ -237,6 +238,9 @@ func (r *SFLabelSelectorScheduler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_labelselector").
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
+		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
 		Complete(r)
 }

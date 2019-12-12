@@ -22,6 +22,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // SFServiceInstanceCounter reconciles a SFServiceInstance object
@@ -154,8 +156,17 @@ func (r *SFServiceInstanceCounter) SetupWithManager(mgr ctrl.Manager) error {
 
 	r.scheme = mgr.GetScheme()
 
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+	interoperatorCfg := cfgManager.GetConfig()
+
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_helper_sfserviceinstance_counter").
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
+		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
 		Complete(r)
 }
