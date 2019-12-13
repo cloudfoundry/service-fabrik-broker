@@ -24,7 +24,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.11"
+        - "1.13"
       git:
         depth: 3
       before_install:
@@ -76,7 +76,7 @@ matrix:
         - "npm run -s test-coverall"
     - language: node_js
       node_js:
-        - "8.14"
+        - "12.13"
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
@@ -84,7 +84,7 @@ matrix:
         - "npm run -s jsdoc"
     - language: node_js
       node_js:
-        - "8.14"
+        - "12.13"
       before_install:
         # - pip install --user truffleHog==2.0.89
         - |
