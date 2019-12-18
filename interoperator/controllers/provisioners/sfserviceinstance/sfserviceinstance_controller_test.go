@@ -188,7 +188,11 @@ func TestReconcile(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
@@ -196,7 +200,7 @@ func TestReconcile(t *testing.T) {
 	setupInteroperatorConfig(g)
 
 	controller := &ReconcileSFServiceInstance{
-		Client:          mgr.GetClient(),
+		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
 		resourceManager: mockResourceManager,
 		clusterRegistry: mockClusterRegistry,
@@ -285,7 +289,13 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c := mgr.GetClient()
+
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	stopMgr, mgrStopped := StartTestManager(mgr, g)

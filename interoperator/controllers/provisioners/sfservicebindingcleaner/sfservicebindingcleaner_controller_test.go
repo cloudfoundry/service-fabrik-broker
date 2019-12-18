@@ -22,6 +22,7 @@ import (
 )
 
 const brokerFinalizer = "broker.servicefabrik.io"
+
 // NOTE: A timeout of 5 seconds has been chosen specifically for the travis
 // builds to run successfully.
 const timeout = time.Second * 5

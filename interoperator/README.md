@@ -14,7 +14,7 @@ These instructions will get you a copy of the project up and running on your loc
 * Install [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 
 ```
-version=2.1.0 # latest stable version
+version=2.2.0 # latest stable version
 arch=amd64
 
 # download the release

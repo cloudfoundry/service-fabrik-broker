@@ -101,7 +101,7 @@ func createAndTestSFServiceAndPlans(serviceName string, planName string, service
 			return err
 		}
 		return fmt.Errorf("not deleted")
-	}, timeout).Should(gomega.Succeed())
+	}, 2*timeout).Should(gomega.Succeed())
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      service.GetName(),
@@ -248,7 +248,7 @@ func TestReconcile(t *testing.T) {
 			return err
 		}
 		return fmt.Errorf("not deleted")
-	}, timeout).Should(gomega.Succeed())
+	}, 2*timeout).Should(gomega.Succeed())
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      sfcluster2.GetName(),
