@@ -294,8 +294,9 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		}
 		for _, sfcrdname := range sfcrdnames {
 			sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
-			g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)).NotTo(gomega.HaveOccurred())
-
+			g.Eventually(func() error {
+				return c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
+			}, timeout).Should(gomega.Succeed())
 		}
 	}
 }
@@ -358,9 +359,11 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 			}
 		})
 		ns := &corev1.Namespace{}
-		g.Expect(c2.Get(context.TODO(), types.NamespacedName{
-			Name: "test-namespace",
-		}, ns)).NotTo(gomega.HaveOccurred())
+		g.Eventually(func() error {
+			return c2.Get(context.TODO(), types.NamespacedName{
+				Name: "test-namespace",
+			}, ns)
+		}, timeout).Should(gomega.Succeed())
 	}
 }
 
@@ -438,7 +441,9 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 			}
 		})
 		sfTargetCluster := &resourcev1alpha1.SFCluster{}
-		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)).NotTo(gomega.HaveOccurred())
+		g.Eventually(func() error {
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)
+		}, timeout).Should(gomega.Succeed())
 	}
 }
 
@@ -523,7 +528,9 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 			}
 		})
 		clusterInstanceSecret := &corev1.Secret{}
-		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)).NotTo(gomega.HaveOccurred())
+		g.Eventually(func() error {
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)
+		}, timeout).Should(gomega.Succeed())
 	}
 }
 
@@ -610,7 +617,9 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 			}
 		})
 		targetProvisionerInstance := &appsv1.Deployment{}
-		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)).NotTo(gomega.HaveOccurred())
+		g.Eventually(func() error {
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)
+		}, timeout).Should(gomega.Succeed())
 	}
 }
 
@@ -689,6 +698,8 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 			}
 		})
 		targetClusterRoleBinding := &v1.ClusterRoleBinding{}
-		g.Expect(c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)).NotTo(gomega.HaveOccurred())
+		g.Eventually(func() error {
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)
+		}, timeout).Should(gomega.Succeed())
 	}
 }

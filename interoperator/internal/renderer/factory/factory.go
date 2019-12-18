@@ -64,20 +64,24 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		values["binding"] = bindingObj
 	}
 
+	var content string
+	if template.Content != "" {
+		content = template.Content
+	} else if template.ContentEncoded != "" {
+		decodedContent, err := base64.StdEncoding.DecodeString(template.ContentEncoded)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode base64 content %v", err)
+		}
+		content = string(decodedContent)
+	}
+
 	switch rendererType {
 	case "helm", "Helm", "HELM":
-		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
+		input := helm.NewInput(template.URL, name.Name, name.Namespace, content, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		var content string
-		if template.Content != "" {
-			content = template.Content
-		} else if template.ContentEncoded != "" {
-			decodedContent, err := base64.StdEncoding.DecodeString(template.ContentEncoded)
-			content = string(decodedContent)
-			if err != nil {
-				return nil, fmt.Errorf("unable to decode base64 content %v", err)
-			}
+		if content == "" {
+			return nil, fmt.Errorf("content & contentEncoded fields empty for %s template ", template.Action)
 		}
 		input := gotemplate.NewInput(template.URL, content, name.Name, values)
 		return input, nil
@@ -96,9 +100,6 @@ func GetStatusRendererInput(template *osbv1alpha1.TemplateSpec, name types.Names
 	}
 
 	switch rendererType {
-	case "helm", "Helm", "HELM":
-		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
-		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
 		var content string
 		if template.Content != "" {

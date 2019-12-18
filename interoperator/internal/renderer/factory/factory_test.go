@@ -1,16 +1,15 @@
 package factory
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/helm"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,7 +22,14 @@ func TestGetRenderer(t *testing.T) {
 		clientSet    *kubernetes.Clientset
 	}
 
-	helmRenderer, _ := helm.New(nil)
+	helmRenderer, err := helm.New(nil)
+	if err != nil {
+		t.Errorf("GetRenderer() failed to create  helmRenderer error = %v", err)
+	}
+	gotemplateRenderer, err := gotemplate.New()
+	if err != nil {
+		t.Errorf("GetRenderer() failed to create  gotemplateRenderer error = %v", err)
+	}
 	tests := []struct {
 		name    string
 		args    args
@@ -37,7 +43,16 @@ func TestGetRenderer(t *testing.T) {
 				clientSet:    nil,
 			},
 			want:    helmRenderer,
-			wantErr: true,
+			wantErr: false,
+		},
+		{
+			name: "testValidInputGotemplate",
+			args: args{
+				rendererType: "gotemplate",
+				clientSet:    nil,
+			},
+			want:    gotemplateRenderer,
+			wantErr: false,
 		},
 		{
 			name: "testInvalidInput",
@@ -56,7 +71,7 @@ func TestGetRenderer(t *testing.T) {
 				t.Errorf("GetRenderer() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if reflect.TypeOf(got) != reflect.TypeOf(tt.want) {
 				t.Errorf("GetRenderer() = %v, want %v", got, tt.want)
 			}
 		})
@@ -64,26 +79,22 @@ func TestGetRenderer(t *testing.T) {
 }
 
 func TestGetRendererInput(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		gopath = "/home/travis/gopath"
-	}
-
 	templateSpec := []osbv1alpha1.TemplateSpec{
 		osbv1alpha1.TemplateSpec{
-			Action: "provision",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
+			Action:  "provision",
+			Type:    "helm",
+			URL:     "../helm/samples/postgresql",
+			Content: "valuesTemplate:valuesTemplate",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "status",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
+			Action:  "status",
+			Type:    "gotemplate",
+			Content: "statusContent",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "sources",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
+			Action:  "sources",
+			Type:    "gotemplate",
+			Content: "sourcesContent",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{
@@ -152,10 +163,9 @@ func TestGetRendererInput(t *testing.T) {
 	}
 
 	invalidTemplate := osbv1alpha1.TemplateSpec{
-		Action: "provision",
-		Type:   "invalidTemplate",
-		//Content: `{{ (printf "{ (b64enc \"provisioncontent\" | quote) }" ) }}`,
-		Content: "cHJvdmlzaW9uY29udGVudA==",
+		Action:  "provision",
+		Type:    "invalidTemplate",
+		Content: "provisioncontent%",
 	}
 
 	template, _ := plan.GetTemplate(osbv1alpha1.ProvisionAction)
@@ -168,7 +178,7 @@ func TestGetRendererInput(t *testing.T) {
 	values["instance"] = instanceObj
 	bindingObj, _ := dynamic.ObjectToMapInterface(binding)
 	values["binding"] = bindingObj
-	helmInput := helm.NewInput(template.URL, name.Name, name.Namespace, values)
+	helmInput := helm.NewInput(template.URL, name.Name, name.Namespace, "valuesTemplate", values)
 
 	type args struct {
 		template *osbv1alpha1.TemplateSpec
@@ -210,6 +220,56 @@ func TestGetRendererInput(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "testInvalidInput fail to decode ContentEncoded",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action:         "provision",
+					Type:           "gotemplate",
+					ContentEncoded: "invalid bas64 content",
+				},
+				service:  &service,
+				plan:     &plan,
+				instance: &instance,
+				binding:  &binding,
+				name:     name,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "testInvalidInput no content and ContentEncoded",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action: "provision",
+					Type:   "gotemplate",
+				},
+				service:  &service,
+				plan:     &plan,
+				instance: &instance,
+				binding:  &binding,
+				name:     name,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "testValidInput gotemplate ContentEncoded",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action:         "provision",
+					Type:           "gotemplate",
+					ContentEncoded: "Q29udGVudEVuY29kZWQK", // ContentEncoded
+				},
+				service:  &service,
+				plan:     &plan,
+				instance: &instance,
+				binding:  &binding,
+				name:     name,
+			},
+			want:    gotemplate.NewInput("", "ContentEncoded", name.Name, values),
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -218,151 +278,24 @@ func TestGetRendererInput(t *testing.T) {
 				t.Errorf("GetRendererInput() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if reflect.TypeOf(got) != reflect.TypeOf(tt.want) {
 				t.Errorf("GetRendererInput() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGetPropertiesRendererInput(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		gopath = "/home/travis/gopath"
-	}
-
-	templateSpec := []osbv1alpha1.TemplateSpec{
-		osbv1alpha1.TemplateSpec{
-			Action: "provision",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action: "status",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action: "sources",
-			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
-		},
-	}
-	plan := osbv1alpha1.SFPlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "plan-id",
-			Namespace: "default",
-		},
-		Spec: osbv1alpha1.SFPlanSpec{
-			Name:          "plan-name",
-			ID:            "plan-id",
-			Description:   "description",
-			Metadata:      nil,
-			Free:          false,
-			Bindable:      true,
-			PlanUpdatable: true,
-			Schemas:       nil,
-			Templates:     templateSpec,
-			ServiceID:     "service-id",
-			RawContext:    nil,
-			Manager:       nil,
-		},
-		Status: osbv1alpha1.SFPlanStatus{},
-	}
-
-	templateSpec2 := []osbv1alpha1.TemplateSpec{
-		osbv1alpha1.TemplateSpec{
-			Action: "provision",
-			Type:   "gotemplate",
-			//Content: `{{ (printf "{ (b64enc \"provisioncontent\" | quote) }" ) }}`,
-			ContentEncoded: "cHJvdmlzaW9uY29udGVudA==",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action:         "bind",
-			Type:           "gotemplate",
-			ContentEncoded: "YmluZGNvbnRlbnQ=",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action:         "status",
-			Type:           "gotemplate",
-			ContentEncoded: "c3RhdHVzY29udGVudA==",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action:         "sources",
-			Type:           "gotemplate",
-			ContentEncoded: "c291cmNlc2NvbnRlbnQ=",
-		},
-	}
-	plan2 := osbv1alpha1.SFPlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "plan-id",
-			Namespace: "default",
-		},
-		Spec: osbv1alpha1.SFPlanSpec{
-			Name:          "plan-name",
-			ID:            "plan-id",
-			Description:   "description",
-			Metadata:      nil,
-			Free:          false,
-			Bindable:      true,
-			PlanUpdatable: true,
-			Schemas:       nil,
-			Templates:     templateSpec2,
-			ServiceID:     "service-id",
-			RawContext:    nil,
-			Manager:       nil,
-		},
-		Status: osbv1alpha1.SFPlanStatus{},
-	}
-
-	service := osbv1alpha1.SFService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-	}
-
+func TestGetStatusRendererInput(t *testing.T) {
 	name := types.NamespacedName{
 		Name:      "foo",
 		Namespace: "default",
-	}
-
-	spec := osbv1alpha1.SFServiceInstanceSpec{}
-	instance := osbv1alpha1.SFServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-		Spec: spec,
-		Status: osbv1alpha1.SFServiceInstanceStatus{
-			DashboardURL: "",
-			State:        "",
-			Error:        "",
-			Description:  "",
-			AppliedSpec:  spec,
-			Resources: []osbv1alpha1.Source{
-				{
-					APIVersion: "v1alpha1",
-					Kind:       "Director",
-					Name:       "dddd",
-					Namespace:  "default",
-				},
-			},
-		},
-	}
-
-	binding := osbv1alpha1.SFServiceBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
 	}
 
 	invalidTemplate := osbv1alpha1.TemplateSpec{
 		Action: "provision",
 		Type:   "invalidTemplate",
 		//Content: `{{ (printf "{ (b64enc \"provisioncontent\" | quote) }" ) }}`,
-		Content: "cHJvdmlzaW9uY29udGVudA==",
+		Content: "provisioncontent",
 	}
 
 	type args struct {
@@ -370,69 +303,8 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 		name     types.NamespacedName
 		sources  map[string]*unstructured.Unstructured
 	}
-
-	template, _ := plan.GetTemplate(osbv1alpha1.SourcesAction)
-	clientSet, _ := kubernetes.NewForConfig(cfg)
-	rendererObj, _ := GetRenderer(template.Type, clientSet)
-	input, _ := GetRendererInput(template, &service, &plan, &instance, &binding, name)
-	output, _ := rendererObj.Render(input)
-	files, _ := output.ListFiles()
-	sourcesFileName := files[0]
-	for _, file := range files {
-		if file == "sources.yaml" {
-			sourcesFileName = file
-			break
-		}
-	}
-	sourcesString, _ := output.FileContent(sourcesFileName)
-	sources, _ := properties.ParseSources(sourcesString)
-	sourceObjects := make(map[string]*unstructured.Unstructured)
-	for key, val := range sources {
-		if val.Name != "" {
-			obj := &unstructured.Unstructured{}
-			obj.SetKind(val.Kind)
-			obj.SetAPIVersion(val.APIVersion)
-			sourceObjects[key] = obj
-		}
-	}
-
-	values := make(map[string]interface{})
-	for key, val := range sourceObjects {
-		values[key] = val.Object
-	}
-
-	helmInput := helm.NewInput(template.URL, name.Name, name.Namespace, values)
-
-	template2, _ := plan2.GetTemplate(osbv1alpha1.SourcesAction)
-	rendererObj2, _ := GetRenderer(template2.Type, nil)
-	input2, _ := GetRendererInput(template2, &service, &plan, &instance, &binding, name)
-	output2, _ := rendererObj2.Render(input2)
-	files2, _ := output2.ListFiles()
-	sourcesFileName2 := files2[0]
-	for _, file := range files2 {
-		if file == "sources.yaml" {
-			sourcesFileName2 = file
-			break
-		}
-	}
-	sourcesString2, _ := output2.FileContent(sourcesFileName2)
-	sources2, _ := properties.ParseSources(sourcesString2)
-	sourceObjects2 := make(map[string]*unstructured.Unstructured)
-	for key, val := range sources2 {
-		if val.Name != "" {
-			obj := &unstructured.Unstructured{}
-			obj.SetKind(val.Kind)
-			obj.SetAPIVersion(val.APIVersion)
-			sourceObjects2[key] = obj
-		}
-	}
-
-	values2 := make(map[string]interface{})
-	for key, val := range sourceObjects2 {
-		values2[key] = val.Object
-	}
-
-	//gotemplateInput := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
+	sources := make(map[string]*unstructured.Unstructured)
+	sources["key"] = &unstructured.Unstructured{}
 
 	tests := []struct {
 		name    string
@@ -445,41 +317,63 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 			args: args{
 				template: &invalidTemplate,
 				name:     name,
-				sources:  nil,
+				sources:  sources,
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name: "testValidInputHelm",
+			name: "testValidInputGoTemplate with ContentEncoded",
 			args: args{
-				template: &templateSpec[2],
-				name:     name,
-				sources:  sourceObjects,
+				template: &osbv1alpha1.TemplateSpec{
+					Action:         "status",
+					Type:           "gotemplate",
+					ContentEncoded: "c3RhdHVzY29udGVudA==", //statuscontent
+				},
+				name:    name,
+				sources: nil,
 			},
-			want:    helmInput,
+			want:    gotemplate.NewInput("", "statuscontent", "foo", nil),
 			wantErr: false,
 		},
 		{
-			name: "testValidInputGoTemplate",
+			name: "testValidInputGoTemplate with content",
 			args: args{
-				template: &templateSpec2[2],
-				name:     name,
-				sources:  sourceObjects2,
+				template: &osbv1alpha1.TemplateSpec{
+					Action:  "status",
+					Type:    "gotemplate",
+					Content: "statuscontent", //statuscontent
+				},
+				name:    name,
+				sources: nil,
 			},
-			want:    gotemplate.NewInput(template.URL, "statuscontent", "foo", values2),
+			want:    gotemplate.NewInput("", "statuscontent", "foo", nil),
 			wantErr: false,
+		},
+		{
+			name: "testInvalidInput fail to decode ContentEncoded",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action:         "status",
+					Type:           "gotemplate",
+					ContentEncoded: "invalid bas64 content",
+				},
+				name:    name,
+				sources: nil,
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GetStatusRendererInput(tt.args.template, tt.args.name, tt.args.sources)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetPropertiesRendererInput() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetStatusRendererInput() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetPropertiesRendererInput() = %v, want %v", got, tt.want)
+			if reflect.TypeOf(got) != reflect.TypeOf(tt.want) {
+				t.Errorf("GetStatusRendererInput() = %v, want %v", got, tt.want)
 			}
 		})
 	}

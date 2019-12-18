@@ -19,6 +19,7 @@ package sfserviceinstancecounter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -89,17 +90,31 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
+	sfCluster := &resourcev1alpha1.SFCluster{}
 
 	// when cluster selector evaluates to single cluster
 	instance1 := _getDummySFServiceInstance("foo1", "plan-id-1")
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(gomega.HaveOccurred())
 	//defer c.Delete(context.TODO(), instance1)
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), types.NamespacedName{
+			Name:      "1",
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		}, sfCluster)
+		if err != nil {
+			return err
+		}
+		serviceInstanceCount := sfCluster.Status.ServiceInstanceCount
+		if serviceInstanceCount != 1 {
+			return fmt.Errorf("service instance count is not 1. current count = %d", serviceInstanceCount)
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
 
 	instance2 := _getDummySFServiceInstance("foo2", "plan-id-2")
 	g.Expect(c.Create(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
 	//defer c.Delete(context.TODO(), instance2)
 
-	sfCluster := &resourcev1alpha1.SFCluster{}
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
@@ -110,7 +125,7 @@ func TestReconcile(t *testing.T) {
 		}
 		serviceInstanceCount := sfCluster.Status.ServiceInstanceCount
 		if serviceInstanceCount != 2 {
-			return errors.New("service intance count is not 2")
+			return fmt.Errorf("service instance count is not 2. current count = %d", serviceInstanceCount)
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
@@ -120,6 +135,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
 
 	sfcluster2 := &resourcev1alpha1.SFCluster{}
+
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo1",
@@ -128,14 +144,22 @@ func TestReconcile(t *testing.T) {
 		if err == nil {
 			return errors.New("instance not deleted")
 		}
-		err = c.Get(context.TODO(), types.NamespacedName{
+		return nil
+	}, timeout).Should(gomega.Succeed())
+
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo2",
 			Namespace: constants.DefaultServiceFabrikNamespace,
 		}, instance2)
 		if err == nil {
 			return errors.New("instance not deleted")
 		}
-		err = c.Get(context.TODO(), types.NamespacedName{
+		return nil
+	}, timeout).Should(gomega.Succeed())
+
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
 			Namespace: constants.DefaultServiceFabrikNamespace,
 		}, sfcluster2)
@@ -144,12 +168,10 @@ func TestReconcile(t *testing.T) {
 		}
 		serviceInstanceCount := sfcluster2.Status.ServiceInstanceCount
 		if serviceInstanceCount != 0 {
-			return errors.New("service intance count is not 0")
+			return fmt.Errorf("service instance count is not 0. current count = %d", serviceInstanceCount)
 		}
 		return nil
-	}, timeout).Should(gomega.Succeed())
-	g.Expect(sfcluster2.Status.ServiceInstanceCount).To(gomega.Equal(0))
-
+	}, 2*timeout).Should(gomega.Succeed())
 }
 
 func _getDummyConfigMap() *corev1.ConfigMap {

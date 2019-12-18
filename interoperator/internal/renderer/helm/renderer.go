@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Service Fabrik Authors.
+Copyright 2019 The Service Fabrik Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,69 +17,69 @@ limitations under the License.
 package helm
 
 import (
-	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/engine"
-	chartapi "k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/timeconv"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	chartapi "helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/downloader"
+	"helm.sh/helm/v3/pkg/engine"
+	"helm.sh/helm/v3/pkg/getter"
 )
 
-var ignoreFileSuffix = [...]string{"NOTES.txt"}
+var (
+	ignoreFileSuffix = [...]string{"NOTES.txt"}
+)
 
 type helmRenderer struct {
-	renderer     *engine.Engine
-	capabilities *chartutil.Capabilities
-	clientSet    *kubernetes.Clientset
+	chartDownloader    *downloader.ChartDownloader
+	gotemplateRenderer renderer.Renderer
 }
 
 type helmInput struct {
-	chartPath   string
-	releaseName string
-	namespace   string
-	values      map[string]interface{}
+	chartPath      string
+	releaseName    string
+	namespace      string
+	valuesTemplate string
+	valuesInput    map[string]interface{}
 }
 
 // NewInput creates a new helm Renderer input object.
-func NewInput(chartPath, releaseName, namespace string, values map[string]interface{}) renderer.Input {
+func NewInput(chartPath, releaseName, namespace string, valuesTemplate string, valuesInput map[string]interface{}) renderer.Input {
 	return helmInput{
-		chartPath:   chartPath,
-		releaseName: releaseName,
-		namespace:   namespace,
-		values:      values,
+		chartPath:      chartPath,
+		releaseName:    releaseName,
+		namespace:      namespace,
+		valuesTemplate: valuesTemplate,
+		valuesInput:    valuesInput,
 	}
 }
 
 // New creates a new helm Renderer object.
 func New(clientSet *kubernetes.Clientset) (renderer.Renderer, error) {
-	if clientSet == nil {
-		cfg, err := config.GetConfig()
-		if err != nil {
-			return nil, errors.NewRendererError("helm", "unable to set up client config", err)
-		}
-
-		clientSet, err = kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return nil, errors.NewRendererError("helm", "failed to create kubernetes client", err)
-		}
+	chartDownloader := &downloader.ChartDownloader{
+		Out: os.Stdout,
+		Getters: getter.Providers{getter.Provider{
+			Schemes: []string{"http", "https"},
+			New:     getter.NewHTTPGetter,
+		}},
 	}
-	sv, err := clientSet.ServerVersion()
-
+	gotemplateRenderer, err := gotemplate.New()
 	if err != nil {
-		return nil, errors.NewRendererError("helm", "failed to get kubernetes server version", err)
+		return nil, err
 	}
 	return &helmRenderer{
-		clientSet:    clientSet,
-		renderer:     engine.New(),
-		capabilities: &chartutil.Capabilities{KubeVersion: sv},
+		chartDownloader:    chartDownloader,
+		gotemplateRenderer: gotemplateRenderer,
 	}, nil
 }
 
@@ -91,53 +91,85 @@ func (r *helmRenderer) Render(rawInput renderer.Input) (renderer.Output, error) 
 	if !ok {
 		return nil, errors.NewRendererError("helm", "invalid input to renderer", nil)
 	}
-	chart, err := chartutil.Load(input.chartPath)
+
+	var valuesString string
+
+	if input.valuesTemplate != "" {
+		gotemplateInput := gotemplate.NewInput("", input.valuesTemplate, input.releaseName, input.valuesInput)
+		gotemplateOutput, err := r.gotemplateRenderer.Render(gotemplateInput)
+		if err != nil {
+			return nil, errors.NewRendererError("helm", "failed to render values", err)
+		}
+		valuesString, err = gotemplateOutput.FileContent("main")
+		if err != nil {
+			return nil, errors.NewRendererError("helm", "failed to read rendered values", err)
+		}
+	}
+
+	values, err := chartutil.ReadValues([]byte(valuesString))
 	if err != nil {
-		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't create load chart from path %s", input.chartPath), err)
-	}
-	return r.renderRelease(chart, input.releaseName, input.namespace, input.values)
-}
-
-func (r *helmRenderer) renderRelease(chart *chartapi.Chart, releaseName, namespace string, values map[string]interface{}) (renderer.Output, error) {
-	chartName := chart.GetMetadata().GetName()
-
-	parsedValues, err := json.Marshal(values)
-	if err != nil {
-		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't parse variables for chart %s", chartName), err)
-	}
-	chartConfig := &chartapi.Config{Raw: string(parsedValues)}
-
-	err = chartutil.ProcessRequirementsEnabled(chart, chartConfig)
-	if err != nil {
-		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't process requirements for chart %s", chartName), err)
-	}
-	err = chartutil.ProcessRequirementsImportValues(chart)
-	if err != nil {
-		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't process requirements for import values for chart %s", chartName), err)
+		return nil, errors.NewRendererError("helm", "failed to parse rendered values", err)
 	}
 
-	caps := r.capabilities
-	revision := 1
-	ts := timeconv.Now()
-	options := chartutil.ReleaseOptions{
-		Name:      releaseName,
-		Time:      ts,
-		Namespace: namespace,
-		Revision:  revision,
-		IsInstall: true,
-	}
-
-	valuesToRender, err := chartutil.ToRenderValuesCaps(chart, chartConfig, options, caps)
+	chartDownloader := r.chartDownloader
+	chartURL, err := chartDownloader.ResolveChartVersion(input.chartPath, "")
 	if err != nil {
 		return nil, err
 	}
+
+	dir, err := ioutil.TempDir("", "helm")
+	if err != nil {
+		return nil, err
+	}
+
+	defer os.RemoveAll(dir)
+
+	path, _, err := chartDownloader.DownloadTo(chartURL.String(), "", dir)
+	if err != nil {
+		return nil, err
+	}
+
+	chart, err := loader.Load(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.renderRelease(chart, input.releaseName, input.namespace, values)
+}
+
+func (r *helmRenderer) renderRelease(chart *chartapi.Chart, releaseName, namespace string, values map[string]interface{}) (renderer.Output, error) {
+	chartName := chart.Name()
+
+	valuesToRender, err := chartutil.ToRenderValues(chart, values, chartutil.ReleaseOptions{
+		Name:      releaseName,
+		Namespace: namespace,
+		Revision:  1,
+		IsInstall: true,
+	}, nil)
+	if err != nil {
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't parse variables for chart %s", chartName), err)
+	}
+
+	err = chartutil.ProcessDependencies(chart, valuesToRender)
+	if err != nil {
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't process dependencies for chart %s", chartName), err)
+	}
+
 	return r.renderResources(chart, valuesToRender)
 }
 
 func (r *helmRenderer) renderResources(ch *chartapi.Chart, values chartutil.Values) (renderer.Output, error) {
-	files, err := r.renderer.Render(ch, values)
+	files, err := engine.Render(ch, values)
 	if err != nil {
 		return nil, err
+	}
+
+	CRDs, err := r.processCRDS(ch)
+	if err != nil {
+		return nil, err
+	}
+	for key, data := range CRDs {
+		files[key] = string(data)
 	}
 
 	// Remove NODES.txt and partials
@@ -158,4 +190,26 @@ func (r *helmRenderer) renderResources(ch *chartapi.Chart, values chartutil.Valu
 		Name:  ch.Metadata.Name,
 		Files: files,
 	}, nil
+}
+
+func (r *helmRenderer) processCRDS(ch *chartapi.Chart) (map[string]string, error) {
+	crds := make(map[string]string)
+	for _, cr := range ch.CRDs() {
+		//Add chart name so that crds are applied first
+		key := fmt.Sprintf("%s/%s", ch.Name(), cr.Name)
+		crds[key] = string(cr.Data)
+	}
+
+	for _, dependency := range ch.Dependencies() {
+		dependencyCRDs, err := r.processCRDS(dependency)
+		if err != nil {
+			return nil, err
+		}
+		for crName, data := range dependencyCRDs {
+			key := fmt.Sprintf("%s/charts/%s", ch.Name(), crName)
+			crds[key] = data
+		}
+	}
+
+	return crds, nil
 }

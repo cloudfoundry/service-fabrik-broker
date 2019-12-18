@@ -148,20 +148,6 @@ func (mr *MockSFClusterInterfaceMockRecorder) GetGeneration() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGeneration", reflect.TypeOf((*MockSFClusterInterface)(nil).GetGeneration))
 }
 
-// GetInitializers mocks base method
-func (m *MockSFClusterInterface) GetInitializers() *v1.Initializers {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetInitializers")
-	ret0, _ := ret[0].(*v1.Initializers)
-	return ret0
-}
-
-// GetInitializers indicates an expected call of GetInitializers
-func (mr *MockSFClusterInterfaceMockRecorder) GetInitializers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitializers", reflect.TypeOf((*MockSFClusterInterface)(nil).GetInitializers))
-}
-
 // GetKubeConfig mocks base method
 func (m *MockSFClusterInterface) GetKubeConfig(arg0 client.Client) (*rest.Config, error) {
 	m.ctrl.T.Helper()
@@ -383,18 +369,6 @@ func (m *MockSFClusterInterface) SetGeneration(arg0 int64) {
 func (mr *MockSFClusterInterfaceMockRecorder) SetGeneration(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGeneration", reflect.TypeOf((*MockSFClusterInterface)(nil).SetGeneration), arg0)
-}
-
-// SetInitializers mocks base method
-func (m *MockSFClusterInterface) SetInitializers(arg0 *v1.Initializers) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetInitializers", arg0)
-}
-
-// SetInitializers indicates an expected call of SetInitializers
-func (mr *MockSFClusterInterfaceMockRecorder) SetInitializers(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetInitializers", reflect.TypeOf((*MockSFClusterInterface)(nil).SetInitializers), arg0)
 }
 
 // SetLabels mocks base method

@@ -207,7 +207,11 @@ func TestReconcile(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mgr.GetClient()
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
@@ -310,7 +314,12 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c := mgr.GetClient()
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
@@ -318,8 +327,6 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
-	cache := mgr.GetCache()
-	stopCacheSync := make(chan struct{})
 
 	binding := &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -351,9 +358,8 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 		resourceManager: mockResourceManager,
 	}
 
-	err = c.Create(context.TODO(), binding)
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
+	g.Expect(c.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
+
 	g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
 
 	type args struct {
@@ -397,11 +403,13 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 		{
 			name: "return error if binding not found",
 			setup: func() {
-				g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
-				g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
-				serviceBinding.SetFinalizers([]string{})
-				g.Expect(c.Update(context.TODO(), serviceBinding)).NotTo(gomega.HaveOccurred())
-				g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
+
+				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					_ = c.Get(context.TODO(), bindingKey, serviceBinding)
+					serviceBinding.SetFinalizers([]string{})
+					return c.Update(context.TODO(), serviceBinding)
+				})
+				g.Expect(err).NotTo(gomega.HaveOccurred())
 				g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).To(gomega.HaveOccurred())
 			},
 			args: args{
@@ -439,7 +447,13 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c := mgr.GetClient()
+
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
@@ -447,8 +461,6 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
-	cache := mgr.GetCache()
-	stopCacheSync := make(chan struct{})
 
 	binding := &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -490,9 +502,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 	}
 
 	g.Expect(c.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
-	g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
-	g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
 	g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
 
 	type args struct {
