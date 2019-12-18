@@ -3,8 +3,7 @@ module github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
 go 1.13
 
 require (
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible
+	github.com/Masterminds/sprig/v3 v3.0.2
 	github.com/go-logr/logr v0.1.0
 	github.com/golang/mock v1.2.0
 	github.com/onsi/ginkgo v1.10.1
