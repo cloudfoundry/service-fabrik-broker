@@ -20,10 +20,14 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 	res := make([]*unstructured.Unstructured, 0, len(contents))
 
 	for _, content := range contents {
+		trimmedContent := strings.Trim(content, "\n")
+		if trimmedContent == "" {
+			continue
+		}
 		obj := &unstructured.Unstructured{}
 
 		var body interface{}
-		err := yaml.Unmarshal([]byte(content), &body)
+		err := yaml.Unmarshal([]byte(trimmedContent), &body)
 		if err != nil {
 			log.Error(err, "StringToUnstructured: failed to unmarshal yaml")
 			return nil, errors.NewUnmarshalError("unable to unmarshal from yaml", err)

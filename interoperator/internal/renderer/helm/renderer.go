@@ -26,6 +26,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 
 	chartapi "helm.sh/helm/v3/pkg/chart"
@@ -55,9 +56,10 @@ type helmInput struct {
 
 // NewInput creates a new helm Renderer input object.
 func NewInput(chartPath, releaseName, namespace string, valuesTemplate string, valuesInput map[string]interface{}) renderer.Input {
+	shortName := fmt.Sprintf("in-%s", utils.Adler32sum(releaseName))
 	return helmInput{
 		chartPath:      chartPath,
-		releaseName:    releaseName,
+		releaseName:    shortName,
 		namespace:      namespace,
 		valuesTemplate: valuesTemplate,
 		valuesInput:    valuesInput,
