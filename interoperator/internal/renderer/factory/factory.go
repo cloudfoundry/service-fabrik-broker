@@ -83,7 +83,7 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		if content == "" {
 			return nil, fmt.Errorf("content & contentEncoded fields empty for %s template ", template.Action)
 		}
-		input := gotemplate.NewInput(template.URL, content, name.Name, values)
+		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, template.Action), values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
@@ -111,7 +111,7 @@ func GetStatusRendererInput(template *osbv1alpha1.TemplateSpec, name types.Names
 				return nil, fmt.Errorf("unable to decode base64 content %v", err)
 			}
 		}
-		input := gotemplate.NewInput(template.URL, content, name.Name, values)
+		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, template.Action), values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)

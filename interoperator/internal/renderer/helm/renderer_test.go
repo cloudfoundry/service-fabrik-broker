@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	chartapi "helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -53,7 +54,7 @@ func TestNewInput(t *testing.T) {
 			},
 			want: helmInput{
 				chartPath:      "chartPath",
-				releaseName:    "releaseName",
+				releaseName:    fmt.Sprintf("in-%s", utils.Adler32sum("releaseName")),
 				namespace:      "namespace",
 				valuesTemplate: "valuesTemplate",
 				valuesInput:    nil,
