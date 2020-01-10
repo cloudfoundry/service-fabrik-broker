@@ -21,7 +21,7 @@ helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interop
 ```
 
 
-### 0.3.0 -> 0.4.0
+### 0.3.0 -> 0.4.0/0.4.1
 
 To add service fabrik interoperator helm chart repo if not already added
 ```shell
