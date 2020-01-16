@@ -76,6 +76,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	_ = mgr.GetFieldIndexer().IndexField(&osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
+		return []string{planID}
+	})
+
 	if err = provisioners.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create provisioners")
 		os.Exit(1)

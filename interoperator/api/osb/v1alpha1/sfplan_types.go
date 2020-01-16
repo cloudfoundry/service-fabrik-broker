@@ -71,30 +71,33 @@ type ServiceSchemas struct {
 
 // SFPlanSpec defines the desired state of SFPlan
 type SFPlanSpec struct {
-	Name          string                `json:"name"`
-	ID            string                `json:"id"`
-	Description   string                `json:"description"`
-	Metadata      *runtime.RawExtension `json:"metadata,omitempty"`
-	Free          bool                  `json:"free"`
-	Bindable      bool                  `json:"bindable"`
-	PlanUpdatable bool                  `json:"planUpdatable,omitempty"`
-	Schemas       *ServiceSchemas       `json:"schemas,omitempty"`
-	Templates     []TemplateSpec        `json:"templates"`
-	ServiceID     string                `json:"serviceId"`
-	RawContext    *runtime.RawExtension `json:"context,omitempty"`
-	Manager       *runtime.RawExtension `json:"manager,omitempty"`
+	Name                string                `json:"name"`
+	ID                  string                `json:"id"`
+	Description         string                `json:"description"`
+	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
+	Free                bool                  `json:"free"`
+	Bindable            bool                  `json:"bindable"`
+	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
+	AutoUpdateInstances bool                  `json:"autoUpdateInstances,omitempty"`
+	Schemas             *ServiceSchemas       `json:"schemas,omitempty"`
+	Templates           []TemplateSpec        `json:"templates"`
+	ServiceID           string                `json:"serviceId"`
+	RawContext          *runtime.RawExtension `json:"context,omitempty"`
+	Manager             *runtime.RawExtension `json:"manager,omitempty"`
 	// Add supported_platform field
 }
 
 // SFPlanStatus defines the observed state of SFPlan
 type SFPlanStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	SpecHash string `json:"specHash,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +genclient
 // +genclient:noStatus
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.name`
+// +kubebuilder:printcolumn:name="age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // SFPlan is the Schema for the sfplans API
 type SFPlan struct {
