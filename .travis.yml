@@ -69,7 +69,7 @@ matrix:
         - popd
     - language: node_js
       node_js:
-        - "8.14"
+        - "12.13"
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
