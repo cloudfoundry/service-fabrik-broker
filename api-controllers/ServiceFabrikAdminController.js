@@ -525,10 +525,14 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   startOobBackup(req, res) {
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     const opts = {
       user: req.user,
       deploymentName: req.params.name,
-      arguments: _.omit(req.body, 'bosh_director')
+      arguments: _.omit(req.body, 'bosh_director'),
+      agent_properties: req.body.agent_properties
     };
     logger.info(`Starting OOB backup for: ${opts.deploymentName}`);
     const oobBackupManager = OobBackupManager.getInstance(req.body.bosh_director);
@@ -546,9 +550,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getOobBackup(req, res) {
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
-      .getBackup(req.params.name, req.query.backup_guid)
+      .getBackup(req.params.name, req.query.backup_guid, req.body.agent_properties)
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs', 'container'))
       .then(backups => {
         const locals = {
@@ -563,8 +570,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     if (_.isEmpty(req.query.token)) {
       throw new errors.BadRequest('Query param token is required');
     }
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     const options = utils.decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
+    options.agent_properties = req.body.agent_properties;
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
@@ -578,12 +589,16 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   startOobRestore(req, res) {
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     return Promise
       .try(() => {
         const opts = {
           user: req.user,
           backup_guid: req.body.backup_guid,
-          deploymentName: req.params.name
+          deploymentName: req.params.name,
+          agent_properties: req.body.agent_properties
         };
 
         if (!opts.backup_guid) {
@@ -612,8 +627,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     if (_.isEmpty(req.query.token)) {
       throw new errors.BadRequest('Query param token is required');
     }
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     const options = utils.decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
+    options.agent_properties = req.body.agent_properties;
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
@@ -627,9 +646,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getOobRestore(req, res) {
+    if(_.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('req.body.agent_properties is mandatory');
+    }
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
-      .getRestore(req.params.name)
+      .getRestore(req.params.name, req.body.agent_properties)
       .then(restoreInfo => {
         const locals = {
           restore: _.omit(restoreInfo, 'secret', 'agent_ip')
@@ -640,40 +662,39 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   scheduleOobBackup(req, res) {
-    if (_.isEmpty(req.body.repeatInterval) || _.isEmpty(req.body.type)) {
-      throw new BadRequest('repeatInterval | type are mandatory');
+    if (_.isEmpty(req.body.repeatInterval) || _.isEmpty(req.body.type) || _.isEmpty(req.body.agent_properties)) {
+      throw new BadRequest('repeatInterval | type || agent_properties are mandatory');
     }
     const boshDirectorName = req.body.bosh_director;
-    const boshDirector = bosh.director;
-    return boshDirector.getAgentPropertiesFromManifest(req.params.name)
-      .then(deploymentAgentProps => {
-        const deploymentAgentContainer = deploymentAgentProps.provider.container;
-        if (_.isEmpty(deploymentAgentContainer)) {
-          /* if the deployment is deleted, there won't be any clue where the backup was stored by agent.
+    const deploymentAgentProps = req.body.agent_properties;
+    return Promise.try(() => {
+      const deploymentAgentContainer = _.get(deploymentAgentProps, 'provider.container');
+      if (_.isEmpty(deploymentAgentContainer)) {
+        /* if the deployment is deleted, there won't be any clue where the backup was stored by agent.
           This case is unlike service instance based backup where we had service id ,
           from that we can figure out the container/bucket name.
           But here we don't have that info. that's why container/bucket is required.*/
-          throw new BadRequest(`Backup not supported by deployment ${req.params.name}.
+        throw new BadRequest(`Backup not supported by deployment ${req.params.name}.
                   Required attribute 'provider.container' missing in manifest`);
-        }
-        const data = _.chain(req.body)
-          .omit('repeatInterval')
-          .set('deployment_name', req.params.name)
-          .set('trigger', CONST.BACKUP.TRIGGER.SCHEDULED)
-          .set('container', deploymentAgentContainer)
-          .set('bosh_director', boshDirectorName)
-          .value();
+      }
+      const data = _.chain(req.body)
+        .omit('repeatInterval')
+        .set('deployment_name', req.params.name)
+        .set('trigger', CONST.BACKUP.TRIGGER.SCHEDULED)
+        .set('container', deploymentAgentContainer)
+        .set('bosh_director', boshDirectorName)
+        .value();
 
-        return ScheduleManager.schedule(
-          req.params.name,
-          CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
-          req.body.repeatInterval,
-          data,
-          req.user)
-          .then(body => res
-            .status(201)
-            .send(body));
-      });
+      return ScheduleManager.schedule(
+        req.params.name,
+        CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
+        req.body.repeatInterval,
+        data,
+        req.user)
+        .then(body => res
+          .status(201)
+          .send(body));
+    });
   }
 
   getOobBackupSchedule(req, res) {
