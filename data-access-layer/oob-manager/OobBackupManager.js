@@ -53,7 +53,6 @@ class OobBackupManager {
       backup_guid: undefined,
       agent_ip: undefined
     };
-    const agentProperties = opts.agent_properties;
 
     function createSecret() {
       return utils
@@ -65,9 +64,10 @@ class OobBackupManager {
         utils.uuidV4(),
         createSecret(),
         this.boshDirector.getDeploymentIps(deploymentName),
-        this.boshDirector.getNormalizedDeploymentVms(deploymentName)
+        this.boshDirector.getNormalizedDeploymentVms(deploymentName),
+        opts.agent_properties ? opts.agent_properties : this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
       ])
-      .spread((backup_guid, secret, ips, vms) => {
+      .spread((backup_guid, secret, ips, vms, agentProperties) => {
         logger.info(`-> initiating ServiceFabrik DB backup with guid : ${backup_guid} on agents : ${ips}`);
         backup.guid = data.backup_guid = result.backup_guid = backup_guid;
         data.secret = backup.secret = secret;
@@ -88,30 +88,37 @@ class OobBackupManager {
 
   getLastBackupStatus(opts) {
     const agent_ip = opts.agent_ip;
-    const agentProperties = opts.agent_properties;
 
     function isFinished(state) {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
 
     const deploymentName = opts.deploymentName;
-    const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
-    return agent
-      .getBackupLastOperation(agent_ip)
-      .tap(lastOperation => {
-        if (isFinished(lastOperation.state)) {
-          agent.getBackupLogs(agent_ip)
-            .then(logs => backupStore
-              .patchBackupFile({
-                deployment_name: deploymentName,
-                root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
-              }, {
-                state: lastOperation.state,
-                logs: logs,
-                snapshotId: lastOperation.snapshotId
-              })
-            );
-        }
+    return Promise.try(() => {
+      if(!opts.agent_properties) {
+        return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+      }
+      return opts.agent_properties;
+    })
+      .then(agentProperties => {
+        const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+        return agent
+          .getBackupLastOperation(agent_ip)
+          .tap(lastOperation => {
+            if (isFinished(lastOperation.state)) {
+              agent.getBackupLogs(agent_ip)
+                .then(logs => backupStore
+                  .patchBackupFile({
+                    deployment_name: deploymentName,
+                    root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
+                  }, {
+                    state: lastOperation.state,
+                    logs: logs,
+                    snapshotId: lastOperation.snapshotId
+                  })
+                );
+            }
+          });
       });
   }
 
@@ -131,9 +138,17 @@ class OobBackupManager {
           logger.debug('Retrieved backup info :', metadata);
           switch (metadata.state) {
             case 'processing':
-              const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
-              return agent.getBackupLastOperation(metadata.agent_ip)
-                .then(data => [_.assign(metadata, _.pick(data, 'state', 'stage'))]);
+              return Promise.try(() => {
+                if(!agentProperties) {
+                  return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+                }
+                return agentProperties;
+              })
+                .then(brokerAgentProperties => {
+                  const agent = new Agent(this.getAgentFromAgentProperties(brokerAgentProperties));
+                  return agent.getBackupLastOperation(metadata.agent_ip)
+                    .then(data => [_.assign(metadata, _.pick(data, 'state', 'stage'))]);
+                });
             default:
               return [metadata];
           }
@@ -184,13 +199,13 @@ class OobBackupManager {
         result = _.assign(result, {
           backup_guid: opts.backup_guid
         });
-        const agentProperties = opts.agent_properties;
         return Promise
           .all([
             this.boshDirector.getDeploymentIps(deploymentName),
-            this.boshDirector.getNormalizedDeploymentVms(deploymentName)
+            this.boshDirector.getNormalizedDeploymentVms(deploymentName),
+            opts.agent_properties ? opts.agent_properties : this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
           ])
-          .spread((ips, vms) => {
+          .spread((ips, vms, agentProperties) => {
             logger.info(`-> initiating deployment ${deploymentName} restore with backup guid : ${opts.backup_guid} on agents : ${ips}`);
             return new Agent(this.getAgentFromAgentProperties(agentProperties))
               .startRestore(ips, backup, vms)
@@ -206,27 +221,33 @@ class OobBackupManager {
 
   getLastRestoreStatus(opts) {
     const agent_ip = opts.agent_ip;
-    const agentProperties = opts.agent_properties;
-
     function isFinished(state) {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
     const deploymentName = opts.deploymentName;
-    const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
-    return agent.getRestoreLastOperation(agent_ip)
-      .tap(lastOperation => {
-        if (isFinished(lastOperation.state)) {
-          agent.getRestoreLogs(agent_ip)
-            .then(logs => backupStore
-              .patchRestoreFile({
-                deployment_name: deploymentName,
-                root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
-              }, {
-                state: lastOperation.state,
-                logs: logs
-              })
-            );
-        }
+    return Promise.try(() => {
+      if(!opts.agent_properties) {
+        return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+      }
+      return opts.agent_properties;
+    })
+      .then(agentProperties => {
+        const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+        return agent.getRestoreLastOperation(agent_ip)
+          .tap(lastOperation => {
+            if (isFinished(lastOperation.state)) {
+              agent.getRestoreLogs(agent_ip)
+                .then(logs => backupStore
+                  .patchRestoreFile({
+                    deployment_name: deploymentName,
+                    root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
+                  }, {
+                    state: lastOperation.state,
+                    logs: logs
+                  })
+                );
+            }
+          });
       });
   }
 
@@ -241,10 +262,17 @@ class OobBackupManager {
       .then(metadata => {
         switch (metadata.state) {
           case 'processing':
-            const agent = this.getAgentFromAgentProperties(agentProperties);
-            return new Agent(agent)
-              .getRestoreLastOperation(metadata.agent_ip)
-              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+            return Promise.try(() => {
+              if(!agentProperties) {
+                return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+              }
+              return agentProperties;
+            })
+              .then(brokerAgentProperties => {
+                const agent = new Agent(this.getAgentFromAgentProperties(brokerAgentProperties));
+                return agent.getRestoreLastOperation(metadata.agent_ip)
+                  .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+              });
           default:
             return metadata;
         }
