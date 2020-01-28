@@ -1,6 +1,13 @@
 # Upgrade Interoperator from the earlier releases(special handling, downtime if any)
 
-## Local clone to 0.3.0
+If no special handling is required, to upgrade to a newer version use
+```shell
+helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version <version> interoperator sf-charts/interoperator --force --recreate-pods
+```
+
+## Special handling for specific version upgrades
+
+### Local clone to 0.3.0
 
 To add service fabrik interoperator helm chart repo if not already added
 ```shell
@@ -14,7 +21,7 @@ helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interop
 ```
 
 
-## 0.3.0 -> 0.4.0
+### 0.3.0 -> 0.4.0/0.4.1
 
 To add service fabrik interoperator helm chart repo if not already added
 ```shell
@@ -24,6 +31,7 @@ helm repo update
 
 To update to 0.4.0 version
 ```shell
+kubectl delete ClusterRoleBinding interoperator-interoperator-manager-rolebinding
 kubectl delete ClusterRole interoperator-interoperator-manager-role
 
 # Assuming interoperator is currently deployed in interoperator namespace
@@ -34,3 +42,13 @@ helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interop
 ```
 Once the ClusterRole is deleted the existing deployment stops working and there is downtime till helm upgrade is completed.
 
+### 0.4.0 or 0.4.1 -> 0.4.2
+First upgrade interoperator using:
+```shell
+helm upgrade --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator --version 0.4.2 interoperator sf-charts/interoperator --force --recreate-pods
+```
+
+Then on each sister cluster delete the `provisioner` statefulset.
+```shell
+kubectl -n interoperator delete statefulset provisioner --ignore-not-found
+```

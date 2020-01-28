@@ -2,8 +2,26 @@ apiVersion: v1
 entries:
   interoperator:
   - apiVersion: v1
+    appVersion: 0.4.3
+    created: "2019-12-06T07:33:26.555740387Z"
+    description: A Helm chart for Interoperator for Kubernetes
+    digest: 1cda78b81ef3e204b3a874f6f1453b86d72b37285007f289ba2b7dc8c494b2d3
+    name: interoperator
+    urls:
+    - https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts/interoperator-0.4.3.tgz
+    version: 0.4.3
+  - apiVersion: v1
+    appVersion: 0.4.2
+    created: "2019-12-06T07:33:26.555057778Z"
+    description: A Helm chart for Interoperator for Kubernetes
+    digest: 02250e701402d1a1d90e13cc530e89338e9ea807d54cb7fd38fbf44e045f4d93
+    name: interoperator
+    urls:
+    - https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts/interoperator-0.4.2.tgz
+    version: 0.4.2
+  - apiVersion: v1
     appVersion: 0.4.1
-    created: "2019-09-30T12:38:40.023913099Z"
+    created: "2019-12-06T07:33:26.554329279Z"
     description: A Helm chart for Interoperator for Kubernetes
     digest: 94c3b19215c2972b7d16c888b0806524b0834e2813594dc48cbc09790ef5d5b4
     name: interoperator
@@ -12,7 +30,7 @@ entries:
     version: 0.4.1
   - apiVersion: v1
     appVersion: 0.4.0
-    created: "2019-09-30T12:38:40.023295017Z"
+    created: "2019-12-06T07:33:26.55372876Z"
     description: A Helm chart for Interoperator for Kubernetes
     digest: 6ed7c9705b2f48875554d3381c50d3e6452453ff892077b515c2146023040781
     name: interoperator
@@ -21,11 +39,11 @@ entries:
     version: 0.4.0
   - apiVersion: v1
     appVersion: 0.3.0
-    created: "2019-09-30T12:38:40.02252041Z"
+    created: "2019-12-06T07:33:26.553117605Z"
     description: A Helm chart for Interoperator for Kubernetes
     digest: b6fddb67fb4cb20ac602957d1316b573b416dfda79be10d7f11ea3a86391aa35
     name: interoperator
     urls:
     - https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts/interoperator-0.3.0.tgz
     version: 0.3.0
-generated: "2019-09-30T12:38:40.021415142Z"
+generated: "2019-12-06T07:33:26.552165964Z"

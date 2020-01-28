@@ -9,58 +9,62 @@ This document describes the basic architecture and scope for the Service Fabrik 
 Architects, Developers, Product Owners, Development Managers who are interested in understanding/using Service Fabrik inter-operator to expose Kubernetes-based services as [OSB](https://www.openservicebrokerapi.org/)-compliant service brokers and integrate with [Service Manager](https://github.com/Peripli/service-manager).
 
 ## Table of Content
-* [Service Fabrik Inter\-operator Basic Architecture](#service-fabrik-inter-operator-basic-architecture)
-  * [Abstract](#abstract)
-  * [Target Audience](#target-audience)
-  * [Table of Content](#table-of-content)
-  * [Context](#context)
-  * [Integration with Service Manager](#integration-with-service-manager)
-    * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker)
-    * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner)
-  * [Basic Control\-flow](#basic-control-flow)
-    * [Catalog](#catalog)
-      * [Service and Plan registration](#service-and-plan-registration)
-      * [Service Fabrik Broker Catalog Cache](#service-fabrik-inter-operator-broker-catalog-cache)
-      * [Integration with Service Manager](#integration-with-service-manager-1)
-    * [Provision](#provision)
-      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-1)
-      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-1)
-      * [Service Operator](#service-operator)
-    * [Last Operation](#last-operation)
-      * [Service Operator](#service-operator-1)
-      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-2)
-      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-2)
-    * [Bind](#bind)
-      * [Service Fabrik Inter\-operator Broker](#service-fabrik-inter-operator-broker-3)
-      * [Service Fabrik Inter\-operator Provisioner](#service-fabrik-inter-operator-provisioner-3)
-      * [Service Operator](#service-operator-2)
-  * [Service Fabrik Inter\-operator Custom Resources](#service-fabrik-inter-operator-custom-resources)
-    * [SFService](#sfservice)
-    * [SFPlan](#sfplan)
-      * [Templates](#templates)
-        * [Template Variables](#template-variables)
-        * [Actions](#actions)
-        * [Types](#types)
-        * [Remote Templates](#remote-templates)
-        * [In\-line templates](#in-line-templates)
-    * [SFServiceInstance](#sfserviceinstance)
-      * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
-    * [SFServiceBinding](#sfservicebinding)
-  * [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
-    * [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
-    * [New Custom Resources Introduced](#new-custom-resources-introduced)
-      * [SFCluster](#sfcluster)
-    * [Components within Interoperator](#components-within-interoperator)
-      * [Broker](#broker)
-      * [MultiClusterDeployer](#multiclusterdeployer)
-      * [Schedulers](#schedulers)
-        * [DefaultScheduler](#defaultscheduler)
-        * [Round Robin Scheduler](#roundrobinscheduler)
-      * [Provisioner](#provisioner)
-    * [Deployment Flow](#deployment-flow)
-    * [Runtime Flow](#runtime-flow)
-    * [Limitations with Multi-Cluster deployment](#limitations-with-multi-cluster-deployment)
-  * [Mass Update of Custom Resources for Interoperator Custom Resource changes](#mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
+- [Service Fabrik Inter-operator Basic Architecture](#service-fabrik-inter-operator-basic-architecture)
+  - [Abstract](#abstract)
+  - [Target Audience](#target-audience)
+  - [Table of Content](#table-of-content)
+  - [Context](#context)
+  - [Integration with Service Manager](#integration-with-service-manager)
+    - [Service Fabrik Inter-operator Broker](#service-fabrik-inter-operator-broker)
+    - [Service Fabrik Inter-operator Provisioner](#service-fabrik-inter-operator-provisioner)
+  - [Basic Control-flow](#basic-control-flow)
+    - [Catalog](#catalog)
+      - [Service and Plan registration](#service-and-plan-registration)
+      - [Service Fabrik Broker Catalog Cache](#service-fabrik-broker-catalog-cache)
+      - [Integration with Service Manager](#integration-with-service-manager-1)
+    - [Provision](#provision)
+      - [Service Fabrik Inter-operator Broker](#service-fabrik-inter-operator-broker-1)
+      - [Service Fabrik Inter-operator Provisioner](#service-fabrik-inter-operator-provisioner-1)
+      - [Service Operator](#service-operator)
+    - [Last Operation](#last-operation)
+      - [Service Operator](#service-operator-1)
+      - [Service Fabrik Inter-operator Provisioner](#service-fabrik-inter-operator-provisioner-2)
+      - [Service Fabrik Inter-operator Broker](#service-fabrik-inter-operator-broker-2)
+    - [Bind](#bind)
+      - [Service Fabrik Inter-operator Broker](#service-fabrik-inter-operator-broker-3)
+      - [Service Fabrik Inter-operator Provisioner](#service-fabrik-inter-operator-provisioner-3)
+      - [Service Operator](#service-operator-2)
+  - [Service Fabrik Inter-operator Custom Resources](#service-fabrik-inter-operator-custom-resources)
+    - [SFService](#sfservice)
+    - [SFPlan](#sfplan)
+      - [Templates](#templates)
+        - [Template Variables](#template-variables)
+        - [Actions](#actions)
+        - [Types](#types)
+        - [Remote Templates](#remote-templates)
+        - [In-line templates](#in-line-templates)
+    - [SFServiceInstance](#sfserviceinstance)
+      - [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
+    - [SFServiceBinding](#sfservicebinding)
+- [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
+  - [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
+  - [New Custom Resources Introduced](#new-custom-resources-introduced)
+    - [SFCluster](#sfcluster)
+  - [Components within Interoperator](#components-within-interoperator)
+    - [Broker](#broker)
+    - [MultiClusterDeployer](#multiclusterdeployer)
+      - [Provisioner Controller](#provisioner-controller)
+      - [Service Replicator](#service-replicator)
+      - [Service Instance Reconciler](#service-instance-reconciler)
+      - [Service Binding Reconciler](#service-binding-reconciler)
+    - [Schedulers](#schedulers)
+      - [DefaultScheduler](#defaultscheduler)
+      - [Label Selector based Scheduler](#label-selector-based-scheduler)
+    - [Provisioner](#provisioner)
+  - [Deployment Flow](#deployment-flow)
+  - [Runtime Flow](#runtime-flow)
+  - [Limitations with Multi-Cluster deployment](#limitations-with-multi-cluster-deployment)
+- [Mass Update of Custom Resources for Interoperator Custom Resource changes](#mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
 
 
 ## Context
@@ -392,22 +396,24 @@ To enable this independence of API for the service operators, Service Fabrik int
 To provide the flexibility to the individual service implementations, many standard template variables are supplied during the rendering of the templates.
 
 At a minimum, the following variable would be supported.
-1. `SFService`.
-1. `SFPlan`.
-1. `SFInstance`.
-1. `SFBind` for `bind` request.
+1. `SFService` as `.service`.
+1. `SFPlan` as `.plan`.
+1. `SFServiceInstance` as `.instance`.
+1. `SFServiceBinding` as `.binding` for `bind` request.
 
 More variables such as the actual resources created by the template might also be made available in the future.
 
 ##### Actions
 
-The `action` field can be used to specify the OSB action for which the template supplied is applicable. Typically, these would include `provision`, `bind` etc. But these could be extended to custom/generic actions.
+The `action` field can be used to specify the OSB action for which the template supplied is applicable. Typically, these would include `provision`, `bind` etc. But these could be extended to custom/generic actions. The current supported actions are `provision`, `bind`, `sources`, `status` and `clusterSelector`
 
 ##### Types
 
 The `type` field can be used to specify the type of template itself. For example, [`gotemplate`](https://golang.org/pkg/text/template/), [`helm`](https://helm.sh/) etc. In future, additional template types could be supported such as [`jsonnet`](https://jsonnet.org/).
 
-Refer [here](./gotemplate.md) for details on additional functions provided by interoperator along with `gotemplate`. Currently, only a single resource is expected to be generated by the `gotemplates`. The type `helm` supports the generation of multiple resources.
+Refer [here](./templates.md#gotemplates) for details on additional functions provided by interoperator along with `gotemplate`. Currently, only a single resource is expected to be generated by the `gotemplates`. The type `helm` supports the generation of multiple resources.
+
+Refer [here](./templates.md#helm) for details on helm templates.
 
 ##### Remote Templates
 
@@ -557,11 +563,11 @@ Multi-cluster provisioning support enables provisioning and distribution of the 
 ## Why Multi Cluster Support is needed
 Scalability is the main reason why one should use Multi-Cluster support. It gives you an option to add new clusters into your set of clusters and scale horizontally. There could be many limitations with the number of resources you can spawn in a cluster such as finite capacity of the worker nodes constraining the number of services that can be scheduled on a given worker node, some finite maximum number of nodes per cluster due to some constraints in the cluster control plane or infrastructure. Hence, for a production scenario, multi-cluster support will be required so that services can be scheduled and spread across multiple clusters and can be scaled horizontally.
 
-Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-filled scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
+Regarding the type of scheduling algorithms which are supported, we currently support round-robin and least-utilized scheduler. We also plan to implement other schedulers which can be used. Schedulers are discussed later in the [schedulers](#schedulers) section.
 ## New Custom Resources Introduced
 Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
 ### SFCluster
-`SFCluster` is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The structure of a sample resource look like the following.
+`SFCluster` is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The name "1" for `SFCluster` is reserved to be used when the master cluster also acts as a sister cluster(it is used for service provisioning). For a sister cluster which is not also the master, some other name should be used. The structure of a sample resource look like the following.
 
 ```yaml
 apiVersion: resource.servicefabrik.io/v1alpha1
@@ -602,10 +608,20 @@ Service Binding Reconciler is the custom controller which watches across multipl
 Schedulers are basically custom controller running on master cluster watching on `SFServiceInstances` and schedules/assigns them `clusterId` (the name of the corresponding `SFCluster` instance) of the cluster where the instance need to be provisioned, depending on the scheduling algorithm it implements. We currently have implemented the following set of schedulers described below. Activating a scheduler is config driven to be passed when someone deploys Inter-operator.
 #### DefaultScheduler
 This is just a sample scheduler suitable only for the single cluster setup. In that case, it schedules all the instances in the one cluster which is part of the setup. It is not suitable for the multi-cluster setup.
-#### Round Robin Scheduler
-As the name suggests, round robin scheduler schedules instances in round robin fashion. At this point, it does not take care of capacity and if interoperator restarts, it loses the state about the next cluster to be scheduled and starts scheduling from the beginning. 
-#### Least filled Scheduler
-This scheduler schedules instance in the least filled cluster.
+#### Label Selector based Scheduler
+Label selector based scheduler chooses clusters for a service instance based on the label selector defined. Label selector is a go template defined within the `SFPlan`, The template can be evaluated to a label selector string which the scheduler uses to choose cluster for the service instance provisioning. An example of such a template can be the following.
+```yaml
+  - action: clusterSelector
+    type: gotemplate
+    content: |
+      {{- $planId := "" }}
+      {{- with .instance.spec.planId }} {{ $planId = . }} {{ end }}
+      plan={{ $planId }}
+```
+
+In the above template, when evaluated, gives a label selector string which looks like `plan=<plan-id-1>`. If there are any cluster which are meant for scheduling instances from a specific plan, then that appropriate label can be applied on that `SFCluster` and this scheduler will ensure all such instances are scheduled in that cluster. Continuing this example, other plans can have a template evaluating to `plan!=<plan-id-1>`, which will ensure that other clusters are used for those plans. Similar to the example above, label selectors can be written using go template for specific scheduling criteria.
+        To enable this scheduler use `--set interoperator.config.schedulerType=label-selector` in the helm install/upgrade command. If a label selector chooses multiple clusters, least-utilized scheduling logic will be applied to select one among them. Least utilized first logic schedules a service instance to the cluster which has the lowest number of service instances assigned to it.
+
 ### Provisioner
 Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.
 ## Deployment Flow

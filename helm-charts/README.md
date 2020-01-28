@@ -1,5 +1,8 @@
 # Helm chart
 
+## Prerequisites
+
+* Install [helm](https://helm.sh/docs/intro/install/) - Supported Version 2.16.1
 ## Using helm chart
 
 To add service fabrik interoperator helm chart repo
