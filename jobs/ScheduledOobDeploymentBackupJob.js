@@ -44,7 +44,7 @@ class ScheduledOobDeploymentBackupJob extends BaseJob {
         }
         return this
           .getBrokerClient()
-          .startDeploymentBackup(_.pick(options, 'deployment_name', 'type', 'trigger', 'bosh_director', 'container'));
+          .startDeploymentBackup(_.pick(options, 'deployment_name', 'type', 'trigger', 'bosh_director', 'container', 'agent_properties'));
       })
       .tap(backupResponse => backupRunStatus.start_backup_status = backupResponse)
       .then(() => this.deleteOldBackup(job, deploymentDeleted))

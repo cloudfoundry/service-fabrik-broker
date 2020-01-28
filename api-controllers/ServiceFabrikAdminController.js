@@ -683,6 +683,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .set('trigger', CONST.BACKUP.TRIGGER.SCHEDULED)
         .set('container', deploymentAgentContainer)
         .set('bosh_director', boshDirectorName)
+        .set('agent_properties', deploymentAgentProps)
         .value();
 
       return ScheduleManager.schedule(

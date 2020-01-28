@@ -53,16 +53,17 @@ class OperationStatusPollerJob extends BaseJob {
     const operationName = job.attrs.data.operation;
     const backupGuid = job.attrs.data.operation_response.backup_guid;
     const boshDirectorName = job.attrs.data.bosh_director;
+    const agentProperties = job.attrs.data.agent_properties;
 
     return Promise.try(() => {
       if (operationName === 'backup') {
         return this
           .getBrokerClient()
-          .getDeploymentBackupStatus(deploymentName, operationResp.token, boshDirectorName);
+          .getDeploymentBackupStatus(deploymentName, operationResp.token, boshDirectorName, agentProperties);
       } else if (operationName === 'restore') {
         return this
           .getBrokerClient()
-          .getDeploymentRestoreStatus(deploymentName, operationResp.token, boshDirectorName);
+          .getDeploymentRestoreStatus(deploymentName, operationResp.token, boshDirectorName, agentProperties);
       } else {
         throw new errors.BadRequest(`Operation ${operationName} not supported by status poller.`);
       }
