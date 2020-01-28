@@ -8,6 +8,13 @@ metadata:
   creationTimestamp: null
   name: sfservices.osb.servicefabrik.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.name
+    name: display-name
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
   group: osb.servicefabrik.io
   names:
     kind: SFService
@@ -15,6 +22,7 @@ spec:
     plural: sfservices
     singular: sfservice
   scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: SFService is the Schema for the sfservices API

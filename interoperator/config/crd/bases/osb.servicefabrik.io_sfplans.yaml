@@ -8,6 +8,13 @@ metadata:
   creationTimestamp: null
   name: sfplans.osb.servicefabrik.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.name
+    name: display-name
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
   group: osb.servicefabrik.io
   names:
     kind: SFPlan
@@ -15,6 +22,8 @@ spec:
     plural: sfplans
     singular: sfplan
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: SFPlan is the Schema for the sfplans API
@@ -34,6 +43,8 @@ spec:
         spec:
           description: SFPlanSpec defines the desired state of SFPlan
           properties:
+            autoUpdateInstances:
+              type: boolean
             bindable:
               type: boolean
             context:
@@ -132,6 +143,9 @@ spec:
           type: object
         status:
           description: SFPlanStatus defines the observed state of SFPlan
+          properties:
+            specHash:
+              type: string
           type: object
       type: object
   version: v1alpha1

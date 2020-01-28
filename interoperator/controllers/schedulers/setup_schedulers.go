@@ -19,10 +19,12 @@ limitations under the License.
 package schedulers
 
 import (
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
-
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstanceupdater"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -36,6 +38,19 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfserviceinstance-counter"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create sfserviceinstance-counter", "scheduler-helper", "SFServiceInstanceCounter")
+		return err
+	}
+
+	_ = mgr.GetFieldIndexer().IndexField(&osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
+		return []string{planID}
+	})
+
+	if err = (&sfserviceinstanceupdater.SFServiceInstanceUpdater{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfserviceinstance-updater"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create sfserviceinstance-updater", "scheduler-helper", "SFServiceInstanceUpdater")
 		return err
 	}
 

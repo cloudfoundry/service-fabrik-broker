@@ -53,6 +53,8 @@ type SFServiceStatus struct {
 // +kubebuilder:object:root=true
 // +genclient
 // +genclient:noStatus
+// +kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.name`
+// +kubebuilder:printcolumn:name="age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // SFService is the Schema for the sfservices API
 type SFService struct {
