@@ -39,7 +39,7 @@ class ServiceBrokerClient extends HttpClient {
       .then(res => res.body);
   }
 
-  getDeploymentBackupStatus(name, token, boshDirectorName) {
+  getDeploymentBackupStatus(name, token, boshDirectorName, agentProperties) {
     return this
       .request({
         method: 'GET',
@@ -52,11 +52,14 @@ class ServiceBrokerClient extends HttpClient {
           token: token,
           bosh_director: boshDirectorName
         },
+        body: {
+          agent_properties: agentProperties
+        },
         json: true
       }, 200)
       .then(res => res.body);
   }
-  getDeploymentRestoreStatus(name, token, boshDirectorName) {
+  getDeploymentRestoreStatus(name, token, boshDirectorName, agentProperties) {
     return this
       .request({
         method: 'GET',
@@ -68,6 +71,9 @@ class ServiceBrokerClient extends HttpClient {
         qs: {
           token: token,
           bosh_director: boshDirectorName
+        },
+        body: {
+          agent_properties: agentProperties
         },
         json: true
       }, 200)

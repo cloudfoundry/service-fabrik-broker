@@ -52,6 +52,14 @@ describe('service-fabrik-admin', function () {
       backup_guid: backup_guid,
       deployment_name: deployment_name
     };
+    const agentProperties = {
+      username: 'admin',
+      password: 'admin',
+      provider: {
+        name: 'openstack',
+        container: config.backup.provider.container
+      }
+    };
     let timestampStub, uuidv4Stub, scheduleStub;
 
     function isoDate(time) {
@@ -96,6 +104,9 @@ describe('service-fabrik-admin', function () {
             backup_guid: backup_guid
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -107,7 +118,6 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb backup operation successfully', function () {
-        mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo(2);
@@ -126,6 +136,9 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/backup`)
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -149,7 +162,6 @@ describe('service-fabrik-admin', function () {
           stage: 'Creating volume',
           updated_at: started_at
         };
-        mocks.director.getDeploymentManifest();
         mocks.agent.lastBackupOperation(backupState);
         return chai
           .request(app)
@@ -158,6 +170,9 @@ describe('service-fabrik-admin', function () {
             token: token
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -178,6 +193,9 @@ describe('service-fabrik-admin', function () {
             bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -189,7 +207,6 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bosh-sf deployment backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(1);
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
@@ -209,7 +226,8 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/backup`)
           .send({
-            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF,
+            agent_properties: agentProperties
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -235,7 +253,6 @@ describe('service-fabrik-admin', function () {
           stage: 'Creating volume',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastBackupOperation(backupState);
         return chai
           .request(app)
@@ -245,6 +262,9 @@ describe('service-fabrik-admin', function () {
             bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -261,6 +281,9 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .get(`${base_url}/deployments/${deployment_name}/restore`)
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -312,7 +335,6 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb restore operation successfully: backup_guid', function () {
-        mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
@@ -334,6 +356,9 @@ describe('service-fabrik-admin', function () {
             backup_guid: backup_guid
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -359,6 +384,9 @@ describe('service-fabrik-admin', function () {
             backup_guid: backup_guid
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -378,7 +406,6 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
           .request(app)
@@ -387,6 +414,9 @@ describe('service-fabrik-admin', function () {
             token: token
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -406,7 +436,6 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
           .request(app)
@@ -415,6 +444,9 @@ describe('service-fabrik-admin', function () {
             token: token
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -432,6 +464,9 @@ describe('service-fabrik-admin', function () {
             bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -441,7 +476,6 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bosh-sf deployment restore operation successfully', function () {
-        mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
@@ -464,6 +498,9 @@ describe('service-fabrik-admin', function () {
             bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
@@ -487,7 +524,6 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
           .request(app)
@@ -497,6 +533,9 @@ describe('service-fabrik-admin', function () {
             bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
+          .send({
+            agent_properties: agentProperties
+          })
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {

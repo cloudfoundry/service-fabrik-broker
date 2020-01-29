@@ -613,27 +613,27 @@ class BoshDirectorClient extends HttpClient {
       });
   }
 
-  getAgentPropertiesFromManifest(deploymentName) {
-    return this.getDeploymentManifest(deploymentName)
-      .tap(manifest => {
-        if (_.isNil(manifest)) {
-          throw new BadRequest(`The deployment ${deploymentName} does not exist`);
-        }
-      })
-      .then(manifest => {
-        if (manifest.instance_groups) {
-          let agentJob = {};
-          _.each(manifest.instance_groups, instance_group => {
-            agentJob = _.find(instance_group.jobs, job => job.name === CONST.AGENT.NAME);
-            return !agentJob;
-          });
-          return agentJob.properties.agent || agentJob.properties;
-        } else {
-          // This section has been retained to support backward compatibility for instances of bosh v1 manifest.
-          // TODO: this must be removed once the migration to bosh v2 manifest is done to avoid confusion. 
-          return manifest.properties.agent;
-        }
-      });
+  getAgentPropertiesFromManifest(deploymentName) {	
+    return this.getDeploymentManifest(deploymentName)	
+      .tap(manifest => {	
+        if (_.isNil(manifest)) {	
+          throw new BadRequest(`The deployment ${deploymentName} does not exist`);	
+        }	
+      })	
+      .then(manifest => {	
+        if (manifest.instance_groups) {	
+          let agentJob = {};	
+          _.each(manifest.instance_groups, instance_group => {	
+            agentJob = _.find(instance_group.jobs, job => job.name === CONST.AGENT.NAME);	
+            return !agentJob;	
+          });	
+          return agentJob.properties.agent || agentJob.properties;	
+        } else {	
+          // This section has been retained to support backward compatibility for instances of bosh v1 manifest.	
+          // TODO: this must be removed once the migration to bosh v2 manifest is done to avoid confusion. 	
+          return manifest.properties.agent;	
+        }	
+      });	
   }
 
   getNormalizedDeploymentVms(deploymentName) {

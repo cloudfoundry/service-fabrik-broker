@@ -528,7 +528,8 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const opts = {
       user: req.user,
       deploymentName: req.params.name,
-      arguments: _.omit(req.body, 'bosh_director')
+      arguments: _.omit(req.body, 'bosh_director'),
+      agent_properties: req.body.agent_properties
     };
     logger.info(`Starting OOB backup for: ${opts.deploymentName}`);
     const oobBackupManager = OobBackupManager.getInstance(req.body.bosh_director);
@@ -548,7 +549,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getOobBackup(req, res) {
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
-      .getBackup(req.params.name, req.query.backup_guid)
+      .getBackup(req.params.name, req.query.backup_guid, req.body.agent_properties)
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs', 'container'))
       .then(backups => {
         const locals = {
@@ -565,6 +566,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     }
     const options = utils.decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
+    options.agent_properties = req.body.agent_properties;
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
@@ -583,7 +585,8 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         const opts = {
           user: req.user,
           backup_guid: req.body.backup_guid,
-          deploymentName: req.params.name
+          deploymentName: req.params.name,
+          agent_properties: req.body.agent_properties
         };
 
         if (!opts.backup_guid) {
@@ -614,6 +617,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     }
     const options = utils.decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
+    options.agent_properties = req.body.agent_properties;
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
@@ -629,7 +633,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getOobRestore(req, res) {
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
-      .getRestore(req.params.name)
+      .getRestore(req.params.name, req.body.agent_properties)
       .then(restoreInfo => {
         const locals = {
           restore: _.omit(restoreInfo, 'secret', 'agent_ip')
@@ -645,11 +649,16 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     }
     const boshDirectorName = req.body.bosh_director;
     const boshDirector = bosh.director;
-    return boshDirector.getAgentPropertiesFromManifest(req.params.name)
+    return Promise.try(() => {
+      if(!req.body.agent_properties) {
+        return boshDirector.getAgentPropertiesFromManifest(req.params.name);
+      }
+      return req.body.agent_properties;
+    })
       .then(deploymentAgentProps => {
-        const deploymentAgentContainer = deploymentAgentProps.provider.container;
+        const deploymentAgentContainer = _.get(deploymentAgentProps, 'provider.container');
         if (_.isEmpty(deploymentAgentContainer)) {
-          /* if the deployment is deleted, there won't be any clue where the backup was stored by agent.
+        /* if the deployment is deleted, there won't be any clue where the backup was stored by agent.
           This case is unlike service instance based backup where we had service id ,
           from that we can figure out the container/bucket name.
           But here we don't have that info. that's why container/bucket is required.*/
@@ -662,6 +671,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .set('trigger', CONST.BACKUP.TRIGGER.SCHEDULED)
           .set('container', deploymentAgentContainer)
           .set('bosh_director', boshDirectorName)
+          .set('agent_properties', deploymentAgentProps)
           .value();
 
         return ScheduleManager.schedule(
@@ -672,7 +682,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           req.user)
           .then(body => res
             .status(201)
-            .send(body));
+            .send(_.omit(body, 'data.agent_properties.provider', 'data.agent_properties.password')));
       });
   }
 
@@ -681,7 +691,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .getSchedule(req.params.name, CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP)
       .then(body => res
         .status(200)
-        .send(body));
+        .send(_.omit(body, 'data.agent_properties.provider', 'data.agent_properties.password')));
   }
 
   cancelOobScheduledBackup(req, res) {

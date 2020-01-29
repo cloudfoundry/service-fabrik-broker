@@ -65,7 +65,7 @@ class OobBackupManager {
         createSecret(),
         this.boshDirector.getDeploymentIps(deploymentName),
         this.boshDirector.getNormalizedDeploymentVms(deploymentName),
-        this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
+        opts.agent_properties ? opts.agent_properties : this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
       ])
       .spread((backup_guid, secret, ips, vms, agentProperties) => {
         logger.info(`-> initiating ServiceFabrik DB backup with guid : ${backup_guid} on agents : ${ips}`);
@@ -94,8 +94,12 @@ class OobBackupManager {
     }
 
     const deploymentName = opts.deploymentName;
-
-    return this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
+    return Promise.try(() => {
+      if(!opts.agent_properties) {
+        return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+      }
+      return opts.agent_properties;
+    })
       .then(agentProperties => {
         const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
         return agent
@@ -118,7 +122,7 @@ class OobBackupManager {
       });
   }
 
-  getBackup(deploymentName, backupGuid) {
+  getBackup(deploymentName, backupGuid, agentProperties) {
     const opts = {
       deployment_name: deploymentName,
       backup_guid: undefined,
@@ -134,9 +138,14 @@ class OobBackupManager {
           logger.debug('Retrieved backup info :', metadata);
           switch (metadata.state) {
             case 'processing':
-              return this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
-                .then(agentProperties => {
-                  const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+              return Promise.try(() => {
+                if(!agentProperties) {
+                  return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+                }
+                return agentProperties;
+              })
+                .then(brokerAgentProperties => {
+                  const agent = new Agent(this.getAgentFromAgentProperties(brokerAgentProperties));
                   return agent.getBackupLastOperation(metadata.agent_ip)
                     .then(data => [_.assign(metadata, _.pick(data, 'state', 'stage'))]);
                 });
@@ -190,12 +199,11 @@ class OobBackupManager {
         result = _.assign(result, {
           backup_guid: opts.backup_guid
         });
-
         return Promise
           .all([
             this.boshDirector.getDeploymentIps(deploymentName),
             this.boshDirector.getNormalizedDeploymentVms(deploymentName),
-            this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
+            opts.agent_properties ? opts.agent_properties : this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
           ])
           .spread((ips, vms, agentProperties) => {
             logger.info(`-> initiating deployment ${deploymentName} restore with backup guid : ${opts.backup_guid} on agents : ${ips}`);
@@ -213,55 +221,62 @@ class OobBackupManager {
 
   getLastRestoreStatus(opts) {
     const agent_ip = opts.agent_ip;
-
     function isFinished(state) {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
     const deploymentName = opts.deploymentName;
-
-    return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then(agentProperties => {
-      const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
-      return agent.getRestoreLastOperation(agent_ip)
-        .tap(lastOperation => {
-          if (isFinished(lastOperation.state)) {
-            agent.getRestoreLogs(agent_ip)
-              .then(logs => backupStore
-                .patchRestoreFile({
-                  deployment_name: deploymentName,
-                  root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
-                }, {
-                  state: lastOperation.state,
-                  logs: logs
-                })
-              );
-          }
-        });
-    });
+    return Promise.try(() => {
+      if(!opts.agent_properties) {
+        return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+      }
+      return opts.agent_properties;
+    })
+      .then(agentProperties => {
+        const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+        return agent.getRestoreLastOperation(agent_ip)
+          .tap(lastOperation => {
+            if (isFinished(lastOperation.state)) {
+              agent.getRestoreLogs(agent_ip)
+                .then(logs => backupStore
+                  .patchRestoreFile({
+                    deployment_name: deploymentName,
+                    root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
+                  }, {
+                    state: lastOperation.state,
+                    logs: logs
+                  })
+                );
+            }
+          });
+      });
   }
 
-  getRestore(deploymentName) {
+  getRestore(deploymentName, agentProperties) {
     const opts = {
       deployment_name: deploymentName,
       backup_guid: undefined,
       root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
     };
-
     return backupStore
       .getRestoreFile(opts)
       .then(metadata => {
         switch (metadata.state) {
           case 'processing':
-            return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then(agentProperties => {
-              const agent = this.getAgentFromAgentProperties(agentProperties);
-              return new Agent(agent)
-                .getRestoreLastOperation(metadata.agent_ip)
-                .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-            });
+            return Promise.try(() => {
+              if(!agentProperties) {
+                return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
+              }
+              return agentProperties;
+            })
+              .then(brokerAgentProperties => {
+                const agent = new Agent(this.getAgentFromAgentProperties(brokerAgentProperties));
+                return agent.getRestoreLastOperation(metadata.agent_ip)
+                  .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+              });
           default:
             return metadata;
         }
       });
-    // });
   }
 
   /* Helper functions  */
