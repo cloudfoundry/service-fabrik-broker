@@ -691,7 +691,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .getSchedule(req.params.name, CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP)
       .then(body => res
         .status(200)
-        .send(body));
+        .send(_.omit(body, 'data.agent_properties.provider', 'data.agent_properties.password')));
   }
 
   cancelOobScheduledBackup(req, res) {
