@@ -682,7 +682,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           req.user)
           .then(body => res
             .status(201)
-            .send(body));
+            .send(_.omit(body, 'data.agent_properties.provider', 'data.agent_properties.password')));
       });
   }
 
