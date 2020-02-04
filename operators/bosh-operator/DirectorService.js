@@ -619,6 +619,7 @@ class DirectorService extends BaseDirectorService {
       })
       .then(() => this.director.deleteDeployment(deploymentName))
       .tap(taskId => logger.info(`+-> Scheduled delete deployment task '${taskId}'`))
+      .catchThrow(NotFound, new ServiceInstanceNotFound(this.guid))
       .catch(err => {
         logger.error('+-> Failed to delete deployment', err);
         throw err;
