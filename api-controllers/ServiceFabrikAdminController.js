@@ -540,7 +540,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         body = _.pick(result, 'operation', 'backup_guid');
         body.token = utils.encodeBase64(result);
         return registerOperationCompletionStatusPoller(req.params.name, 'backup', body,
-          new Date().toISOString(), req.body.bosh_director);
+          new Date().toISOString(), req.body.bosh_director, req.body.agent_properties);
       })
       .then(() => res.status(202)
         .send(body));
@@ -604,7 +604,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
             body = _.pick(result, 'operation', 'backup_guid');
             body.token = utils.encodeBase64(result);
             return registerOperationCompletionStatusPoller(req.params.name, 'restore', body,
-              new Date().toISOString(), req.body.bosh_director);
+              new Date().toISOString(), req.body.bosh_director, req.body.agent_properties);
           })
           .then(() => res.status(202)
             .send(body));
@@ -905,7 +905,7 @@ function getPlanByGuid(plans, guid) {
 }
 
 function registerOperationCompletionStatusPoller(deploymentName, operationName,
-  operationResp, startedAt, boshDirectorName) {
+  operationResp, startedAt, boshDirectorName, agentProperties) {
 
   const data = {
     deployment_name: deploymentName,
@@ -914,7 +914,8 @@ function registerOperationCompletionStatusPoller(deploymentName, operationName,
     trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
     operation: operationName,
     operation_response: operationResp,
-    bosh_director: boshDirectorName
+    bosh_director: boshDirectorName,
+    agent_properties: agentProperties
   };
 
   // Repeat interval inminute
