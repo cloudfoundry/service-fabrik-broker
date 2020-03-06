@@ -387,6 +387,46 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 		}
 	}
 
+	if service != nil {
+		obj := &unstructured.Unstructured{}
+		serviceObj, err := dynamic.ObjectToMapInterface(service)
+		if err != nil {
+			return nil, err
+		}
+		obj.Object = serviceObj
+		sourceObjects["service"] = obj
+	}
+
+	if plan != nil {
+		obj := &unstructured.Unstructured{}
+		planObj, err := dynamic.ObjectToMapInterface(plan)
+		if err != nil {
+			return nil, err
+		}
+		obj.Object = planObj
+		sourceObjects["plan"] = obj
+	}
+
+	if instance != nil {
+		obj := &unstructured.Unstructured{}
+		instanceObj, err := dynamic.ObjectToMapInterface(instance)
+		if err != nil {
+			return nil, err
+		}
+		obj.Object = instanceObj
+		sourceObjects["instance"] = obj
+	}
+
+	if binding != nil {
+		obj := &unstructured.Unstructured{}
+		bindingObj, err := dynamic.ObjectToMapInterface(binding)
+		if err != nil {
+			return nil, err
+		}
+		obj.Object = bindingObj
+		sourceObjects["binding"] = obj
+	}
+
 	template, err = plan.GetTemplate(osbv1alpha1.StatusAction)
 	if err != nil {
 		log.Error(err, "plan does not have status template")
