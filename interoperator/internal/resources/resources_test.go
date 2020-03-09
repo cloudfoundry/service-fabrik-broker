@@ -990,7 +990,7 @@ status:
 			Action: "status",
 			Type:   "gotemplate",
 			Content: `{{ $name := "" }}
-{{- with .director.metadata.name }}
+{{- with .instance.metadata.name }}
   {{- $name = . }}
 {{- end }}
 {{- $stateString := "in progress" }}
@@ -1232,7 +1232,7 @@ directorbind:
 
 	instanceStatus := properties.InstanceStatus{}
 	instanceStatus.State = "in progress"
-	instanceStatus.Response = "Service Instance  provision in progress"
+	instanceStatus.Response = "Service Instance instance-id provision in progress"
 	instanceStatus.Error = ""
 	instanceStatus.DashboardURL = ""
 
