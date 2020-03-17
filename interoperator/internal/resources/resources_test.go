@@ -647,8 +647,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 	defer c.Delete(context.TODO(), resource)
 
 	type args struct {
-		sourceClient      kubernetes.Client
-		targetClient      kubernetes.Client
+		client            kubernetes.Client
 		expectedResources []*unstructured.Unstructured
 		lastResources     []osbv1alpha1.Source
 	}
@@ -664,8 +663,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 			name: "Test1",
 			r:    resourceManager{},
 			args: args{
-				sourceClient:      c,
-				targetClient:      c,
+				client:            c,
 				expectedResources: []*unstructured.Unstructured{resource},
 				lastResources:     nil,
 			},
@@ -676,7 +674,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ReconcileResources(tt.args.sourceClient, tt.args.targetClient, tt.args.expectedResources, tt.args.lastResources)
+			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.ReconcileResources() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -755,8 +753,7 @@ status:
 	oldResource.SetNamespace(lastResource2.Namespace)
 
 	type args struct {
-		sourceClient      kubernetes.Client
-		targetClient      kubernetes.Client
+		client            kubernetes.Client
 		expectedResources []*unstructured.Unstructured
 		lastResources     []osbv1alpha1.Source
 	}
@@ -772,8 +769,7 @@ status:
 			name: "Test1",
 			r:    resourceManager{},
 			args: args{
-				sourceClient:      c,
-				targetClient:      c,
+				client:            c,
 				expectedResources: expectedResources,
 				lastResources:     []osbv1alpha1.Source{lastResource1, lastResource2},
 			},
@@ -784,8 +780,7 @@ status:
 			name: "Test2",
 			r:    resourceManager{},
 			args: args{
-				sourceClient:      c,
-				targetClient:      c,
+				client:            c,
 				expectedResources: expectedResources,
 				lastResources:     []osbv1alpha1.Source{lastResource1},
 			},
@@ -796,7 +791,7 @@ status:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ReconcileResources(tt.args.sourceClient, tt.args.targetClient, tt.args.expectedResources, tt.args.lastResources)
+			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.ReconcileResources() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1237,14 +1232,13 @@ directorbind:
 	instanceStatus.DashboardURL = ""
 
 	type args struct {
-		sourceClient kubernetes.Client
-		targetClient kubernetes.Client
-		instanceID   string
-		bindingID    string
-		serviceID    string
-		planID       string
-		action       string
-		namespace    string
+		client     kubernetes.Client
+		instanceID string
+		bindingID  string
+		serviceID  string
+		planID     string
+		action     string
+		namespace  string
 	}
 	tests := []struct {
 		name    string
@@ -1257,14 +1251,13 @@ directorbind:
 			name: "TestInvalidInstanceError",
 			r:    resourceManager{},
 			args: args{
-				sourceClient: c,
-				targetClient: c,
-				instanceID:   "instance-id2",
-				bindingID:    "binding-id",
-				serviceID:    "service-id",
-				planID:       "plan-id",
-				action:       osbv1alpha1.ProvisionAction,
-				namespace:    "default",
+				client:     c,
+				instanceID: "instance-id2",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				action:     osbv1alpha1.ProvisionAction,
+				namespace:  "default",
 			},
 			want:    nil,
 			wantErr: true,
@@ -1273,14 +1266,13 @@ directorbind:
 			name: "TestValid",
 			r:    resourceManager{},
 			args: args{
-				sourceClient: c,
-				targetClient: c,
-				instanceID:   "instance-id",
-				bindingID:    "binding-id",
-				serviceID:    "service-id",
-				planID:       "plan-id",
-				action:       osbv1alpha1.ProvisionAction,
-				namespace:    "default",
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				action:     osbv1alpha1.ProvisionAction,
+				namespace:  "default",
 			},
 			want:    &instanceStatus,
 			wantErr: false,
@@ -1289,7 +1281,7 @@ directorbind:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ComputeStatus(tt.args.sourceClient, tt.args.targetClient, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.action, tt.args.namespace)
+			got, err := r.ComputeStatus(tt.args.client, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.action, tt.args.namespace)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.ComputeStatus() error = %v, wantErr %v", err, tt.wantErr)
 				return
