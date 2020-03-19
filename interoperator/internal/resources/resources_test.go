@@ -321,8 +321,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := resourceManager{}
-			got, got1, got2, got3, err := r.fetchResources(tt.args.client, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.namespace)
+			got, got1, got2, got3, err := fetchResources(tt.args.client, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.namespace)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.fetchResources() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -650,6 +649,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 		client            kubernetes.Client
 		expectedResources []*unstructured.Unstructured
 		lastResources     []osbv1alpha1.Source
+		force             bool
 	}
 
 	tests := []struct {
@@ -666,6 +666,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 				client:            c,
 				expectedResources: []*unstructured.Unstructured{resource},
 				lastResources:     nil,
+				force:             false,
 			},
 			want:    []*unstructured.Unstructured{resource},
 			wantErr: false,
@@ -674,7 +675,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources)
+			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources, tt.args.force)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.ReconcileResources() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -756,6 +757,7 @@ status:
 		client            kubernetes.Client
 		expectedResources []*unstructured.Unstructured
 		lastResources     []osbv1alpha1.Source
+		force             bool
 	}
 
 	tests := []struct {
@@ -772,6 +774,7 @@ status:
 				client:            c,
 				expectedResources: expectedResources,
 				lastResources:     []osbv1alpha1.Source{lastResource1, lastResource2},
+				force:             false,
 			},
 			want:    append(foundResources, oldResource),
 			wantErr: false,
@@ -791,7 +794,7 @@ status:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources)
+			got, err := r.ReconcileResources(tt.args.client, tt.args.expectedResources, tt.args.lastResources, tt.args.force)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.ReconcileResources() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -857,8 +860,7 @@ func Test_resourceManager_findUnstructuredObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := resourceManager{}
-			if got := r.findUnstructuredObject(tt.args.list, tt.args.item); got != tt.want {
+			if got := findUnstructuredObject(tt.args.list, tt.args.item); got != tt.want {
 				t.Errorf("resourceManager.findUnstructuredObject() = %v, want %v", got, tt.want)
 			}
 		})

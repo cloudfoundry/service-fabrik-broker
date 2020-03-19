@@ -23,7 +23,7 @@ var log = logf.Log.WithName("resources.internal")
 type ResourceManager interface {
 	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)
 	SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error
-	ReconcileResources(client kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
+	ReconcileResources(client kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source, force bool) ([]osbv1alpha1.Source, error)
 	ComputeStatus(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error)
 	DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
 }
@@ -53,7 +53,7 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 	}
 
 	switch action {
-	case osbv1alpha1.BindAction:
+	case osbv1alpha1.BindAction, osbv1alpha1.UnbindAction:
 		name.Name = binding.GetName()
 	}
 
@@ -103,7 +103,7 @@ func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*uns
 }
 
 // ReconcileResources setups all resources according to expectation
-func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error) {
+func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source, force bool) ([]osbv1alpha1.Source, error) {
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
 		foundResource := &unstructured.Unstructured{}
@@ -135,12 +135,22 @@ func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedRe
 		}
 
 		toBeUpdated := false
+		var updatedResource interface{}
 		log.V(2).Info("reconcile - expectedResource resource", "foundResource", foundResource.Object, "expectedResource", expectedResource.Object)
-		updatedResource, toBeUpdated := dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
-		if toBeUpdated {
+		if !force {
+			updatedResource, toBeUpdated = dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
+		}
+
+		if toBeUpdated || force {
 			log.Info("reconcile - updating resource", "kind", kind, "namespacedName", namespacedName)
-			foundResource.Object = updatedResource.(map[string]interface{})
-			err = client.Update(context.TODO(), foundResource)
+			if force {
+				log.Info("reconcile - force updating resource", "resource", expectedResource.Object)
+				err = client.Update(context.TODO(), expectedResource)
+			} else {
+				foundResource.Object = updatedResource.(map[string]interface{})
+				log.Info("reconcile - updating resource", "resource", foundResource.Object)
+				err = client.Update(context.TODO(), foundResource)
+			}
 			if err != nil {
 				log.Error(err, "reconcile- failed to update resource", "kind", kind, "namespacedName", namespacedName)
 				return nil, err
@@ -158,15 +168,20 @@ func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedRe
 		oldResource.SetName(lastResource.Name)
 		oldResource.SetNamespace(lastResource.Namespace)
 		if ok := findUnstructuredObject(foundResources, oldResource); !ok {
-			err := client.Delete(context.TODO(), oldResource)
+			err := deleteSubResource(client, oldResource)
 			if err != nil {
+				if apiErrors.IsNotFound(err) {
+					log.Info("deleted completed for outdated subResource", "resource", lastResource)
+					continue
+				}
+
 				// Not failing here. Add the outdated resource to foundResource
 				// Delete will be retried on next reconcile
-				log.Error(err, "reconcile - failed to delete outdated resource", "resource", lastResource)
+				log.Error(err, "reconcile - failed to delete outdated subResource", "resource", lastResource)
 				foundResources = append(foundResources, oldResource)
 				continue
 			}
-			log.Info("reconcile - delete triggered for outdated resource", "resource", lastResource)
+			log.Info("reconcile - delete triggered for outdated subResource", "resource", lastResource)
 		}
 	}
 	resourceRefs := []osbv1alpha1.Source{}
@@ -191,7 +206,7 @@ func (r resourceManager) ComputeStatus(client kubernetes.Client, instanceID, bin
 	}
 
 	switch action {
-	case osbv1alpha1.BindAction:
+	case osbv1alpha1.BindAction, osbv1alpha1.UnbindAction:
 		name.Name = binding.GetName()
 	}
 

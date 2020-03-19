@@ -154,7 +154,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
 
-		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, instance.Status.Resources)
+		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, instance.Status.Resources, false)
 		if err != nil {
 			log.Error(err, "ReconcileResources failed")
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)

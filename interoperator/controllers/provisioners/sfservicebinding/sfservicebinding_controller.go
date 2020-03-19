@@ -131,7 +131,27 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 		bindSecret.APIVersion = "v1"
 		bindSecret.Name = secretName
 		bindSecret.Namespace = binding.GetNamespace()
-		resourceRefs := append(binding.Status.Resources, bindSecret)
+		var resourceRefs []osbv1alpha1.Source
+
+		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.UnbindAction, binding.GetNamespace())
+		if err != nil && !errors.TemplateNotFound(err) {
+			return r.handleError(binding, ctrl.Result{}, err, state, 0)
+		}
+
+		if err != nil {
+			// Unbind Template is not present, delete all resources created
+			resourceRefs = append(binding.Status.Resources, bindSecret)
+		} else {
+			_, err = r.resourceManager.ReconcileResources(r, expectedResources, binding.Status.Resources, true)
+			if err != nil {
+				log.Error(err, "ReconcileResources failed", "binding", bindingID)
+				return r.handleError(binding, ctrl.Result{}, err, state, 0)
+			}
+
+			// Unbind template is present, delete only secret
+			resourceRefs = []osbv1alpha1.Source{bindSecret}
+		}
+
 		remainingResource, err := r.resourceManager.DeleteSubResources(r, resourceRefs)
 		if err != nil {
 			log.Error(err, "Delete sub resources failed", "binding", bindingID)
@@ -153,7 +173,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
 		}
 
-		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, binding.Status.Resources)
+		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, binding.Status.Resources, false)
 		if err != nil {
 			log.Error(err, "ReconcileResources failed", "binding", bindingID)
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
@@ -278,7 +298,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(binding *osbv1alpha1.SFSe
 	namespace := binding.GetNamespace()
 	log := r.Log.WithValues("sfservicebinding", bindingID)
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.UnbindAction, namespace)
 	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
 		return err

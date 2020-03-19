@@ -28,13 +28,14 @@ const (
 	ProvisionAction            = "provision"
 	StatusAction               = "status"
 	BindAction                 = "bind"
+	UnbindAction               = "unbind"
 	SourcesAction              = "sources"
 	ClusterLabelSelectorAction = "clusterSelector"
 )
 
 // TemplateSpec is the specifcation of a template
 type TemplateSpec struct {
-	// +kubebuilder:validation:Enum=provision;status;bind;sources;clusterSelector
+	// +kubebuilder:validation:Enum=provision;status;bind;unbind;sources;clusterSelector
 	Action string `yaml:"action" json:"action"`
 
 	// +kubebuilder:validation:Enum=gotemplate;helm

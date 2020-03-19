@@ -322,15 +322,15 @@ func renderTemplate(client kubernetes.Client, instance *osbv1alpha1.SFServiceIns
 		name.Name = binding.GetName()
 	}
 
-	sourceObjects, err := computeInputObjects(client, instance, binding, service, plan)
-	if err != nil {
-		log.Error(err, "failed to compute input object for template from sources")
-		return nil, err
-	}
-
 	template, err := plan.GetTemplate(action)
 	if err != nil {
 		log.Error(err, "plan does not have template")
+		return nil, err
+	}
+
+	sourceObjects, err := computeInputObjects(client, instance, binding, service, plan)
+	if err != nil {
+		log.Error(err, "failed to compute input object for template from sources")
 		return nil, err
 	}
 

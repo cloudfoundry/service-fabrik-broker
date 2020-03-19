@@ -68,18 +68,18 @@ func (mr *MockResourceManagerMockRecorder) SetOwnerReference(owner, resources, s
 }
 
 // ReconcileResources mocks base method
-func (m *MockResourceManager) ReconcileResources(client client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source) ([]v1alpha1.Source, error) {
+func (m *MockResourceManager) ReconcileResources(client client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source, force bool) ([]v1alpha1.Source, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReconcileResources", client, expectedResources, lastResources)
+	ret := m.ctrl.Call(m, "ReconcileResources", client, expectedResources, lastResources, force)
 	ret0, _ := ret[0].([]v1alpha1.Source)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReconcileResources indicates an expected call of ReconcileResources
-func (mr *MockResourceManagerMockRecorder) ReconcileResources(client, expectedResources, lastResources interface{}) *gomock.Call {
+func (mr *MockResourceManagerMockRecorder) ReconcileResources(client, expectedResources, lastResources, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileResources", reflect.TypeOf((*MockResourceManager)(nil).ReconcileResources), client, expectedResources, lastResources)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileResources", reflect.TypeOf((*MockResourceManager)(nil).ReconcileResources), client, expectedResources, lastResources, force)
 }
 
 // ComputeStatus mocks base method
