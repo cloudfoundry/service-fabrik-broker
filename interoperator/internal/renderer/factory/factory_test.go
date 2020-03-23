@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/helm"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
@@ -285,7 +284,7 @@ func TestGetRendererInput(t *testing.T) {
 	}
 }
 
-func TestGetStatusRendererInput(t *testing.T) {
+func TestGetRendererInputFromSources(t *testing.T) {
 	name := types.NamespacedName{
 		Name:      "foo",
 		Namespace: "default",
@@ -301,10 +300,10 @@ func TestGetStatusRendererInput(t *testing.T) {
 	type args struct {
 		template *osbv1alpha1.TemplateSpec
 		name     types.NamespacedName
-		sources  map[string]*unstructured.Unstructured
+		sources  map[string]interface{}
 	}
-	sources := make(map[string]*unstructured.Unstructured)
-	sources["key"] = &unstructured.Unstructured{}
+	sources := make(map[string]interface{})
+	sources["key"] = make(map[string]interface{})
 
 	tests := []struct {
 		name    string
@@ -367,13 +366,13 @@ func TestGetStatusRendererInput(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetStatusRendererInput(tt.args.template, tt.args.name, tt.args.sources)
+			got, err := GetRendererInputFromSources(tt.args.template, tt.args.name, tt.args.sources)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetStatusRendererInput() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetRendererInputFromSources() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if reflect.TypeOf(got) != reflect.TypeOf(tt.want) {
-				t.Errorf("GetStatusRendererInput() = %v, want %v", got, tt.want)
+				t.Errorf("GetRendererInputFromSources() = %v, want %v", got, tt.want)
 			}
 		})
 	}

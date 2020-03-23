@@ -229,7 +229,7 @@ func TestReconcile(t *testing.T) {
 	mockClusterRegistry.EXPECT().GetClient("1").Return(controller, nil).AnyTimes()
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(&properties.Status{
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(&properties.Status{
 		Bind: properties.GenericStatus{
 			State:    "succeeded",
 			Response: "foo",
@@ -506,9 +506,8 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
 
 	type args struct {
-		targetClient client.Client
-		binding      *osbv1alpha1.SFServiceBinding
-		retryCount   int
+		binding    *osbv1alpha1.SFServiceBinding
+		retryCount int
 	}
 	tests := []struct {
 		name    string
@@ -520,14 +519,13 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			name: "fail if computestatus fails without notfound error",
 			setup: func() {
 				mockResourceManager.EXPECT().
-					ComputeStatus(r, c, "instance-id", "binding-id", "service-id", "plan-id",
+					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
 						osbv1alpha1.BindAction, "default").
 					Return(nil, errors.NewMarshalError("", nil))
 			},
 			args: args{
-				targetClient: c,
-				binding:      serviceBinding,
-				retryCount:   0,
+				binding:    serviceBinding,
+				retryCount: 0,
 			},
 			wantErr: true,
 		},
@@ -535,14 +533,13 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			name: "succeed and remove finalizer if computestatus fails with notfound error",
 			setup: func() {
 				mockResourceManager.EXPECT().
-					ComputeStatus(r, c, "instance-id", "binding-id", "service-id", "plan-id",
+					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
 						osbv1alpha1.BindAction, "default").
 					Return(nil, errors.NewSFServiceInstanceNotFound("instance-id", nil))
 			},
 			args: args{
-				targetClient: c,
-				binding:      serviceBinding,
-				retryCount:   0,
+				binding:    serviceBinding,
+				retryCount: 0,
 			},
 			wantErr: false,
 		},
@@ -550,14 +547,13 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			name: "fail if binding not found",
 			setup: func() {
 				mockResourceManager.EXPECT().
-					ComputeStatus(r, c, "instance-id", "binding-id", "service-id", "plan-id",
+					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
 						osbv1alpha1.BindAction, "default").
 					Return(nil, errors.NewSFServiceBindingNotFound("binding-id", nil)).AnyTimes()
 			},
 			args: args{
-				targetClient: c,
-				binding:      serviceBinding,
-				retryCount:   0,
+				binding:    serviceBinding,
+				retryCount: 0,
 			},
 			wantErr: true,
 		},
@@ -567,7 +563,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			if err := r.updateUnbindStatus(tt.args.targetClient, tt.args.binding, tt.args.retryCount); (err != nil) != tt.wantErr {
+			if err := r.updateUnbindStatus(tt.args.binding, tt.args.retryCount); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileSFServiceBinding.updateUnbindStatus() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

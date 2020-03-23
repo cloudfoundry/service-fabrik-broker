@@ -110,21 +110,35 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
 		return current, toBeUpdated
 	case []interface{}:
 		current := currentObj.([]interface{})
+		currentLen := len(current)
 		for i, val := range new {
-			updatedVal, ok := DeepUpdate(current[i], val)
-			if ok {
-				current[i] = updatedVal
+			if i < currentLen {
+				updatedVal, ok := DeepUpdate(current[i], val)
+				if ok {
+					current[i] = updatedVal
+					toBeUpdated = true
+				}
+			} else {
+				current = append(current, new[i:]...)
 				toBeUpdated = true
+				return current, toBeUpdated
 			}
 		}
 		return current, toBeUpdated
 	case []map[string]interface{}:
 		current := currentObj.([]map[string]interface{})
+		currentLen := len(current)
 		for i, val := range new {
-			updatedVal, ok := DeepUpdate(current[i], val)
-			if ok {
-				current[i] = updatedVal.(map[string]interface{})
+			if i < currentLen {
+				updatedVal, ok := DeepUpdate(current[i], val)
+				if ok {
+					current[i] = updatedVal.(map[string]interface{})
+					toBeUpdated = true
+				}
+			} else {
+				current = append(current, new[i:]...)
 				toBeUpdated = true
+				return current, toBeUpdated
 			}
 		}
 		return current, toBeUpdated
