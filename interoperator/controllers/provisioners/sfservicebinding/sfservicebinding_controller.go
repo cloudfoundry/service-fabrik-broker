@@ -43,6 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var ownClusterID string
@@ -119,8 +121,6 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 		return r.handleError(binding, ctrl.Result{Requeue: true}, nil, "", 0)
 	}
 
-	targetClient := r
-
 	if state == "delete" && !binding.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
 		// so lets handle our external dependency
@@ -131,8 +131,28 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 		bindSecret.APIVersion = "v1"
 		bindSecret.Name = secretName
 		bindSecret.Namespace = binding.GetNamespace()
-		resourceRefs := append(binding.Status.Resources, bindSecret)
-		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
+		var resourceRefs []osbv1alpha1.Source
+
+		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.UnbindAction, binding.GetNamespace())
+		if err != nil && !errors.TemplateNotFound(err) {
+			return r.handleError(binding, ctrl.Result{}, err, state, 0)
+		}
+
+		if err != nil {
+			// Unbind Template is not present, delete all resources created
+			resourceRefs = append(binding.Status.Resources, bindSecret)
+		} else {
+			_, err = r.resourceManager.ReconcileResources(r, expectedResources, binding.Status.Resources, true)
+			if err != nil {
+				log.Error(err, "ReconcileResources failed", "binding", bindingID)
+				return r.handleError(binding, ctrl.Result{}, err, state, 0)
+			}
+
+			// Unbind template is present, delete only secret
+			resourceRefs = []osbv1alpha1.Source{bindSecret}
+		}
+
+		remainingResource, err := r.resourceManager.DeleteSubResources(r, resourceRefs)
 		if err != nil {
 			log.Error(err, "Delete sub resources failed", "binding", bindingID)
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
@@ -153,7 +173,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
 		}
 
-		resourceRefs, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
+		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, binding.Status.Resources, false)
 		if err != nil {
 			log.Error(err, "ReconcileResources failed", "binding", bindingID)
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
@@ -178,12 +198,12 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 
 	if state == "in progress" {
 		if lastOperation == "delete" {
-			err = r.updateUnbindStatus(targetClient, binding, 0)
+			err = r.updateUnbindStatus(binding, 0)
 			if err != nil {
 				return r.handleError(binding, ctrl.Result{}, err, lastOperation, 0)
 			}
 		} else if lastOperation == "in_queue" || lastOperation == "update" {
-			err = r.updateBindStatus(targetClient, binding, 0)
+			err = r.updateBindStatus(binding, 0)
 			if err != nil {
 				return r.handleError(binding, ctrl.Result{}, err, lastOperation, 0)
 			}
@@ -268,7 +288,7 @@ func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.Namespace
 	return nil
 }
 
-func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
+func (r *ReconcileSFServiceBinding) updateUnbindStatus(binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
 	ctx := context.Background()
 
 	serviceID := binding.Spec.ServiceID
@@ -278,7 +298,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	namespace := binding.GetNamespace()
 	log := r.Log.WithValues("sfservicebinding", bindingID)
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.UnbindAction, namespace)
 	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
 		return err
@@ -317,7 +337,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 			Name:      resource.GetName(),
 			Namespace: resource.GetNamespace(),
 		}
-		err := targetClient.Get(ctx, namespacedName, resource)
+		err := r.Get(ctx, namespacedName, resource)
 		if !apiErrors.IsNotFound(err) {
 			remainingResource = append(remainingResource, subResource)
 		}
@@ -342,7 +362,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 		if err := r.Update(context.Background(), binding); err != nil {
 			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateUnbindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
-				return r.updateUnbindStatus(targetClient, binding, retryCount+1)
+				return r.updateUnbindStatus(binding, retryCount+1)
 			}
 			log.Error(err, "failed to update unbind status", "binding", bindingID)
 			return err
@@ -351,7 +371,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	return nil
 }
 
-func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
+func (r *ReconcileSFServiceBinding) updateBindStatus(binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
 	ctx := context.Background()
 
 	serviceID := binding.Spec.ServiceID
@@ -361,7 +381,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 	namespace := binding.GetNamespace()
 	log := r.Log.WithValues("sfservicebinding", bindingID)
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
 	if err != nil {
 		log.Error(err, "Compute status failed for bind", "binding", bindingID)
 		return err
@@ -427,7 +447,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateBindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
-				return r.updateBindStatus(targetClient, binding, retryCount+1)
+				return r.updateBindStatus(binding, retryCount+1)
 			}
 			log.Error(err, "failed to update status", "binding", bindingID)
 			return err
@@ -588,7 +608,11 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	for _, subresource := range subresources {
-		builder = builder.Owns(subresource)
+		builder = builder.Watches(&source.Kind{Type: subresource},
+			&handler.EnqueueRequestForOwner{
+				IsController: false,
+				OwnerType:    &osbv1alpha1.SFServiceBinding{},
+			})
 	}
 
 	return builder.Complete(r)
