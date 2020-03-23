@@ -40,6 +40,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var ownClusterID string
@@ -128,12 +130,10 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		return r.handleError(instance, ctrl.Result{Requeue: true}, nil, "", 0)
 	}
 
-	targetClient := r
-
 	if state == "delete" && !instance.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
 		// so lets handle our external dependency
-		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
+		remainingResource, err := r.resourceManager.DeleteSubResources(r, instance.Status.Resources)
 		if err != nil {
 			log.Error(err, "Delete sub resources failed")
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
@@ -154,7 +154,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
 
-		resourceRefs, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
+		resourceRefs, err := r.resourceManager.ReconcileResources(r, expectedResources, instance.Status.Resources, false)
 		if err != nil {
 			log.Error(err, "ReconcileResources failed")
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
@@ -179,11 +179,11 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 
 	if state == "in progress" {
 		if lastOperation == "delete" {
-			if err := r.updateDeprovisionStatus(targetClient, instance, 0); err != nil {
+			if err := r.updateDeprovisionStatus(instance, 0); err != nil {
 				return r.handleError(instance, ctrl.Result{}, err, lastOperation, 0)
 			}
 		} else if lastOperation == "in_queue" || lastOperation == "update" {
-			err = r.updateStatus(targetClient, instance, 0)
+			err = r.updateStatus(instance, 0)
 			if err != nil {
 				return r.handleError(instance, ctrl.Result{}, err, lastOperation, 0)
 			}
@@ -269,7 +269,7 @@ func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.Namespac
 	return nil
 }
 
-func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
+func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
 	ctx := context.Background()
 
 	serviceID := instance.Spec.ServiceID
@@ -280,7 +280,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 
 	log := r.Log.WithValues("sfserviceinstance", instanceID)
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for deprovision", "instanceId", instanceID)
 		return err
@@ -320,7 +320,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 			Name:      resource.GetName(),
 			Namespace: resource.GetNamespace(),
 		}
-		err := targetClient.Get(ctx, namespacedName, resource)
+		err := r.Get(ctx, namespacedName, resource)
 		if !apiErrors.IsNotFound(err) {
 			remainingResource = append(remainingResource, subResource)
 		}
@@ -344,7 +344,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 		if err := r.Update(ctx, instance); err != nil {
 			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateDeprovisionStatus", "retryCount", retryCount+1, "instanceID", instanceID)
-				return r.updateDeprovisionStatus(targetClient, instance, retryCount+1)
+				return r.updateDeprovisionStatus(instance, retryCount+1)
 			}
 			log.Error(err, "failed to update deprovision status", "instance", instanceID)
 			return err
@@ -353,7 +353,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	return nil
 }
 
-func (r *ReconcileSFServiceInstance) updateStatus(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
+func (r *ReconcileSFServiceInstance) updateStatus(instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
@@ -363,7 +363,7 @@ func (r *ReconcileSFServiceInstance) updateStatus(targetClient client.Client, in
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstance", instanceID)
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Error(err, "Compute status failed", "instance", instanceID)
 		return err
@@ -392,7 +392,7 @@ func (r *ReconcileSFServiceInstance) updateStatus(targetClient client.Client, in
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateStatus", "retryCount", retryCount+1, "instanceID", instanceID)
-				return r.updateStatus(targetClient, instance, retryCount+1)
+				return r.updateStatus(instance, retryCount+1)
 			}
 			log.Error(err, "failed to update status", "instanceId", instanceID)
 			return err
@@ -547,7 +547,11 @@ func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	for _, subresource := range subresources {
-		builder = builder.Owns(subresource)
+		builder = builder.Watches(&source.Kind{Type: subresource},
+			&handler.EnqueueRequestForOwner{
+				IsController: false,
+				OwnerType:    &osbv1alpha1.SFServiceInstance{},
+			})
 	}
 
 	return builder.Complete(r)

@@ -113,6 +113,7 @@ spec:
                     - provision
                     - status
                     - bind
+                    - unbind
                     - sources
                     - clusterSelector
                     type: string
