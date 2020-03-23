@@ -58,6 +58,8 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-broker
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
