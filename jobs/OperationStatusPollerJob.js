@@ -56,6 +56,11 @@ class OperationStatusPollerJob extends BaseJob {
     const agentProperties = job.attrs.data.agent_properties;
 
     return Promise.try(() => {
+      if(!agentProperties && deploymentName == 'sf-event-mesh-server') {
+        // Special case to cancel the job not containing agentProperties
+        logger.info(`Job ${deploymentName}_${operationName}_${backupGuid} contains invalid data, cancelling schedule`);
+        return ScheduleManager.cancelSchedule(`${deploymentName}_${operationName}_${backupGuid}`, CONST.JOB.OPERATION_STATUS_POLLER);
+      }
       if (operationName === 'backup') {
         return this
           .getBrokerClient()
