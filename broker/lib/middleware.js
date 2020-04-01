@@ -105,7 +105,7 @@ exports.checkQuota = function () {
   function shouldCheckQuotaForPlatform(platform, origin) {
     return (platform === CONST.PLATFORM.CF ||
       (platform === CONST.PLATFORM.SM &&
-        origin === CONST.PLATFORM.CF));
+        (origin === CONST.PLATFORM.CF || origin === CONST.PLATFORM.K8S)));
   }
   return function (req, res, next) {
     if (!_.get(config.quota, 'enabled')) {
@@ -122,9 +122,11 @@ exports.checkQuota = function () {
         if (orgId === undefined) {
           next(new BadRequest('organization_id is undefined'));
         } else {
-          const quota = require('../../quota');
-          const quotaManager = quota.quotaManager;
-          return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
+          const quotaPlatform = platform === CONST.PLATFORM.CF ? platform : origin;
+          const quotaManager = quotaPlatform == CONST.PLATFORM.CF ?
+            require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager :
+            require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
+          return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, quotaPlatform)
             .then(quotaValid => {
               const plan = getPlanFromRequest(req);
               logger.debug(`quota api response : ${quotaValid}`);

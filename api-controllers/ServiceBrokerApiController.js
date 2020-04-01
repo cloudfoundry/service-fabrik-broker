@@ -101,6 +101,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         metadata: {
           finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
         },
+        labels: {
+          organizationGuid: _.get(params, 'organization_guid'),
+          planId: planId
+        },
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
