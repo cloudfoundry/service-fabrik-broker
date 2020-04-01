@@ -4,4 +4,4 @@ metadata:
   name: sf-settings-config
 data:
   "settings.yml": |
-{{ (.Files.Get "conf/settings.yaml")  | printf "%s" | indent 4 }}
+{{ tpl (.Files.Get "conf/settings.yaml") . | printf "%s" | indent 4 }}
