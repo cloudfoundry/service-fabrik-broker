@@ -21,6 +21,7 @@ const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
 const NotImplemented = errors.NotImplemented;
+const NotFound = errors.NotFound;
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
 exports.promiseWhile = promiseWhile;
@@ -68,6 +69,7 @@ exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 exports.getPlanCrdFromConfig = getPlanCrdFromConfig;
 exports.getServiceCrdFromConfig = getServiceCrdFromConfig;
 exports.registerSFEventsCrd = registerSFEventsCrd;
+exports.waitWhileCRDsAreRegistered = waitWhileCRDsAreRegistered;
 exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
@@ -750,6 +752,17 @@ function registerSFEventsCrd() {
   return Promise.all([
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT)
   ]);
+}
+
+function waitWhileCRDsAreRegistered() {
+  // We assume here that the Helm chart based deployment or the pre-start script of interoperator job in case of BOSH based deployment will take care of registering the CRDs. While it is not registered, we wait!
+  const eventmesh = require('../../data-access-layer/eventmesh');
+  logger.info('Checking if the CRDs are already registered');
+  return eventmesh.apiServerClient.getCustomResourceDefinition('sfservices.osb.servicefabrik.io')
+    .catch(NotFound, () => {
+      logger.info('Waiting for the CRDs to get registered');
+      return Promise.delay(1000).then(() => waitWhileCRDsAreRegistered());
+    });
 }
 
 function getAllServices() {
