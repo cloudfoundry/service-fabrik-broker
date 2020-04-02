@@ -13,7 +13,7 @@ const CONST = require('../common/constants');
 
 async function init() {
   try {
-    await utils.registerInterOperatorCrds();
+    await utils.registerSFEventsCrd();
     // TODO:- To be removed when bosh services also push plan and service CRDs to apiserver
     await utils.pushServicePlanToApiServer();
     await utils.loadCatalogFromAPIServer();

@@ -67,7 +67,7 @@ exports.getPlatformFromContext = getPlatformFromContext;
 exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 exports.getPlanCrdFromConfig = getPlanCrdFromConfig;
 exports.getServiceCrdFromConfig = getServiceCrdFromConfig;
-exports.registerInterOperatorCrds = registerInterOperatorCrds;
+exports.registerSFEventsCrd = registerSFEventsCrd;
 exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
@@ -745,13 +745,9 @@ function pushServicePlanToApiServer() {
   }
 }
 
-function registerInterOperatorCrds() {
+function registerSFEventsCrd() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return Promise.all([
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS),
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT)
   ]);
 }

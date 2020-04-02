@@ -463,19 +463,11 @@ describe('utils', function () {
     });
   });
 
-  describe('#registerInterOperatorCrds', () => {
+  describe('#registerSFEventsCrd', () => {
     it('Patch already register crds successfully', () => {
-      const sfPlanCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS);
-      const sfServiceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES);
-      const sfServiceInstanceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES);
-      const sfServiceBindingCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS);
-      const meteringCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfPlanCrdJson.metadata.name, {}, sfPlanCrdJson);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceCrdJson.metadata.name, {}, sfServiceCrdJson);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceInstanceCrdJson.metadata.name, {}, sfServiceInstanceCrdJson);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceBindingCrdJson.metadata.name, {}, sfServiceBindingCrdJson);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson);
-      return utils.registerInterOperatorCrds()
+       const meteringCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
+       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson);
+      return utils.registerSFEventsCrd()
         .then(() => {
           mocks.verify();
         });
