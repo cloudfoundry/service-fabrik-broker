@@ -30,11 +30,11 @@ interoperator:
     pullPolicy: Always
   resources:
     limits:
-      cpu: 200m
-      memory: 60Mi
+      cpu: 800m
+      memory: 200Mi
     requests:
-      cpu: 100m
-      memory: 20Mi
+      cpu: 400m
+      memory: 100Mi
   config:
     instanceWorkerCount: 10
     bindingWorkerCount: 20
