@@ -740,7 +740,7 @@ class ApiServerClient {
 
   getCustomResourceDefinition(customResourceName) {
     return Promise.try(() => {
-      return apiserver.apis['apiextensions.k8s.io'].v1beta1.customresourcedefinitions(customResourceName).get();
+      return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(customResourceName).get();
     })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);

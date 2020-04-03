@@ -758,7 +758,7 @@ function waitWhileCRDsAreRegistered() {
   // We assume here that the Helm chart based deployment or the pre-start script of interoperator job in case of BOSH based deployment will take care of registering the CRDs. While it is not registered, we wait!
   const eventmesh = require('../../data-access-layer/eventmesh');
   logger.info('Checking if the CRDs are already registered');
-  return eventmesh.apiServerClient.getCustomResourceDefinition('sfservices.osb.servicefabrik.io')
+  return eventmesh.apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR)
     .catch(NotFound, () => {
       logger.info('Waiting for the CRDs to get registered');
       return Promise.delay(1000).then(() => waitWhileCRDsAreRegistered());

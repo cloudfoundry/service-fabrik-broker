@@ -464,10 +464,21 @@ describe('utils', function () {
   });
 
   describe('#registerSFEventsCrd', () => {
-    it('Patch already register crds successfully', () => {
+    it('Patch already registered SFEvents CRD successfully', () => {
        const meteringCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson);
       return utils.registerSFEventsCrd()
+        .then(() => {
+          mocks.verify();
+        });
+    });
+  });
+
+  describe('#waitWhileCRDsAreRegistered', () => {
+    it.only('waiting successfully till the sfservices ', () => {
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, null, 404);
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, null, 200);
+       return utils.waitWhileCRDsAreRegistered()
         .then(() => {
           mocks.verify();
         });
