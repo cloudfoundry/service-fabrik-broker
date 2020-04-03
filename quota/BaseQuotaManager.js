@@ -8,19 +8,21 @@ const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const catalog = require('../common/models/catalog');
 
 class BaseQuotaManager {
-  constructor(quotaAPIClient) {
+  constructor(quotaAPIClient, platform) {
     this.quotaAPIClient = quotaAPIClient;
+    this.platform = platform;
   }
 
-  async checkQuota(orgId, planId, previousPlanId, reqMethod) {
+  async checkQuota(orgOrSubaccountId, planId, previousPlanId, reqMethod) {
     if (CONST.HTTP_METHOD.PATCH === reqMethod && this.isSamePlanOrSkuUpdate(planId, previousPlanId)) {
       logger.debug('Quota check skipped as it is a normal instance update or plan update with same sku.');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
-    } else if (await this.isOrgWhitelisted(orgId)) {
+    } else if (await this.isOrgWhitelisted(orgOrSubaccountId)) {
       logger.debug('Org whitelisted, Quota check skipped');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
     } else {
-      logger.debug(`Org id is ${orgId}`);
+      logger.debug(`Platform is ${this.platform}`);
+      logger.debug(`Org/Subaccount id is ${orgOrSubaccountId}`);
       logger.debug(`Plan id is ${planId}`);
       let planName = _.find(catalog.plans, ['id', planId]).name;
       let serviceName = _.find(catalog.plans, ['id', planId]).service.name;
@@ -31,7 +33,7 @@ class BaseQuotaManager {
       if (skipQuotaCheck && skipQuotaCheck === true) {
         return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
       } else {
-        const quota = await this.quotaAPIClient.getQuota(orgId, serviceName, planName);
+        const quota = await this.quotaAPIClient.getQuota(orgOrSubaccountId, serviceName, planName, this.platform === CONST.PLATFORM.K8S);
         // Special cases:
         // When obtained quota = 0, send message to customer – Not entitled to create service instance
         // When obtained quota = -1, assume that the org is whitelisted and hence allow the creation
@@ -41,15 +43,15 @@ class BaseQuotaManager {
           return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         } else {
           const planIdsWithSameSKU = this.getAllPlanIdsWithSameSKU(planName, serviceName, catalog);
-          const instanceCount = await this.getInstanceCountonPlatform(orgId, planIdsWithSameSKU);
+          const instanceCount = await this.getInstanceCountonPlatform(orgOrSubaccountId, planIdsWithSameSKU);
           logger.debug(`Number of instances are ${instanceCount} & Quota number for current org space and service_plan is ${quota}`);
           return instanceCount >= quota ? CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA : CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         }
       }
     }
   }
-  async getInstanceCountonPlatform(orgId, planGuids) {
-    throw new NotImplementedBySubclass(`getInstanceCountonPlatform - ${orgId}, ${planGuids}`);
+  async getInstanceCountonPlatform(orgOrSubaccountId, planGuids) {
+    throw new NotImplementedBySubclass(`getInstanceCountonPlatform - ${orgOrSubaccountId}, ${planGuids}`);
   }
   getAllPlanIdsWithSameSKU(planName, serviceName, serviceCatalog) {
     const planManagerName = _.find(catalog.plans, ['name', planName]).manager.name;

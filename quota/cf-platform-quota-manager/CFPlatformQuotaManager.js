@@ -5,11 +5,12 @@ const Promise = require('bluebird');
 const logger = require('../../common/logger');
 const cf = require('../../data-access-layer/cf');
 const config = require('../../common/config');
+const CONST = require('../../common/constants');
 const BaseQuotaManager = require('../BaseQuotaManager');
 
 class CFPlatformQuotaManager extends BaseQuotaManager {
   constructor(quotaAPIClient) {
-    super(quotaAPIClient);
+    super(quotaAPIClient, CONST.PLATFORM.CF);
   }
 
   async getInstanceCountonPlatform(orgId, planIds) {

@@ -119,22 +119,23 @@ exports.checkQuota = function () {
       const origin = _.get(req, 'body.context.origin');
       if (shouldCheckQuotaForPlatform(platform, origin)) {
         const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
-        if (orgId === undefined) {
-          next(new BadRequest('organization_id is undefined'));
+        const subaccountId = _.get(req, 'body.context.subaccount_id');
+        if (orgId === undefined && subaccountId === undefined) {
+          next(new BadRequest('organization_id and subaccountId are undefined'));
         } else {
           const quotaPlatform = platform === CONST.PLATFORM.CF ? platform : origin;
           const quotaManager = quotaPlatform == CONST.PLATFORM.CF ?
             require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager :
             require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
-          return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, quotaPlatform)
+          return quotaManager.checkQuota(quotaPlatform === CONST.PLATFORM.CF ? orgId : subaccountId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
             .then(quotaValid => {
               const plan = getPlanFromRequest(req);
               logger.debug(`quota api response : ${quotaValid}`);
               if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
-                logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
+                logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
                 next(new Forbidden('Not entitled to create service instance'));
               } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
-                logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
+                logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
                 next(new Forbidden('Quota is not sufficient for this request'));
               } else {
                 logger.debug('[Quota]: calling next handler..');
