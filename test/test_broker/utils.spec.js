@@ -475,9 +475,20 @@ describe('utils', function () {
   });
 
   describe('#waitWhileCRDsAreRegistered', () => {
-    it.only('waiting successfully till the sfservices ', () => {
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, null, 404);
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, null, 200);
+    let sandbox, delayStub;
+    before(function () {
+      sandbox = sinon.createSandbox();
+      delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
+    });
+
+    after(function () {
+      delayStub.restore();
+    });
+    it('waiting successfully till the sfservices ', () => {
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 2, 200);
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
+       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 200);
        return utils.waitWhileCRDsAreRegistered()
         .then(() => {
           mocks.verify();

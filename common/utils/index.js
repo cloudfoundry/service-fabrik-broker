@@ -759,6 +759,7 @@ function waitWhileCRDsAreRegistered() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   logger.info('Checking if the CRDs are already registered');
   return eventmesh.apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR)
+    .then(() => eventmesh.apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR))
     .catch(NotFound, () => {
       logger.info('Waiting for the CRDs to get registered');
       return Promise.delay(1000).then(() => waitWhileCRDsAreRegistered());
