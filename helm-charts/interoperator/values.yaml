@@ -31,13 +31,13 @@ interoperator:
   resources:
     limits:
       cpu: 800m
-      memory: 200Mi
+      memory: 512Mi
     requests:
       cpu: 400m
-      memory: 100Mi
+      memory: 256Mi
   config:
-    instanceWorkerCount: 10
-    bindingWorkerCount: 20
-    schedulerWorkerCount: 10
-    provisionerWorkerCount: 10
+    instanceWorkerCount: 2
+    bindingWorkerCount: 4
+    schedulerWorkerCount: 2
+    provisionerWorkerCount: 2
     schedulerType: label-selector
