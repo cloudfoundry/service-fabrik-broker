@@ -13,7 +13,7 @@ class BaseQuotaManager {
     this.platform = platform;
   }
 
-  async checkQuota(orgOrSubaccountId, planId, previousPlanId, reqMethod) {
+  async checkQuota(orgOrSubaccountId, planId, previousPlanId, reqMethod, useSubaccountForQuotaCheck) {
     if (CONST.HTTP_METHOD.PATCH === reqMethod && this.isSamePlanOrSkuUpdate(planId, previousPlanId)) {
       logger.debug('Quota check skipped as it is a normal instance update or plan update with same sku.');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
@@ -33,7 +33,7 @@ class BaseQuotaManager {
       if (skipQuotaCheck && skipQuotaCheck === true) {
         return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
       } else {
-        const quota = await this.quotaAPIClient.getQuota(orgOrSubaccountId, serviceName, planName, this.platform === CONST.PLATFORM.K8S);
+        const quota = await this.quotaAPIClient.getQuota(orgOrSubaccountId, serviceName, planName, useSubaccountForQuotaCheck);
         // Special cases:
         // When obtained quota = 0, send message to customer – Not entitled to create service instance
         // When obtained quota = -1, assume that the org is whitelisted and hence allow the creation

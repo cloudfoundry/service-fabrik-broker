@@ -123,11 +123,18 @@ exports.checkQuota = function () {
         if (orgId === undefined && subaccountId === undefined) {
           next(new BadRequest('organization_id and subaccountId are undefined'));
         } else {
-          const quotaPlatform = platform === CONST.PLATFORM.CF ? platform : origin;
-          const quotaManager = quotaPlatform == CONST.PLATFORM.CF ?
+          /*
+          case 1 : BOSH + CF => org API and CF
+          case 2: BOSH + SM => org API and CF
+          case 3 : K8S + CF => org API and apiserver
+          case 4 : K8S + SM (CF + K8S) => subaccount based API and apiserver
+          */
+          const quotaManager = utils.isBrokerBoshDeployment() ?
             require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager :
             require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
-          return quotaManager.checkQuota(quotaPlatform === CONST.PLATFORM.CF ? orgId : subaccountId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
+          
+          const useSubaccountForQuotaCheck = !utils.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
+          return quotaManager.checkQuota(useSubaccountForQuotaCheck ? subaccountId : orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, useSubaccountForQuotaCheck)
             .then(quotaValid => {
               const plan = getPlanFromRequest(req);
               logger.debug(`quota api response : ${quotaValid}`);

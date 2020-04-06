@@ -302,11 +302,15 @@ describe('#checkQuota', () => {
 
   it('SMK8S platform, Quota valid, should call next', () => {
     req.body = SMK8SContextBody;
+    process.env.POD_NAMESPACE = 'default';
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkK8SQuotaStub).to.have.been.called;
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
-      .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
+      .then(() => {
+        delete process.env.POD_NAMESPACE;
+        expect(next).to.have.been.calledOnce.calledWithExactly()
+      });
   });
 
   it('Quota funtion throws error, should call next with error', () => {
