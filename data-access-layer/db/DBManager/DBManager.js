@@ -196,6 +196,7 @@ class DBManager {
         // MongoDB update operations should go through to BOSH without any rate limits applied by broker
         params = {
           context: context,
+          service_id: CONST.FABRIK_INTERNAL_MONGO_DB.SERVICE_ID,
           organization_guid: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
           space_guid: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID,
           parameters: {
@@ -205,6 +206,7 @@ class DBManager {
       } else {
         params = {
           context: context,
+          service_id: CONST.FABRIK_INTERNAL_MONGO_DB.SERVICE_ID,
           previous_values: {
             plan_id: config.mongodb.provision.plan_id,
             organization_id: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
