@@ -25,7 +25,7 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
     logger.debug('current org details are ', org);
     logger.debug('current org name is ', org.entity.name);
     logger.debug('Whitelisted orgs are ', config.quota.whitelist);
-    return await _.includes(config.quota.whitelist, org.entity.name);
+    return _.includes(config.quota.whitelist, org.entity.name);
   }
 
   async getAllPlanGuidsFromPlanIDs(planIds) {
