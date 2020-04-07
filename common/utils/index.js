@@ -21,6 +21,7 @@ const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
 const NotImplemented = errors.NotImplemented;
+const NotFound = errors.NotFound;
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
 exports.promiseWhile = promiseWhile;
@@ -67,7 +68,8 @@ exports.getPlatformFromContext = getPlatformFromContext;
 exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 exports.getPlanCrdFromConfig = getPlanCrdFromConfig;
 exports.getServiceCrdFromConfig = getServiceCrdFromConfig;
-exports.registerInterOperatorCrds = registerInterOperatorCrds;
+exports.registerSFEventsCrd = registerSFEventsCrd;
+exports.waitWhileCRDsAreRegistered = waitWhileCRDsAreRegistered;
 exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
@@ -750,15 +752,25 @@ function pushServicePlanToApiServer() {
   }
 }
 
-function registerInterOperatorCrds() {
+function registerSFEventsCrd() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return Promise.all([
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS),
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT)
   ]);
+}
+
+function waitWhileCRDsAreRegistered() {
+  // We assume here that the Helm chart based deployment or the pre-start script of interoperator job in case of BOSH based deployment will take care of registering the CRDs. While it is not registered, we wait!
+  const eventmesh = require('../../data-access-layer/eventmesh');
+  logger.info('Checking if the CRDs are already registered');
+  return Promise.all([
+    eventmesh.apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR),
+    eventmesh.apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR)
+  ])
+    .catch(NotFound, () => {
+      logger.info('Waiting for the CRDs to get registered');
+      return Promise.delay(CONST.APISERVER.WAIT_IN_MS_BEFORE_STARTUP).then(() => waitWhileCRDsAreRegistered());
+    });
 }
 
 function getAllServices() {

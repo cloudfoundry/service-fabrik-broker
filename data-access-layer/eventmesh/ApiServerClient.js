@@ -738,6 +738,15 @@ class ApiServerClient {
       });
   }
 
+  getCustomResourceDefinition(customResourceName) {
+    return Promise.try(() => {
+      return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(customResourceName).get();
+    })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
   /**
    * @description Get Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Unique id of resource
