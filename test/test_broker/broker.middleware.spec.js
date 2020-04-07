@@ -110,16 +110,13 @@ describe('#checkQuota', () => {
       service_id: service_id
     }
   };
-  const nonCFContextBody = {
+  const k8sContextBody = {
     service_id: service_id,
-    plan_id: plan_id_update,
+    plan_id: validQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'kubernetes'
-    },
-    previous_values: {
-      plan_id: plan_id,
-      service_id: service_id
+      platform: 'kubernetes',
+      subaccount_id: subaccount_id
     }
   };
   const CFContextBody = {
@@ -231,6 +228,7 @@ describe('#checkQuota', () => {
     checkQuotaStub.withArgs(organization_guid, invalidQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA));
     checkQuotaStub.withArgs(organization_guid, validQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
     checkK8SQuotaStub.withArgs(subaccount_id, validQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStub.withArgs(subaccount_id, validQuotaPlanId, undefined, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
   });
   afterEach(function () {
     next.resetHistory();
@@ -246,12 +244,17 @@ describe('#checkQuota', () => {
     expect(checkQuotaStub).to.not.have.been.called;
     expect(next).to.have.been.calledOnce.calledWithExactly();
   });
-  it('not CF platform, should call next', () => {
-    req.body = nonCFContextBody;
+  it('K8S platform, should call next', () => {
+    req.body = k8sContextBody;
+    process.env.POD_NAMESPACE = 'default';
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
-    expect(checkQuotaStub).to.not.have.been.called;
-    expect(next).to.have.been.calledOnce.calledWithExactly();
+    expect(checkK8SQuotaStub).to.have.been.called;
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => {
+        delete process.env.POD_NAMESPACE;
+        expect(next).to.have.been.calledOnce.calledWithExactly()
+      });
   });
   it('CF platform, org id undefined, should call next with BadRequest', () => {
     req.body = CFContextBody;
