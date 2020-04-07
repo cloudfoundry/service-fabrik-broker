@@ -102,11 +102,6 @@ exports.checkBlockingOperationInProgress = function () {
 };
 
 exports.checkQuota = function () {
-  function shouldCheckQuotaForPlatform(platform, origin) {
-    return (platform === CONST.PLATFORM.CF ||
-      (platform === CONST.PLATFORM.SM &&
-        origin === CONST.PLATFORM.CF));
-  }
   return function (req, res, next) {
     if (!_.get(config.quota, 'enabled')) {
       logger.debug('Quota check is not enabled');
@@ -116,36 +111,41 @@ exports.checkQuota = function () {
       next();
     } else {
       const platform = _.get(req, 'body.context.platform');
-      const origin = _.get(req, 'body.context.origin');
-      if (shouldCheckQuotaForPlatform(platform, origin)) {
-        const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
-        if (orgId === undefined) {
-          next(new BadRequest('organization_id is undefined'));
-        } else {
-          const quota = require('../../quota');
-          const quotaManager = quota.quotaManager;
-          return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
-            .then(quotaValid => {
-              const plan = getPlanFromRequest(req);
-              logger.debug(`quota api response : ${quotaValid}`);
-              if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
-                logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
-                next(new Forbidden('Not entitled to create service instance'));
-              } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
-                logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
-                next(new Forbidden('Quota is not sufficient for this request'));
-              } else {
-                logger.debug('[Quota]: calling next handler..');
-                next();
-              }
-            }).catch(err => {
-              logger.error('[QUOTA]: exception occurred --', err);
-              next(err);
-            });
-        }
+      const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
+      const subaccountId = _.get(req, 'body.context.subaccount_id');
+      if (orgId === undefined && subaccountId === undefined) {
+        next(new BadRequest('organization_id and subaccountId are undefined'));
       } else {
-        logger.debug(`[Quota]: Platform: ${platform}, Origin: ${origin}. Platform is not ${CONST.PLATFORM.CF} or ${CONST.PLATFORM.SM}/${CONST.PLATFORM.CF}. Skipping quota check : calling next handler..`);
-        next();
+        /*
+          case 1 : BOSH + CF => org API and CF
+          case 2: BOSH + SM => org API and CF
+          case 3 : K8S + CF => org API and apiserver
+          case 4 : K8S + SM (CF + K8S) => subaccount based API and apiserver
+          */
+        const quotaManager = utils.isBrokerBoshDeployment() ?
+          require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager :
+          require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
+          
+        const useSubaccountForQuotaCheck = !utils.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
+        logger.info(useSubaccountForQuotaCheck ? subaccountId : orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, useSubaccountForQuotaCheck);
+        return quotaManager.checkQuota(useSubaccountForQuotaCheck ? subaccountId : orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, useSubaccountForQuotaCheck)
+          .then(quotaValid => {
+            const plan = getPlanFromRequest(req);
+            logger.debug(`quota api response : ${quotaValid}`);
+            if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
+              logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
+              next(new Forbidden('Not entitled to create service instance'));
+            } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
+              logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
+              next(new Forbidden('Quota is not sufficient for this request'));
+            } else {
+              logger.debug('[Quota]: calling next handler..');
+              next();
+            }
+          }).catch(err => {
+            logger.error('[QUOTA]: exception occurred --', err);
+            next(err);
+          });
       }
     }
   };

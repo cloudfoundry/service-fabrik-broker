@@ -7,11 +7,11 @@ const middleware = proxyquire('../../broker/lib/middleware', {
     return req.auth;
   }
 });
-const quota = require('../../quota');
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
-const quotaManager = quota.quotaManager;
+const quotaManager = require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager;
+const k8squotaManager = require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
 const utils = require('../../common/utils');
 const errors = require('../../common/errors');
 const BadRequest = errors.BadRequest;
@@ -84,6 +84,7 @@ describe('#checkQuota', () => {
   const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f'; // name: 'v1.0-xsmall'
   const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'; // name: 'v1.0-large'
   const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
+  const subaccount_id = 'b319968c-0eba-43f2-959b-40f507c269fd';
   const notEntitledPlanId = 'bc158c9a-7934-401e-94ab-057082a5073e';
   const validQuotaPlanId = 'bc158c9a-7934-401e-94ab-057082a5073f';
   const invalidQuotaPlanId = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
@@ -95,7 +96,7 @@ describe('#checkQuota', () => {
   const parameters = {
     foo: 'bar'
   };
-  let isServiceFabrikOperationStub, checkQuotaStub;
+  let isServiceFabrikOperationStub, checkQuotaStub, checkK8SQuotaStub;
   const checkQuota = middleware.checkQuota();
   const res = new Response();
   const next = sinon.spy();
@@ -109,16 +110,13 @@ describe('#checkQuota', () => {
       service_id: service_id
     }
   };
-  const nonCFContextBody = {
+  const k8sContextBody = {
     service_id: service_id,
-    plan_id: plan_id_update,
+    plan_id: validQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'kubernetes'
-    },
-    previous_values: {
-      plan_id: plan_id,
-      service_id: service_id
+      platform: 'kubernetes',
+      subaccount_id: subaccount_id
     }
   };
   const CFContextBody = {
@@ -133,6 +131,35 @@ describe('#checkQuota', () => {
       service_id: service_id
     }
   };
+  const SMCFContextBody = {
+    service_id: service_id,
+    plan_id: validQuotaPlanId,
+    parameters: parameters,
+    context: {
+      platform: 'sapcp',
+      origin: 'cloudfoundry',
+      organization_guid: organization_guid,
+      subaccount_id: subaccount_id
+    },
+    previous_values: {
+      service_id: service_id
+    }
+  };
+
+  const SMK8SContextBody = {
+    service_id: service_id,
+    plan_id: validQuotaPlanId,
+    parameters: parameters,
+    context: {
+      platform: 'sapcp',
+      origin: 'kubernetes',
+      subaccount_id: subaccount_id
+    },
+    previous_values: {
+      service_id: service_id
+    }
+  };
+
   const notEntitledBody = {
     service_id: service_id,
     plan_id: notEntitledPlanId,
@@ -196,15 +223,19 @@ describe('#checkQuota', () => {
     isServiceFabrikOperationStub = sinon.stub(utils, 'isServiceFabrikOperation');
     isServiceFabrikOperationStub.withArgs(operationsBody).returns(true);
     checkQuotaStub = sinon.stub(quotaManager, 'checkQuota');
+    checkK8SQuotaStub = sinon.stub(k8squotaManager, 'checkQuota');
     checkQuotaStub.withArgs(organization_guid, notEntitledPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));
     checkQuotaStub.withArgs(organization_guid, invalidQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA));
     checkQuotaStub.withArgs(organization_guid, validQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStub.withArgs(subaccount_id, validQuotaPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStub.withArgs(subaccount_id, validQuotaPlanId, undefined, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
   });
   afterEach(function () {
     next.resetHistory();
     res.reset();
     isServiceFabrikOperationStub.restore();
     checkQuotaStub.restore();
+    checkK8SQuotaStub.restore();
   });
   it('should call isServiceFabrikOperation and next', () => {
     req.body = operationsBody;
@@ -213,12 +244,17 @@ describe('#checkQuota', () => {
     expect(checkQuotaStub).to.not.have.been.called;
     expect(next).to.have.been.calledOnce.calledWithExactly();
   });
-  it('not CF platform, should call next', () => {
-    req.body = nonCFContextBody;
+  it('K8S platform, should call next', () => {
+    req.body = k8sContextBody;
+    process.env.POD_NAMESPACE = 'default';
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
-    expect(checkQuotaStub).to.not.have.been.called;
-    expect(next).to.have.been.calledOnce.calledWithExactly();
+    expect(checkK8SQuotaStub).to.have.been.called;
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => {
+        delete process.env.POD_NAMESPACE;
+        expect(next).to.have.been.calledOnce.calledWithExactly()
+      });
   });
   it('CF platform, org id undefined, should call next with BadRequest', () => {
     req.body = CFContextBody;
@@ -258,6 +294,28 @@ describe('#checkQuota', () => {
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
   });
+  it('SMCF platform, Quota valid, should call next', () => {
+    req.body = SMCFContextBody;
+    checkQuota(req, res, next);
+    expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
+    expect(checkQuotaStub).to.have.been.called;
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
+  });
+
+  it('SMK8S platform, Quota valid, should call next', () => {
+    req.body = SMK8SContextBody;
+    process.env.POD_NAMESPACE = 'default';
+    checkQuota(req, res, next);
+    expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
+    expect(checkK8SQuotaStub).to.have.been.called;
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => {
+        delete process.env.POD_NAMESPACE;
+        expect(next).to.have.been.calledOnce.calledWithExactly()
+      });
+  });
+
   it('Quota funtion throws error, should call next with error', () => {
     checkQuotaStub.withArgs(organization_guid, errQuotaPlanId, undefined, 'PATCH').returns(Promise.reject(err));
     req.body = errQuotaBody;

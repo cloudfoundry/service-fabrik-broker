@@ -74,6 +74,11 @@ exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 exports.getDefaultErrorMsg = getDefaultErrorMsg;
 exports.sleep = sleep;
 exports.isCronSafe = isCronSafe;
+exports.isBrokerBoshDeployment = isBrokerBoshDeployment;
+
+function isBrokerBoshDeployment() {
+  return !process.env.POD_NAMESPACE;
+}
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
