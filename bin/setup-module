@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#shellcheck disable=SC2162
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;33m'
+NC='\033[0m' # No Color
+
+if [ -z "$1" ]; then
+    echo -e "${RED}NPM module cannot be initialized - path to directory must be provided${NC}"
+    exit 1
+fi
+
+readonly SCRIPT_DIR=$(dirname "$0")
+DIRECTORY="$1"
+FIRST_CHAR=${DIRECTORY:0:1}
+
+if [ "$FIRST_CHAR" != '/' ] && [ "$FIRST_CHAR" != '~' ]; then
+    DIRECTORY="$PWD/$DIRECTORY"
+fi
+
+function setup() {
+    cp "$SCRIPT_DIR/../tools/module-generator/files/package.json" "$DIRECTORY"
+    if [ -d "$DIRECTORY/src" ]; then
+        echo -e "${CYAN}Directory 'src' already present inside $DIRECTORY - initialization will be skipped${NC}"
+    else
+        mkdir -p "$DIRECTORY/src"
+        touch "$DIRECTORY/src/index.js"
+    fi
+    if [ -d "$DIRECTORY/test" ]; then
+        echo -e "${CYAN}Directory 'test' already present inside $DIRECTORY - initialization will be skipped${NC}"
+    else
+        mkdir -p "$DIRECTORY/test"
+    fi
+    pushd "$DIRECTORY" || exit 1
+    read -p "Enter the name of your module: " MODULE_NAME
+    echo -n ""
+    read -p "Enter a short description of your module: " MODULE_DESCRIPTION
+    echo -n ""
+    sed -i "s/<module>/$MODULE_NAME/g" "$DIRECTORY/package.json"
+    sed -i "s/<description>/$MODULE_DESCRIPTION/g" "$DIRECTORY/package.json"
+    popd || exit 1
+}
+
+if [ -d "$DIRECTORY" ]; then
+    if [ -f "$DIRECTORY/package.json" ]; then
+        echo -e "${CYAN}Module descriptor already present inside $DIRECTORY - initialization will be skipped${NC}"
+    else
+        setup
+    fi
+else
+    mkdir -p "$DIRECTORY"
+    setup
+fi
+
+cp "$SCRIPT_DIR/../tools/module-generator/files/.eslintignore" "$DIRECTORY"
+cp "$SCRIPT_DIR/../tools/module-generator/files/.eslintrc.json" "$DIRECTORY"
+cp "$SCRIPT_DIR/../tools/module-generator/files/.prettierrc" "$DIRECTORY"
+
+echo -e "${GREEN}Module successfully initialized${NC}"

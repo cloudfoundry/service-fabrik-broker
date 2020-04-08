@@ -1,8 +1,20 @@
 .DS_Store
 .idea
+.vscode
+lerna-debug.log
+package-lock.json
+node_modules
+coverage
 
-# Ignore node_modules.
-/node_modules
+**/node_modules
+**/coverage
+**/package-lock.json
+**/.env
+**/lerna-debug.log
+**/npm-debug.log
+**/.idea
+**/store/sessions
+**/config/**/settings.*.yml
 
 # Ignore documentation
 /jsdoc
