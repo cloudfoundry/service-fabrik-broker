@@ -10,7 +10,7 @@ const {
     SecurityGroupNotFound,
     ServiceBrokerNotFound,
     NotFound
-  }} = require('@sf/common-utils');
+  } } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const ResourceStream = require('./ResourceStream');
 

@@ -9,10 +9,10 @@ const {
     ContinueWithNext,
     BadRequest
   },
-  commonFunctions: {uuidV4},
+  commonFunctions: { uuidV4 },
   serviceFlowMapper
 } = require('@sf/common-utils');
-const {catalog} = require('@sf/models');
+const { catalog } = require('@sf/models');
 const BaseController = require('./BaseController');
 
 class FabrikBaseController extends BaseController {
@@ -63,7 +63,7 @@ class FabrikBaseController extends BaseController {
     const plan = catalog.getPlan(plan_id);
     return Promise.try(() => {
       if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-        const lockManager = require('../data-access-layer/eventmesh').lockManager;
+        const lockManager = require('@sf/eventmesh').lockManager;
         // Acquire lock for this instance
         return lockManager.lock(req.params.instance_id, {
           lockedResourceDetails: this._getLockResourceDetails(req, operationType, serviceFlowId)
@@ -99,7 +99,7 @@ class FabrikBaseController extends BaseController {
       .try(() => {
         _.set(req, 'params_copy', req.params);
         if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-          const lockManager = require('../data-access-layer/eventmesh').lockManager;
+          const lockManager = require('@sf/eventmesh').lockManager;
           if (processedRequest) {
             // if sf20 is enabled Check res status and unlock based on the request and status        
             if (
@@ -165,6 +165,7 @@ class FabrikBaseController extends BaseController {
 }
 
 FabrikBaseController.uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+// eslint-disable-next-line no-useless-escape
 FabrikBaseController.k8sNamespacePattern = /^[0-9a-z\-]+$/i;
 
 module.exports = FabrikBaseController;

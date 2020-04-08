@@ -52,6 +52,7 @@ if (config.enable_circuit_breaker) {
   });
   completeCircutBreakerConfig(config);
 } else {
+  // eslint-disable-next-line no-console
   console.log('circuit breaker is disabled');
 }
 
@@ -170,6 +171,7 @@ function completeCircutBreakerConfig(config) {
   if (fs.existsSync(circuitBreakerConfigAbsPath)) {
     config.circuit_breaker = yaml.safeLoad(fs.readFileSync(circuitBreakerConfigAbsPath, 'utf8'));
   } else {
+    // eslint-disable-next-line no-console
     console.log('Circuit break config not found. Hystrix will not be configured.');
   }
 }

@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const querystring = require('querystring');
-const {HttpClient} = require('@sf/common-utils');
+const { HttpClient } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 
 class UaaClient extends HttpClient {

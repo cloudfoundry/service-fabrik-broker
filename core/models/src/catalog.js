@@ -61,7 +61,7 @@ class Catalog {
       .value();
   }
 
-  getCatalogForPlatform(platform){
+  getCatalogForPlatform(platform) {
     const modifiedCatalog = _.cloneDeep(this);
     _.remove(modifiedCatalog.services, function (service) {
       _.remove(service.plans, function (plan) {

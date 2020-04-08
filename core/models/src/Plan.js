@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const config = require('@sf/app-config');
-const {CONST} = require('@sf/common-utils');
+const { CONST } = require('@sf/common-utils');
 
 class Plan {
   constructor(service, options) {

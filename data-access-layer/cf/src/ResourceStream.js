@@ -7,9 +7,9 @@ const Readable = require('stream').Readable;
 const parseUrl = _.partialRight(url.parse, true);
 const formatUrl = url.format;
 const logger = require('@sf/logger');
-const {commonFunctions: {
+const { commonFunctions: {
   streamToPromise
-}} = require('@sf/common-utils');
+} } = require('@sf/common-utils');
 
 function mergeQuery(url, qs) {
   url.query = _.merge(url.query, qs);
@@ -88,8 +88,8 @@ class ResourceStream extends Readable {
 
   all() {
     return streamToPromise(this, {
-        objectMode: true
-      });
+      objectMode: true
+    });
   }
 }
 

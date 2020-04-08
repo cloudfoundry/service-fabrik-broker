@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
 module.exports = {
-    FabrikBaseController: require('./FabrikBaseController'),
-    BaseController: require('./BaseController')
-}
+  FabrikBaseController: require('./FabrikBaseController'),
+  BaseController: require('./BaseController')
+};

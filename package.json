@@ -71,6 +71,7 @@
     "@sf/common-utils": "file:core/utils",
     "@sf/eventmesh": "file:data-access-layer/eventmesh",
     "@sf/express-commons": "file:core/express-commons",
+    "@sf/extensions": "file:applications/extensions",
     "@sf/logger": "file:core/logging",
     "@sf/models": "file:core/models",
     "@sf/osb-broker": "file:applications/osb-broker",

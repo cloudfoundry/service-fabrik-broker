@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const {errors: ContinueWithNext} = require('@sf/common-utils');
+const { errors: ContinueWithNext } = require('@sf/common-utils');
 
 class BaseController {
   constructor() {}

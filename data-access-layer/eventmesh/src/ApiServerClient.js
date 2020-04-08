@@ -258,7 +258,7 @@ class ApiServerClient {
     const crdJson = this.getCrdJson(resourceGroup, resourceType);
     if (!crdJson) {
       return Promise.resolve();
-    };
+    }
     return Promise.try(() => apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
       body: crdJson,
       headers: {

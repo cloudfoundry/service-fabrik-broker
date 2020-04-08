@@ -3,8 +3,8 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const logger = require('@sf/logger');
-const {catalog} = require('@sf/models');
-const {CONST} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { CONST } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 
 const cf = require('@sf/cf');

@@ -18,4 +18,4 @@ module.exports = {
   cloudController,
   TokenInfo,
   ResourceStream
-}
+};

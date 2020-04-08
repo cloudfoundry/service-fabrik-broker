@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
-const {errors: Unauthorized} = require('@sf/common-utils');
+const { errors: Unauthorized } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const TokenInfo = require('./TokenInfo');
 

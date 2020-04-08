@@ -1,15 +1,19 @@
 'use strict';
 
+const _ = require('lodash');
 const Ajv = require('ajv');
 const {
   CONST,
   errors: {
     BadRequest,
     Forbidden,
-    DeploymentAlreadyLocked
+    DeploymentAlreadyLocked,
+    UnprocessableEntity,
+    InvalidServiceParameters
   },
   commonFunctions
 } = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
 const { lockManager } = require('@sf/eventmesh');

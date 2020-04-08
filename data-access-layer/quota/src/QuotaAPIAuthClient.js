@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const {CONST, HttpClient} = require('@sf/common-utils');
+const { CONST, HttpClient } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 
 class QuotaAPIAuthClient extends HttpClient {

@@ -10,9 +10,9 @@ const tokenIssuer = new TokenIssuer(quotaAPIAuthClient);
 const quotaAPIClient = new QuotaAPIClient(tokenIssuer);
 const quotaManager = new QuotaManager(quotaAPIClient);
 module.exports = {
-    quotaAPIAuthClient,
-    tokenIssuer,
-    quotaAPIClient,
-    quotaManager,
-    TokenInfo
-}
+  quotaAPIAuthClient,
+  tokenIssuer,
+  quotaAPIClient,
+  quotaManager,
+  TokenInfo
+};

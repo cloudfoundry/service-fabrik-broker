@@ -20,7 +20,8 @@ const {
     ContinueWithNext,
     Conflict,
     Timeout,
-    UnprocessableEntity
+    UnprocessableEntity,
+    BadRequest
   } } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
 const {

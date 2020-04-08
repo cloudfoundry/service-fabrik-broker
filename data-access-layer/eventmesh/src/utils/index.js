@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
 const decamelizeKeysDeep = require('decamelize-keys-deep');
@@ -51,6 +52,71 @@ function registerInterOperatorCrds() {
     apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT)
   ]);
 }
+
+function getServiceCrdFromConfig(service) {
+  assert.ok(service.name, 'service.name is required to generate plan crd');
+  assert.ok(service.id, 'service.id is required to generate plan crd');
+  assert.ok(service.description, 'service.description is required to generate plan crd');
+  assert.ok(service.bindable, 'service.bindable is required to generate plan crd');
+
+  let serviceCRD = {
+    apiVersion: 'osb.servicefabrik.io/v1alpha1',
+    kind: 'SFService',
+    metadata: {
+      name: service.id,
+      labels: {
+        'controller-tools.k8s.io': '1.0',
+        serviceId: service.id
+      }
+    },
+    spec: {
+      name: service.name,
+      id: service.id,
+      bindable: service.bindable,
+      description: service.description,
+      metadata: service.metadata,
+      tags: service.tags,
+      dashboardClient: service.dashboard_client,
+      planUpdateable: service.plan_updateable
+    }
+  };
+  return serviceCRD;
+}
+
+
+
+function getPlanCrdFromConfig(plan, service) {
+  assert.ok(plan.name, 'plan.name is required to generate plan crd');
+  assert.ok(plan.id, 'plan.id is required to generate plan crd');
+  assert.ok(plan.description, 'plan.description is required to generate plan crd');
+
+  let planCRD = {
+    apiVersion: 'osb.servicefabrik.io/v1alpha1',
+    kind: 'SFPlan',
+    metadata: {
+      name: plan.id,
+      labels: {
+        'controller-tools.k8s.io': '1.0',
+        serviceId: service.id
+      }
+    },
+    spec: {
+      name: plan.name,
+      id: plan.id,
+      serviceId: service.id,
+      description: plan.description,
+      free: plan.free ? true : service.free ? true : false,
+      bindable: plan.bindable ? plan.bindable : service.bindable ? service.bindable : false,
+      planUpdatable: plan.bindable ? true : false,
+      templates: plan.templates ? plan.templates : [],
+      metadata: plan.metadata,
+      manager: plan.manager,
+      context: plan.context
+    }
+  };
+  return planCRD;
+}
+
 function pushServicePlanToApiServer() {
   return Promise.map(_.get(config, 'services', []), service => {
     const servicePromise = apiServerClient.createOrUpdateServicePlan(getServiceCrdFromConfig(service));

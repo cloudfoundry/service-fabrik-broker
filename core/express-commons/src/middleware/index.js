@@ -1,13 +1,19 @@
 'use strict';
 
+const _ = require('lodash');
 const basicAuth = require('basic-auth');
 const {
   errors: {
     NotFound,
     Unauthorized,
-    MethodNotAllowed
+    MethodNotAllowed,
+    ServiceUnavailable
+  },
+  commonFunctions : {
+    isFeatureEnabled
   }
 } = require('@sf/common-utils');
+const logger = require('@sf/logger');
 
 exports.methodNotAllowed = function (allow) {
   return function (req, res, next) {
@@ -135,5 +141,14 @@ exports.enableAbsMatchingRouteLookup = function (express) {
     req.__route = (req.__route || '') + path;
 
     return origPP.apply(this, arguments);
+  };
+};
+
+exports.isFeatureEnabled = function (featureName) {
+  return function (req, res, next) {
+    if (isFeatureEnabled(featureName)) {
+      throw new ServiceUnavailable(`${featureName} feature not enabled`);
+    }
+    next();
   };
 };

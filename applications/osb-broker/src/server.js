@@ -1,7 +1,8 @@
 /* jshint ignore:start */
 'use strict';
 
-console.log('Starting Service Fabrik...');
+// eslint-disable-next-line no-console
+console.log('Starting Service Fabrik OSB Server...');
 const _ = require('lodash');
 const routes = require('./api-controllers/routes');
 const middleware = require('./api-controllers/middleware');

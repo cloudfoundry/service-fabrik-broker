@@ -1,6 +1,18 @@
 'use strict';
 
+const _ = require('lodash');
+const uuid = require('uuid');
+const crypto = require('crypto');
+const Promise = require('bluebird');
+const randomBytes = Promise.promisify(crypto.randomBytes);
+const Readable = require('stream').Readable;
+const config = require('@sf/app-config');
+
 const RetryOperation = require('./RetryOperation');
+const CONST = require('./commonVariables');
+const {
+  NotImplemented
+} = require('./errors');
 
 exports.retry = RetryOperation.retry;
 exports.compareVersions = compareVersions;
@@ -9,6 +21,24 @@ exports.decodeBase64 = decodeBase64;
 exports.uuidV4 = uuidV4;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
 exports.streamToPromise = streamToPromise;
+exports.isFeatureEnabled = isFeatureEnabled;
+exports.verifyFeatureSupport = verifyFeatureSupport;
+exports.isRestorePossible = isRestorePossible;
+exports.getPlatformFromContext = getPlatformFromContext;
+exports.unifyDiffResult = unifyDiffResult;
+
+function parseVersion(version) {
+  return _
+    .chain(version)
+    .split('.', 3)
+    .tap(values => {
+      while (values.length < 3) {
+        values.push('0');
+      }
+    })
+    .map(_.unary(parseInt))
+    .value();
+}
 
 function compareVersions(left, right) {
   return _
@@ -61,4 +91,74 @@ function streamToPromise(stream, options) {
     });
     stream.on('error', reject);
   });
+}
+
+function isDBConfigured() {
+  return (_.get(config, 'mongodb.url') !== undefined || _.get(config, 'mongodb.provision.plan_id') !== undefined);
+}
+
+function isFeatureEnabled(name) {
+  var jobTypes = _.get(config, 'scheduler.job_types'); // eslint-disable-line no-var
+  var jobTypeList = jobTypes !== undefined ? jobTypes.replace(/\s*/g, '').split(',') : []; // eslint-disable-line no-var
+  switch (name) {
+    case CONST.FEATURE.SCHEDULED_UPDATE:
+      return _.get(config, 'feature.ServiceInstanceAutoUpdate', false) && isDBConfigured() && jobTypeList.indexOf(name) !== -1;
+    case CONST.FEATURE.SCHEDULED_BACKUP:
+    case CONST.FEATURE.SCHEDULED_OOB_DEPLOYMENT_BACKUP:
+      return isDBConfigured() && jobTypeList.indexOf(name) !== -1;
+    default:
+      throw new Error(`Unknown feature : ${name}`);
+  }
+}
+
+function verifyFeatureSupport(plan, feature) {
+  if (!_.includes(plan.manager.settings.agent.supported_features, feature)) {
+    throw new NotImplemented(`Feature '${feature}' not supported`);
+  }
+}
+
+function isRestorePossible(plan_id, plan) {
+  const settings = plan.manager.settings;
+  const restorePredecessors = settings.restore_predecessors || settings.update_predecessors || [];
+  const previousPlan = _.find(plan.service.plans, ['id', plan_id]);
+  return plan === previousPlan || _.includes(restorePredecessors, previousPlan.id);
+}
+
+function getPlatformFromContext(context) {
+  let platform = _.get(context, 'platform');
+  if (platform === CONST.PLATFORM.SM) {
+    return _.get(context, 'origin');
+  } else {
+    return platform;
+  }
+}
+
+function unifyDiffResult(result, ignoreTags) {
+  const diff = [];
+  let validDeploymentSection = true;
+  _.each(result.diff, _.spread((value, type) => {
+
+    if (_.includes(value, 'tags:') && ignoreTags) {
+      validDeploymentSection = false;
+    } else if (!validDeploymentSection && _.findIndex(CONST.BOSH_DEPLOYMENT_MANIFEST_SECTIONS, section => {
+      return _.includes(value, section);
+    }) != -1) {
+      validDeploymentSection = true;
+    }
+
+    if (validDeploymentSection) {
+      switch (type) {
+        case 'added':
+          diff.push(`+${value}`);
+          break;
+        case 'removed':
+          diff.push(`-${value}`);
+          break;
+        default:
+          diff.push(` ${value}`);
+          break;
+      }
+    }
+  }));
+  return diff;
 }

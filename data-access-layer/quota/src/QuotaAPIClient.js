@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
-const {HttpClient} = require('@sf/common-utils');
+const { HttpClient } = require('@sf/common-utils');
 
 class QuotaAPIClient extends HttpClient {
   constructor(tokenIssuer) {

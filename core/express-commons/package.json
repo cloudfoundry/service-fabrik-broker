@@ -17,6 +17,7 @@
     "express": "4.13.4",
     "helmet": "3.14.0",
     "js-yaml": "3.6.1",
+    "lodash": "4.17.5",
     "moment": "2.19.3",
     "morgan": "1.6.1",
     "pubsub-js": "1.5.4"
