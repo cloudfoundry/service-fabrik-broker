@@ -1,0 +1,162 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: sfplans.osb.servicefabrik.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.name
+    name: display-name
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
+  group: osb.servicefabrik.io
+  names:
+    kind: SFPlan
+    listKind: SFPlanList
+    plural: sfplans
+    singular: sfplan
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: SFPlan is the Schema for the sfplans API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SFPlanSpec defines the desired state of SFPlan
+          properties:
+            autoUpdateInstances:
+              type: boolean
+            bindable:
+              type: boolean
+            context:
+              type: object
+            description:
+              type: string
+            free:
+              type: boolean
+            id:
+              type: string
+            manager:
+              type: object
+            metadata:
+              type: object
+            name:
+              type: string
+            planUpdatable:
+              type: boolean
+            schemas:
+              description: ServiceSchemas is definitions for Service Instances and
+                Service Bindings for the Service Plan.
+              properties:
+                binding:
+                  description: ServiceBindingSchema is the  schema definition for
+                    creating a Service Binding. Used only if the Service Plan is bindable.
+                  properties:
+                    create:
+                      description: Schema definition for the input parameters.
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+                instance:
+                  description: ServiceInstanceSchema is the schema definitions for
+                    creating and updating a Service Instance.
+                  properties:
+                    create:
+                      description: Schema definition for the input parameters.
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                    update:
+                      description: Schema definition for the input parameters.
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+              type: object
+            serviceId:
+              type: string
+            templates:
+              items:
+                description: TemplateSpec is the specifcation of a template
+                properties:
+                  action:
+                    enum:
+                    - provision
+                    - status
+                    - bind
+                    - unbind
+                    - sources
+                    - clusterSelector
+                    type: string
+                  content:
+                    type: string
+                  contentEncoded:
+                    type: string
+                  type:
+                    enum:
+                    - gotemplate
+                    - helm
+                    type: string
+                  url:
+                    type: string
+                required:
+                - action
+                - type
+                type: object
+              type: array
+          required:
+          - bindable
+          - description
+          - free
+          - id
+          - name
+          - serviceId
+          - templates
+          type: object
+        status:
+          description: SFPlanStatus defines the observed state of SFPlan
+          properties:
+            specHash:
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
