@@ -53,11 +53,11 @@ deploy: manifests
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	cp -v config/crd/bases/osb.servicefabrik.io_sfplans.yaml ../helm-charts/interoperator/templates/sfplan.yaml
-	cp -v config/crd/bases/osb.servicefabrik.io_sfservicebindings.yaml ../helm-charts/interoperator/templates/sfservicebinding.yaml
-	cp -v config/crd/bases/osb.servicefabrik.io_sfserviceinstances.yaml ../helm-charts/interoperator/templates/sfserviceinstance.yaml
-	cp -v config/crd/bases/osb.servicefabrik.io_sfservices.yaml ../helm-charts/interoperator/templates/sfservice.yaml
-	cp -v config/crd/bases/resource.servicefabrik.io_sfclusters.yaml ../helm-charts/interoperator/templates/sfcluster.yaml
+	cp -v config/crd/bases/osb.servicefabrik.io_sfplans.yaml ../helm-charts/interoperator/conf/sfplan.yaml
+	cp -v config/crd/bases/osb.servicefabrik.io_sfservicebindings.yaml ../helm-charts/interoperator/conf/sfservicebinding.yaml
+	cp -v config/crd/bases/osb.servicefabrik.io_sfserviceinstances.yaml ../helm-charts/interoperator/conf/sfserviceinstance.yaml
+	cp -v config/crd/bases/osb.servicefabrik.io_sfservices.yaml ../helm-charts/interoperator/conf/sfservice.yaml
+	cp -v config/crd/bases/resource.servicefabrik.io_sfclusters.yaml ../helm-charts/interoperator/conf/sfcluster.yaml
 
 # Run go fmt against code
 fmt:
