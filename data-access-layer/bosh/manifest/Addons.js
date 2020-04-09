@@ -8,6 +8,7 @@ const config = require('../../../common/config');
 class Addons {
   constructor(context) {
     this.networks = Array.isArray(context.networks) ? context.networks : [context.networks];
+    this.params = context.parameters;
   }
 
   getAll() {
@@ -37,6 +38,7 @@ class Addons {
         name: CONST.ADD_ON_JOBS.IP_TABLES_MANAGER,
         release: _.get(config, 'release_name', CONST.SERVICE_FABRIK_PREFIX),
         properties: {
+          enable_connection: _.get(this.params, 'prepare_migration', false) || _.get(this.params, 'bucardo', false),
           allow_ips_list: allowIpList.join(','),
           block_ips_list: blockIpList.join(',')
         }
