@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const uuid = require('uuid');
 const crypto = require('crypto');
 const Promise = require('bluebird');
@@ -26,6 +27,18 @@ exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
 exports.getPlatformFromContext = getPlatformFromContext;
 exports.unifyDiffResult = unifyDiffResult;
+exports.getRandomInt = getRandomInt;
+exports.isCronSafe = isCronSafe;
+exports.getRandomCronForEveryDayAtXHoursInterval = getRandomCronForEveryDayAtXHoursInterval;
+exports.getCronWithIntervalAndAfterXminute = getCronWithIntervalAndAfterXminute;
+exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeployment;
+exports.taskIdRegExp = taskIdRegExp;
+exports.deploymentNameRegExp = deploymentNameRegExp;
+exports.isServiceFabrikOperationFinished = isServiceFabrikOperationFinished;
+
+function isServiceFabrikOperationFinished(state) {
+  return _.includes([CONST.OPERATION.SUCCEEDED, CONST.OPERATION.FAILED, CONST.OPERATION.ABORTED], state);
+}
 
 function parseVersion(version) {
   return _
@@ -161,4 +174,100 @@ function unifyDiffResult(result, ignoreTags) {
     }
   }));
   return diff;
+}
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  const factor = max - min === 1 ? 2 : (max - min);
+  // If we want a random of just 2 numbers then the factor must be 2, else it will always return back the lesser of two number always.
+  return Math.floor(Math.random() * (factor)) + min;
+}
+
+// valid format: sec|* (optional) min|* hour|* day|* month|* day of week|*
+function isCronSafe(interval) {
+  const parts = interval.trim().split(/\s+/);
+  if (parts.length < 5 || parts.length > 6) {
+    return false;
+  }
+  for(let i = 0; i < parts.length; i++) {
+    if (parts[i] != '*') {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
+  assert.ok((everyXHours > 0 && everyXHours <= 24), 'Input hours can be any number between 1 to 24 only');
+  const min = exports.getRandomInt(0, 59);
+  // referred via exports to aid in stubbing for UT
+  let nthHour = exports.getRandomInt(0, everyXHours - 1); // Since we consider from 0
+  let hoursApplicable = `${nthHour}`;
+  while (nthHour + everyXHours < 24) {
+    nthHour = nthHour + everyXHours;
+    hoursApplicable = `${hoursApplicable},${nthHour}`;
+  }
+  return `${min} ${hoursApplicable} * * *`;
+}
+
+
+function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
+  afterXminute = afterXminute || 0;
+  const currentTime = new Date().getTime();
+  const timeAfterXMinute = new Date(currentTime + afterXminute * 60 * 1000);
+  const hr = timeAfterXMinute.getHours();
+  const min = timeAfterXMinute.getMinutes();
+
+  if (interval === CONST.SCHEDULE.DAILY) {
+    interval = `${min} ${hr} * * *`;
+  } else if (interval.indexOf('hours') !== -1) {
+    const everyXhrs = parseInt(/^[0-9]+/.exec(interval)[0]);
+    assert.ok((everyXhrs > 0 && everyXhrs <= 24), 'Input hours can be any number between 1 to 24 only');
+    if (everyXhrs === 24) {
+      interval = `${min} ${hr} * * *`;
+    } else {
+      let arrayOfHours = [hr];
+      let nthHour = hr;
+      while (nthHour + everyXhrs < 24) {
+        nthHour = nthHour + everyXhrs;
+        arrayOfHours.push(nthHour);
+      }
+      nthHour = hr;
+      while (nthHour - everyXhrs >= 0) {
+        nthHour = nthHour - everyXhrs;
+        arrayOfHours.push(nthHour);
+      }
+      // This to handle e.g. '7 hours' where 7 doesn't divide 24
+      // then it shoud run in every 7 hours a day including 0
+      if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
+        arrayOfHours.push(0);
+      }
+      const hoursApplicable = _.sortBy(arrayOfHours).join(',');
+      interval = `${min} ${hoursApplicable} * * *`;
+    }
+  } else {
+    throw new assert.AssertionError({
+      message: 'interval should \'daily\' or in \'x hours\' format'
+    });
+  }
+  return interval;
+}
+
+function deploymentNameRegExp(service_subnet) {
+  let subnet = service_subnet ? `_${service_subnet}` : '';
+  return new RegExp(`^(${CONST.SERVICE_FABRIK_PREFIX}${subnet})-([0-9]{${CONST.NETWORK_SEGMENT_LENGTH}})-([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$`);
+}
+
+
+function taskIdRegExp() {
+  return new RegExp('^([0-9a-z-]+)_([0-9]+)$');
+}
+
+function parseServiceInstanceIdFromDeployment(deploymentName) {
+  const deploymentNameArray = deploymentNameRegExp().exec(deploymentName);
+  if (Array.isArray(deploymentNameArray) && deploymentNameArray.length === 4) {
+    return deploymentNameArray[3];
+  }
+  return deploymentName;
 }

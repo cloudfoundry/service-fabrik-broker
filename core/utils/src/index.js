@@ -6,6 +6,8 @@ const serviceFlowMapper = require('./ServiceFlowMapper');
 const HttpClient = require('./HttpClient');
 const errors = require('./errors');
 const JWT = require('./jwt');
+const Repository = require('./Repository');
+const EncryptionManager = require('./EncryptionManager');
 
 module.exports = {
   errors,
@@ -13,5 +15,7 @@ module.exports = {
   CONST: commonVarliables,
   serviceFlowMapper,
   HttpClient,
-  JWT
+  JWT,
+  Repository,
+  EncryptionManager
 };

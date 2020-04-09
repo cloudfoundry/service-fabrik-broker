@@ -12,6 +12,8 @@ const serviceFabrikClient = new ServiceFabrikClient(tokenIssuer);
 const cloudController = new CloudControllerClient(tokenIssuer);
 
 module.exports = {
+  UaaClient,
+  TokenIssuer,
   uaa,
   tokenIssuer,
   serviceFabrikClient,

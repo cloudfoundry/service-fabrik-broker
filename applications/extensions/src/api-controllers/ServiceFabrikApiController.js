@@ -44,10 +44,10 @@ const DirectorService = require('../../../../core/operators/bosh-operator/Direct
 const backupStore = require('../../../../data-access-layer/iaas').backupStore;
 
 const filename = backupStore.filename;
-const ScheduleManager = require('../jobs');
-const dbManager = require('../data-access-layer/db/DBManager');
+const ScheduleManager = require('../../../../core/jobs');
+const dbManager = require('../../../../data-access-layer/db/DBManager');
 
-const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
+const docker = config.enable_swarm_manager ? require('../../../../data-access-layer/docker') : undefined;
 
 const serviceBrokerClient = require('../../../../core/common/utils/ServiceBrokerClient');
 
