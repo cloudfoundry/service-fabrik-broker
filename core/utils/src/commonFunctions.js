@@ -12,7 +12,8 @@ const config = require('@sf/app-config');
 const RetryOperation = require('./RetryOperation');
 const CONST = require('./commonVariables');
 const {
-  NotImplemented
+  NotImplemented,
+  Forbidden
 } = require('./errors');
 
 exports.retry = RetryOperation.retry;
@@ -35,6 +36,18 @@ exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeploym
 exports.taskIdRegExp = taskIdRegExp;
 exports.deploymentNameRegExp = deploymentNameRegExp;
 exports.isServiceFabrikOperationFinished = isServiceFabrikOperationFinished;
+exports.maskSensitiveInfo = maskSensitiveInfo;
+exports.deploymentStaggered = deploymentStaggered;
+exports.deploymentLocked = deploymentLocked;
+exports.hasChangesInForbiddenSections = hasChangesInForbiddenSections;
+exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWeekly;
+exports.buildErrorJson = buildErrorJson;
+exports.sleep = sleep;
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function isServiceFabrikOperationFinished(state) {
   return _.includes([CONST.OPERATION.SUCCEEDED, CONST.OPERATION.FAILED, CONST.OPERATION.ABORTED], state);
@@ -270,4 +283,144 @@ function parseServiceInstanceIdFromDeployment(deploymentName) {
     return deploymentNameArray[3];
   }
   return deploymentName;
+}
+
+function maskSensitiveInfo(target) {
+  const mask = function (target, level) {
+    const SENSITIVE_FIELD_NAMES = ['password', 'psswd', 'pwd', 'passwd', 'uri', 'url'];
+    // For now only the above fields are marked sensitive. If any additional keys are to be added, expand this list.
+    if (level === undefined || level < 0) {
+      throw new Error('Level argument cannot be undefined or negative value');
+    }
+    if (level > 4) {
+      // Do not recurse beyond 5 levels in deep objects.
+      return target;
+    }
+    if (!_.isPlainObject(target) && !_.isArray(target)) {
+      return;
+    }
+    if (_.isPlainObject(target)) {
+      _.forEach(target, (value, key) => {
+        if (_.isPlainObject(target[key]) || _.isArray(target[key])) {
+          mask(target[key], level + 1);
+        }
+        if (typeof value === 'string' &&
+          _.includes(SENSITIVE_FIELD_NAMES, key)) {
+          target[key] = '*******';
+        }
+      });
+    } else if (_.isArray(target)) {
+      _.forEach(target, value => {
+        if (_.isPlainObject(value) || _.isArray(value)) {
+          mask(value, level + 1);
+        }
+      });
+    }
+  };
+  mask(target, 0);
+}
+
+function deploymentStaggered(err) {
+  const response = _.get(err, 'error', {});
+  const description = _.get(response, 'description', '');
+  return description.indexOf(CONST.FABRIK_OPERATION_STAGGERED) > 0 && description.indexOf(CONST.FABRIK_OPERATION_COUNT_EXCEEDED) > 0;
+}
+
+function deploymentLocked(err) {
+  const response = _.get(err, 'error', {});
+  const description = _.get(response, 'description', '');
+  return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0 &&
+    _.includes([_.get(err, 'status'), _.get(err, 'statusCode'), _.get(response, 'status')], CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
+}
+
+function hasChangesInForbiddenSections(diff) {
+  function findRemovedJob() {
+    const jobsRegex = new RegExp('^ {2}jobs'); // this regex is to find the position of jobs section
+    const jobsLevelRegex = new RegExp('^ {2}[a-z]+'); // this regex is to find the position of next section at the same level as jobs
+    const jobNameRegex = new RegExp('^ {2}[- ] name'); // this regex is to find the position of removal in job name
+    const jobStartIndex = _.findIndex(diff, element => jobsRegex.test(element[0]));
+    const jobEndIndex = _.findIndex(diff, element => jobsLevelRegex.test(element[0]), jobStartIndex + 1);
+
+    const jobDiff = _.slice(diff, jobStartIndex, jobEndIndex);
+    const removedJobName = _.find(jobDiff, element => jobNameRegex.test(element[0]) && _.includes(element[1], 'removed'));
+    return removedJobName;
+  }
+
+  const forbiddenSections = _
+    .chain(diff)
+    .map(_.first)
+    .filter(line => /^[a-z]\w+:/.test(line))
+    .map(line => _.nth(/^([a-z]\w+):/.exec(line), 1))
+    .difference([
+      'update',
+      'releases',
+      'tags',
+      'addons'
+    ])
+    .value();
+
+  if (!_.isEmpty(forbiddenSections) && !_.includes(forbiddenSections, 'director_uuid')) {
+    const boshLinks = _.filter(diff, element => _.includes(element[0], 'consumes'));
+    const forbiddenSectionsDiff = _.filter(diff, element => _.includes(element[0], 'instances') || _.includes(element[0], 'persistent_disk_type'));
+    const removedJobName = findRemovedJob();
+    const isDiffForbidden = _.isEmpty(boshLinks) && !_.isEmpty(forbiddenSectionsDiff);
+    if (isDiffForbidden || removedJobName) {
+      throw new Forbidden(`Automatic update not possible. ${!_.isEmpty(forbiddenSectionsDiff) ? 'Detected changes in forbidden sections:' + forbiddenSectionsDiff.join(',') : `Job definition removed: ${removedJobName[0]}`}`);
+    }
+  }
+  return false;
+}
+
+/**
+ * Create a weekly cron
+ * @param {Object} options                          - Various options for weekly cron
+ * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron (inclusive)
+ * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron (excluded)
+ * @param {string} [options.start_after_hr=0]       - bound of the hour to start the cron
+ * @param {string} [options.start_before_hr=23]     - bound of the hour to end the cron
+ * @param {string} [options.start_after_min=0]      - bound of the minute to start the cron
+ * @param {string} [options.start_before_min=59]    - bound of the minute to end the cron
+ */
+function getRandomCronForOnceEveryXDaysWeekly(options) {
+  const dayInterval = _.get(options, 'day_interval', 0);
+  // Get random hour
+  const startAfterHour = _.get(options, 'start_after_hr', 0);
+  const startBeforeHour = _.get(options, 'start_before_hr', 23);
+  const hr = exports.getRandomInt(startAfterHour, startBeforeHour);
+  // Get random minute
+  const startAfterMin = _.get(options, 'start_after_min', 0);
+  const startBeforeMin = _.get(options, 'start_before_min', 59);
+  const min = exports.getRandomInt(startAfterMin, startBeforeMin);
+  // Get Weekday bounds
+  const startAfterWeekday = _.get(options, 'start_after_weekday', 0);
+  const startBeforeWeekday = _.get(options, 'start_before_weekday', 7);
+  const day = exports.getRandomInt(startAfterWeekday, startBeforeWeekday);
+  // Validate the bounds
+  assert.ok((startAfterWeekday >= 0 && startAfterWeekday <= 6), 'Start day should be between 0-6');
+  assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
+  // Get weekday cron based on interval
+  let weeklyCron;
+  // Default behavior will have dayInterval as 0
+  // hence will produce a cron with only one day included
+  // 34 11 * * 3
+  // which is "At 11:34 on Wednesday."
+  // for running multiple times in a week provide a interval between 0 and 4
+  // For and interval of 2 and start day of 3, cron:
+  // 34 11 * * 3,5
+  // the above cron runs at “At 11:34 on Wednesday and Friday.”
+  if (dayInterval === 0 || dayInterval >= 4) {
+    weeklyCron = `${min} ${hr} * * ${day}`;
+  } else {
+    const weekdays = _.toString(_.range(startAfterWeekday, startBeforeWeekday, dayInterval));
+    weeklyCron = `${min} ${hr} * * ${weekdays}`;
+  }
+  return weeklyCron;
+}
+
+function buildErrorJson(err, message) {
+  return {
+    code: err.code,
+    status: err.status,
+    message: message ? message : err.message
+  };
 }

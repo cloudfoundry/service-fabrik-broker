@@ -1,10 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../common/constants');
-const config = require('../common/config');
-const errors = require('../common/errors');
 const Promise = require('bluebird');
+
+const {
+  CONST,
+  errors: {
+    UnprocessableEntity
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 
 class BasePlatformManager {
   constructor(platform) {
@@ -62,7 +67,7 @@ class BasePlatformManager {
       } else if (config.multi_az_enabled === CONST.DISABLED || config.multi_az_enabled === false) {
         return false;
       }
-      throw new errors.UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
+      throw new UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
     });
   }
 

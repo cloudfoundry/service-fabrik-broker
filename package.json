@@ -77,6 +77,7 @@
     "@sf/iaas": "file:data-access-layer/iaas",
     "@sf/jobs": "file:core/scheduler-jobs",
     "@sf/logger": "file:core/logging",
+    "@sf/metering": "file:data-access-layer/metering",
     "@sf/models": "file:core/models",
     "@sf/osb-broker": "file:applications/osb-broker",
     "@sf/quota": "file:data-access-layer/quota"

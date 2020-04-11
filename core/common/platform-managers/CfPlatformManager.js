@@ -2,18 +2,25 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const BasePlatformManager = require('./BasePlatformManager');
-const utils = require('../common/utils');
 const assert = require('assert');
-const errors = require('../common/errors');
-const cloudController = require('../data-access-layer/cf').cloudController;
-const logger = require('../common/logger');
-const CONST = require('../common/constants');
-const config = require('../common/config');
-const SecurityGroupNotCreated = errors.SecurityGroupNotCreated;
-const SecurityGroupNotFound = errors.SecurityGroupNotFound;
-const InstanceSharingNotAllowed = errors.InstanceSharingNotAllowed;
-const CrossOrganizationSharingNotAllowed = errors.CrossOrganizationSharingNotAllowed;
+const {
+  CONST,
+  errors:{
+    SecurityGroupNotFound,
+    SecurityGroupNotCreated,
+    InstanceSharingNotAllowed,
+    CrossOrganizationSharingNotAllowed,
+    UnprocessableEntity
+  },
+  commonFunctions: {
+    retry
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { cloudController } = require('@sf/cf');
+
+const BasePlatformManager = require('./BasePlatformManager');
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 
 class CfPlatformManager extends BasePlatformManager {
@@ -108,15 +115,14 @@ class CfPlatformManager extends BasePlatformManager {
 
   createApplicationSecurityGroup(name, rules, spaceId) {
     logger.info(`Creating security group '${name}' with rules ...`, rules);
-    return utils
-      .retry(tries => {
-        logger.info(`+-> ${ordinals[tries]} attempt to create security group '${name}'...`);
-        return this.cloudController
-          .createSecurityGroup(name, rules, [spaceId]);
-      }, {
-        maxAttempts: CONST.CF_SECURITY_GROUP.MAX_RETRIES,
-        minDelay: CONST.CF_SECURITY_GROUP.RETRY_DELAY
-      })
+    return retry(tries => {
+      logger.info(`+-> ${ordinals[tries]} attempt to create security group '${name}'...`);
+      return this.cloudController
+        .createSecurityGroup(name, rules, [spaceId]);
+    }, {
+      maxAttempts: CONST.CF_SECURITY_GROUP.MAX_RETRIES,
+      minDelay: CONST.CF_SECURITY_GROUP.RETRY_DELAY
+    })
       .then(securityGroup => securityGroup.metadata.guid)
       .tap(guid => logger.info(`+-> Created security group with guid '${guid}'`))
       .catch(err => {
@@ -217,7 +223,7 @@ class CfPlatformManager extends BasePlatformManager {
         logger.info(`+-> Multi-AZ Deployment disabled for all consumers : ${config.multi_az_enabled}`);
         return false;
       }
-      throw new errors.UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
+      throw new UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
     });
   }
 

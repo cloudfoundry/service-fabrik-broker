@@ -268,6 +268,7 @@ class CloudProviderClient extends BaseCloudClient {
 
   static createStorageClient(options) {
     if (options.authUrl && options.keystoneAuthVersion) {
+      // eslint-disable-next-line no-useless-escape
       const pattern = new RegExp(`\/${options.keystoneAuthVersion}\/?$`);
       options.authUrl = options.authUrl.replace(pattern, '');
     }

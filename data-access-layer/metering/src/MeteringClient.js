@@ -3,11 +3,12 @@
 'use strict';
 
 const _ = require('lodash');
-const config = require('../../common/config');
-const utils = require('../../common/utils');
-const HttpClient = utils.HttpClient;
-const CONST = require('../../common/constants');
-const TokenInfo = require('../../quota/TokenInfo');
+const config = require('@sf/app-config');
+const { TokenInfo } = require('@sf/quota');
+const {
+  CONST,
+  HttpClient
+} = require('@sf/common-utils');
 
 class MeteringClient extends HttpClient {
 

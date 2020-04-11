@@ -1,17 +1,22 @@
 'use strict';
 
 const _ = require('lodash');
-const logger = require('../common/logger');
-const BaseJob = require('./BaseJob');
-const catalog = require('../common/models/catalog');
-const config = require('../common/config');
-const utils = require('../common/utils');
-const EventLogInterceptor = require('../common/EventLogInterceptor');
+const logger = require('@sf/logger');
+const { catalog } = require('@sf/models');
+const config = require('@sf/app-config');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions: {
+    retry,
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
 /* jshint ignore:start */
-const maas = require('../data-access-layer/metering');
+const maas = require('@sf/metering').client;
 /* jshint ignore:end */
-const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
-const CONST = require('../common/constants');
+const EventLogInterceptor = require('../../../common/EventLogInterceptor');
+const BaseJob = require('./BaseJob');
 
 class MeterInstanceJob extends BaseJob {
 
@@ -100,7 +105,7 @@ class MeterInstanceJob extends BaseJob {
       }
       const enrichedUsageDoc = await this.enrichEvent(_.get(event.spec, 'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
-      const validEvent = await utils.retry(tries => {
+      const validEvent = await retry(tries => {
         logger.debug(`Sending usage document, try: ${tries}`);
         return maas.client.sendUsageRecord({
           usage: [enrichedUsageDoc]
@@ -168,13 +173,13 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static updateMeterState(status, event, err) {
-    return utils.retry(tries => {
+    return retry(tries => {
       logger.debug(`Updating meter state to ${status} for event, try: ${tries}`, event);
       let status_obj = {
         state: status
       };
       if (err !== undefined) {
-        status_obj.error = utils.buildErrorJson(err);
+        status_obj.error = buildErrorJson(err);
       }
       return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,

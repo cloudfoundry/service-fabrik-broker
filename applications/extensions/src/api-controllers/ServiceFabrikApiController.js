@@ -36,21 +36,14 @@ const {
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
 const cf = require('@sf/cf');
-
-
+const { backupStore } = require('@sf/iaas');
 const JsonWebTokenError = JWT.JsonWebTokenError;
-
-const DirectorService = require('../../../../core/operators/bosh-operator/DirectorService');
-const backupStore = require('../../../../data-access-layer/iaas').backupStore;
-
-const filename = backupStore.filename;
-const ScheduleManager = require('../../../../core/jobs');
+const { serviceBrokerClient } = require('@sf/broker-client');
+const ScheduleManager = require('@sf/jobs');
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 const dbManager = require('../../../../data-access-layer/db/DBManager');
-
 const docker = config.enable_swarm_manager ? require('../../../../data-access-layer/docker') : undefined;
-
-const serviceBrokerClient = require('../../../../core/common/utils/ServiceBrokerClient');
-
+const filename = backupStore.filename;
 const CloudControllerError = {
   NotAuthorized: err => {
     const body = err.error;

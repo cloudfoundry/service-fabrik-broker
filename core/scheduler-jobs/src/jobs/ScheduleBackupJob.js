@@ -23,7 +23,7 @@ const { apiServerClient } = require('@sf/eventmesh');
 
 const { backupStore } = require('@sf/iaas');
 const BaseJob = require('./BaseJob');
-const ScheduleManager = require('./../ScheduleManager');
+const ScheduleManager = require('../ScheduleManager');
 
 // Above reference to schedulemanager leads to the below cyclic dependency:
 // ScheduleManager -> Scheduler -> JobFabrik -> ScheduleBackupJob -> ScheduleManager

@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../common/logger');
+const logger = require('@sf/logger');
 const moment = require('moment');
 const BaseJob = require('./BaseJob');
-const ScheduleManager = require('./ScheduleManager');
-const Repository = require('../common/db').Repository;
+const { Repository } = require('@sf/common-utils');
+const ScheduleManager = require('../ScheduleManager');
 
 class DbCollectionReaperJob extends BaseJob {
   static run(job, done) {

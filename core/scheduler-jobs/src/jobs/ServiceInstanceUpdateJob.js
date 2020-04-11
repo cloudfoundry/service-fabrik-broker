@@ -2,18 +2,29 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../common/logger');
-const config = require('../common/config');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const {
+  CONST,
+  errors: {
+    BadRequest,
+    ServiceUnavailable,
+    NotFound
+  },
+  commonFunctions: {
+    unifyDiffResult,
+    getRandomCronForOnceEveryXDaysWeekly,
+    deploymentStaggered,
+    deploymentLocked,
+    hasChangesInForbiddenSections
+  },
+  Repository
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { apiServerClient } = require('@sf/eventmesh');
+const ScheduleManager = require('../ScheduleManager');
 const BaseJob = require('./BaseJob');
-const errors = require('../common/errors');
-const utils = require('../common/utils');
-const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
-const catalog = require('../common/models/catalog');
-const CONST = require('../common/constants');
-const ScheduleManager = require('./ScheduleManager');
-const DirectorService = require('../operators/bosh-operator/DirectorService');
-const eventmesh = require('../data-access-layer/eventmesh');
-const Repository = require('../common/db').Repository;
+const DirectorService = require('../../../../applications/operators/bosh-operator/DirectorService');
 // NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {
@@ -33,23 +44,23 @@ class ServiceInstanceUpdateJob extends BaseJob {
       if (!_.get(instanceDetails, 'instance_id') || !_.get(instanceDetails, 'deployment_name')) {
         const msg = `ServiceInstance Update cannot be initiated as the required mandatory params (instance_id | deployment_name) is empty : ${JSON.stringify(instanceDetails)}`;
         logger.error(msg);
-        return this.runFailed(new errors.BadRequest(msg), operationResponse, job, done);
+        return this.runFailed(new BadRequest(msg), operationResponse, job, done);
       }
       if (!_.get(config, 'feature.ServiceInstanceAutoUpdate', false)) {
         const msg = `Schedule update feature is turned off. Cannot run update for ${instanceDetails.instance_name} - Deployment: ${instanceDetails.deployment_name}`;
         logger.error(msg);
-        return this.runFailed(new errors.ServiceUnavailable(msg), operationResponse, job, done);
+        return this.runFailed(new ServiceUnavailable(msg), operationResponse, job, done);
       }
       /* In case of instance provisioned by other than bosh director.
        * Need to chnage resource group / type. Better to save plan name in job data.
        * Otherwise need to look for instance_id with all possible provisioners.
        */
-      return eventmesh.apiServerClient.getResource({
+      return apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceDetails.instance_id
       })
-        .catch(errors.NotFound, () => undefined)
+        .catch(NotFound, () => undefined)
         .then(resource => {
           if (!_.isEmpty(_.get(resource, 'status.appliedOptions'))) {
             return _.get(resource, 'status.appliedOptions');
@@ -94,7 +105,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
     const serviceId = _.get(resourceDetails, 'service_id');
     const serviceName = catalog.getServiceName(serviceId);
     const configKey = CONST.CONFIG.DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX + serviceName;
-    return serviceBrokerClient.getConfigValue(configKey);
+    return this.getBrokerClient().getConfigValue(configKey);
   }
 
   static updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse) {
@@ -107,7 +118,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
       .then(diffResults => {
         const outdated = _.get(diffResults, 'diff', false) && diffResults.diff.length !== 0;
         operationResponse.deployment_outdated = outdated;
-        operationResponse.diff = utils.unifyDiffResult(diffResults);
+        operationResponse.diff = unifyDiffResult(diffResults);
         if (!outdated) {
           operationResponse.update_init = 'NA';
           logger.info(`Instance: ${instanceDetails.instance_name} - Deployment: ${instanceDetails.deployment_name} up-to date. No update required.`);
@@ -131,14 +142,14 @@ class ServiceInstanceUpdateJob extends BaseJob {
           .catch(err => {
             operationResponse.update_init = CONST.OPERATION.FAILED;
             logger.error('Error occurred while updating service instance job :', err);
-            if (utils.deploymentStaggered(err)) {
+            if (deploymentStaggered(err)) {
               // If deployment was staggered due to exhaustion of workers, reschedule update job
               // Retry attempts do not count when deployment is staggered
               // TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
               trackAttempts = false;
               err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
             }
-            if (utils.deploymentLocked(err)) {
+            if (deploymentLocked(err)) {
               // If deployment locked then backup is in progress. So reschedule update job,
               // Retry attempts dont count when deployment is locked for backup.
               // Only if locked for backup operation
@@ -176,10 +187,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
     return Promise
       .try(() => {
         if (!skipForbiddenCheck) {
-          utils.hasChangesInForbiddenSections(diff);
+          hasChangesInForbiddenSections(diff);
         }
       })
-      .then(() => serviceBrokerClient
+      .then(() => this.getBrokerClient()
         .updateServiceInstance({
           instance_id: instance_id,
           context: context,
@@ -254,7 +265,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
       start_before_min: beforeMin,
       dayInterval: runOnceEvery
     };
-    return utils.getRandomCronForOnceEveryXDaysWeekly(opts);
+    return getRandomCronForOnceEveryXDaysWeekly(opts);
   }
 
   static getLastRunStatus(name) {

@@ -1,11 +1,17 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
-const utils = require('../common/utils');
-const Repository = require('..//common/db').Repository;
-const logger = require('../common/logger');
-const CONST = require('../common/constants');
-const errors = require('../common/errors');
-const config = require('../common/config');
+const {
+  CONST,
+  errors: {
+    BadRequest
+  },
+  commonFunctions: {
+    isServiceFabrikOperationFinished
+  },
+  Repository
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
 
 class MaintenanceManager {
 
@@ -38,18 +44,18 @@ class MaintenanceManager {
       .findOne(CONST.DB_MODEL.MAINTENANCE_DETAIL, criteria)
       .then(model => {
         if (_.isEmpty(model)) {
-          throw new errors.BadRequest('System not in maitenance mode');
+          throw new BadRequest('System not in maitenance mode');
         }
         if (progressInfo === undefined || _.isEmpty(progressInfo.trim())) {
-          throw new errors.BadRequest('Progressinfo is mandatory');
+          throw new BadRequest('Progressinfo is mandatory');
         } else {
           model.progress.push(`${progressInfo} at ${new Date()}`);
         }
         if (state !== undefined) {
           if (_.chain(CONST.OPERATION).valuesIn().indexOf(state).value() === -1) {
-            throw new errors.BadRequest(`Maintenance state can be only one of these values : ${_.valuesIn(CONST.OPERATION)}`);
+            throw new BadRequest(`Maintenance state can be only one of these values : ${_.valuesIn(CONST.OPERATION)}`);
           }
-          if (utils.isServiceFabrikOperationFinished(state)) {
+          if (isServiceFabrikOperationFinished(state)) {
             model.completedAt = new Date();
           }
           model.state = state;

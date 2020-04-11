@@ -1,14 +1,20 @@
 'use strict';
 const _ = require('lodash');
 const path = require('path');
-const logger = require('./logger');
-const pubsub = require('pubsub-js');
-const config = require('./config');
 const os = require('os');
-const utils = require('./utils');
+const pubsub = require('pubsub-js');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const CONST = require('./constants');
+const config = require('@sf/app-config');
+const {
+  CONST,
+  commonFunctions: {
+    decodeBase64,
+    maskSensitiveInfo
+
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 
 class EventLogInterceptor {
   constructor(eventType, appType) {
@@ -65,9 +71,9 @@ class EventLogInterceptor {
       // For operations which can be determined at HTTP verb, below is checked in execute() method itself
     }
     const planId = _.get(req, 'body.plan_id') || _.get(req, 'query.plan_id');
-    const serviceInstanceType = planId ? `${require('./models/catalog').getPlan(planId).manager.name}.` : (req.service ? `${req.service.name}.` : '');
+    const serviceInstanceType = planId ? `${require('@sf/models').catalog.getPlan(planId).manager.name}.` : (req.service ? `${req.service.name}.` : '');
     const response = _.cloneDeep(resBody);
-    utils.maskSensitiveInfo(response);
+    maskSensitiveInfo(response);
     const info = this.getEventInfo(serviceInstanceType,
       operationConfig.event_name,
       operationConfig.tags,
@@ -119,7 +125,7 @@ class EventLogInterceptor {
         return;
       }
       if (eventConfig.op_name_in_request.decode) {
-        operation = utils.decodeBase64(operation);
+        operation = decodeBase64(operation);
       }
       if (typeof operation === 'string' && !eventConfig.op_name_in_request.lookup_params) {
         // If operation name is string and there are no lookup params, then the value at the

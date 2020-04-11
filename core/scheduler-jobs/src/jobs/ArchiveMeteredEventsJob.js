@@ -1,13 +1,20 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../common/constants');
-const config = require('../common/config');
-const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
-const meteringArchiveStore = require('../data-access-layer/iaas').meteringArchiveStore;
+
+const {
+  CONST,
+  commonFunctions:{
+    retry,
+    sleep
+  }
+
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const { apiServerClient } = require('@sf/eventmesh');
+const { meteringArchiveStore } = require('@sf/iaas');
 const BaseJob = require('./BaseJob');
-const logger = require('../common/logger');
-const utils = require('../common/utils');
 
 class ArchiveMeteredEventsJob extends BaseJob {
 
@@ -47,7 +54,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
       const eventsToPatch = _.slice(events, 0, noEventsToPatch);
       for(let i = 0; i < eventsToPatch.length; i++) {
         await this.processEvent(eventsToPatch[i], timeStamp, attempts || 4);
-        await utils.sleep(sleepDuration || 1000);
+        await sleep(sleepDuration || 1000);
       }
       return noEventsToPatch;
     } catch(err) {
@@ -59,7 +66,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
   static async processEvent(event, timeStamp, attempts) {
     logger.info(`Processing event: ${event.metadata.name}`);
     await meteringArchiveStore.patchEventToArchiveFile(event, timeStamp);
-    return utils.retry(tries => {
+    return retry(tries => {
       logger.debug(`Trying to delete ${event.metadata.name}. Total retries yet: ${tries}`);
       return apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,

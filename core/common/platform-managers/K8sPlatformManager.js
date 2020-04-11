@@ -1,7 +1,7 @@
 'use strict';
 
-const BasePlatformManager = require('./BasePlatformManager');
 const Promise = require('bluebird');
+const BasePlatformManager = require('./BasePlatformManager');
 
 class K8sPlatformManager extends BasePlatformManager {
   constructor(platform) {
