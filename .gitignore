@@ -23,7 +23,7 @@ coverage
 # Ignore all logfiles and tempfiles.
 /logs/*.log
 /tmp
-/store/sessions
+**/store/sessions
 npm-debug.log
 package-lock.json
 

@@ -1,6 +1,6 @@
 'use strict';
 
-// const path = require('path');
+const path = require('path');
 const _ = require('lodash');
 const moment = require('moment');
 const yaml = require('js-yaml');
@@ -32,7 +32,7 @@ class ExpressApp {
       app.use(helmet());
     }
     app.disable('etag');
-    // app.set('views', path.join(__dirname, 'views'));
+    app.set('views', path.join(__dirname, 'views'));
     app.set('view engine', 'pug');
     if (cfg.trust_proxy) {
       app.set('trust proxy', cfg.trust_proxy);
@@ -44,7 +44,7 @@ class ExpressApp {
     app.use(connectTimeout(config.http_timeout, {
       respond: true
     }));
-    // app.use(express.static(path.join(__dirname, 'public')));
+    app.use(express.static(path.join(__dirname, 'public')));
     app.use(bodyParser.urlencoded({
       extended: true
     }));

@@ -20,6 +20,7 @@ async function init() {
       });
       // service fabrik api
       app.use('/api', routes.api);
+      app.use('/manage', routes.manage);
     });
     HttpServer.start(external);
     HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054

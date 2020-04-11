@@ -152,3 +152,27 @@ exports.isFeatureEnabled = function (featureName) {
     next();
   };
 };
+
+exports.csp = function () {
+  const NONE = '\'none\'';
+  const SELF = '\'self\'';
+  const contentSecurityPolicy = formatContentSecurityPolicy({
+    'default-src': [NONE],
+    'script-src': [SELF],
+    'style-src': [SELF, 'https://fonts.googleapis.com'],
+    'font-src': [SELF, 'https://fonts.gstatic.com'],
+    'img-src': [SELF]
+  });
+  return function (req, res, next) {
+    res.setHeader('Content-Security-Policy', contentSecurityPolicy);
+    next();
+  };
+};
+
+function formatContentSecurityPolicy(policy) {
+  return _.map(policy, formatContentSecurityPolicyDirective).join(' ');
+}
+
+function formatContentSecurityPolicyDirective(values, key) {
+  return `${key} ${values.join(' ')};`;
+}

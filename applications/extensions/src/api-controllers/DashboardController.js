@@ -4,22 +4,32 @@ const crypto = require('crypto');
 const _ = require('lodash');
 const yaml = require('js-yaml');
 const Promise = require('bluebird');
-const Session = require('express-session').Session;
-const config = require('../common/config');
-const errors = require('../common/errors');
-const logger = require('../common/logger');
-const catalog = require('../common/models').catalog;
-const utils = require('../common/utils');
-const CONST = require('../common/constants');
-const eventmesh = require('../data-access-layer/eventmesh');
-const cf = require('../data-access-layer/cf');
-const DirectorService = require('../operators/bosh-operator/DirectorService');
-const DockerService = require('../operators/docker-operator/DockerService');
-const VirtualHostService = require('../operators/virtualhost-operator/VirtualHostService');
-const FabrikBaseController = require('./FabrikBaseController');
-const Forbidden = errors.Forbidden;
-const ContinueWithNext = errors.ContinueWithNext;
 const assert = require('assert');
+const Session = require('express-session').Session;
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    Forbidden,
+    ContinueWithNext,
+    NotFound
+  },
+  commonFunctions: {
+    decodeBase64,
+    parseToken
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { apiServerClient } = require('@sf/eventmesh');
+const cf = require('@sf/cf');
+const {
+  FabrikBaseController
+} = require('@sf/common-controllers');
+
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
+const DockerService = require('../../../operators/docker-operator/DockerService');
+const VirtualHostService = require('../../../operators/virtualhost-operator/VirtualHostService');
 
 Promise.promisifyAll(crypto, Session.prototype);
 
@@ -130,7 +140,7 @@ class DashboardController extends FabrikBaseController {
     const service_id = req.params.service_id;
     const plan_id = req.params.plan_id;
     const encodedOp = _.get(req, 'query.operation', undefined);
-    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
+    const operation = encodedOp === undefined ? null : decodeBase64(encodedOp);
     const context = _.get(req, 'body.context') || _.get(operation, 'context');
     logger.info(`Validating service '${service_id}' and plan '${plan_id}'`);
     return this.cloudController.getPlanIdFromInstanceId(instance_id)
@@ -180,9 +190,9 @@ class DashboardController extends FabrikBaseController {
         resourceType = CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST;
         break;
       default:
-        throw new errors.NotFound(`Resource doesn't exist for instance type ${instance_type}`);
+        throw new NotFound(`Resource doesn't exist for instance type ${instance_type}`);
     }
-    return eventmesh.apiServerClient.getResource({
+    return apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: resourceType,
       resourceId: instance_id
@@ -215,7 +225,7 @@ class DashboardController extends FabrikBaseController {
   }
 
   ensureTokenNotExpired(req, res) {
-    const token = utils.parseToken(req.session.access_token)[1];
+    const token = parseToken(req.session.access_token)[1];
     if (Date.now() < token.exp * 1000) {
       throw new ContinueWithNext();
     }
@@ -224,7 +234,7 @@ class DashboardController extends FabrikBaseController {
   }
 
   ensureAllNecessaryScopesAreApproved(req, res) {
-    const token = utils.parseToken(req.session.access_token)[1];
+    const token = parseToken(req.session.access_token)[1];
     if (!_.difference(this.constructor.necessaryScopes, token.scope).length) {
       throw new ContinueWithNext();
     }

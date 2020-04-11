@@ -43,7 +43,16 @@ exports.hasChangesInForbiddenSections = hasChangesInForbiddenSections;
 exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWeekly;
 exports.buildErrorJson = buildErrorJson;
 exports.sleep = sleep;
+exports.parseToken = parseToken;
 
+function parseToken(token) {
+  return _
+    .chain(token)
+    .split('.')
+    .slice(0, 2)
+    .map(decodeBase64)
+    .value();
+}
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
