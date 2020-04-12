@@ -5,7 +5,6 @@
 console.log('Starting Service Fabrik OSB Server...');
 const _ = require('lodash');
 const routes = require('./api-controllers/routes');
-const middleware = require('./api-controllers/middleware');
 const { ExpressApp, HttpServer } = require('@sf/express-commons');
 const config = require('@sf/app-config');
 const { utils, UnlockResourcePoller } = require('@sf/eventmesh');
@@ -29,14 +28,10 @@ async function init() {
         });
       });
       if (!_.includes(config.disabled_apis, 'admin')) {
-        // TODO - Add admin route outside
         const adminRoute = require('../../admin');
         app.use('/admin', adminRoute.admin);
       }
       app.use('/:platform(cf|k8s|sm)', routes.broker);
-      if (_.get(config, 'internal.log_event')) {
-        app.use(middleware.requireEventLogging(_.get(config, 'internal'), 'internal'));
-      }
     });
     HttpServer.start(internal);
     HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054

@@ -12,8 +12,6 @@
     "@sf/cf": "file:../cf",
     "@sf/common-utils": "file:../../core/utils",
     "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models",
-    "bluebird": "3.4.0",
-    "lodash": "4.17.5"
+    "@sf/models": "file:../../core/models"
   }
 }

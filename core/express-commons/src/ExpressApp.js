@@ -14,7 +14,7 @@ const logger = require('@sf/logger');
 const middleware = require('./middleware');
 
 class ExpressApp {
-  static create(type, addRoutes, setProperties) {
+  static create(type, addRoutes) {
     const app = express();
     app.locals.moment = moment;
     const cfg = _.get(config, type);
@@ -49,11 +49,11 @@ class ExpressApp {
       extended: true
     }));
     app.use(bodyParser.json());
+    if (cfg.log_event) {
+      app.use(middleware.requireEventLogging(cfg, type));
+    }
     // routes
     addRoutes(app);
-    if(setProperties) {
-      setProperties(app);
-    }
 
     // catch 404 and forward to error handler
     app.use(middleware.notFound());

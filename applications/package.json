@@ -78,6 +78,14 @@
   "engines": {
     "node": ">= 6.2.1"
   },
+  "files": [
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "broker/server.js",
+    "common/app.js",
+    "broker/lib/"
+  ],
   "scripts": {
     "start": "node broker/server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js .",

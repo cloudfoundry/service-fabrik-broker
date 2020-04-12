@@ -35,7 +35,7 @@ const {
 const { getPlatformManager } = require('@sf/platforms');
 const { catalog } = require('@sf/models');
 
-const { ScheduleManager } = require('@sf/jobs');
+const ScheduleManager = require('@sf/jobs');
 
 const {
   manifest: {
@@ -551,7 +551,7 @@ class DirectorService extends BaseDirectorService {
     // Lazy create of deploymentHookClient
     // Only Processes that require service lifecycle operations will need deployment_hooks properties.
     // Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../../core/common/utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../deployment_hooks/lib/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :

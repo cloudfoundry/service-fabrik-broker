@@ -3,9 +3,9 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 const child_process = require('child_process');
-const logger = require('../logger');
-const errors = require('../errors');
-const config = require('../config');
+const logger = require('@sf/logger');
+const { errors: { InternalServerError } } = require('@sf/common-utils');
+const config = require('@sf/app-config');
 
 class ScriptExecutor {
   constructor(command) {
@@ -38,7 +38,7 @@ class ScriptExecutor {
             code: err.code,
             description: stderr !== '' ? stderr : stdout
           };
-          return reject(new errors.InternalServerError(`${errResponse.description}`));
+          return reject(new InternalServerError(`${errResponse.description}`));
         }
       });
     });

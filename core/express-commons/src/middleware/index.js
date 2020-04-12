@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const basicAuth = require('basic-auth');
+const interceptor = require('express-interceptor');
 const {
   errors: {
     NotFound,
@@ -14,6 +15,7 @@ const {
   }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
+const { initializeEventListener } = require('@sf/event-logger');
 
 exports.methodNotAllowed = function (allow) {
   return function (req, res, next) {
@@ -167,6 +169,35 @@ exports.csp = function () {
     res.setHeader('Content-Security-Policy', contentSecurityPolicy);
     next();
   };
+};
+
+
+exports.requireEventLogging = function (appConfig, appType) {
+  const eventsLogInterceptor = initializeEventListener(appConfig, appType);
+  return interceptor((req, res) => ({
+    isInterceptable: () => true,
+    // intercept all responses
+    // Filtering is done in the eventlogging interceptor based on event config
+
+    intercept: (body, send) => send(body),
+    // the above dummy intercept is required for HTTP redirects
+    // If the above is not provided, they throw exceptions for redirects at client end
+
+    afterSend: body => {
+      // after response is sent, log the event. This is invoked in process.nextTick
+      try {
+        const responseContentType = res.get('Content-Type') || '';
+        if (responseContentType.indexOf('application/json') !== -1) {
+          body = JSON.parse(body);
+        }
+        eventsLogInterceptor.execute(req, res, body);
+        logger.debug('Done processing request: ', req.__route);
+      } catch (err) {
+        logger.error('Error occurred while logging event :', err);
+        // Just log. Even if event logging has issues, should not affect main eventloop.
+      }
+    }
+  }));
 };
 
 function formatContentSecurityPolicy(policy) {

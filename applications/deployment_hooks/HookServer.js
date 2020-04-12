@@ -5,11 +5,10 @@ console.log('Starting Service Fabrik Deployment Hook App...');
 // set NODE_CMD process environment
 process.env.NODE_CMD = process.env.NODE_CMD || 'node';
 
-const HttpServer = require('../common/HttpServer');
-const expressApp = require('../common/ExpressApp');
+const { ExpressApp, HttpServer } = require('@sf/express-commons');
 const routes = require('./lib/routes');
 
-const hook = expressApp.create('hook', app => {
+const hook = ExpressApp.create('hook', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')

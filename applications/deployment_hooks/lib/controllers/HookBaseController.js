@@ -1,7 +1,6 @@
 'use strict';
 
-// const errors = require('../errors');
-const BaseController = require('../../../common/controllers/BaseController');
+const { BaseController } = require('@sf/common-controllers');
 
 class HookBaseController extends BaseController {
   constructor() {

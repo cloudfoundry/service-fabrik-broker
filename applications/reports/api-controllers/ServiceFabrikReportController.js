@@ -1,12 +1,17 @@
 'use strict';
 
 var moment = require('moment-timezone'); // eslint-disable-line no-var
-const errors = require('../common/errors');
-const logger = require('../common/logger');
-const FabrikBaseController = require('./FabrikBaseController');
-const BackupReportManager = require('../reports');
-const CONST = require('../common/constants');
-const BadRequest = errors.BadRequest;
+const {
+  CONST,
+  errors: {
+    BadRequest
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const {
+  FabrikBaseController
+} = require('@sf/common-controllers');
+const BackupReportManager = require('./BackupReportManager');
 
 class ServiceFabrikReportController extends FabrikBaseController {
   constructor() {

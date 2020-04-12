@@ -9,14 +9,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@sf/app-config": "file:../app-config",
-    "@sf/logger": "file:../logging",
-    "bluebird": "3.4.0",
-    "hystrixjs": "0.2.0",
-    "jsonwebtoken": "8.1.0",
-    "lodash": "4.17.5",
-    "mongoose": "4.8.2",
-    "request": "2.84.0",
-    "uuid": "2.0.2",
-    "moment": "2.19.3"
+    "@sf/logger": "file:../logging"
   }
 }

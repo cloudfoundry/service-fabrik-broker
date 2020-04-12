@@ -10,8 +10,6 @@
   "dependencies": {
     "@sf/app-config": "file:../../core/app-config",
     "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "bluebird": "3.4.0",
-    "lodash": "4.17.5"
+    "@sf/logger": "file:../../core/logging"
   }
 }

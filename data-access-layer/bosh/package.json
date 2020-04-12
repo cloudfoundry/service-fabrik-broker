@@ -15,12 +15,6 @@
     "@sf/common-utils": "file:../../core/utils",
     "@sf/eventmesh": "file:../eventmesh",
     "@sf/express-commons": "file:../../core/express-commons",
-    "@sf/logger": "file:../../core/logging",
-    "bluebird": "3.4.0",
-    "ip": "1.1.3",
-    "js-yaml": "3.6.1",
-    "lodash": "4.17.5",
-    "ssh2": "0.8.2",
-    "uuid": "2.0.2"
+    "@sf/logger": "file:../../core/logging"
   }
 }

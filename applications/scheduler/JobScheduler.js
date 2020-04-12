@@ -6,14 +6,18 @@ const pubsub = require('pubsub-js');
 const cluster = require('cluster');
 const moment = require('moment');
 const cpus = require('os').cpus();
-const CONST = require('../common/constants');
-const logger = require('../common/logger');
-const config = require('../common/config');
-const utils = require('../common/utils');
-const errors = require('../common/errors');
-const maintenanceManager = require('../maintenance').maintenanceManager;
-const serviceFabrikClient = require('../data-access-layer/cf').serviceFabrikClient;
-require('../data-access-layer/db/DBManager');
+const {
+  CONST,
+  errors: {
+    DBUnavailable
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { initializeEventListener } = require('@sf/event-logger');
+const { maintenanceManager } = require('./maintenance');
+const { serviceFabrikClient } = require('@sf/cf');
+require('../../data-access-layer/db/DBManager');
 
 let cpuCount = cpus.length;
 let maxWorkers = 0;
@@ -74,9 +78,9 @@ class JobScheduler {
     this.workerType = `Worker - ${cluster.worker.id} - ${process.pid}`;
     process.on('message', msg => this.handleMessage(msg));
     logger.info(`Starting Service Fabrik Batch Job worker: ${cluster.worker.id} - ${process.pid}  @${new Date()}`);
-    require('../jobs');
+    require('@sf/jobs');
     logger.info('Initializing event listeners..');
-    utils.initializeEventListener(config.external, 'external');
+    initializeEventListener(config.external, 'external');
   }
 
   handleMessage(msg) {
@@ -226,7 +230,7 @@ class JobScheduler {
 
   processUnhandledRejection(reason, p) {
     logger.error(`Unhandled Rejection in - ${this.workerType} - at:`, p, 'reason:', reason);
-    if (reason && reason instanceof errors.DBUnavailable) {
+    if (reason && reason instanceof DBUnavailable) {
       logger.error('DB unavailable. shutting down app');
       this.shutDown();
     } else {

@@ -1,9 +1,8 @@
 'use strict';
 
 console.log('Starting Service Fabrik Report App...');
-const routes = require('../api-controllers/routes');
-const HttpServer = require('../common/HttpServer');
-const ExpressApp = require('../common/ExpressApp');
+const routesReport = require('./report');
+const { ExpressApp, HttpServer } = require('@sf/express-commons');
 
 const report = ExpressApp.create('report', app => {
   app.get('/', (req, res) => {
@@ -11,7 +10,7 @@ const report = ExpressApp.create('report', app => {
       title: app.get('title')
     });
   });
-  app.use('/admin/report', routes.report);
+  app.use('/admin/report', routesReport);
 });
 
 HttpServer.start(report);

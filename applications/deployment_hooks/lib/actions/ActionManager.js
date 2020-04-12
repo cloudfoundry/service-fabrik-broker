@@ -4,9 +4,14 @@ const fs = require('fs');
 const _ = require('lodash');
 const Promise = require('bluebird');
 const path = require('path');
-const logger = require('../../../common/logger');
-const errors = require('../errors');
-const CONST = require('../constants');
+const logger = require('@sf/logger');
+
+const {
+  CONST,
+  errors: {
+    NotImplemented
+  }
+} = require('@sf/common-utils');
 const ScriptExecutor = require('../utils/ScriptExecutor');
 
 class ActionManager {
@@ -55,7 +60,7 @@ class ActionManager {
           // action must be defined atleast for one phase.
           return this.voidImplementation(action, phase, 'script');
         }
-        throw new errors.NotImplemented(`Not implemented ${phase} for ${action}`);
+        throw new NotImplemented(`Not implemented ${phase} for ${action}`);
       }
     }
   }

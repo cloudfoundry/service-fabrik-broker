@@ -1,9 +1,11 @@
 'use strict';
 
-
-const errors = require('../errors');
-const logger = require('../logger');
-const BadRequest = errors.BadRequest;
+const {
+  errors: {
+    BadRequest
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const HookBaseController = require('./HookBaseController');
 const ActionManager = require('../actions/ActionManager');
 

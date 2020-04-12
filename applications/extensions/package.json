@@ -20,11 +20,6 @@
     "@sf/iaas": "file:../../data-access-layer/iaas",
     "@sf/jobs": "file:../../core/scheduler-jobs",
     "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models",
-    "bluebird": "3.4.0",
-    "express": "4.13.4",
-    "express-session": "1.13.0",
-    "lodash": "4.17.5",
-    "session-file-store": "0.2.0"
+    "@sf/models": "file:../../core/models"
   }
 }
