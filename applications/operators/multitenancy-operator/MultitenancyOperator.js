@@ -3,14 +3,19 @@
 const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
+const { apiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    Gone
+  },
+  commonFunctions: {
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const MTServiceFabrik = require('./MTServiceFabrik');
-const errors = require('../../common/errors');
-const Gone = errors.Gone;
 
 class MultitenancyOperator extends BaseOperator {
 
@@ -42,13 +47,13 @@ class MultitenancyOperator extends BaseOperator {
     })
       .catch(Error, err => {
         logger.error('Error occurred in processing request by MultitenancyOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: this.resourceType,
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -62,7 +67,7 @@ class MultitenancyOperator extends BaseOperator {
     const multitenancyService = MTServiceFabrik.getService(this.service);
     return multitenancyService.createInstance(changeObjectBody.metadata.name, changedOptions, this.resourceType)
       .then(multitenancyService => multitenancyService.create())
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: this.resourceType,
         resourceId: changeObjectBody.metadata.name,
@@ -81,12 +86,12 @@ class MultitenancyOperator extends BaseOperator {
     const multitenancyService = MTServiceFabrik.getService(this.service);
     return multitenancyService.createInstance(changeObjectBody.metadata.name, changedOptions, this.resourceType)
       .then(multitenancyService => multitenancyService.delete(changeObjectBody))
-      .then(() => eventmesh.apiServerClient.deleteResource({
+      .then(() => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: this.resourceType,
         resourceId: changeObjectBody.metadata.name
       }))
-      .catch(Gone, () => eventmesh.apiServerClient.deleteResource({
+      .catch(Gone, () => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: this.resourceType,
         resourceId: changeObjectBody.metadata.name
@@ -101,7 +106,7 @@ class MultitenancyOperator extends BaseOperator {
     const multitenancyService = MTServiceFabrik.getService(this.service);
     return multitenancyService.createInstance(changeObjectBody.metadata.name, changedOptions, this.resourceType)
       .then(multitenancyService => multitenancyService.update(changeObjectBody))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: this.resourceType,
         resourceId: changeObjectBody.metadata.name,

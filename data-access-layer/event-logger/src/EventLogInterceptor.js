@@ -11,7 +11,6 @@ const {
   commonFunctions: {
     decodeBase64,
     maskSensitiveInfo
-
   }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');

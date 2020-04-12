@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const CONST = require('../../../common/constants');
+const { CONST } = require('@sf/common-utils');
 let ServiceInstanceUpdate, ServiceInstanceBackup, BlueprintTask;
 
 class TaskFabrik {

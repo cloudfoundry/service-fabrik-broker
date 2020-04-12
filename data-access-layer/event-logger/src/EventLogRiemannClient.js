@@ -2,10 +2,12 @@
 
 const _ = require('lodash');
 const riemannClient = require('riemannjs');
-const logger = require('../logger');
-const config = require('../config');
 const pubsub = require('pubsub-js');
-const CONST = require('../constants');
+
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
 
 class EventLogRiemannClient {
   constructor(options) {
@@ -108,7 +110,7 @@ class EventLogRiemannClient {
         eventName = `${eventName}.app_guid.${appGuid}`;
       }
       if (serviceId !== undefined) {
-        let serviceName = require('../models').catalog.getServiceName(serviceId);
+        let serviceName = catalog.getServiceName(serviceId);
         eventName = `${eventName}.service_name.${serviceName}`;
       }
     }

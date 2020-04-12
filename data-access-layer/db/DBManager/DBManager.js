@@ -22,10 +22,9 @@ const {
   }
 } = require('@sf/common-utils');
 const { apiServerClient } = require('@sf/eventmesh');
-
+const { BasePlatformManager } = require('@sf/platforms');
 const DirectorService = require('../../../applications/operators/bosh-operator/DirectorService');
 const dbConnectionManager = require('../DbConnectionManager');
-const BasePlatformManager = require('../../../core/common/platform-managers/BasePlatformManager');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'

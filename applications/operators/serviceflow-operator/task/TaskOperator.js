@@ -3,10 +3,14 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
-const logger = require('../../../common/logger');
-const CONST = require('../../../common/constants');
-const utils = require('../../../common/utils');
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    isServiceFabrikOperationFinished
+  }
+} = require('@sf/common-utils');
+const apiServerClient = require('@sf/eventmesh');
 const BaseOperator = require('../../../operators/BaseOperator');
 const TaskFabrik = require('./TaskFabrik');
 
@@ -83,7 +87,7 @@ class TaskOperator extends BaseOperator {
       .getStatus(object.metadata.name, taskDetails)
       .then(operationStatus => {
         const state = _.get(operationStatus, 'state');
-        if (utils.isServiceFabrikOperationFinished(state)) {
+        if (isServiceFabrikOperationFinished(state)) {
           logger.info(`TASK COMPLETE - on resource - ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)}  - ${JSON.stringify(taskDetails.resource)}`);
           let description = _.get(operationStatus, 'description');
           description = description || _.get(operationStatus, 'response.description');

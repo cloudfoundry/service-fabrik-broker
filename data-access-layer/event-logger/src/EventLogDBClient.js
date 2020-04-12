@@ -2,10 +2,12 @@
 
 const _ = require('lodash');
 const pubsub = require('pubsub-js');
-const config = require('../config');
-const logger = require('../logger');
-const Repository = require('../db').Repository;
-const CONST = require('../constants');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
 
 class EventLogDBClient {
   constructor(options) {

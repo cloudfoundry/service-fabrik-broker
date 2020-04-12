@@ -5,10 +5,10 @@ const assert = require('assert');
 const uuid = require('uuid');
 const crypto = require('crypto');
 const Promise = require('bluebird');
+const moment = require('moment');
 const randomBytes = Promise.promisify(crypto.randomBytes);
 const Readable = require('stream').Readable;
 const config = require('@sf/app-config');
-
 const RetryOperation = require('./RetryOperation');
 const CONST = require('./commonVariables');
 const {
@@ -26,7 +26,6 @@ exports.streamToPromise = streamToPromise;
 exports.isFeatureEnabled = isFeatureEnabled;
 exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
-exports.getPlatformFromContext = getPlatformFromContext;
 exports.unifyDiffResult = unifyDiffResult;
 exports.getRandomInt = getRandomInt;
 exports.isCronSafe = isCronSafe;
@@ -44,6 +43,13 @@ exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWee
 exports.buildErrorJson = buildErrorJson;
 exports.sleep = sleep;
 exports.parseToken = parseToken;
+exports.getPlatformFromContext = getPlatformFromContext;
+exports.randomBytes = randomBytes;
+exports.isDBConfigured = isDBConfigured;
+exports.getDefaultErrorMsg = getDefaultErrorMsg;
+exports.getTimeAgo = getTimeAgo;
+exports.demux = demux;
+exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
 
 function parseToken(token) {
   return _
@@ -432,4 +438,127 @@ function buildErrorJson(err, message) {
     status: err.status,
     message: message ? message : err.message
   };
+}
+
+function getDefaultErrorMsg(err) {
+  return `Service Broker Error, status code: ${err.code ? err.code : CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR}, error code: ${err.statusCode ? err.statusCode : CONST.ERR_STATUS_CODES.BROKER.DEFAULT}, message: ${err.message}`;
+}
+
+function getTimeAgo(date, suffixless) {
+  return moment.duration(new Date(date).getTime() - Date.now()).humanize(!suffixless);
+}
+
+
+function demux(stream, options) {
+  options = _.assign({
+    tail: Infinity
+  }, options);
+  const stdout = [];
+  const stderr = [];
+
+  function takeRight(size) {
+    if (stdout.length > size) {
+      stdout.splice(0, stdout.length - size);
+    }
+    if (stderr.length > size) {
+      stderr.splice(0, stderr.length - size);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    let header = null;
+    let chunk = null;
+    let stdoutLength = 0;
+    let stderrLength = 0;
+
+    function read() {
+      if (!header) {
+        header = stream.read(8);
+      }
+      if (!header) {
+        return false;
+      }
+      chunk = stream.read(header.readUInt32BE(4));
+      if (!chunk) {
+        return false;
+      }
+      return true;
+    }
+
+    function onreadable() {
+      while (read()) {
+        switch (header.readUInt8(0)) {
+          case 2:
+            stderrLength++;
+            stderr.push(chunk);
+            break;
+          default:
+            stdoutLength++;
+            stdout.push(chunk);
+        }
+        takeRight(2 * options.tail);
+        header = null;
+        chunk = null;
+      }
+    }
+
+    function truncatedMessage(logType, length, total) {
+      const separator = _.repeat('#', 68);
+      return _
+        .chain([
+          `The "${logType}" log is truncated.`,
+          `Only the last ${length} lines of ${total} are shown here.`
+        ])
+        .map(line => `# ${_.pad(line, separator.length - 4)} #`)
+        .tap(lines => {
+          lines.unshift(separator);
+          lines.push(separator, '...\n');
+        })
+        .join('\n')
+        .value();
+    }
+
+    function onend() {
+      takeRight(options.tail);
+      if (stdoutLength > stdout.length) {
+        stdout.unshift(truncatedMessage('stdout', stdout.length, stdoutLength));
+      }
+      if (stderrLength > stderr.length) {
+        stderr.unshift(truncatedMessage('stderr', stderr.length, stderrLength));
+
+      }
+      resolve(_.map([stdout, stderr], lines => _.join(lines, '')));
+    }
+
+    function onerror(err) {
+      reject(err);
+    }
+
+    stream.on('readable', onreadable);
+    stream.once('end', onend);
+    stream.once('error', onerror);
+  });
+}
+
+function getBrokerAgentCredsFromManifest(manifest) {
+  var brokerAgentNameRegex = RegExp('broker-agent'); // eslint-disable-line no-var
+  let authObject;
+  _.forEach(manifest.instance_groups, instanceGroup => {
+    if (authObject) {
+      // break forEach
+      return false;
+    }
+    _.forEach(instanceGroup.jobs, job => {
+      if (brokerAgentNameRegex.test(job.name)) {
+        authObject =
+          _.chain({})
+            .set('username', job.properties.username)
+            .set('password', job.properties.password)
+            .value();
+        // break forEach
+        return false;
+      }
+    });
+  });
+  return authObject;
 }

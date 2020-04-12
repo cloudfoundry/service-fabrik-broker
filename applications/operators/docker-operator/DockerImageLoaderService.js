@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const docker = require('../../data-access-layer/docker');
+const docker = require('../../../data-access-layer/docker');
 const dockerClient = docker.client;
 
 class DockerImageLoaderService {

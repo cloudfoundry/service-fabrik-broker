@@ -1,0 +1,22 @@
+{
+  "name": "@sf/event-logger",
+  "version": "1.0.0",
+  "description": "Module to enable event logging",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
+    "@sf/common-utils": "file:../../core/utils",
+    "@sf/logger": "file:../../core/logging",
+    "@sf/models": "file:../../core/models",
+    "js-yaml": "3.6.1",
+    "lodash": "4.17.5",
+    "pubsub-js": "1.5.4",
+    "riemannjs": "1.0.1"
+  }
+}

@@ -2,10 +2,14 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const CONST = require('../../common/constants');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const DirectorService = require('./DirectorService');
 const BaseStatusPoller = require('../BaseStatusPoller');
 
@@ -34,7 +38,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
       .createInstance(instanceId, resourceOptions)
       .then(directorService => directorService.getAgentLifecyclePostProcessingStatus(operationType, deploymentName))
       .tap(agentResponse => logger.debug('agent response is ', agentResponse))
-      .then(agentResponse => Promise.all([eventmesh.apiServerClient.updateResource({
+      .then(agentResponse => Promise.all([apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceId,
@@ -55,7 +59,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
         logger.error(`Error occurred while post processing deployment for instance ${instanceId}`, err);
         const timestamp = new Date().toISOString();
         this.clearPoller(instanceId, intervalId);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: instanceId,
@@ -65,7 +69,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
               resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED,
               description: `Postprocessing of ${operationType} deployment ${deploymentName} failed at ${timestamp} with Error "${err.message}"`
             },
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });

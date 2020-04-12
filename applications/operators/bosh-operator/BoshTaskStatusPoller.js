@@ -3,16 +3,22 @@
 const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
-const logger = require('../../common/logger');
-const config = require('../../common/config');
-const utils = require('../../common/utils');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  errors: {
+    ServiceInstanceNotFound
+  },
+  commonFunctions: {
+    getDefaultErrorMsg,
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { EventLogInterceptor } = require('@sf/event-logger');
 const DirectorService = require('./DirectorService');
-const EventLogInterceptor = require('../../common/EventLogInterceptor');
 const BaseStatusPoller = require('../BaseStatusPoller');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const AssertionError = assert.AssertionError;
 
 class BoshTaskStatusPoller extends BaseStatusPoller {
@@ -50,7 +56,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           logger.error('Error occured while getting last operation', err);
           this.clearPoller(instanceId, intervalId);
           if (resourceBody.status.response.type === 'delete') {
-            return eventmesh.apiServerClient.deleteResource({
+            return apiServerClient.deleteResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: instanceId
@@ -58,16 +64,16 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           } else {
             lastOperationOfInstance = {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err)
+              description: getDefaultErrorMsg(err)
             };
-            return eventmesh.apiServerClient.updateResource({
+            return apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: instanceId,
               status: {
                 lastOperation: lastOperationOfInstance,
                 state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                error: utils.buildErrorJson(err)
+                error: buildErrorJson(err)
               },
               metadata: {
                 annotations: {
@@ -83,16 +89,16 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           err.statusCode = CONST.ERR_STATUS_CODES.BOSH.BAD_FORMAT;
           lastOperationOfInstance = {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: utils.getDefaultErrorMsg(err)
+            description: getDefaultErrorMsg(err)
           };
-          return eventmesh.apiServerClient.updateResource({
+          return apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: instanceId,
             status: {
               lastOperation: lastOperationOfInstance,
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              error: utils.buildErrorJson(err)
+              error: buildErrorJson(err)
             },
             metadata: {
               annotations: {
@@ -132,7 +138,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
           return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
             .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
-            .then(ips => eventmesh.apiServerClient.updateResource({
+            .then(ips => apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: instanceId,
@@ -149,7 +155,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
             }))
             .catch(err => {
               logger.error(`Error occurred while updating deployment IPs in apiserver for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
-              return eventmesh.apiServerClient.updateResource({
+              return apiServerClient.updateResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                 resourceId: instanceId,
@@ -166,14 +172,14 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
             });
         }
         if (lastOperationValue.type === CONST.OPERATION_TYPE.DELETE) {
-          return eventmesh.apiServerClient.deleteResource({
+          return apiServerClient.deleteResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: instanceId
           });
         }
       } else {
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: instanceId,

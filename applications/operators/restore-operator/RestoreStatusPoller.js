@@ -2,14 +2,19 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const CONST = require('../../common/constants');
-const logger = require('../../common/logger');
-const catalog = require('../../common/models').catalog;
-const config = require('../../common/config');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions: {
+    isServiceFabrikOperationFinished
+  }
+
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const { catalog } = require('@sf/models');
+const config = require('@sf/app-config');
+const { EventLogInterceptor } = require('@sf/event-logger');
 const RestoreService = require('./');
-const utils = require('../../common/utils');
-const EventLogInterceptor = require('../../common/EventLogInterceptor');
 const BaseStatusPoller = require('../BaseStatusPoller');
 
 class RestoreStatusPoller extends BaseStatusPoller {
@@ -39,7 +44,7 @@ class RestoreStatusPoller extends BaseStatusPoller {
         .then(operationStatusResponse => {
           logger.debug(`Got restore operation response for guid ${changedOptions.restore_guid}`, operationStatusResponse);
           return Promise
-            .try(() => eventmesh.apiServerClient.patchResource({
+            .try(() => apiServerClient.patchResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
               resourceId: changedOptions.restore_guid,
@@ -48,8 +53,8 @@ class RestoreStatusPoller extends BaseStatusPoller {
               }
             }))
             .then(() => {
-              if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                return eventmesh.apiServerClient.patchResource({
+              if (isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+                return apiServerClient.patchResource({
                   resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                   resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                   resourceId: changedOptions.restore_guid,

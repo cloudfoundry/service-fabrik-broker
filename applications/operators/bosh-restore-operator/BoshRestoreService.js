@@ -2,16 +2,23 @@
 
 const _ = require('lodash');
 const assert = require('assert');
-const eventmesh = require('../../data-access-layer/eventmesh');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    BadRequest
+  }
+} = require('@sf/common-utils');
+const {
+  cloudProvider,
+  backupStore
+} = require('@sf/iaas');
+const logger = require('@sf/logger');
+const { director } = require('@sf/bosh');
+const { catalog } = require('@sf/models');
+const config = require('@sf/app-config');
 const BaseDirectorService = require('../BaseDirectorService');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
-const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
-const logger = require('../../common/logger');
-const bosh = require('../../data-access-layer/bosh');
-const catalog = require('../../common/models/catalog');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const config = require('../../common/config');
 
 /*
   This Operator carries out new improved restore by following a sequence of steps.
@@ -31,7 +38,7 @@ class BoshRestoreService extends BaseDirectorService {
     super(plan);
     this.plan = plan;
     this.cloudProvider = cloudProvider;
-    this.director = bosh.director;
+    this.director = director;
     this.backupStore = backupStore;
   }
 
@@ -89,14 +96,14 @@ class BoshRestoreService extends BaseDirectorService {
     try {
       restoreFileMetadata = await this.backupStore.getRestoreFile(data);
     } catch(err) {
-      if (!(err instanceof errors.NotFound)) {
+      if (!(err instanceof NotFound)) {
         throw err;
       }
     }
     await this.backupStore.putFile(_.assign(data, {
       restore_dates: _.get(restoreFileMetadata, 'restore_dates')
     }));
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: opts.restore_guid,
@@ -185,7 +192,7 @@ class BoshRestoreService extends BaseDirectorService {
           await this.processFinalize(changedOptions);
           break;
         default:
-          throw new errors.BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
+          throw new BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
       }
     } catch(err) {
       logger.error(`Error occurred in state ${currentState} for restore ${changedOptions.restore_guid}: ${err}`);
@@ -201,7 +208,7 @@ class BoshRestoreService extends BaseDirectorService {
       if(!_.isEmpty(patchObj)) {
         _.set(patchResourceObj, 'status.response', patchObj);
       }
-      await eventmesh.apiServerClient.patchResource(patchResourceObj);
+      await apiServerClient.patchResource(patchResourceObj);
       return this.patchRestoreFileWithFinalResult(changedOptions, patchObj);
     }
   }
@@ -228,7 +235,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
       _.set(patchResourceObj, 'options', stateResult);
     } 
-    await eventmesh.apiServerClient.patchResource(patchResourceObj);
+    await apiServerClient.patchResource(patchResourceObj);
   }
   // TODO: Store the logs in restorefile or not?
   // TODO: Putting some threshold on disk creation.
@@ -243,7 +250,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     };
     await Promise.all(deploymentInstancesInfo.map(createDiskFn)); 
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -271,7 +278,7 @@ class BoshRestoreService extends BaseDirectorService {
       }
     };
     await Promise.all(deploymentInstancesInfo.map(createDiskAttachmentTaskFn)); 
-    await eventmesh.apiServerClient.patchResource({ 
+    await apiServerClient.patchResource({ 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -313,7 +320,7 @@ class BoshRestoreService extends BaseDirectorService {
     };
     // TODO: add retries
     await Promise.all(deploymentInstancesInfo.map(sshFn)); 
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -344,11 +351,11 @@ class BoshRestoreService extends BaseDirectorService {
         }];
       default:
         if (isNaN(instanceOption) || _.isEmpty(instanceOption)) {
-          throw new errors.BadRequest(`Invalid 'instances' option: ${instanceOption}`);
+          throw new BadRequest(`Invalid 'instances' option: ${instanceOption}`);
         }
         let instanceIndex = parseInt(instanceOption);
         if (instanceIndex >= deploymentInstancesInfo.length || instanceIndex < 0) {
-          throw new errors.BadRequest(`${instanceIndex} out of bound, number of instances: ${deploymentInstancesInfo.length}`);
+          throw new BadRequest(`${instanceIndex} out of bound, number of instances: ${deploymentInstancesInfo.length}`);
         }
         return [{
           'group': deploymentInstancesInfo[instanceIndex].job_name,
@@ -381,7 +388,7 @@ class BoshRestoreService extends BaseDirectorService {
           errands: errands
         }
       });
-      await eventmesh.apiServerClient.patchResource({ 
+      await apiServerClient.patchResource({ 
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -394,7 +401,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBaseBackupErrand(resourceOptions) { 
     await this.triggerErrand(resourceOptions, 'baseBackupErrand'); 
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -411,7 +418,7 @@ class BoshRestoreService extends BaseDirectorService {
       await this.triggerErrand(resourceOptions, 'pointInTimeErrand');
       nextState = `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`;
     }
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -443,12 +450,12 @@ class BoshRestoreService extends BaseDirectorService {
       });
       _.set(patchResourceObj, 'options', stateResult);
     } 
-    await eventmesh.apiServerClient.patchResource(patchResourceObj);
+    await apiServerClient.patchResource(patchResourceObj);
   }
 
   async processPostStart(resourceOptions) { 
     await this.triggerErrand(resourceOptions, 'postStartErrand'); 
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
@@ -471,7 +478,7 @@ class BoshRestoreService extends BaseDirectorService {
     if(!_.isEmpty(patchObj)) {
       _.set(patchResourceObj, 'status.response', patchObj);
     }
-    await eventmesh.apiServerClient.patchResource(patchResourceObj);
+    await apiServerClient.patchResource(patchResourceObj);
     await this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
     if (this.service.pitr === true) {
       this.reScheduleBackup({

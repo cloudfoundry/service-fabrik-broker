@@ -23,8 +23,8 @@
     "@sf/models": "file:../../core/models",
     "bluebird": "3.4.0",
     "express": "4.13.4",
-    "lodash": "4.17.5",
     "express-session": "1.13.0",
+    "lodash": "4.17.5",
     "session-file-store": "0.2.0"
   }
 }

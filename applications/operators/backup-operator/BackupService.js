@@ -2,23 +2,29 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../common/config');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const bosh = require('../../data-access-layer/bosh');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const utils = require('../../common/utils');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const Agent = require('../../data-access-layer/service-agent');
-const CONST = require('../../common/constants');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    Forbidden
+  },
+  commonFunctions: {
+    buildErrorJson,
+    randomBytes
+  }
+} = require('@sf/common-utils');
+const { director } = require('@sf/bosh');
+const { backupStore } = require('@sf/iaas');
+const { apiServerClient } = require('@sf/eventmesh');
+const Agent = require('../../../data-access-layer/service-agent');
 const BaseDirectorService = require('../BaseDirectorService');
-const Forbidden = errors.Forbidden;
 
 class BackupService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
     this.plan = plan;
-    this.director = bosh.director;
+    this.director = director;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
   }
@@ -64,8 +70,7 @@ class BackupService extends BaseDirectorService {
       .value();
 
     function createSecret() {
-      return utils
-        .randomBytes(12)
+      return randomBytes(12)
         .then(buffer => buffer.toString('base64'));
     }
 
@@ -78,8 +83,7 @@ class BackupService extends BaseDirectorService {
       backupStarted = false;
 
     let deploymentName;
-    return bosh
-      .director
+    return director
       .getDeploymentNameForInstanceId(opts.instance_guid).then(res => {
         deploymentName = res;
         logger.info('Obtained the deployment name for instance :', deploymentName);
@@ -112,7 +116,7 @@ class BackupService extends BaseDirectorService {
         const response = _.extend(backupInfo, {
           deployment: deploymentName
         });
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           resourceId: result.backup_guid,
@@ -126,7 +130,7 @@ class BackupService extends BaseDirectorService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
-          .then(() => eventmesh.apiServerClient.updateResource({
+          .then(() => apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: result.backup_guid,
@@ -136,7 +140,7 @@ class BackupService extends BaseDirectorService {
                 state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                 description: err.message
               },
-              error: utils.buildErrorJson(err)
+              error: buildErrorJson(err)
             }
           }))
           .then(() => {
@@ -232,7 +236,7 @@ class BackupService extends BaseDirectorService {
                   .replace(/\.\d*/, '')
               })
             )
-            .then(patchObj => eventmesh.apiServerClient.patchResource({
+            .then(patchObj => apiServerClient.patchResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               resourceId: opts.backup_guid,
@@ -256,7 +260,7 @@ class BackupService extends BaseDirectorService {
     logger.info('Attempting delete with:', options);
     return this.backupStore
       .deleteBackupFile(options)
-      .then(() => eventmesh.apiServerClient.updateResource({
+      .then(() => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: options.backup_guid,
@@ -281,7 +285,7 @@ class BackupService extends BaseDirectorService {
           case 'processing':
             return this.agent
               .abortBackup(metadata.agent_ip)
-              .then(() => eventmesh.apiServerClient.updateResource({
+              .then(() => apiServerClient.updateResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
                 resourceId: abortOptions.guid,

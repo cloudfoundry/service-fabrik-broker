@@ -2,25 +2,28 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const errors = require('../common/errors');
-const logger = require('../common/logger');
-const config = require('../common/config');
-const eventmesh = require('../data-access-layer/eventmesh');
-const CONST = require('../common/constants');
-const NotImplementedBySubclass = errors.NotImplementedBySubclass;
-const Conflict = errors.Conflict;
-const NotFound = errors.NotFound;
+const {
+  CONST,
+  errors: {
+    NotImplementedBySubclass,
+    Conflict,
+    NotFound
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { apiServerClient } = require('@sf/eventmesh');
 
 class BaseOperator {
 
   registerCrds(resourceGroup, resourceType) {
-    return eventmesh.apiServerClient.registerCrds(resourceGroup, resourceType);
+    return apiServerClient.registerCrds(resourceGroup, resourceType);
   }
 
   registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval) {
     const queryString = `state in (${_.join(validStateList, ',')})`;
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
-    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, resource => this.handleResource(resource, handler, resourceGroup, resourceType, queryString), queryString)
+    return apiServerClient.registerWatcher(resourceGroup, resourceType, resource => this.handleResource(resource, handler, resourceGroup, resourceType, queryString), queryString)
       .then(stream => {
         logger.debug('Successfully set watcher with query string:', queryString);
         watchRefreshInterval = watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL;
@@ -57,8 +60,8 @@ class BaseOperator {
     patchAnnotations.lockedByManager = config.broker_ip;
     patchAnnotations.processingStartedAt = new Date();
     metadata.annotations = patchAnnotations;
-    const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
-    return eventmesh.apiServerClient.updateResource({
+    const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
+    return apiServerClient.updateResource({
       resourceGroup: resourceDetails.resourceGroup,
       resourceType: resourceDetails.resourceType,
       resourceId: metadata.name,
@@ -82,8 +85,8 @@ class BaseOperator {
         processingStartedAt: ''
       }
     };
-    const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
-    return eventmesh.apiServerClient.updateResource({
+    const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
+    return apiServerClient.updateResource({
       resourceGroup: resourceDetails.resourceGroup,
       resourceType: resourceDetails.resourceType,
       resourceId: changeObjectBody.metadata.name,

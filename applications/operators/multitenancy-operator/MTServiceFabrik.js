@@ -1,9 +1,9 @@
 'use strict';
 
-const CONST = require('../../common/constants');
+const { CONST } = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const MultitenancyService = require('./MultitenancyService');
 const MultitenancyBindService = require('./MultitenancyBindService');
-const logger = require('../../common/logger');
 
 class MTServiceFabrik {
   static getService(service) {

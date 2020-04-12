@@ -1,22 +1,30 @@
 'use strict';
 
 const Promise = require('bluebird');
+const assert = require('assert');
 const _ = require('lodash');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
+
+const { apiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    ServiceInstanceNotFound
+  },
+  commonFunctions: {
+    buildErrorJson,
+    getDefaultErrorMsg
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const { initializeEventListener } = require('@sf/event-logger');
 const BaseOperator = require('../BaseOperator');
 const DirectorService = require('./DirectorService');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const config = require('../../common/config');
-require('../../data-access-layer/db/DBManager');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const assert = require('assert');
+require('../../../data-access-layer/db/DBManager');
 
 class BoshOperator extends BaseOperator {
   init() {
-    utils.initializeEventListener(config.internal, 'internal');
+    initializeEventListener(config.internal, 'internal');
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, validStateList));
@@ -38,7 +46,7 @@ class BoshOperator extends BaseOperator {
     })
       .catch(err => {
         logger.error('Error occurred in processing request by BoshOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: _.get(changeObjectBody, 'metadata.name'),
@@ -46,13 +54,13 @@ class BoshOperator extends BaseOperator {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             lastOperation: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err)
+              description: getDefaultErrorMsg(err)
             },
             response: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err)
+              description: getDefaultErrorMsg(err)
             },
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -66,7 +74,7 @@ class BoshOperator extends BaseOperator {
     logger.info('Creating deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.create(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: _.get(changeObjectBody, 'metadata.name'),
@@ -85,7 +93,7 @@ class BoshOperator extends BaseOperator {
     logger.info('Updating deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.update(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: _.get(changeObjectBody, 'metadata.name'),
@@ -104,7 +112,7 @@ class BoshOperator extends BaseOperator {
     logger.info('Deleting deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.delete(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: _.get(changeObjectBody, 'metadata.name'),
@@ -113,7 +121,7 @@ class BoshOperator extends BaseOperator {
           state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
         }
       }))
-      .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
+      .catch(ServiceInstanceNotFound, () => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: _.get(changeObjectBody, 'metadata.name')

@@ -1,8 +1,12 @@
 'use strict';
 
-const CONST = require('../common/constants');
-const Agent = require('../data-access-layer/service-agent');
-const utils = require('../common/utils');
+const {
+  CONST,
+  commonFunctions: {
+    getPlatformFromContext
+  }
+} = require('@sf/common-utils');
+const Agent = require('../../data-access-layer/service-agent');
 
 class BaseService {
   constructor(plan) {
@@ -27,7 +31,7 @@ class BaseService {
   }
 
   getTenantGuid(context) {
-    let platform = utils.getPlatformFromContext(context);
+    let platform = getPlatformFromContext(context);
     if (platform === CONST.PLATFORM.CF) {
       return context.space_guid;
     } else if (platform === CONST.PLATFORM.K8S) {

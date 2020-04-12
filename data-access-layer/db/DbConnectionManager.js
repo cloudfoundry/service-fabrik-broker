@@ -3,10 +3,16 @@
 const mongoose = require('mongoose');
 const Promise = require('bluebird');
 const pubsub = require('pubsub-js');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
-const errors = require('../../common/errors');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    DBUnavailable
+  },
+  commonFunctions: {
+    retry
+  }
+} = require('@sf/common-utils');
 mongoose.Promise = Promise;
 const CONNECTION_STATE = CONST.DB.CONNECTION_STATE;
 
@@ -89,15 +95,14 @@ class DbConnectionManager {
         if (config.retry_connect) {
           this.reconnectMode = true;
           logger.info('Attempting reconnect to db with params:', config.retry_connect);
-          return utils
-            .retry(() => this.startUp(config), {
-              maxAttempts: config.retry_connect.max_attempt,
-              minDelay: config.retry_connect.min_delay
-            })
+          return retry(() => this.startUp(config), {
+            maxAttempts: config.retry_connect.max_attempt,
+            minDelay: config.retry_connect.min_delay
+          })
             .catch(err => {
               pubsub.publish(CONST.TOPIC.MONGO_INIT_FAILED);
               logger.error('All attempts to reconnect to DB failed.', err);
-              throw new errors.DBUnavailable(`DB Down / not reachable. Attempted to connect to db ${config.retry_connect.max_attempt} times. Code: ${err.code} , Message: ${err.message}`);
+              throw new DBUnavailable(`DB Down / not reachable. Attempted to connect to db ${config.retry_connect.max_attempt} times. Code: ${err.code} , Message: ${err.message}`);
             });
         }
       } else if (err) {

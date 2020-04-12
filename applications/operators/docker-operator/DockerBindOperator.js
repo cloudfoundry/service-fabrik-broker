@@ -2,13 +2,18 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
+const assert = require('assert');
+const { apiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson,
+    encodeBase64
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const DockerService = require('./DockerService');
-const assert = require('assert');
 
 class DockerBindOperator extends BaseOperator {
 
@@ -28,13 +33,13 @@ class DockerBindOperator extends BaseOperator {
     })
       .catch(err => {
         logger.error('Error occurred in processing request by DockerBindOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -51,8 +56,8 @@ class DockerBindOperator extends BaseOperator {
     return DockerService.createInstance(instance_guid, changedOptions)
       .then(dockerService => dockerService.bind(changedOptions))
       .then(response => {
-        const encodedResponse = utils.encodeBase64(response);
-        return eventmesh.apiServerClient.updateResource({
+        const encodedResponse = encodeBase64(response);
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
           resourceId: changeObjectBody.metadata.name,
@@ -73,7 +78,7 @@ class DockerBindOperator extends BaseOperator {
     logger.info('Triggering docker unbind with the following options:', changedOptions);
     return DockerService.createInstance(instance_guid, changedOptions)
       .then(dockerService => dockerService.unbind(changedOptions))
-      .then(() => eventmesh.apiServerClient.deleteResource({
+      .then(() => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
         resourceId: changeObjectBody.metadata.name

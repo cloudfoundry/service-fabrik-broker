@@ -1,14 +1,19 @@
 'use strict';
 
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
+const eventmesh = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    Gone
+  },
+  commonFunctions: {
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const VirtualHostService = require('./VirtualHostService');
-const errors = require('../../common/errors');
-const Gone = errors.Gone;
 
 class VirtualHostOperator extends BaseOperator {
 
@@ -36,7 +41,7 @@ class VirtualHostOperator extends BaseOperator {
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });

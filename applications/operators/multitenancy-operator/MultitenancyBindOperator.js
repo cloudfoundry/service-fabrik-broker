@@ -2,13 +2,18 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
+const assert = require('assert');
+const { apiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson,
+    encodeBase64
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const MTServiceFabrik = require('./MTServiceFabrik');
-const assert = require('assert');
 
 class MultitenancyBindOperator extends BaseOperator {
 
@@ -35,13 +40,13 @@ class MultitenancyBindOperator extends BaseOperator {
     })
       .catch(Error, err => {
         logger.error('Error occurred in processing request by MultitenancyBindOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: this.bindResourceType,
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -57,8 +62,8 @@ class MultitenancyBindOperator extends BaseOperator {
     return multitenancyBindService.createInstance(instance_guid, changedOptions, this.bindResourceType, this.deploymentResourceType)
       .then(multitenancyBindService => multitenancyBindService.bind(changedOptions))
       .then(response => {
-        const encodedResponse = utils.encodeBase64(response);
-        return eventmesh.apiServerClient.updateResource({
+        const encodedResponse = encodeBase64(response);
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: this.bindResourceType,
           resourceId: changeObjectBody.metadata.name,
@@ -79,7 +84,7 @@ class MultitenancyBindOperator extends BaseOperator {
     const multitenancyBindService = MTServiceFabrik.getService(this.service);
     return multitenancyBindService.createInstance(instance_guid, changedOptions, this.bindResourceType, this.deploymentResourceType)
       .then(multitenancyBindService => multitenancyBindService.unbind(changedOptions))
-      .then(() => eventmesh.apiServerClient.deleteResource({
+      .then(() => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: this.bindResourceType,
         resourceId: changeObjectBody.metadata.name

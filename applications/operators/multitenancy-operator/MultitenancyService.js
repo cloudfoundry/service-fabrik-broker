@@ -3,17 +3,20 @@
 const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
-const catalog = require('../../common/models').catalog;
-const NotFound = errors.NotFound;
-const Gone = errors.Gone;
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    Gone
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
 const BaseService = require('../BaseService');
-const cf = require('../../data-access-layer/cf');
-const bosh = require('../../data-access-layer/bosh');
+const { cloudController } = require('@sf/cf');
+const { director } = require('@sf/bosh');
+const { apiServerClient } = require('@sf/eventmesh');
 const MultitenancyAgent = require('./MultitenancyAgent');
-const eventmesh = require('../../data-access-layer/eventmesh');
 
 class MultitenancyService extends BaseService {
   constructor(guid, spaceId, plan, parameters, resourceType) {
@@ -21,8 +24,8 @@ class MultitenancyService extends BaseService {
     this.guid = guid;
     this.spaceId = spaceId;
     this.parameters = parameters;
-    this.director = bosh.director;
-    this.cloudController = cf.cloudController;
+    this.director = director;
+    this.cloudController = cloudController;
     this.resourceType = resourceType;
     this.agent = new MultitenancyAgent(this.settings.agent);
   }
@@ -86,7 +89,7 @@ class MultitenancyService extends BaseService {
   }
 
   storeDedicatedInstanceDeploymentName() {
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: this.resourceType,
       resourceId: this.guid,

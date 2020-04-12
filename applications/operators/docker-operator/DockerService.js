@@ -2,21 +2,29 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const docker = require('../../data-access-layer/docker');
-const catalog = require('../../common/models').catalog;
-const Timeout = errors.Timeout;
-const ContainerStartError = errors.ContainerStartError;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const CONST = require('../../common/constants');
 const assert = require('assert');
-const config = require('../../common/config');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    Timeout,
+    ContainerStartError,
+    ServiceInstanceAlreadyExists,
+    ServiceInstanceNotFound
+  },
+  commonFunctions: {
+    retry,
+    getTimeAgo,
+    demux
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { getPlatformManager } = require('@sf/platforms');
+const config = require('@sf/app-config');
+const docker = require('../../../data-access-layer/docker');
 const BaseService = require('../BaseService');
 const DockerImageLoaderService = require('./DockerImageLoaderService');
-const eventmesh = require('../../data-access-layer/eventmesh');
+const { apiServerClient } = require('@sf/eventmesh');
 
 const DockerError = {
   NotFound: {
@@ -594,12 +602,11 @@ class DockerService extends BaseService {
       throw err.error;
     }
 
-    return utils
-      .retry(attempt, {
-        predicate: ContainerStartError,
-        maxAttempts: 3,
-        minDelay: 50
-      })
+    return retry(attempt, {
+      predicate: ContainerStartError,
+      maxAttempts: 3,
+      minDelay: 50
+    })
       .catch(Timeout, throwTimeoutError)
       .then(() => this.inspectContainer());
   }
@@ -678,7 +685,7 @@ class DockerService extends BaseService {
   getInfo() {
     return Promise
       .all([
-        eventmesh.apiServerClient.getResource({
+        apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
           resourceId: this.guid
@@ -722,7 +729,7 @@ class DockerService extends BaseService {
     const info = {
       'ID': this.containerInfo.Id,
       'Name': this.containerInfo.Name,
-      'Created': utils.getTimeAgo(this.containerInfo.Created),
+      'Created': getTimeAgo(this.containerInfo.Created),
       'Status': this.getContainerStatus(this.containerInfo.State)
     };
     const config = {
@@ -766,10 +773,10 @@ class DockerService extends BaseService {
 
   getContainerStatus(state) {
     if (state.Running) {
-      return `Up for ${utils.getTimeAgo(state.StartedAt, true)}${state.Paused ? ' (Paused)' : ''}`;
+      return `Up for ${getTimeAgo(state.StartedAt, true)}${state.Paused ? ' (Paused)' : ''}`;
     }
     if (state.ExitCode > 0) {
-      return `Exited (${state.ExitCode}) ${utils.getTimeAgo(state.FinishedAt)}`;
+      return `Exited (${state.ExitCode}) ${getTimeAgo(state.FinishedAt)}`;
     }
     return 'Stopped';
   }
@@ -791,7 +798,7 @@ class DockerService extends BaseService {
         stderr: 1,
         timestamps: 1
       })
-      .then(stream => utils.demux(stream, {
+      .then(stream => demux(stream, {
         tail: 1000
       }));
   }
@@ -807,7 +814,7 @@ class DockerService extends BaseService {
         dockerService.imageInfo = manager.imageInfo;
       })
       .then(() => context ? context : dockerService.platformContext)
-      .then(context => dockerService.assignPlatformManager(utils.getPlatformManager(context)))
+      .then(context => dockerService.assignPlatformManager(getPlatformManager(context)))
       .return(dockerService);
   }
 }

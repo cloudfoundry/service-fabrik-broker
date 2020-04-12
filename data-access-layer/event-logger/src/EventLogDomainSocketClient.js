@@ -1,9 +1,9 @@
 'use strict';
 
 const net = require('net');
-const config = require('../config');
-const logger = require('../logger');
 const pubsub = require('pubsub-js');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
 
 class EventLogDomainSocketClient {
   constructor(options) {

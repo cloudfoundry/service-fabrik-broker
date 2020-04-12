@@ -4,34 +4,57 @@ const assert = require('assert');
 const Promise = require('bluebird');
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const config = require('../../common/config');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const catalog = require('../../common/models').catalog;
-const NotFound = errors.NotFound;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const ScheduleManager = require('../../jobs');
-const CONST = require('../../common/constants');
-const bosh = require('../../data-access-layer/bosh');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const Agent = require('../../data-access-layer/service-agent');
-const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
-const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
-const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
-const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
-const DeploymentDelayed = errors.DeploymentDelayed;
-const BaseDirectorService = require('../BaseDirectorService');
-const cf = require('../../data-access-layer/cf');
-const cloudController = cf.cloudController;
-const serviceFabrikClient = cf.serviceFabrikClient;
-const Header = bosh.manifest.Header;
-const Addons = bosh.manifest.Addons;
-const EvaluationContext = bosh.EvaluationContext;
-const BadRequest = errors.BadRequest;
 
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    ServiceInstanceNotFound,
+    ServiceInstanceAlreadyExists,
+    DirectorServiceUnavailable,
+    FeatureNotSupportedByAnyAgent,
+    ServiceInstanceNotOperational,
+    DeploymentDelayed,
+    Forbidden,
+    Timeout,
+    UnprocessableEntity,
+    BadRequest,
+    DeploymentAttemptRejected
+  },
+  commonFunctions: {
+    verifyFeatureSupport,
+    retry,
+    maskSensitiveInfo,
+    decodeBase64,
+    isFeatureEnabled
+    
+  }
+} = require('@sf/common-utils');
+const { getPlatformManager } = require('@sf/platforms');
+const { catalog } = require('@sf/models');
+
+const ScheduleManager = require('@sf/jobs');
+
+const {
+  manifest: {
+    Header,
+    Addons
+  },
+  EvaluationContext,
+  NetworkSegmentIndex,
+  director
+} = require('@sf/bosh');
+const { apiServerClient } = require('@sf/eventmesh');
+const Agent = require('../../../data-access-layer/service-agent');
+const { backupStore } = require('@sf/iaas');
+const BaseDirectorService = require('../BaseDirectorService');
+const {
+  cloudController,
+  serviceFabrikClient,
+  uaa
+} = require('@sf/cf');
 
 class DirectorService extends BaseDirectorService {
   constructor(plan, guid) {
@@ -40,7 +63,7 @@ class DirectorService extends BaseDirectorService {
     this.plan = plan;
     this.cloudController = cloudController;
     this.serviceFabrikClient = serviceFabrikClient;
-    this.director = bosh.director;
+    this.director = director;
     this.networkSegmentIndex = undefined;
     this.platformManager = undefined;
     this.backupStore = backupStore;
@@ -92,7 +115,7 @@ class DirectorService extends BaseDirectorService {
 
   getContextFromResource() {
     logger.debug(`Fetching context from etcd for ${this.guid}`);
-    return eventmesh.apiServerClient.getPlatformContext({
+    return apiServerClient.getPlatformContext({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
       resourceId: this.guid
@@ -299,7 +322,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   getDeploymentNamesInCache() {
-    return eventmesh.apiServerClient.getResourceListByState({
+    return apiServerClient.getResourceListByState({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
       stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
@@ -399,7 +422,7 @@ class DirectorService extends BaseDirectorService {
       .executePolicy(scheduled, action, deploymentName)
       .then(res => {
         if (scheduled && !res.shouldRunNow) {
-          throw new errors.DeploymentAttemptRejected(deploymentName);
+          throw new DeploymentAttemptRejected(deploymentName);
         }
         if (!res.shouldRunNow) {
           // deployment stagger
@@ -474,13 +497,12 @@ class DirectorService extends BaseDirectorService {
           case CONST.OPERATION_TYPE.CREATE:
             serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
             if (_.get(params, 'parameters.bosh_director_name')) {
-              return cf
-                .uaa
+              return uaa
                 .getScope(username, password)
                 .then(scopes => {
                   const isAdmin = _.includes(scopes, 'cloud_controller.admin');
                   if (!isAdmin) {
-                    throw new errors.Forbidden('Token has insufficient scope');
+                    throw new Forbidden('Token has insufficient scope');
                   }
                 });
             }
@@ -529,7 +551,7 @@ class DirectorService extends BaseDirectorService {
     // Lazy create of deploymentHookClient
     // Only Processes that require service lifecycle operations will need deployment_hooks properties.
     // Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../common/utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../../core/common/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
@@ -770,7 +792,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   createBinding(deploymentName, binding) {
-    utils.verifyFeatureSupport(this.plan, 'credentials');
+    verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
     logger.info('+-> Binding parameters:', binding.parameters);
     let actionContext = {
@@ -780,19 +802,19 @@ class DirectorService extends BaseDirectorService {
     return Promise.join(
       this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
       this.getDeploymentIps(deploymentName),
-      (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
+      (preBindResponse, ips) => retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
         operation: 'CREATE_CREDENTIAL_AGENT',
         maxAttempts: 2,
         timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
       })
-        .catch(errors.Timeout, err => {
+        .catch(Timeout, err => {
           throw err;
         })
     )
       .tap(credentials => {
         _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
-        utils.maskSensitiveInfo(bindCreds);
+        maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
       .catch(err => {
@@ -814,7 +836,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   deleteBinding(deploymentName, id) {
-    utils.verifyFeatureSupport(this.plan, 'credentials');
+    verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
     let actionContext = {
       'deployment_name': deploymentName,
@@ -828,12 +850,12 @@ class DirectorService extends BaseDirectorService {
             this.getDeploymentIps(deploymentName),
             this.getCredentials(id)
           ]))
-      .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
+      .spread((preUnbindResponse, ips, credentials) => retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
         operation: 'DELETE_CREDENTIAL_AGENT',
         maxAttempts: 2,
         timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
       })
-        .catch(errors.Timeout, err => {
+        .catch(Timeout, err => {
           throw err;
         })
       )
@@ -847,9 +869,9 @@ class DirectorService extends BaseDirectorService {
 
   getCredentials(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
-    return utils.retry(tries => {
+    return retry(tries => {
       logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
-      return eventmesh.apiServerClient.getResponse({
+      return apiServerClient.getResponse({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
         resourceId: id
@@ -857,7 +879,7 @@ class DirectorService extends BaseDirectorService {
         .then(response => {
           logger.debug(`[getCredentials] Response obtained from ApiServer for ${id}`);
           if (response) {
-            return utils.decodeBase64(response);
+            return decodeBase64(response);
           }
         });
     }, {
@@ -931,7 +953,7 @@ class DirectorService extends BaseDirectorService {
         logger.debug('network config to be used:', networks[this.networkName]);
         if (networks[this.networkName] === undefined) {
           logger.error(`subnet ${this.networkName} definition not found among the applicable networks defintion : ${JSON.stringify(networks)}`);
-          throw new errors.UnprocessableEntity(`subnet ${this.networkName} definition not found`);
+          throw new UnprocessableEntity(`subnet ${this.networkName} definition not found`);
         }
         let manifestYml = _.template(this.template)(context);
         if (!skipAddOns) {
@@ -977,9 +999,9 @@ class DirectorService extends BaseDirectorService {
     logger.debug(`Scheduling backup for  instance : ${this.guid}`);
     return Promise
       .try(() => {
-        if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
+        if (isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
           try {
-            utils.verifyFeatureSupport(this.plan, 'backup');
+            verifyFeatureSupport(this.plan, 'backup');
             ScheduleManager
               .getSchedule(this.guid, CONST.JOB.SCHEDULED_BACKUP)
               .then(schedule => {
@@ -987,7 +1009,7 @@ class DirectorService extends BaseDirectorService {
                 return;
               })
               .catch(error => {
-                if (typeof error !== errors.NotFound) {
+                if (typeof error !== NotFound) {
                   // NotFound is an expected error.
                   logger.warn('error occurred while fetching schedule for existing job', error);
                 }
@@ -1014,24 +1036,23 @@ class DirectorService extends BaseDirectorService {
       repeatInterval: CONST.SCHEDULE.RANDOM,
       timeZone: _.get(config, 'scheduler.jobs.service_instance_update.time_zone', 'UTC')
     };
-    return utils
-      .retry(tries => {
-        logger.info(`+-> ${CONST.ORDINALS[tries]} attempt to schedule auto update for : ${this.guid}`);
-        if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_UPDATE)) {
-          return this
-            .serviceFabrikClient
-            .scheduleUpdate(options)
-            .catch(err => {
-              logger.error(`Error occurred while setting up auto update for : ${this.guid}`, err);
-              throw err;
-            });
-        } else {
-          logger.warn(` Schedule update feature is disabled. Auto update not scheduled for instance : ${this.guid}`);
-        }
-      }, {
-        maxAttempts: 3,
-        minDelay: 1000
-      })
+    return retry(tries => {
+      logger.info(`+-> ${CONST.ORDINALS[tries]} attempt to schedule auto update for : ${this.guid}`);
+      if (isFeatureEnabled(CONST.FEATURE.SCHEDULED_UPDATE)) {
+        return this
+          .serviceFabrikClient
+          .scheduleUpdate(options)
+          .catch(err => {
+            logger.error(`Error occurred while setting up auto update for : ${this.guid}`, err);
+            throw err;
+          });
+      } else {
+        logger.warn(` Schedule update feature is disabled. Auto update not scheduled for instance : ${this.guid}`);
+      }
+    }, {
+      maxAttempts: 3,
+      minDelay: 1000
+    })
       .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
   }
 
@@ -1042,7 +1063,7 @@ class DirectorService extends BaseDirectorService {
     };
     return Promise
       .all([
-        eventmesh.apiServerClient.getResource({
+        apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: this.guid
@@ -1123,7 +1144,7 @@ class DirectorService extends BaseDirectorService {
     const directorService = new DirectorService(plan, instanceId);
     return Promise
       .try(() => context ? context : directorService.platformContext)
-      .then(context => directorService.assignPlatformManager(utils.getPlatformManager(context)))
+      .then(context => directorService.assignPlatformManager(getPlatformManager(context)))
       .return(directorService);
   }
 }

@@ -1,8 +1,8 @@
 'use strict';
 
-const config = require('../config');
-const HttpClient = require('../utils').HttpClient;
-const logger = require('../logger');
+const config = require('@sf/app-config');
+const { HttpClient } = require('@sf/common-utils');
+const logger = require('@sf/logger');
 class DeploymentHookClient extends HttpClient {
   constructor() {
     super({

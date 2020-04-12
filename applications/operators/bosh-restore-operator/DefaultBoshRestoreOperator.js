@@ -1,9 +1,9 @@
 'use strict';
 
-const logger = require('../../common/logger');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const catalog = require('../../common/models/catalog');
-const CONST = require('../../common/constants');
+const logger = require('@sf/logger');
+const { apiServerClient } = require('@sf/eventmesh');
+const { catalog } = require('@sf/models');
+const { CONST } = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const BoshRestoreService = require('./');
 
@@ -38,7 +38,7 @@ class DefaultBoshRestoreOperator extends BaseOperator {
       }
     } catch (err) {
       logger.error('Following error occurred while processing the restore request: ', err);
-      return eventmesh.apiServerClient.updateResource({
+      return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: requestObjectBody.metadata.name,

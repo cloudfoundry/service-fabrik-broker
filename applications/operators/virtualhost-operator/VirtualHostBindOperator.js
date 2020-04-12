@@ -2,10 +2,15 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson,
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const BaseOperator = require('../BaseOperator');
 const VirtualHostService = require('./VirtualHostService');
 
@@ -27,13 +32,13 @@ class VirtualHostBindOperator extends BaseOperator {
     })
       .catch(Error, err => {
         logger.error('Error occurred in processing request by VirtualHostBindOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -46,8 +51,8 @@ class VirtualHostBindOperator extends BaseOperator {
     return VirtualHostService.createVirtualHostService(instance_guid, changedOptions)
       .then(virtualHostService => virtualHostService.bind(changedOptions))
       .then(response => {
-        const encodedResponse = utils.encodeBase64(response);
-        return eventmesh.apiServerClient.updateResource({
+        const encodedResponse = encodeBase64(response);
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
           resourceId: changeObjectBody.metadata.name,
@@ -64,7 +69,7 @@ class VirtualHostBindOperator extends BaseOperator {
     logger.info('Triggering unbind for virtualhost with the following options:', changedOptions);
     return VirtualHostService.createVirtualHostService(instance_guid, changedOptions)
       .then(virtualHostService => virtualHostService.unbind(changedOptions))
-      .then(() => eventmesh.apiServerClient.deleteResource({
+      .then(() => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
         resourceId: changeObjectBody.metadata.name

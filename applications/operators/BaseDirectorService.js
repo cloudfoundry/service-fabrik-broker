@@ -1,29 +1,40 @@
 'use strict';
 
 const _ = require('lodash');
-const utils = require('../common/utils');
-const bosh = require('../data-access-layer/bosh');
-const Agent = require('../data-access-layer/service-agent');
-const logger = require('../common/logger');
-const errors = require('../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const BoshDirectorClient = bosh.BoshDirectorClient;
-const Networks = bosh.manifest.Networks;
+const {
+  director,
+  BoshDirectorClient,
+  manifest: {
+    Networks
+  }
+} = require('@sf/bosh');
+const {
+  CONST,
+  errors: {
+    ServiceInstanceNotFound
+  },
+  commonFunctions: {
+    deploymentNameRegExp,
+    getCronWithIntervalAndAfterXminute,
+    retry
+
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const Agent = require('../../data-access-layer/service-agent');
 const BaseService = require('./BaseService');
-const retry = utils.retry;
-const CONST = require('../common/constants');
 
 class BaseDirectorService extends BaseService {
   constructor(plan) {
     super(plan);
     this.plan = plan;
-    this.director = bosh.director;
+    this.director = director;
     this.agent = new Agent(this.settings.agent);
   }
 
   static parseDeploymentName(deploymentName, subnet) {
     return _
-      .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
+      .chain(deploymentNameRegExp(subnet).exec(deploymentName))
       .slice(1)
       .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
       .value();
@@ -97,7 +108,7 @@ class BaseDirectorService extends BaseService {
       options.repeatInterval = this.plan.service.backup_interval;
     }
 
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
+    options.repeatInterval = getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
     return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {

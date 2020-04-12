@@ -1,11 +1,15 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const catalog = require('../../common/models/catalog');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
+const logger = require('@sf/logger');
+const { apiServerClient } = require('@sf/eventmesh');
+const { catalog } = require('@sf/models');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const RestoreService = require('./');
 
@@ -27,13 +31,13 @@ class DefaultRestoreOperator extends BaseOperator {
     })
       .catch(err => {
         logger.error('Error occurred in processing request by DefaultRestoreOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
           resourceId: requestObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });

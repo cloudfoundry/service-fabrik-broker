@@ -1,17 +1,21 @@
 'use strict';
 
 const _ = require('lodash');
-const logger = require('../../../common/logger');
-const CONST = require('../../../common/constants');
-const util = require('../../../common/utils');
-const catalog = require('../../../common/models/catalog');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    uuidV4
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { apiServerClient } = require('@sf/eventmesh');
 const Task = require('./Task');
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 
 class ServiceInstanceBackupTask extends Task {
   static run(taskId, taskDetails) {
     logger.info(`Running ServiceInstanceUpdateTask Task ${taskId} - with Data - ${JSON.stringify((taskDetails))}`);
-    return util.uuidV4()
+    return uuidV4()
       .then(backupGuid => {
         const planId = taskDetails.operation_params.plan_id;
         const plan = catalog.getPlan(planId);

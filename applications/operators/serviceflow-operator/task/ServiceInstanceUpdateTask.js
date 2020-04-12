@@ -2,10 +2,10 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const logger = require('../../../common/logger');
-const CONST = require('../../../common/constants');
+const logger = require('@sf/logger');
+const { CONST } = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 const Task = require('./Task');
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 
 class ServiceInstanceUpdateTask extends Task {
   static run(taskId, taskDetails) {

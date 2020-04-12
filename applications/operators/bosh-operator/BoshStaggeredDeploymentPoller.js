@@ -2,10 +2,14 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const CONST = require('../../common/constants');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const DirectorService = require('./DirectorService');
 const BaseStatusPoller = require('../BaseStatusPoller');
 
@@ -39,7 +43,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
       })
       .then(directorResponse => {
         if (_.get(directorResponse, 'task_id')) {
-          return Promise.all([eventmesh.apiServerClient.updateResource({
+          return Promise.all([apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: instanceId,
@@ -57,7 +61,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
         logger.error(`Error occured while triggering deployment for instance ${instanceId}`, err);
         const timestamp = new Date().toISOString();
         this.clearPoller(instanceId, intervalId);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: instanceId,
@@ -67,7 +71,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
               description: `${operationType} deployment ${deploymentName} failed at ${timestamp} with Error "${err.message}"`
             },
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });

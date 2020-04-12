@@ -1,16 +1,21 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
 const formatUrl = require('url').format;
 const path = require('path');
 const Promise = require('bluebird');
-const utils = require('../../common/utils');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const HttpClient = utils.HttpClient;
-const compareVersions = utils.compareVersions;
-const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
+const {
+  CONST,
+  errors: {
+    FeatureNotSupportedByAnyAgent
+  },
+  commonFunctions: {
+    compareVersions,
+    getBrokerAgentCredsFromManifest
+  },
+  HttpClient
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 var AGENT_CACHE = {}; // eslint-disable-line no-var
 class Agent extends HttpClient {
   constructor(settings) {
@@ -192,7 +197,7 @@ class Agent extends HttpClient {
   }
 
   preUpdate(ips, context) {
-    const agentCredsBeforeUpdate = utils.getBrokerAgentCredsFromManifest(context.params.previous_manifest);
+    const agentCredsBeforeUpdate = getBrokerAgentCredsFromManifest(context.params.previous_manifest);
     // Making agent request with agent credentials from previous manifest
     // In case agent passwords are being updated as part of this update
     return this

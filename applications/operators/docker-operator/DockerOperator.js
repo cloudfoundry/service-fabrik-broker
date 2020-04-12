@@ -2,14 +2,19 @@
 
 const assert = require('assert');
 const Promise = require('bluebird');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
+const { apiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    buildErrorJson
+  },
+  errors: {
+    ServiceInstanceNotFound
+  }
+} = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
 const DockerService = require('./DockerService');
-const errors = require('../../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
 class DockerOperator extends BaseOperator {
 
@@ -36,13 +41,13 @@ class DockerOperator extends BaseOperator {
     })
       .catch(err => {
         logger.error('Error occurred in processing request by DockerOperator', err);
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
           resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
+            error: buildErrorJson(err)
           }
         });
       });
@@ -56,7 +61,7 @@ class DockerOperator extends BaseOperator {
     logger.info('Creating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
         resourceId: changeObjectBody.metadata.name,
@@ -76,7 +81,7 @@ class DockerOperator extends BaseOperator {
     logger.info('Updating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
         resourceId: changeObjectBody.metadata.name,
@@ -96,12 +101,12 @@ class DockerOperator extends BaseOperator {
     logger.info('Deleting docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
-      .then(() => eventmesh.apiServerClient.deleteResource({
+      .then(() => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
         resourceId: changeObjectBody.metadata.name
       }))
-      .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
+      .catch(ServiceInstanceNotFound, () => apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
         resourceId: changeObjectBody.metadata.name

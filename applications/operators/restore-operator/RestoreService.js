@@ -1,15 +1,19 @@
 'use strict';
 
 const _ = require('lodash');
-const Agent = require('../../data-access-layer/service-agent');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const BaseDirectorService = require('../BaseDirectorService');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
 const Promise = require('bluebird');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const config = require('../../common/config');
-const logger = require('../../common/logger');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  errors: {
+    NotFound
+  }
+} = require('@sf/common-utils');
+const { backupStore } = require('@sf/iaas');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const Agent = require('../../../data-access-layer/service-agent');
+const BaseDirectorService = require('../BaseDirectorService');
 
 class RestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -96,7 +100,7 @@ class RestoreService extends BaseDirectorService {
               };
               return this.backupStore
                 .patchRestoreFile(options, patchObj)
-                .then(() => eventmesh.apiServerClient.patchResource({
+                .then(() => apiServerClient.patchResource({
                   resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                   resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                   resourceId: opts.restore_guid,
@@ -173,7 +177,7 @@ class RestoreService extends BaseDirectorService {
             data.agent_ip = agent_ip;
             return this.backupStore
               .getRestoreFile(data)
-              .catch(errors.NotFound, err => {
+              .catch(NotFound, err => {
                 logger.debug('Not found any restore data. May be first time.', err);
                 // Restore file might not be found, first time restore.
                 return;
@@ -184,7 +188,7 @@ class RestoreService extends BaseDirectorService {
           }))
       )
       .then(() => {
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
           resourceId: opts.restore_guid,
@@ -219,7 +223,7 @@ class RestoreService extends BaseDirectorService {
           case 'processing':
             return this.agent
               .abortRestore(metadata.agent_ip)
-              .then(() => eventmesh.apiServerClient.updateResource({
+              .then(() => apiServerClient.updateResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                 resourceId: abortOptions.restore_guid,

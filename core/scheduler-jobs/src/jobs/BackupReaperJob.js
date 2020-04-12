@@ -17,7 +17,7 @@ const { director } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
 const BaseJob = require('./BaseJob');
 const ScheduleManager = require('../ScheduleManager');
-const EventLogInterceptor = require('../../../common/EventLogInterceptor');
+const { EventLogInterceptor } = require('@sf/event-logger');
 
 class BackupReaperJob extends BaseJob {
 

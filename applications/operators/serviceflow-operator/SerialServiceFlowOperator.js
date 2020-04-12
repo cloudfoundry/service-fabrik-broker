@@ -6,10 +6,16 @@ const assert = require('assert');
 const fs = require('fs');
 const yaml = require('js-yaml');
 const path = require('path');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    BadRequest,
+    Conflict
+  }
+
+} = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 const BaseOperator = require('../BaseOperator');
 const TaskFabrik = require('./task/TaskFabrik');
 const FAILED = true;
@@ -49,7 +55,7 @@ class SerialServiceFlowOperator extends BaseOperator {
       if (this.SERVICE_FLOW_DEFINITION[serviceFlowOptions.serviceflow_name] === undefined) {
         return this
           .serviceFlowComplete(serviceFlowOptions, `Invalid service flow ${serviceFlowOptions.serviceflow_name}. No service flow definition found!`, FAILED)
-          .throw(new errors.BadRequest(`Invalid service flow ${serviceFlowOptions.serviceflow_name}. No service flow definition found!`));
+          .throw(new BadRequest(`Invalid service flow ${serviceFlowOptions.serviceflow_name}. No service flow definition found!`));
       }
       const serviceFlow = this.SERVICE_FLOW_DEFINITION[serviceFlowOptions.serviceflow_name];
       const tasks = serviceFlow.tasks;
@@ -154,7 +160,7 @@ class SerialServiceFlowOperator extends BaseOperator {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[taskDetails.task_order - 1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
             }))
-          .catch(errors.Conflict, err => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
+          .catch(Conflict, err => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
           .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
     });

@@ -1,9 +1,9 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh');
+const logger = require('@sf/logger');
+const { CONST } = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 
 class VirtualHostRelationMapper {
   constructor() {
@@ -13,7 +13,7 @@ class VirtualHostRelationMapper {
   createVirtualHostRelation(deploymentName, instanceId) {
     logger.info(`Storing deployment name : '${deploymentName}' for virtual_host instance id : '${instanceId}'`);
     this.cache[instanceId] = deploymentName;
-    return eventmesh.apiServerClient.patchResource({
+    return apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
       resourceId: instanceId,
@@ -35,7 +35,7 @@ class VirtualHostRelationMapper {
   }
 
   loadCacheforInstance(instanceId) {
-    return eventmesh.apiServerClient.getResource({
+    return apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
       resourceId: instanceId

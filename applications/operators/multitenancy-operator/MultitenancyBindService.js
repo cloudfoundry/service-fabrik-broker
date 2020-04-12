@@ -2,15 +2,21 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
-const catalog = require('../../common/models').catalog;
-const BaseService = require('../BaseService');
-const bosh = require('../../data-access-layer/bosh');
-const MultitenancyAgent = require('./MultitenancyAgent');
-const eventmesh = require('../../data-access-layer/eventmesh');
 const assert = require('assert');
+const logger = require('@sf/logger');
+const {
+  CONST,
+  commonFunctions: {
+    maskSensitiveInfo,
+    decodeBase64
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { director } = require('@sf/bosh');
+const { apiServerClient } = require('@sf/eventmesh');
+const MultitenancyAgent = require('./MultitenancyAgent');
+const BaseService = require('../BaseService');
+
 
 class MultitenancyBindService extends BaseService {
 
@@ -18,14 +24,14 @@ class MultitenancyBindService extends BaseService {
     super(plan);
     this.guid = guid;
     this.parameters = parameters;
-    this.director = bosh.director;
+    this.director = director;
     this.agent = new MultitenancyAgent(this.settings.agent);
     this.bindResourceType = bindResourceType;
     this.deploymentResourceType = deploymentResourceType;
   }
 
   initialize() {
-    return eventmesh.apiServerClient.getResource({
+    return apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: this.deploymentResourceType,
       resourceId: this.guid
@@ -50,7 +56,7 @@ class MultitenancyBindService extends BaseService {
       .tap(credentials => {
         _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
-        utils.maskSensitiveInfo(bindCreds);
+        maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
       .catch(err => {
@@ -81,7 +87,7 @@ class MultitenancyBindService extends BaseService {
 
   getCredentialsFromResource(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
-    return eventmesh.apiServerClient.getResource({
+    return apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
       resourceType: this.bindResourceType,
       resourceId: id
@@ -89,7 +95,7 @@ class MultitenancyBindService extends BaseService {
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
         if (!_.isEmpty(response)) {
-          return utils.decodeBase64(response);
+          return decodeBase64(response);
         }
       })
       .catch(err => {

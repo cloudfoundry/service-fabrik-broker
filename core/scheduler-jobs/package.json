@@ -15,6 +15,7 @@
     "@sf/broker-client": "file:../../data-access-layer/broker-client",
     "@sf/cf": "file:../../data-access-layer/cf",
     "@sf/common-utils": "file:../utils",
+    "@sf/event-logger": "file:../../data-access-layer/event-logger",
     "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
     "@sf/iaas": "file:../../data-access-layer/iaas",
     "@sf/logger": "file:../logging",

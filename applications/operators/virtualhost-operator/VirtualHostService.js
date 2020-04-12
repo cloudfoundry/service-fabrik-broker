@@ -2,20 +2,28 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const CONST = require('../../common/constants');
-const catalog = require('../../common/models').catalog;
-const NotFound = errors.NotFound;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
-const Gone = errors.Gone;
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    ServiceBindingNotFound,
+    NotFound,
+    Gone
+  },
+  commonFunctions: {
+    maskSensitiveInfo,
+    decodeBase64,
+    retry,
+    deploymentNameRegExp
+  }
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const { cloudController } = require('@sf/cf');
+const { director } = require('@sf/bosh');
+const { apiServerClient } = require('@sf/eventmesh');
 const BaseService = require('../BaseService');
-const cf = require('../../data-access-layer/cf');
-const bosh = require('../../data-access-layer/bosh');
 const VirtualHostAgent = require('./VirtualHostAgent');
 const mapper = require('./VirtualHostRelationMapper');
-const eventmesh = require('../../data-access-layer/eventmesh');
 
 class VirtualHostService extends BaseService {
   constructor(guid, spaceId, plan, parameters) {
@@ -24,8 +32,8 @@ class VirtualHostService extends BaseService {
     this.spaceId = spaceId;
     this.plan = plan;
     this.parameters = parameters;
-    this.director = bosh.director;
-    this.cloudController = cf.cloudController;
+    this.director = director;
+    this.cloudController = cloudController;
     this.agent = new VirtualHostAgent(this.settings.agent);
     this.mapper = mapper.VirtualHostRelationMapper;
   }
@@ -107,7 +115,7 @@ class VirtualHostService extends BaseService {
       .then(() => binding.credentials)
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
-        utils.maskSensitiveInfo(bindCreds);
+        maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       });
   }
@@ -134,16 +142,16 @@ class VirtualHostService extends BaseService {
 
   getCredentials(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
-    return utils.retry(tries => {
+    return retry(tries => {
       logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
-      return eventmesh.apiServerClient.getResponse({
+      return apiServerClient.getResponse({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
         resourceId: id
       })
         .then(response => {
           if (response) {
-            return utils.decodeBase64(response);
+            return decodeBase64(response);
           }
         });
     }, {
@@ -164,12 +172,12 @@ class VirtualHostService extends BaseService {
         this.parentInstanceId = this.getParentInstanceId();
         return Promise
           .all([
-            eventmesh.apiServerClient.getResource({
+            apiServerClient.getResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
               resourceId: this.guid
             }),
-            eventmesh.apiServerClient.getResource({
+            apiServerClient.getResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: this.parentInstanceId
@@ -191,7 +199,7 @@ class VirtualHostService extends BaseService {
 
   getParentInstanceId() {
     return _.nth(_
-      .chain(utils.deploymentNameRegExp().exec(this.deploymentName))
+      .chain(deploymentNameRegExp().exec(this.deploymentName))
       .slice(1)
       .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
       .value(), 2);

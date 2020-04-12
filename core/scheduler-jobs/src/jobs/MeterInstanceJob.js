@@ -15,7 +15,7 @@ const {
 /* jshint ignore:start */
 const maas = require('@sf/metering').client;
 /* jshint ignore:end */
-const EventLogInterceptor = require('../../../common/EventLogInterceptor');
+const { EventLogInterceptor } = require('@sf/event-logger');
 const BaseJob = require('./BaseJob');
 
 class MeterInstanceJob extends BaseJob {

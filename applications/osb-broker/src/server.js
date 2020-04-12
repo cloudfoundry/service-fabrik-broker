@@ -28,6 +28,10 @@ async function init() {
           title: app.get('title')
         });
       });
+      if (!_.includes(config.disabled_apis, 'admin')) {
+        // TODO - Add admin route outside
+        app.use('/admin', routes.admin);
+      }
       app.use('/:platform(cf|k8s|sm)', routes.broker);
       if (_.get(config, 'internal.log_event')) {
         app.use(middleware.requireEventLogging(_.get(config, 'internal'), 'internal'));

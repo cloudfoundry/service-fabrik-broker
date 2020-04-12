@@ -3,13 +3,16 @@
 const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
-const eventmesh = require('../data-access-layer/eventmesh');
-const CONST = require('../common/constants');
-const errors = require('../common/errors');
-const logger = require('../common/logger');
-const config = require('../common/config');
-const NotImplementedBySubclass = errors.NotImplementedBySubclass;
-const Conflict = errors.Conflict;
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  errors: {
+    NotImplementedBySubclass,
+    Conflict
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
 
 class BaseStatusPoller {
   constructor(opts) {
@@ -32,7 +35,7 @@ class BaseStatusPoller {
   }
 
   acquireLock(resourceBody) {
-    const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(resourceBody.metadata.selfLink);
+    const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(resourceBody.metadata.selfLink);
     const options = _.get(resourceBody, 'spec.options');
     const pollerAnnotation = _.get(resourceBody, 'metadata.annotations.lockedByTaskPoller');
     logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
@@ -52,7 +55,7 @@ class BaseStatusPoller {
         });
         metadata.annotations = patchAnnotations;
         // Handle conflict also
-        return eventmesh.apiServerClient.updateResource({
+        return apiServerClient.updateResource({
           resourceGroup: resourceDetails.resourceGroup,
           resourceType: resourceDetails.resourceType,
           resourceId: metadata.name,
@@ -70,10 +73,10 @@ class BaseStatusPoller {
   }
 
   pollStatus(object, intervalId) {
-    const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
+    const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
     // If no lockedByPoller annotation then set annotation  with time
     // Else check timestamp if more than specific time than start polling and change lockedByPoller Ip
-    return eventmesh.apiServerClient.getResource({
+    return apiServerClient.getResource({
       resourceGroup: resourceDetails.resourceGroup,
       resourceType: resourceDetails.resourceType,
       resourceId: object.metadata.name
@@ -110,7 +113,7 @@ class BaseStatusPoller {
 
   init() {
     const queryString = `state in (${_.join(this.validStateList, ',')})`;
-    return eventmesh.apiServerClient.registerWatcher(this.resourceGroup, this.resourceType, this.startPoller.bind(this), queryString)
+    return apiServerClient.registerWatcher(this.resourceGroup, this.resourceType, this.startPoller.bind(this), queryString)
       .then(stream => {
         logger.debug(`Successfully set watcher on ${this.resourceType} resource types for status polling with query string:`, queryString);
         return Promise

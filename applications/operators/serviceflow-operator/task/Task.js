@@ -1,13 +1,17 @@
 'use strict';
 
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
-const errors = require('../../../common/errors');
-const logger = require('../../../common/logger');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  errors: {
+    NotImplementedBySubclass
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 
 class Task {
 
   static run() {
-    throw new errors.NotImplementedBySubclass('run');
+    throw new NotImplementedBySubclass('run');
   }
 
   static getStatus(taskId, taskDetails) {
