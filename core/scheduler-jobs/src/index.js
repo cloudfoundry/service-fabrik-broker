@@ -1,3 +1,4 @@
 'use strict';
 
-module.exports = require('./ScheduleManager');
+exports.ScheduleManager = require('./ScheduleManager');
+exports.maintenanceManager = require('./maintenance');

@@ -50,6 +50,7 @@ exports.getDefaultErrorMsg = getDefaultErrorMsg;
 exports.getTimeAgo = getTimeAgo;
 exports.demux = demux;
 exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
+exports.getCronAfterXMinuteFromNow = getCronAfterXMinuteFromNow;
 
 function parseToken(token) {
   return _
@@ -561,4 +562,16 @@ function getBrokerAgentCredsFromManifest(manifest) {
     });
   });
   return authObject;
+}
+
+function getCronAfterXMinuteFromNow(afterXminute) {
+  afterXminute = afterXminute || 3;
+  const currentTime = new Date().getTime();
+  const timeAfterXMinute = new Date(currentTime + afterXminute * 60 * 1000);
+  const hr = timeAfterXMinute.getHours();
+  const min = timeAfterXMinute.getMinutes();
+  const date = timeAfterXMinute.getDate();
+  const month = timeAfterXMinute.getMonth();
+  const interval = `${min} ${hr} ${date} ${month} *`;
+  return interval;
 }

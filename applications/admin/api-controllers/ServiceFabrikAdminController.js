@@ -4,32 +4,45 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
 var moment = require('moment-timezone'); // eslint-disable-line no-var
-const catalog = require('../common/models/catalog');
-const errors = require('../common/errors');
-const logger = require('../common/logger');
-const config = require('../common/config');
-const NetworkSegmentIndex = require('../data-access-layer/bosh/NetworkSegmentIndex');
-const backupStore = require('../data-access-layer/iaas').backupStore;
-const cf = require('../data-access-layer/cf');
-const FabrikBaseController = require('./FabrikBaseController');
-const utils = require('../common/utils');
-const dbManager = require('../data-access-layer/db/DBManager');
-const OobBackupManager = require('../data-access-layer/oob-manager/OobBackupManager');
-const bosh = require('../data-access-layer/bosh');
-const ScheduleManager = require('../jobs');
+const { catalog } = require('@sf/models');
+const {
+  CONST,
+  errors: {
+    BadRequest,
+    NotFound
+  },
+  commonFunctions: {
+    parseServiceInstanceIdFromDeployment,
+    hasChangesInForbiddenSections,
+    unifyDiffResult,
+    encodeBase64,
+    decodeBase64,
+    getCronAfterXMinuteFromNow
+  },
+  Repository
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const config = require('@sf/app-config');
+const { NetworkSegmentIndex } = require('@sf/bosh');
+const { backupStore } = require('@sf/iaas');
+const { cloudController } = require('@sf/cf');
+const {
+  FabrikBaseController
+} = require('@sf/common-controllers');
+const bosh = require('@sf/bosh');
+const { ScheduleManager, maintenanceManager } = require('@sf/jobs');
+const { serviceBrokerClient } = require('@sf/broker-client');
+const { apiServerClient } = require('@sf/eventmesh');
+const dbManager = require('../../../data-access-layer/db/DBManager');
+const OobBackupManager = require('../../../data-access-layer/oob-manager/OobBackupManager');
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
+
 const BackupReportManager = require('../reports');
-const CONST = require('../common/constants');
-const maintenanceManager = require('../maintenance').maintenanceManager;
-const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
-const eventmesh = require('../data-access-layer/eventmesh');
-const DirectorService = require('../operators/bosh-operator/DirectorService');
-const BadRequest = errors.BadRequest;
-const Repository = require('../common/db').Repository;
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
     super();
-    this.cloudController = cf.cloudController;
+    this.cloudController = cloudController;
     this.backupStore = backupStore;
   }
 
@@ -42,7 +55,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
-    const instanceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
+    const instanceId = parseServiceInstanceIdFromDeployment(deploymentName);
     const runImmediately = (req.body.run_immediately === 'true' ? true : false);
     let resourceDetails;
     let plan;
@@ -84,17 +97,17 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
       /* TODO: Conditional statement to fetch resource options below is needed to be backwards compatible 
        as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
-      return eventmesh.apiServerClient.getResource({
+      return apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceId
       })
-        .catch(errors.NotFound, () => undefined)
+        .catch(NotFound, () => undefined)
         .then(resource => _.get(resource, 'status.appliedOptions') ? _.get(resource, 'status.appliedOptions') : _.get(resource, 'spec.options'))
         .then(resource => {
           resourceDetails = resource;
           if (resourceDetails === undefined) {
-            throw new errors.NotFound(`Resource details of service instance ${instanceId} not found in api server.`);
+            throw new NotFound(`Resource details of service instance ${instanceId} not found in api server.`);
           } else {
             const planId = _.get(resourceDetails, 'plan_id');
             plan = catalog.getPlan(planId);
@@ -106,7 +119,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
                   instance_id: instanceId,
                   deployment_name: deploymentName
                 }, tenantInfo, plan)
-                .then(diff => utils.hasChangesInForbiddenSections(diff))
+                .then(diff => hasChangesInForbiddenSections(diff))
                 .tap(() => logger.info(`Doing update for ${deploymentName} as there is no forbidden changes in manifest`))
                 .then(() => updateDeployment());
             } else {
@@ -226,7 +239,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       plan_id: plan.id
     }))
       .then(directorService =>
-        eventmesh.apiServerClient.getPlatformContext({
+        apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
           resourceType: plan.resourceType,
           resourceId: this.getInstanceId(deploymentName)
@@ -240,7 +253,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
                 this.director.getTasks({
                   deployment: deploymentName
                 }),
-                directorService.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+                directorService.diffManifest(deploymentName, opts).then(unifyDiffResult)
               ])
               .spread((vms, tasks, diff) => ({
                 name: deploymentName,
@@ -267,7 +280,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       return _
         .chain(deployment)
         .pick('name', 'releases', 'stemcell')
-        .set('diff', utils.unifyDiffResult(deployment, true))
+        .set('diff', unifyDiffResult(deployment, true))
         .set('instance', _
           .chain(deployment.entity)
           .pick('name', 'last_operation', 'space_guid', 'service_plan_id', 'service_plan_guid', 'dashboard_url')
@@ -431,7 +444,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       }
       return true;
     }
-    return eventmesh.apiServerClient.getResourceListByState({
+    return apiServerClient.getResourceListByState({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
       stateList: [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED]
@@ -537,7 +550,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .startBackup(opts)
       .then(result => {
         body = _.pick(result, 'operation', 'backup_guid');
-        body.token = utils.encodeBase64(result);
+        body.token = encodeBase64(result);
         return registerOperationCompletionStatusPoller(req.params.name, 'backup', body,
           new Date().toISOString(), req.body.bosh_director);
       })
@@ -561,12 +574,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getLastOobBackupStatus(req, res) {
     if (_.isEmpty(req.query.token)) {
-      throw new errors.BadRequest('Query param token is required');
+      throw new BadRequest('Query param token is required');
     }
-    const options = utils.decodeBase64(req.query.token);
+    const options = decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
     if (_.isEmpty(options.agent_ip)) {
-      throw new errors.BadRequest('Invalid token input');
+      throw new BadRequest('Invalid token input');
     }
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
@@ -599,7 +612,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .startRestore(opts)
           .then(result => {
             body = _.pick(result, 'operation', 'backup_guid');
-            body.token = utils.encodeBase64(result);
+            body.token = encodeBase64(result);
             return registerOperationCompletionStatusPoller(req.params.name, 'restore', body,
               new Date().toISOString(), req.body.bosh_director);
           })
@@ -610,12 +623,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getLastOobRestoreStatus(req, res) {
     if (_.isEmpty(req.query.token)) {
-      throw new errors.BadRequest('Query param token is required');
+      throw new BadRequest('Query param token is required');
     }
-    const options = utils.decodeBase64(req.query.token);
+    const options = decodeBase64(req.query.token);
     options.deploymentName = req.params.name;
     if (_.isEmpty(options.agent_ip)) {
-      throw new errors.BadRequest('Invalid token input');
+      throw new BadRequest('Invalid token input');
     }
     const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
@@ -813,7 +826,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const jobData = instance_guid == undefined ? {} : {
       instance_guid: instance_guid
     };
-    const interval = utils.getCronAfterXMinuteFromNow(1);
+    const interval = getCronAfterXMinuteFromNow(1);
     return ScheduleManager
       .runAt(req.body.job_name, req.params.job_type, interval, jobData, req.user)
       .then(body => res.status(CONST.HTTP_STATUS_CODE.CREATED).send(body));
@@ -830,7 +843,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const body = {
       message: `Created/Updated ${req.query.key} with value ${req.query.value}`
     };
-    return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, config)
+    return apiServerClient.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, config)
       .then(() => {
         return res.status(201).send(body);
       });
@@ -838,7 +851,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getConfig(req, res) {
     assert.ok(req.params.name, 'Key parameter must be defined for the Get Config request');
-    return eventmesh.apiServerClient.getConfigMap(CONST.CONFIG.RESOURCE_NAME, req.params.name)
+    return apiServerClient.getConfigMap(CONST.CONFIG.RESOURCE_NAME, req.params.name)
       .tap(value => logger.debug(`Returning config with key: ${req.params.name} and value: ${value}`))
       .then(value => {
         const body = {

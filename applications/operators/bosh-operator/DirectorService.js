@@ -35,7 +35,7 @@ const {
 const { getPlatformManager } = require('@sf/platforms');
 const { catalog } = require('@sf/models');
 
-const ScheduleManager = require('@sf/jobs');
+const { ScheduleManager } = require('@sf/jobs');
 
 const {
   manifest: {

@@ -30,7 +30,8 @@ async function init() {
       });
       if (!_.includes(config.disabled_apis, 'admin')) {
         // TODO - Add admin route outside
-        app.use('/admin', routes.admin);
+        const adminRoute = require('../../admin');
+        app.use('/admin', adminRoute.admin);
       }
       app.use('/:platform(cf|k8s|sm)', routes.broker);
       if (_.get(config, 'internal.log_event')) {
