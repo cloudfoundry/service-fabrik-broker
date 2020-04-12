@@ -8,7 +8,7 @@ const config = require('../../../common/config');
 class Addons {
   constructor(context) {
     this.networks = Array.isArray(context.networks) ? context.networks : [context.networks];
-    this.params = context.parameters;
+    this.context = context;
   }
 
   getAll() {
@@ -25,6 +25,15 @@ class Addons {
     }
   }
 
+  shouldEnableConnectivity() {
+    const connectivityAllowedServicesList = _.get(this.context, 'connectivityAllowedServicesList');
+    const serviceId = _.get(this.context, 'serviceId');
+    if(_.findIndex(connectivityAllowedServicesList, serviceId) == -1) {
+      return false;
+    }
+    return _.get(this.params, 'prepare_migration', false) || _.get(this.params, 'bucardo', false);
+  }
+
   getIpTablesManagerJob() {
     let allowIpList = [],
       blockIpList = [];
@@ -38,7 +47,7 @@ class Addons {
         name: CONST.ADD_ON_JOBS.IP_TABLES_MANAGER,
         release: _.get(config, 'release_name', CONST.SERVICE_FABRIK_PREFIX),
         properties: {
-          enable_connection: _.get(this.params, 'prepare_migration', false) || _.get(this.params, 'bucardo', false),
+          enable_connection: this.shouldEnableConnectivity(),
           allow_ips_list: allowIpList.join(','),
           block_ips_list: blockIpList.join(',')
         }
