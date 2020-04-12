@@ -28,10 +28,10 @@ class Addons {
   shouldEnableConnectivity() {
     const connectivityAllowedServicesList = _.get(this.context, 'connectivityAllowedServicesList');
     const serviceId = _.get(this.context, 'serviceId');
-    if(_.findIndex(connectivityAllowedServicesList, serviceId) == -1) {
+    if(Array.isArray(connectivityAllowedServicesList) && connectivityAllowedServicesList.indexOf(serviceId) == -1) {
       return false;
     }
-    return _.get(this.params, 'prepare_migration', false) || _.get(this.params, 'bucardo', false);
+    return _.get(this.context, 'parameters.prepare_migration', false) || _.get(this.context, 'parameters.bucardo', false);
   }
 
   getIpTablesManagerJob() {
