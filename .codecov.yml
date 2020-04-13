@@ -3,13 +3,13 @@ codecov:
     require_ci_to_pass: yes
 
 ignore:
-  - "interoperator/pkg/client/**/*"  # ignore folders and all its contents
-  - "interoperator/pkg/cluster/registry/mock_registry/"
-  - "interoperator/pkg/internal/resources/mock_resources/"
-  - "interoperator/pkg/internal/provisioner/mock_provisioner/"
-  - "interoperator/pkg/apis/resource/v1alpha1/mock_sfcluster/"
-  - "interoperator/pkg/controller/multiclusterdeploy/watchmanager/mock_manager.go"
-  - "interoperator/pkg/**/zz_generated.deepcopy.go"
+  - "interoperator/internal/client/**/*"  # ignore folders and all its contents
+  - "interoperator/internal/cluster/registry/mock_registry/"
+  - "interoperator/internal/resources/mock_resources/"
+  - "interoperator/internal/provisioner/mock_provisioner/"
+  - "interoperator/api/resource/v1alpha1/mock_sfcluster/"
+  - "interoperator/internal/controller/multiclusterdeploy/watchmanager/mock_manager.go"
+  - "interoperator/**/zz_generated.deepcopy.go"
 
 
 coverage:
