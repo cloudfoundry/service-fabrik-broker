@@ -52,6 +52,8 @@ module.exports = Object.freeze({
     UPDATE_EVENT: 'update_instance'
   },
   EVENTMESH_POLLER_DELAY: 200,
+  CLUSTER_SCHEDULER_DELAY: 100,
+  CLUSTER_SCHEDULE_TIMEOUT_IN_SEC: 50, // 50 seconds
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   RESTORE_OPERATION: {
     SUCCEEDED: 'succeeded',
