@@ -29,8 +29,7 @@ describe('bosh', () => {
         size: 1
       });
       const context = {
-        networks: networks.all,
-        connectivityAllowedServicesList: ['6db542eb-8187-4afc-8a85-e08b4a3cc24e']
+        networks: networks.all
       };
       describe('#getAll', () => {
         it('returns list of addon jobs that are to be configured for the service', () => {
