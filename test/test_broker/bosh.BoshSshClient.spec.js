@@ -2,7 +2,11 @@
 
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const SshConnectionFailed = require('../../common/errors').SshConnectionFailed;
+const {
+  errors: {
+    SshConnectionFailed
+  }
+} = require('@sf/common-utils');
 const events = require('events');
 
 let connection = new events.EventEmitter();
@@ -11,7 +15,7 @@ function Client() {
   return connection;
 }
 
-const BoshSshClient = proxyquire('../../data-access-layer/bosh/BoshSshClient', {
+const BoshSshClient = proxyquire('../../data-access-layer/bosh/src/BoshSshClient', {
   'ssh2': {
     Client: Client
   }
@@ -52,11 +56,11 @@ describe('bosh', () => {
         let connect = sinon.spy(connection, 'connect');
         connection.end = sinon.stub();
         return Promise.using(subject.getConnection(), conn => {
-            expect(connect.calledOnce).to.eql(true);
-            expect(connect.firstCall.args[0]).to.deep.equal(connectOptions);
-            expect(conn).to.eql(connection);
-            expect(connection.end.notCalled).to.eql(true);
-          })
+          expect(connect.calledOnce).to.eql(true);
+          expect(connect.firstCall.args[0]).to.deep.equal(connectOptions);
+          expect(conn).to.eql(connection);
+          expect(connection.end.notCalled).to.eql(true);
+        })
           .catch(err => {
             expect(connect.calledOnce).to.eql(true);
             expect(err instanceof SshConnectionFailed).to.eql(true);
@@ -71,11 +75,11 @@ describe('bosh', () => {
         let connect = sinon.spy(connection, 'connect');
         connection.end = sinon.stub();
         return Promise.using(subject.getConnection(), conn => {
-            expect(connect.calledOnce).to.eql(true);
-            expect(connect.firstCall.args[0]).to.deep.equal(connectOptions);
-            expect(conn).to.eql(connection);
-            expect(connection.end.notCalled).to.eql(true);
-          })
+          expect(connect.calledOnce).to.eql(true);
+          expect(connect.firstCall.args[0]).to.deep.equal(connectOptions);
+          expect(conn).to.eql(connection);
+          expect(connection.end.notCalled).to.eql(true);
+        })
           .then(() => {
             expect(connection.end.calledOnce).to.eql(true);
           });
@@ -107,7 +111,7 @@ describe('bosh', () => {
         stream.emit('data', 'out 2 ');
         stream.emit('close', 0);
         return execPromise
-          .then((result) => {
+          .then(result => {
             expect(connection.exec.calledOnce).to.eql(true);
             expect(connection.exec.calledWith(linuxcommand)).to.eql(true);
             expect(result.code).to.equal(0);
@@ -140,7 +144,7 @@ describe('bosh', () => {
 
         const runPromise = subject.run(linuxcommand);
         return runPromise
-          .then((result) => {
+          .then(result => {
             expect(connect.calledOnce).to.eql(true);
             expect(connect.firstCall.args[0]).to.deep.equal(connectOptions);
             expect(connection.exec.calledOnce).to.eql(true);

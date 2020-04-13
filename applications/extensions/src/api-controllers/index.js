@@ -4,10 +4,8 @@ const config = require('@sf/app-config');
 
 if (!_.includes(config.disabled_apis, 'api')) {
   const ServiceFabrikApiController = require('./ServiceFabrikApiController');
-  module.exports = {
-    ServiceFabrikApiController: ServiceFabrikApiController,
-    serviceFabrikApi: new ServiceFabrikApiController()
-  };
+  exports.ServiceFabrikApiController = ServiceFabrikApiController;
+  exports.serviceFabrikApi = new ServiceFabrikApiController();
 }
 
 if (!_.includes(config.disabled_apis, 'manage')) {

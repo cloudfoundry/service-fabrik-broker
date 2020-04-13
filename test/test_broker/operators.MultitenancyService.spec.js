@@ -1,10 +1,14 @@
 'use strict';
 
 const Promise = require('bluebird');
-const CONST = require('../../common/constants');
-const MultitenancyService = require('../../operators/multitenancy-operator/MultitenancyService');
-const MultitenancyBindService = require('../../operators/multitenancy-operator/MultitenancyBindService');
-const utils = require('../../common/utils');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const MultitenancyService = require('../../applications/operators/multitenancy-operator/MultitenancyService');
+const MultitenancyBindService = require('../../applications/operators/multitenancy-operator/MultitenancyBindService');
 
 describe('#MultitenancyService', function () {
   this.timeout(0);
@@ -271,7 +275,7 @@ describe('#MultitenancyService', function () {
           };
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.multitenancyAgent.credentials),
+              response: encodeBase64(mocks.multitenancyAgent.credentials),
               state: 'succeeded'
             }
           };

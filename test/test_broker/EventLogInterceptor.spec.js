@@ -1,25 +1,27 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const DirectorService = require('../../operators/bosh-operator/DirectorService');
-const DockerService = require('../../operators/docker-operator/DockerService');
-const catalog = require('../../common/models/catalog');
-const utils = require('../../common/utils');
-const config = require('../../common/config');
-const path = require('path');
+const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
+const DockerService = require('../../applications/operators/docker-operator/DockerService');
+const { catalog } = require('@sf/models');
+const {
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 const proxyquire = require('proxyquire');
 
 const pubSubStub = {
   publish: () => undefined
 };
 
-const EventLogInterceptor = proxyquire('../../common/EventLogInterceptor', {
+const EventLogInterceptor = proxyquire('../../data-access-layer/event-logger/src/EventLogInterceptor', {
   'pubsub-js': {
     /* jshint unused:false */
     publish: function (event, data) {
       return pubSubStub.publish(data);
-      /**The above example uses both proxy and stubs.
+      /** The above example uses both proxy and stubs.
        * Proxy is used to inject any of the dependencies that we do not want as part of unit test.
        * while we might proxy to be injected, we want to inspect what args went into the proxy method
        * and to do this, we used a stub within the proxy method and invoke the stub method with args
@@ -616,7 +618,7 @@ describe('EventLogInterceptor', function () {
         type: 'create'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -655,7 +657,7 @@ describe('EventLogInterceptor', function () {
         type: 'update'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -694,7 +696,7 @@ describe('EventLogInterceptor', function () {
         type: 'create'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -733,7 +735,7 @@ describe('EventLogInterceptor', function () {
         type: 'update'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -772,7 +774,7 @@ describe('EventLogInterceptor', function () {
         type: 'delete'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -808,7 +810,7 @@ describe('EventLogInterceptor', function () {
         type: 'delete'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -847,7 +849,7 @@ describe('EventLogInterceptor', function () {
         type: 'delete'
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const reqBody = {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -884,7 +886,7 @@ describe('EventLogInterceptor', function () {
         parameters: {}
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const timestamp = new Date();
       const respBody = {
@@ -926,7 +928,7 @@ describe('EventLogInterceptor', function () {
         parameters: {}
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const timestamp = new Date();
       const respBody = {
@@ -968,7 +970,7 @@ describe('EventLogInterceptor', function () {
         parameters: {}
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const timestamp = new Date();
       const respBody = {
@@ -1010,7 +1012,7 @@ describe('EventLogInterceptor', function () {
         parameters: {}
       };
       const query = {
-        operation: utils.encodeBase64(op)
+        operation: encodeBase64(op)
       };
       const timestamp = new Date();
       const respBody = {

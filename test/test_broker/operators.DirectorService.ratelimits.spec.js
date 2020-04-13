@@ -3,14 +3,19 @@
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const _ = require('lodash');
-const catalog = require('../../common/models/catalog');
+const { catalog } = require('@sf/models');
 const yaml = require('js-yaml');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
-const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
-const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
-const DirectorService = require('../../operators/bosh-operator/DirectorService');
-const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
+const {
+  CONST,
+  errors: {
+    DeploymentAttemptRejected,
+    DirectorServiceUnavailable,
+    ServiceInstanceAlreadyExists,
+    ServiceInstanceNotFound
+  }
+} = require('@sf/common-utils');
+const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
+const CfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
 
 const guid = 'guid';
 const task_id = 'task_id';
@@ -29,8 +34,8 @@ const internal_params = {
   context: {}
 };
 
-var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
-var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
+let used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
+let used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
 const index = mocks.director.networkSegmentIndex;
 
 const expectedGetDeploymentResponse = {
@@ -86,8 +91,8 @@ describe('service', () => {
       codSpy.returns(Promise.resolve({
         task_id: undefined
       }));
-      DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
-        '../../../common/config': configStub
+      DirectorServiceSub = proxyquire('../../applications/operators/bosh-operator/DirectorService', {
+        '@sf/app-config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
       directorService.networkSegmentIndex = index;
@@ -174,10 +179,10 @@ describe('service', () => {
       });
     });
     it('should invoke last operation: op in progress - cached', () => {
-      return directorService.lastOperation(lastOpWithoutTaskId).then((out) => {
+      return directorService.lastOperation(lastOpWithoutTaskId).then(out => {
         expect(out.state).to.eql('in progress');
         expect(out.task_id).to.eql(undefined);
-        expect(out.description).to.eql(`Create deployment is still in progress`);
+        expect(out.description).to.eql('Create deployment is still in progress');
         expect(getTaskSpy.notCalled).to.eql(true);
       });
     });
@@ -187,10 +192,10 @@ describe('service', () => {
         timestamp: (new Date().getTime()) / 1000,
         state: 'in progress'
       }));
-      return directorService.lastOperation(lastOpWithoutTaskId).then((out) => {
+      return directorService.lastOperation(lastOpWithoutTaskId).then(out => {
         expect(out.state).to.eql('in progress');
         expect(out.task_id).to.eql(undefined);
-        expect(out.description).to.eql(`Create deployment is still in progress`);
+        expect(out.description).to.eql('Create deployment is still in progress');
       });
     });
     it('should invoke last operation: op done- task succeeded', () => {
@@ -202,7 +207,7 @@ describe('service', () => {
       }));
       return directorService.lastOperation(_.assign(_.cloneDeep(lastOpWithoutTaskId), {
         task_id: task_id
-      })).then((out) => {
+      })).then(out => {
         expect(out.state).to.eql('succeeded');
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
@@ -237,8 +242,8 @@ describe('service', () => {
       deleteDeploymentSpy = sandbox.stub();
       deleteDeploymentSpy.returns(Promise.resolve(task_id));
       getTaskSpy = sandbox.stub();
-      DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
-        '../../../common/config': configStub
+      DirectorServiceSub = proxyquire('../../applications/operators/bosh-operator/DirectorService', {
+        '@sf/app-config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
       directorService.networkSegmentIndex = index;
@@ -325,21 +330,21 @@ describe('service', () => {
     });
 
     it('should not create without rate limits - fails due to exception', () => {
-      initializeSpy.returns(Promise.reject(new errors.ServiceInstanceAlreadyExists()));
+      initializeSpy.returns(Promise.reject(new ServiceInstanceAlreadyExists()));
       directorService.networkSegmentIndex = undefined;
       return directorService.create(params)
         .catch(err => {
-          expect(err instanceof errors.ServiceInstanceAlreadyExists).to.eql(true);
+          expect(err instanceof ServiceInstanceAlreadyExists).to.eql(true);
           expect(codSpy.callCount).to.eql(0);
         });
     });
 
     it('should not update without rate limits - fails due to exception', () => {
-      initializeSpy.returns(Promise.reject(new errors.ServiceInstanceNotFound()));
+      initializeSpy.returns(Promise.reject(new ServiceInstanceNotFound()));
       directorService.networkSegmentIndex = undefined;
       return directorService.update(params)
         .catch(err => {
-          expect(err instanceof errors.ServiceInstanceNotFound).to.eql(true);
+          expect(err instanceof ServiceInstanceNotFound).to.eql(true);
           expect(codSpy.callCount).to.eql(0);
         });
     });
@@ -364,7 +369,7 @@ describe('service', () => {
         timestamp: (new Date().getTime()) / 1000,
         state: 'in progress'
       }));
-      return directorService.lastOperation(lastOpTaskId).then((out) => {
+      return directorService.lastOperation(lastOpTaskId).then(out => {
         expect(out.state).to.eql('in progress');
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.eql(`Create deployment deployment-${guid} is still in progress`);
@@ -377,7 +382,7 @@ describe('service', () => {
         timestamp: (new Date().getTime()) / 1000,
         state: 'done'
       }));
-      return directorService.lastOperation(lastOpTaskId).then((out) => {
+      return directorService.lastOperation(lastOpTaskId).then(out => {
         expect(out.state).to.eql('succeeded');
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
@@ -482,7 +487,7 @@ describe('service', () => {
     });
   });
   describe('DirectorService- with rate limits', function () {
-    var configStub = {
+    let configStub = {
       'enable_bosh_rate_limit': true
     };
     const task_id = 'task_id';
@@ -501,7 +506,7 @@ describe('service', () => {
       deleteDeploymentSpy = sandbox.stub();
       getDirectorDeploymentsSpy = sandbox.stub();
       getInstanceGuidSpy = sandbox.stub();
-      var boshStub = {
+      let boshStub = {
         NetworkSegmentIndex: {
           adjust: function (num) {
             return num;
@@ -514,9 +519,9 @@ describe('service', () => {
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
       deploymentSpy.returns(Promise.resolve(task_id));
-      var DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
-        '../../common/config': configStub,
-        '../../data-access-layer/bosh': boshStub
+      let DirectorServiceSub = proxyquire('../../applications/operators/bosh-operator/DirectorService', {
+        '@sf/app-config': configStub,
+        '@sf/bosh': boshStub
       });
       service = new DirectorServiceSub(plan, guid);
       service.director = {

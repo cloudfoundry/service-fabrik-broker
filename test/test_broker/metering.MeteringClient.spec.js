@@ -1,6 +1,6 @@
 'use strict';
 
-const MeteringClient = require('../../data-access-layer/metering/MeteringClient.js');
+const MeteringClient = require('../../data-access-layer/metering/src/MeteringClient');
 
 describe('metering', () => {
   describe('MeteringClient', () => {

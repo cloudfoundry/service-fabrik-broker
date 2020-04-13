@@ -145,5 +145,8 @@ function loadCatalogFromAPIServer() {
 module.exports = {
   loadCatalogFromAPIServer,
   registerInterOperatorCrds,
-  pushServicePlanToApiServer
+  pushServicePlanToApiServer,
+  getServiceCrdFromConfig,
+  getAllServices,
+  getAllPlansForService
 };

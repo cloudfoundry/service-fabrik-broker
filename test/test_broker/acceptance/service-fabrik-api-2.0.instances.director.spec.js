@@ -3,17 +3,28 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const moment = require('moment');
-const ScheduleManager = require('../../../jobs');
-const CONST = require('../../../common/constants');
+const ScheduleManager = require('@sf/jobs');
+const {
+  CONST,
+  errors: {
+    Forbidden
+  },
+  commonFunctions: {
+    unifyDiffResult
+  }
+} = require('@sf/common-utils');
 const apps = require('../support/apps');
-const catalog = require('../../../common/models').catalog;
-const Service = require('../../../common/models').Service;
-const config = require('../../../common/config');
-const errors = require('../../../common/errors');
-const utils = require('../../../common/utils');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
-const filename = iaas.backupStore.filename;
+const {
+  catalog,
+  Service
+} = require('@sf/models');
+const config = require('@sf/app-config');
+const {
+  backupStore,
+  cloudProvider,
+  CloudProviderClient
+} = require('@sf/iaas');
+const filename = backupStore.filename;
 
 describe('service-fabrik-api-sf2.0', function () {
 
@@ -57,9 +68,9 @@ describe('service-fabrik-api-sf2.0', function () {
             service_id: service_id,
             plan_id: plan_id,
             context: {
-              platform: 'cloudfoundry',
+              platform: 'cloudfoundry'
             },
-            space_guid: space_guid,
+            space_guid: space_guid
           })
         }
       };
@@ -75,9 +86,9 @@ describe('service-fabrik-api-sf2.0', function () {
             service_id: service_id,
             plan_id: plan_id,
             context: {
-              platform: 'cloudfoundry',
+              platform: 'cloudfoundry'
             },
-            space_guid: space_guid,
+            space_guid: space_guid
           })
         }
       };
@@ -118,7 +129,7 @@ describe('service-fabrik-api-sf2.0', function () {
 
       before(function () {
         config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         timestampStub = sinon.stub(filename, 'timestamp');
@@ -141,7 +152,7 @@ describe('service-fabrik-api-sf2.0', function () {
 
       after(function () {
         timestampStub.restore();
-        backupStore.cloudProvider = iaas.cloudProvider;
+        backupStore.cloudProvider = cloudProvider;
         cancelScheduleStub.restore();
         scheduleStub.restore();
         getScheduleStub.restore();
@@ -519,7 +530,7 @@ describe('service-fabrik-api-sf2.0', function () {
 
         it('should initiate a scheduled backup operation when initiated by cf admin user', function () {
           mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
+          // cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             spec: {
               options: JSON.stringify({
@@ -761,9 +772,9 @@ describe('service-fabrik-api-sf2.0', function () {
                 service_id: service_id,
                 plan_id: plan_id,
                 context: {
-                  platform: 'cloudfoundry',
+                  platform: 'cloudfoundry'
                 },
-                space_guid: space_guid,
+                space_guid: space_guid
               })
             }
           }, 2);
@@ -771,7 +782,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
             .query({
-              space_guid: space_guid,
+              space_guid: space_guid
             })
             .catch(err => err.response)
             .then(res => {
@@ -794,7 +805,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
             .query({
-              space_guid: space_guid,
+              space_guid: space_guid
             })
             .catch(err => err.response)
             .then(res => {
@@ -1671,9 +1682,9 @@ describe('service-fabrik-api-sf2.0', function () {
               service_id: service_id,
               plan_id: plan_id,
               context: {
-                platform: 'cloudfoundry',
+                platform: 'cloudfoundry'
               },
-              space_guid: space_guid,
+              space_guid: space_guid
             })
           }
         };
@@ -1847,7 +1858,7 @@ describe('service-fabrik-api-sf2.0', function () {
         });
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
+          // cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1880,7 +1891,7 @@ describe('service-fabrik-api-sf2.0', function () {
             },
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-              error: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
+              error: JSON.stringify(new Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
             }
           }, 2);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {});
@@ -2296,7 +2307,7 @@ describe('service-fabrik-api-sf2.0', function () {
               expect(res).to.have.status(200);
               const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
               _.set(expectedJobResponse, 'update_required', true);
-              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({
+              _.set(expectedJobResponse, 'update_details', unifyDiffResult({
                 diff: diff
               }));
               expect(res.body).to.eql(expectedJobResponse);

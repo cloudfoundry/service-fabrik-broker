@@ -2,7 +2,9 @@
 
 const _ = require('lodash');
 const DockerCredentials = require('../../data-access-layer/docker/DockerCredentials');
-const CONST = require('../../common/constants');
+const {
+  CONST
+} = require('@sf/common-utils');
 
 describe('docker', function () {
   describe('DockerCredentials', function () {

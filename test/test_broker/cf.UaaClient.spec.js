@@ -6,8 +6,8 @@ const proxyquire = require('proxyquire');
 
 let authorizationEndpoint = 'https://login.bosh-lite.com';
 
-const UaaClient = proxyquire('../../data-access-layer/cf/UaaClient', {
-  '../../common/config': {
+const UaaClient = proxyquire('../../data-access-layer/cf/src/UaaClient', {
+  '@sf/app-config': {
     cf: {
       authorization_endpoint: authorizationEndpoint
     }
@@ -34,7 +34,7 @@ class MockUaaClient extends UaaClient {
 describe('cf', () => {
   describe('UaaClient', () => {
     describe('#authorizationUrl', () => {
-      it('returns a string containing the authorization endpoint (scope is an array)', (done) => {
+      it('returns a string containing the authorization endpoint (scope is an array)', done => {
         let options = {
           scope: ['foo', 'bar']
         };
@@ -43,7 +43,7 @@ describe('cf', () => {
         done();
       });
 
-      it('returns a string containing the authorization endpoint with login_hint', (done) => {
+      it('returns a string containing the authorization endpoint with login_hint', done => {
         let options = {
           scope: ['foo', 'bar']
         };
@@ -52,7 +52,7 @@ describe('cf', () => {
         done();
       });
 
-      it('returns a string containing the authorization endpoint (scope is a string)', (done) => {
+      it('returns a string containing the authorization endpoint (scope is a string)', done => {
         let options = {
           scope: 'foo'
         };
@@ -63,12 +63,12 @@ describe('cf', () => {
     });
 
     describe('#userInfo', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(body, 200).userInfo('abc').then((content) => {
+        new MockUaaClient(body, 200).userInfo('abc').then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);
@@ -76,7 +76,7 @@ describe('cf', () => {
     });
 
     describe('#accessWithAuthorizationCode', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
@@ -86,7 +86,7 @@ describe('cf', () => {
           redirect_uri: 3
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithAuthorizationCode(client, 500).then((content) => {
+        new MockUaaClient(JSON.stringify(body), 200).accessWithAuthorizationCode(client, 500).then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);
@@ -94,12 +94,12 @@ describe('cf', () => {
     });
 
     describe('#accessWithPassword', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithPassword('user', 'pass').then((content) => {
+        new MockUaaClient(JSON.stringify(body), 200).accessWithPassword('user', 'pass').then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);
@@ -107,12 +107,12 @@ describe('cf', () => {
     });
 
     describe('#accessWithRefreshToken', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithRefreshToken('token').then((content) => {
+        new MockUaaClient(JSON.stringify(body), 200).accessWithRefreshToken('token').then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);
@@ -120,12 +120,12 @@ describe('cf', () => {
     });
 
     describe('#accessWithClientCredentials', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithClientCredentials('client_id', 'client_secret').then((content) => {
+        new MockUaaClient(JSON.stringify(body), 200).accessWithClientCredentials('client_id', 'client_secret').then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);

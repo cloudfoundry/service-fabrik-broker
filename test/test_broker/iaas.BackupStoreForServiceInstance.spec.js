@@ -1,8 +1,10 @@
 'use strict';
 
-const CONST = require('../../common/constants');
-const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
-const backupStore = require('../../data-access-layer/iaas').backupStore;
+const { CONST } = require('@sf/common-utils');
+const {
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
 
 describe('iaas', function () {
   describe('backupStoreForServiceInstance', function () {

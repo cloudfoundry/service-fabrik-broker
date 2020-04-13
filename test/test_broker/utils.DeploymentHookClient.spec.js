@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const deploymentHookClient = require('../../common/utils/DeploymentHookClient');
+const deploymentHookClient = require('../../applications/deployment_hooks/lib/utils/DeploymentHookClient');
 
 describe('Utils', function () {
   describe('DeploymentHookClient', function () {
@@ -53,7 +53,7 @@ describe('Utils', function () {
 
       it('should execute deployment hooks successfully', function () {
         const [options, statusCode] = buildExpectedRequestArgs('POST',
-          `/hook`,
+          '/hook',
           200, body);
         return deploymentHookClient.executeDeploymentActions(body)
           .then(result => {

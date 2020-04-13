@@ -1,6 +1,6 @@
 'use strict';
 
-const Service = require('../../common/models/Service');
+const { Service } = require('@sf/models');
 
 describe('models', () => {
   describe('Service', () => {
@@ -36,7 +36,7 @@ describe('models', () => {
           requires: [],
           service_tags: {},
           plan_updateable: true,
-          //dashboard_client: {},
+          // dashboard_client: {},
           plans: [],
           application_access_ports: null
         });

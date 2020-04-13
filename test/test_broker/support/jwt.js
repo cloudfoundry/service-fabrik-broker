@@ -1,15 +1,14 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
-const config = require('../../../common/config');
-const jwt = lib.jwt;
+const config = require('@sf/app-config');
+const { JWT } = require('@sf/common-utils');
 
 exports.verify = verify;
 exports.sign = sign;
 
 function verify(token, name, args) {
-  return jwt
+  return JWT
     .verify(token, config.password)
     .tap(serviceFabrikOperation => {
       expect(serviceFabrikOperation.name).to.equal(name);
@@ -18,10 +17,10 @@ function verify(token, name, args) {
 }
 
 function sign(opts, name, args) {
-  return jwt
+  return JWT
     .sign(_.assign({
-        name: name,
-        arguments: args
-      }, opts),
-      config.password);
+      name: name,
+      arguments: args
+    }, opts),
+    config.password);
 }

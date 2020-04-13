@@ -4,9 +4,13 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').internal;
 const docker = require('../../../data-access-layer/docker');
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
-const utils = require('../../../common/utils');
+const config = require('@sf/app-config');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
 const camelcaseKeys = require('camelcase-keys');
 
 describe('service-broker-api', function () {
@@ -57,7 +61,7 @@ describe('service-broker-api', function () {
           }
         },
         status: {
-          state: 'in_queue',
+          state: 'in_queue'
         }
       };
 
@@ -85,7 +89,7 @@ describe('service-broker-api', function () {
           }
         },
         status: {
-          state: 'in_queue',
+          state: 'in_queue'
         }
       };
 
@@ -115,7 +119,7 @@ describe('service-broker-api', function () {
           }
         },
         status: {
-          state: 'succeeded',
+          state: 'succeeded'
         }
       };
 
@@ -143,7 +147,7 @@ describe('service-broker-api', function () {
           }
         },
         status: {
-          state: 'succeeded',
+          state: 'succeeded'
         }
       };
       let sandbox, delayStub;
@@ -280,7 +284,7 @@ describe('service-broker-api', function () {
 
           const testPayload2 = _.cloneDeep(payload2);
           testPayload2.spec = camelcaseKeys(payload2.spec);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, {spec: {parameters: null}});
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2 , 1);
           return chai.request(app)
@@ -316,7 +320,7 @@ describe('service-broker-api', function () {
 
           const testPayload2 = _.cloneDeep(payload2K8s);
           testPayload2.spec = camelcaseKeys(payload2K8s.spec);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, {spec: {parameters: null}});
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload, 1);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
@@ -375,7 +379,7 @@ describe('service-broker-api', function () {
             }
           },
           status: {
-            state: 'delete',
+            state: 'delete'
           }
         };
 
@@ -403,7 +407,7 @@ describe('service-broker-api', function () {
             }
           },
           status: {
-            state: 'delete',
+            state: 'delete'
           }
         };
 
@@ -433,7 +437,7 @@ describe('service-broker-api', function () {
             }
           },
           status: {
-            state: 'succeeded',
+            state: 'succeeded'
           }
         };
 
@@ -461,7 +465,7 @@ describe('service-broker-api', function () {
             }
           },
           status: {
-            state: 'succeeded',
+            state: 'succeeded'
           }
         };
         it('returns 200 OK', function () {
@@ -604,7 +608,7 @@ describe('service-broker-api', function () {
             }
           },
           status: {
-            state: 'in_queue',
+            state: 'in_queue'
           }
         };
 
@@ -659,7 +663,7 @@ describe('service-broker-api', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
           mocks.apiServerEventMesh.nockGetSecret(binding_id, CONST.APISERVER.DEFAULT_NAMESPACE, {
             data: {
-              response: utils.encodeBase64({credentials: secretData})
+              response: encodeBase64({ credentials: secretData })
             }
           });
           return chai.request(app)

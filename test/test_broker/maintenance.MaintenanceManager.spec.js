@@ -1,11 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const Repository = require('../../common/db').Repository;
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const errors = require('../../common/errors');
-const maintenanceManager = require('../../maintenance').maintenanceManager;
+const {
+  CONST,
+  errors: {
+    BadRequest
+  },
+  Repository
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const { maintenanceManager } = require('../../applications/scheduler/maintenance');
 
 describe('maintenance', function () {
   /* jshint unused:false */
@@ -112,7 +116,7 @@ describe('maintenance', function () {
         .then(() => {
           throw new Error('Should throw error');
         })
-        .catch(errors.BadRequest, () => {});
+        .catch(BadRequest, () => {});
     });
     it('should throw error if progressInfo is blank', function () {
       const maintInfo = _.cloneDeep(maintenanceInfo);
@@ -120,7 +124,7 @@ describe('maintenance', function () {
         .then(() => {
           throw new Error('Should throw error');
         })
-        .catch(errors.BadRequest, () => {});
+        .catch(BadRequest, () => {});
     });
     it('should throw error if update of maintenance is tried when system is not in maintenance', function () {
       inMaintenance = false;
@@ -129,7 +133,7 @@ describe('maintenance', function () {
         .then(() => {
           throw new Error('Should throw error');
         })
-        .catch(errors.BadRequest, () => {});
+        .catch(BadRequest, () => {});
     });
     it('should throw error if update of maintenance is tried with empty progress info', function () {
       inMaintenance = false;
@@ -138,12 +142,12 @@ describe('maintenance', function () {
         .then(() => {
           throw new Error('Should throw error');
         })
-        .catch(errors.BadRequest, () => {});
+        .catch(BadRequest, () => {});
     });
     it('should return the last downtime phase of an on-going maintenance', function () {
       inMaintenance = true;
       return maintenanceManager.getMaintenaceInfo()
-        .then((response) => {
+        .then(response => {
           expect(findOneStub).to.be.calledOnce;
           expect(maintenanceManager.getLastDowntimePhase(response, config.scheduler.downtime_maintenance_phases)).to.be.eql(downTimePhse);
         });
@@ -151,7 +155,7 @@ describe('maintenance', function () {
     it('should return the last maintenance state', function () {
       inMaintenance = false;
       return maintenanceManager.getLastMaintenaceState()
-        .then((response) => {
+        .then(response => {
           const criteria = {
             sortBy: [
               ['createdAt', 'desc']
@@ -170,7 +174,7 @@ describe('maintenance', function () {
       inMaintenance = false;
       maintenaceFound = false;
       return maintenanceManager.getLastMaintenaceState()
-        .then((response) => {
+        .then(response => {
           const criteria = {
             sortBy: [
               ['createdAt', 'desc']

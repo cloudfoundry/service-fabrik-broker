@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const parseUrl = require('url').parse;
-const CONST = require('../../../common/constants');
+const { CONST } = require('@sf/common-utils');
 const app = require('../support/apps').external;
 
 describe('dashboard', function () {

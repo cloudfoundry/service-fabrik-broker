@@ -4,14 +4,14 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
 
-const QuotaAPIClient = proxyquire('../../quota/QuotaAPIClient', {
-  '../common/config': {
+const QuotaAPIClient = proxyquire('../../data-access-layer/quota/src/QuotaAPIClient', {
+  '@sf/app-config': {
     quota: {
       enabled: false,
       oauthDomain: 'sap-provisioning',
       serviceDomain: 'tenant-onboarding-develop',
       username: 'clientId',
-      password: 'clientSecret',
+      password: 'clientSecret'
     }
   }
 });

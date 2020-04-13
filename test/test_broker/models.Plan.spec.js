@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const Plan = require('../../common/models').Plan;
+const { Plan } = require('@sf/models');
 
 describe('models', function () {
   describe('Plan', function () {

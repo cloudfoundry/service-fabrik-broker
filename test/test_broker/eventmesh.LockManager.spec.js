@@ -1,10 +1,13 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
-const lockManager = require('../../data-access-layer/eventmesh').lockManager;
-const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const {
+  CONST,
+  errors: {
+    DeploymentAlreadyLocked
+  }
+} = require('@sf/common-utils');
+const { lockManager } = require('@sf/eventmesh');
 
 const samplelock1 = {
   spec: {
@@ -206,7 +209,7 @@ describe('eventmesh', () => {
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock4', samplelock4);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock4', samplelock4, 1, samplelock4);
         return lockManager.lock('samplelock4', lockOptions)
-          .then((res) => {
+          .then(res => {
             mocks.verify();
             expect(res).to.eql(samplelock4.metadata.resourceVersion);
           });
@@ -219,7 +222,7 @@ describe('eventmesh', () => {
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock3', samplelock3);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock3', payload, 1, payload);
         return lockManager.lock('samplelock3', lockOptions)
-          .then((res) => {
+          .then(res => {
             mocks.verify();
             expect(res).to.eql(samplelock3.metadata.resourceVersion);
           });
@@ -228,7 +231,7 @@ describe('eventmesh', () => {
         const lockOptions = JSON.parse(samplelock6.spec.options);
         mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, samplelock6, 1, samplelock6);
         return lockManager.lock('samplelock6', lockOptions)
-          .then((res) => {
+          .then(res => {
             mocks.verify();
             expect(res).to.eql(samplelock6.metadata.resourceVersion);
           });
@@ -236,7 +239,7 @@ describe('eventmesh', () => {
       it('should throw an error if api server gives incorrect response', () => {
         const lockOptions = JSON.parse(samplelock6.spec.options);
         return lockManager.lock('samplelock6', lockOptions)
-          .catch((err) => {
+          .catch(err => {
             expect(err).to.have.status(404);
             expect(err.reason).to.eql('Not Found');
           });
@@ -249,7 +252,7 @@ describe('eventmesh', () => {
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock3', samplelock3, 2);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock3', samplelock3, 1, payload1, 409);
         return lockManager.lock('samplelock3', lockOptions)
-          .catch((err) => {
+          .catch(err => {
             mocks.verify();
             expect(err).to.have.status(422);
             expect(err.description).to.eql(`Service Instance samplelock3 __Locked__ at ${new Date(lockOptions.lockTime)} for create`);
@@ -334,7 +337,7 @@ describe('eventmesh', () => {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock6', samplelock6, 3, payload1, 500);
         return lockManager.unlock('samplelock6', samplelock6.metadata.resourceVersion, 3, 100)
-          .catch((err) => {
+          .catch(err => {
             mocks.verify();
             expect(err.code).to.eql('ETIMEDOUT');
             expect(err.error.status).to.eql(500);

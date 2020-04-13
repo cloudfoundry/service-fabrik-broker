@@ -2,9 +2,11 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
-const config = require('../../../common/config');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
+const config = require('@sf/app-config');
+const {
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
 const filename = backupStore.filename;
 
 describe('service-fabrik-admin', function () {
@@ -45,7 +47,7 @@ describe('service-fabrik-admin', function () {
       const archivePathname = `/${blueprintContainer}/${archiveFilename}`;
 
       before(function () {
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([

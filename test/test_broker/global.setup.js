@@ -1,10 +1,10 @@
 'use strict';
 const _ = require('lodash');
-const director = require('../../data-access-layer/bosh').director;
+const { director } = require('@sf/bosh');
 let boshConfigCacheDetails = {};
 let deploymentIpsCacheDetails = {};
 
-process.on('unhandledRejection', (err) => console.log('Unhandled rejection - ', err.name));
+process.on('unhandledRejection', err => console.log('Unhandled rejection - ', err.name));
 
 director.ready.then(() => {
   boshConfigCacheDetails = _.cloneDeep(director.boshConfigCache);

@@ -1,9 +1,11 @@
 'use strict';
 
 const nock = require('nock');
-const CONST = require('../../../common/constants');
+const {
+  CONST
+} = require('@sf/common-utils');
 
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const serviceFabrikUrl = `${config.external.protocol}://${config.external.host}`;
 const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 

@@ -2,10 +2,13 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').external;
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const {
+  backupStore,
+  CloudProviderClient,
+  cloudProvider
+} = require('@sf/iaas');
 
 describe('service-fabrik-api-2.0', function () {
   describe('backups', function () {
@@ -58,7 +61,7 @@ describe('service-fabrik-api-2.0', function () {
       };
 
       before(function () {
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([
@@ -67,7 +70,7 @@ describe('service-fabrik-api-2.0', function () {
       });
 
       after(function () {
-        backupStore.cloudProvider = iaas.cloudProvider;
+        backupStore.cloudProvider = cloudProvider;
       });
 
       afterEach(function () {
@@ -198,7 +201,7 @@ describe('service-fabrik-api-2.0', function () {
               options: JSON.stringify({
                 service_id: service_id,
                 context: {
-                  platform: 'cloudfoundry',
+                  platform: 'cloudfoundry'
                 },
                 space_guid: space_guid
               })

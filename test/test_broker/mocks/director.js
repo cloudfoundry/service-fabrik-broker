@@ -4,11 +4,12 @@ const _ = require('lodash');
 const nock = require('nock');
 const yaml = require('js-yaml');
 const parseUrl = require('url').parse;
-const CONST = require('../../../common/constants');
+const {
+  CONST
+} = require('@sf/common-utils');
 const agent = require('./agent');
-const config = require('../../../common/config');
-const bosh = require('../../../data-access-layer/bosh');
-const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
+const config = require('@sf/app-config');
+const {NetworkSegmentIndex} = require('@sf/bosh');
 const prefix = 'service-fabrik';
 const networkSegmentIndex = 21;
 const credentials = agent.credentials;

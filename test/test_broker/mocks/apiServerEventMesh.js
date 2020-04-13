@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
+const config = require('@sf/app-config');
+const {CONST} = require('@sf/common-utils');
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 

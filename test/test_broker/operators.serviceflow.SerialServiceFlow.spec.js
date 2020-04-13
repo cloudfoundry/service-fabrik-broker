@@ -2,11 +2,18 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const BaseOperator = require('../../operators/BaseOperator');
-const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const utils = require('../../common/utils');
+const BaseOperator = require('../../applications/operators/BaseOperator');
+const {
+  CONST,
+  errors: {
+    Conflict,
+    BadRequest
+  },
+  commonFunctions: {
+    uuidV4
+  }
+} = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
   describe('ServiceFlow', function () {
@@ -86,7 +93,7 @@ describe('operators', function () {
         updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => {
           return Promise.try(() => {
             if (throwExceptionOnUpdate) {
-              throw new errors.Conflict(`Task ${task_id} already exists`);
+              throw new Conflict(`Task ${task_id} already exists`);
             }
             return Promise.resolve({
               body: {
@@ -97,7 +104,7 @@ describe('operators', function () {
         });
         createResourceStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(true));
         clock = sinon.useFakeTimers(new Date().getTime());
-        utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(task_id));
+        utilsStub = sinon.stub(uuidV4).callsFake(() => Promise.resolve(task_id));
       });
       afterEach(function () {
         registerWatcherStub.resetHistory();
@@ -151,10 +158,10 @@ describe('operators', function () {
           .then(() => {
             throw 'Method should have thrown BadRequest exception!';
           })
-          .catch(errors.BadRequest, () => {
+          .catch(BadRequest, () => {
             const status = {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: `Invalid service flow UNKNOWN_FLOW. No service flow definition found!`
+              description: 'Invalid service flow UNKNOWN_FLOW. No service flow definition found!'
             };
             expect(updateResourceStub).to.be.calledOnce;
             expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.RESOURCE_STATE.FAILED);

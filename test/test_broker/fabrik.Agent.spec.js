@@ -2,7 +2,11 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const FeatureNotSupportedByAnyAgent = require('../../common/errors').FeatureNotSupportedByAnyAgent;
+const {
+  errors: {
+    FeatureNotSupportedByAnyAgent
+  }
+} = require('@sf/common-utils');
 const Agent = require('../../data-access-layer/service-agent');
 
 describe('fabrik', function () {
@@ -146,7 +150,7 @@ describe('fabrik', function () {
             .chain(logs)
             .map(JSON.stringify)
             .join('\n')
-            .value(),
+            .value()
         }));
     });
 

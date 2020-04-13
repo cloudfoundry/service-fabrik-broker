@@ -1,7 +1,7 @@
 'use strict';
 
-const TaskFabrik = require('../../operators/serviceflow-operator/task/TaskFabrik');
-const CONST = require('../../common/constants');
+const TaskFabrik = require('../../applications/operators/serviceflow-operator/task/TaskFabrik');
+const { CONST } = require('@sf/common-utils');
 const AssertionError = require('assert').AssertionError;
 
 describe('operators', function () {

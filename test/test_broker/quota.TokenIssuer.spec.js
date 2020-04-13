@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const TokenIssuer = proxyquire('../../quota/TokenIssuer', {});
+const TokenIssuer = proxyquire('../../data-access-layer/quota/src/TokenIssuer', {});
 
 let tokenExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
@@ -26,8 +26,8 @@ describe('quota', () => {
     let tokenIssuer = new TokenIssuer(quotaAPIAuthClient);
 
     describe('refreshToken', () => {
-      it('returns a promise resolving a token-info', (done) => {
-        tokenIssuer.refreshToken().then((content) => {
+      it('returns a promise resolving a token-info', done => {
+        tokenIssuer.refreshToken().then(content => {
           expect(content).to.eql(tokenInfoNotExpired);
           done();
         }).catch(done);
@@ -53,17 +53,17 @@ describe('quota', () => {
     });
 
     describe('getAccessToken', () => {
-      it('returns a promise (accessToken does not expire soon)', (done) => {
+      it('returns a promise (accessToken does not expire soon)', done => {
         tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
-        tokenIssuer.getAccessToken().then((content) => {
+        tokenIssuer.getAccessToken().then(content => {
           expect(content).to.eql(tokenNotExpired);
           done();
         }).catch(done);
       });
 
-      it('returns a promise (accessToken expire soon, so accessToken is refreshed and also updated in tokenInfo)', (done) => {
+      it('returns a promise (accessToken expire soon, so accessToken is refreshed and also updated in tokenInfo)', done => {
         tokenIssuer.updateTokenInfo(tokenInfoExpired);
-        tokenIssuer.getAccessToken().then((content) => {
+        tokenIssuer.getAccessToken().then(content => {
           expect(content).to.eql(tokenNotExpired);
           expect(tokenIssuer.tokenInfo.accessToken).to.eql(tokenNotExpired);
           done();

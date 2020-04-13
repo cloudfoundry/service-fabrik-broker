@@ -1,7 +1,7 @@
 'use strict';
 
 const app = require('../support/apps').report;
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 
 describe('service-fabrik-report', function () {
   /* jshint expr:true */

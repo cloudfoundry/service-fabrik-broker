@@ -1,12 +1,16 @@
 'use strict';
 
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
-const BaseJob = require('../../jobs/BaseJob');
-const ScheduleManager = require('../../jobs/ScheduleManager');
-const BackupStore = require('../../data-access-layer/iaas/BackupStore');
-const OperationStatusPollerJob = require('../../jobs/OperationStatusPollerJob');
+const config = require('@sf/app-config');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const { BackupStore } = require('@sf/iaas');
+const OperationStatusPollerJob = require('../../core/scheduler-jobs/src/jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -45,7 +49,7 @@ describe('Jobs', function () {
     }
 
     function getTokenBasedOnOperation(operationName) {
-      return utils.encodeBase64({
+      return encodeBase64({
         backup_guid: backup_guid,
         agent_ip: mocks.agent.ip,
         operation: operationName
@@ -287,11 +291,11 @@ describe('Jobs', function () {
         sfClientStub = sinon.stub(OperationStatusPollerJob, 'getBrokerClient');
         const job = getJobBasedOnOperation('snapshot');
         OperationStatusPollerJob.run(job, () => {
-          const invalidInputMsg = `Operation pollinng not supported for operation - snapshot`;
+          const invalidInputMsg = 'Operation pollinng not supported for operation - snapshot';
           expect(sfClientStub).not.to.be.called;
           sfClientStub.restore();
           expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql(invalidInputMsg);
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusCode).to.eql(`ERR_SNAPSHOT_NOT_SUPPORTED`);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusCode).to.eql('ERR_SNAPSHOT_NOT_SUPPORTED');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({});
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);

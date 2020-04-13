@@ -2,9 +2,13 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const CONST = require('../../../common/constants');
-const utils = require('../../../common/utils');
-const config = require('../../../common/config');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 const serviceBrokerUrl = `${config.internal.protocol}://${config.internal.host}`;
 const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 
@@ -19,7 +23,7 @@ function isoDate(time) {
 }
 
 function startDeploymentBackup(name, response, payload) {
-  const token = utils.encodeBase64({
+  const token = encodeBase64({
     backup_guid: response.backup_guid || backupGuid,
     agent_ip: mocks.agent.ip,
     operation: 'backup'

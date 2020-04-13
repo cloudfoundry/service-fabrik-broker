@@ -1,13 +1,15 @@
 'use strict';
 
-const catalog = require('../../common/models/catalog');
-const ScheduleManager = require('../../jobs/ScheduleManager');
+const { catalog } = require('@sf/models');
+const ScheduleManager = require('@sf/jobs');
 const Agent = require('../../data-access-layer/service-agent');
-const BackupStore = require('../../data-access-layer/iaas/BackupStore');
+const {
+  BackupStore,
+  backupStore
+} = require('@sf/iaas');
 const moment = require('moment');
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
 
 describe('operators', function () {
   describe('BackupService', function () {
@@ -28,7 +30,7 @@ describe('operators', function () {
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-    const BackupService = require('../../operators/backup-operator/BackupService');
+    const BackupService = require('../../applications/operators/backup-operator/BackupService');
     const started_at = '2015-11-18T11-28-42Z';
     const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);
@@ -177,7 +179,7 @@ describe('operators', function () {
         });
         mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
         return manager.getOperationState('backup', opts)
-          .then((res) => {
+          .then(res => {
             expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
             expect(res.state).to.eql('succeeded');
             expect(getBackupLastOperationStub.callCount).to.eql(1);
@@ -217,7 +219,7 @@ describe('operators', function () {
           }
         });
         return manager.getOperationState('backup', opts)
-          .then((res) => {
+          .then(res => {
             expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
             expect(res.state).to.eql('succeeded');
             mocks.verify();
@@ -251,7 +253,7 @@ describe('operators', function () {
       });
       mocks.agent.abortBackup();
       return manager.abortLastBackup(opts, true)
-        .then((res) => {
+        .then(res => {
           expect(res.state).to.eql('aborting');
           expect(getFileStub.callCount).to.eql(1);
           expect(getFileStub.firstCall.args[0]).to.eql({
@@ -279,7 +281,7 @@ describe('operators', function () {
         guid: backup_guid
       };
       return manager.abortLastBackup(opts, true)
-        .then((res) => {
+        .then(res => {
           expect(res.state).to.eql('succeeded');
           expect(getFileStub.callCount).to.eql(1);
           expect(getFileStub.firstCall.args[0]).to.eql({

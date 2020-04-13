@@ -2,9 +2,9 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const TokenIssuer = proxyquire('../../data-access-layer/cf/TokenIssuer', {});
+const TokenIssuer = proxyquire('../../data-access-layer/cf/src/TokenIssuer', {});
 const assert = require('assert');
-const logger = require('../../common/logger');
+const logger = require('@sf/logger');
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
@@ -55,8 +55,8 @@ describe('cf', () => {
     });
 
     describe('login', () => {
-      it('returns an empty object', (done) => {
-        tokenIssuer.login().then((content) => {
+      it('returns an empty object', done => {
+        tokenIssuer.login().then(content => {
           expect(content).to.eql(tokenInfoExpired);
           done();
         }).catch(done);
@@ -64,17 +64,17 @@ describe('cf', () => {
     });
 
     describe('refreshToken', () => {
-      it('returns a promise resolving a token-info', (done) => {
+      it('returns a promise resolving a token-info', done => {
         tokenIssuer.tokenInfo.refreshToken = tokenNotExpired;
-        tokenIssuer.refreshToken().then((content) => {
+        tokenIssuer.refreshToken().then(content => {
           expect(content).to.eql(tokenInfoNotExpired);
           done();
         }).catch(done);
       });
 
-      it('returns a promise rejecting a token-info', (done) => {
+      it('returns a promise rejecting a token-info', done => {
         tokenIssuer.tokenInfo.refreshToken = expiredToken;
-        tokenIssuer.refreshToken().then(done).catch((content) => {
+        tokenIssuer.refreshToken().then(done).catch(content => {
           expect(content).to.eql(tokenInfoExpired);
           done();
         });
@@ -100,7 +100,7 @@ describe('cf', () => {
         });
       });
 
-      it('should handle errors(if any) in refreshToken after timeout', (done) => {
+      it('should handle errors(if any) in refreshToken after timeout', done => {
         let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
         let tokenInfoSpecific = {
           access_token: tokenExpiresSpecificDate,
@@ -127,27 +127,27 @@ describe('cf', () => {
     });
 
     describe('getAccessToken', () => {
-      it('returns a promise (accessToken does not expire soon)', (done) => {
+      it('returns a promise (accessToken does not expire soon)', done => {
         tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
-        tokenIssuer.getAccessToken().then((content) => {
+        tokenIssuer.getAccessToken().then(content => {
           expect(content).to.eql(tokenNotExpired);
           done();
         }).catch(done);
       });
 
-      it('returns a promise (accessToken expire soon, but refreshToken does not)', (done) => {
+      it('returns a promise (accessToken expire soon, but refreshToken does not)', done => {
         tokenInfoNotExpired.access_token = expiredToken;
         tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
-        tokenIssuer.getAccessToken().then((content) => {
+        tokenIssuer.getAccessToken().then(content => {
           expect(content).to.eql(expiredToken);
           tokenInfoNotExpired.access_token = tokenNotExpired;
           done();
         }).catch(done);
       });
 
-      it('returns a promise (both tokens expire soon)', (done) => {
+      it('returns a promise (both tokens expire soon)', done => {
         tokenIssuer.updateTokenInfo(tokenInfoExpired);
-        tokenIssuer.getAccessToken().then((content) => {
+        tokenIssuer.getAccessToken().then(content => {
           expect(content).to.eql(expiredToken);
           done();
         }).catch(done);
@@ -155,7 +155,7 @@ describe('cf', () => {
     });
 
     describe('getAccessTokenBoshUAA', () => {
-      it('should return existing access token (accessToken does not expire soon)', (done) => {
+      it('should return existing access token (accessToken does not expire soon)', done => {
         tokenIssuer.tokenInfo.update(tokenInfoNotExpired);
         tokenIssuer.getAccessTokenBoshUAA().then(content => {
           expect(content).to.eql(tokenNotExpired);
@@ -163,7 +163,7 @@ describe('cf', () => {
         }).catch(done);
       });
 
-      it('should make explicit request for access token (access token expires soon)', (done) => {
+      it('should make explicit request for access token (access token expires soon)', done => {
         /* jshint expr:true */
         tokenIssuer.tokenInfo.update(tokenInfoExpired);
         let sandbox = sinon.createSandbox();
@@ -180,7 +180,7 @@ describe('cf', () => {
     describe('scheduleNextRequestAccessToken', () => {
       it('should create a valid timeout object', () => {
         /* jshint expr:true */
-        //IST: Sunday, August 25, 2086 3:36:08 AM. Delay < 2147483647, as per condition in this function.
+        // IST: Sunday, August 25, 2086 3:36:08 AM. Delay < 2147483647, as per condition in this function.
         let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
         let tokenInfoSpecific = {
           access_token: tokenExpiresSpecificDate,
@@ -195,7 +195,7 @@ describe('cf', () => {
         sandbox.restore();
       });
 
-      it('should make correct requests after timeout', (done) => {
+      it('should make correct requests after timeout', done => {
         let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
         let tokenInfoSpecific = {
           access_token: tokenExpiresSpecificDate,
@@ -204,7 +204,7 @@ describe('cf', () => {
         };
         tokenIssuer.updateTokenInfo(tokenInfoSpecific);
         const delay = tokenIssuer.tokenInfo.accessTokenExpiresIn - tokenIssuer.bufferPeriodSeconds;
-        //setup stubs
+        // setup stubs
         this.clock = sinon.useFakeTimers(Date.now());
         tokenIssuer.scheduleNextRequestAccessToken('dummy', 'dummy');
         this.clock.tick(delay * 1000);

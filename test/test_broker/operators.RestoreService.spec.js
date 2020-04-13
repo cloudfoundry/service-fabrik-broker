@@ -1,14 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const catalog = require('../../common/models/catalog');
-const RestoreService = require('../../operators/restore-operator/RestoreService');
+const {
+  catalog,
+  Service
+} = require('@sf/models');
+const RestoreService = require('../../applications/operators/restore-operator/RestoreService');
 const moment = require('moment');
-const config = require('../../common/config');
-const Service = require('../../common/models').Service;
-const CONST = require('../../common/constants');
-const iaas = require('../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const { backupStore } = require('@sf/iaas');
 
 describe('operators', function () {
   describe('RestoreService', function () {
@@ -57,7 +58,7 @@ describe('operators', function () {
       },
       agent_ip: agent_ip,
       instance_guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
-      restore_guid: restoreGuid,
+      restore_guid: restoreGuid
     };
     const restore_options = {
       restore_guid: restoreGuid,
@@ -266,19 +267,19 @@ describe('operators', function () {
           updated_at: '2015-11-18T11:28:44Z'
         };
         const restoreLogs = [{
-            time: '2015-11-18T11:28:40+00:00',
-            level: 'info',
-            msg: 'Downloading tarball ...'
-          }, {
-            time: '2015-11-18T11:28:42+00:00',
-            level: 'info',
-            msg: 'Extracting tarball ...'
-          },
-          {
-            time: '2015-11-18T11:28:44+00:00',
-            level: 'info',
-            msg: 'Restore finished'
-          }
+          time: '2015-11-18T11:28:40+00:00',
+          level: 'info',
+          msg: 'Downloading tarball ...'
+        }, {
+          time: '2015-11-18T11:28:42+00:00',
+          level: 'info',
+          msg: 'Extracting tarball ...'
+        },
+        {
+          time: '2015-11-18T11:28:44+00:00',
+          level: 'info',
+          msg: 'Restore finished'
+        }
         ];
         const restoreLogsStream = _
           .chain(restoreLogs)

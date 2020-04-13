@@ -1,6 +1,6 @@
 'use strict';
 
-const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
+const { CloudProviderClient } = require('@sf/iaas');
 
 describe('iaas', function () {
   describe('validate not found responses', function () {

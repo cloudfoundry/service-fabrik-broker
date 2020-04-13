@@ -1,17 +1,25 @@
 'use strict';
 
 const _ = require('lodash');
-const errors = require('../../common/errors');
 const Promise = require('bluebird');
-const config = require('../../common/config');
-const catalog = require('../../common/models').catalog;
-const ScheduleManager = require('../../jobs');
-const CONST = require('../../common/constants');
-const iaas = require('../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
-const DirectorService = require('../../operators/bosh-operator/DirectorService');
-const utils = require('../../common/utils');
-const cfPlatformManager = require('../../platform-managers/CfPlatformManager');
+const config = require('@sf/app-config');
+const { catalog } = require('@sf/models');
+const ScheduleManager = require('@sf/jobs');
+const {
+  CONST,
+  errors: {
+    NotFound
+  },
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const {
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
+const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
+const cfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
 
 describe('#DirectorService', function () {
   describe('instances', function () {
@@ -104,7 +112,7 @@ describe('#DirectorService', function () {
         }
       };
       before(function () {
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
@@ -181,7 +189,7 @@ describe('#DirectorService', function () {
               expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
-                parameters: parameters,
+                parameters: parameters
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -283,7 +291,7 @@ describe('#DirectorService', function () {
                   platform: 'cloudfoundry',
                   organization_guid: organization_guid,
                   space_guid: space_guid
-                },
+                }
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -330,7 +338,7 @@ describe('#DirectorService', function () {
               expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters,
+                parameters: parameters
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -408,7 +416,7 @@ describe('#DirectorService', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
-          //mocks.agent.preUpdate();
+          // mocks.agent.preUpdate();
           mocks.agent.getInfo();
           const options = {
             service_id: service_id,
@@ -455,7 +463,7 @@ describe('#DirectorService', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
-          //mocks.agent.preUpdate();
+          // mocks.agent.preUpdate();
           const options = {
             service_id: service_id,
             plan_id: plan_id_update,
@@ -471,7 +479,7 @@ describe('#DirectorService', function () {
               expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters,
+                parameters: parameters
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -513,7 +521,7 @@ describe('#DirectorService', function () {
               expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters,
+                parameters: parameters
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -1282,7 +1290,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
+          deferred.reject(new NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
@@ -1313,15 +1321,15 @@ describe('#DirectorService', function () {
                 expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
                 mocks.verify();
                 done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+                // Schedule operation is performed in background after response has been returned,
+                // hence added this delay of 500 ms which should work in all cases.
+                // In case asserts are failing, try increasing the timeout first & then debug. :-)
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
         it('returns 201 Created', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
+          deferred.reject(new NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           const context = {
             platform: 'cloudfoundry',
@@ -1368,15 +1376,15 @@ describe('#DirectorService', function () {
                 expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
                 mocks.verify();
                 done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+                // Schedule operation is performed in background after response has been returned,
+                // hence added this delay of 500 ms which should work in all cases.
+                // In case asserts are failing, try increasing the timeout first & then debug. :-)
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
         it('shared instance: returns 201 Created', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
+          deferred.reject(new NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           const context = {
             platform: 'cloudfoundry',
@@ -1427,15 +1435,15 @@ describe('#DirectorService', function () {
                 expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
                 mocks.verify();
                 done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+                // Schedule operation is performed in background after response has been returned,
+                // hence added this delay of 500 ms which should work in all cases.
+                // In case asserts are failing, try increasing the timeout first & then debug. :-)
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
         it('Errors in getting IPs from ApiServer handled properly', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
+          deferred.reject(new NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           const context = {
             platform: 'cloudfoundry',
@@ -1482,15 +1490,15 @@ describe('#DirectorService', function () {
                 expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
                 mocks.verify();
                 done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+                // Schedule operation is performed in background after response has been returned,
+                // hence added this delay of 500 ms which should work in all cases.
+                // In case asserts are failing, try increasing the timeout first & then debug. :-)
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
         it('should process the requests originating from k8s platform', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
+          deferred.reject(new NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           const context = {
             platform: 'kubernetes',
@@ -1551,7 +1559,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.agent.credentials),
+              response: encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
             }
           };
@@ -1595,7 +1603,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.agent.credentials),
+              response: encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
             }
           };
@@ -1634,7 +1642,7 @@ describe('#DirectorService', function () {
             .value();
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.agent.credentials),
+              response: encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
             }
           };
@@ -1678,7 +1686,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.agent.credentials),
+              response: encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
             }
           };

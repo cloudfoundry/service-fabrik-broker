@@ -1,6 +1,6 @@
 'use strict';
 
-const TokenInfo = require('../../data-access-layer/cf/TokenInfo');
+const TokenInfo = require('../../data-access-layer/cf/src/TokenInfo');
 
 const tokenType = 'bearer';
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';

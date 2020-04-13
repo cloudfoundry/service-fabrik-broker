@@ -1,16 +1,23 @@
 'use strict';
 
 const azureStorage = require('azure-storage');
-const AzureClient = require('../../data-access-layer/iaas').AzureClient;
-const CONST = require('../../common/constants');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
+const {
+  AzureClient,
+  backupStore: {
+    filename
+  }
+} = require('@sf/iaas');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    Forbidden,
+    Unauthorized
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
 const moment = require('moment');
 const uuid = require('uuid');
-const filename = require('../../data-access-layer/iaas').backupStore.filename;
-const NotFound = errors.NotFound;
-const Forbidden = errors.Forbidden;
-const Unauthorized = errors.Unauthorized;
 
 describe('iaas', function () {
   describe('AzureClient', function () {
@@ -144,12 +151,12 @@ describe('iaas', function () {
         mocks.azureClient.auth();
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
-          .catch((err) => {
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
+          .catch(err => {
             expect(err.message).to.equal('failure');
             mocks.verify();
           });
@@ -190,12 +197,12 @@ describe('iaas', function () {
           }
         }, null, 'diskfailed');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
-          .catch((err) => {
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
+          .catch(err => {
             expect(err.message).to.equal('diskfailed');
             mocks.verify();
           });
@@ -260,12 +267,12 @@ describe('iaas', function () {
           }
         });
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
-          .then((result) => {
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
+          .then(result => {
             expect(result.volumeId).to.equal(`caching:None%3Bdisk_name:${boshdisk}%3Bresource_group_name:${settings.resource_group}`);
             expect(result.zone).to.equal(zone);
             expect(result.type).to.equal('Premium_LRS');
@@ -467,7 +474,7 @@ describe('iaas', function () {
           }
         });
         return client.remove(`${blobName}`)
-          .then((result) => {
+          .then(result => {
             expect(result).to.eql(undefined);
             mocks.verify();
           });
@@ -569,7 +576,7 @@ describe('iaas', function () {
             }
           });
         return client.deleteSnapshot(snapshotName)
-          .then((result) => {
+          .then(result => {
             expect(result).to.equal(undefined);
             mocks.verify();
           });

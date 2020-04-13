@@ -2,14 +2,21 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const ScheduleManager = require('../../../jobs');
-const CONST = require('../../../common/constants');
+const ScheduleManager = require('@sf/jobs');
+const {
+  CONST,
+  commonFunctions: {
+    unifyDiffResult
+  }
+} = require('@sf/common-utils');
 const apps = require('../support/apps');
-const config = require('../../../common/config');
-const utils = require('../../../common/utils');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
-const filename = iaas.backupStore.filename;
+const config = require('@sf/app-config');
+const {
+  backupStore,
+  CloudProviderClient,
+  cloudProvider
+} = require('@sf/iaas');
+const filename = backupStore.filename;
 
 describe('service-fabrik-api', function () {
 
@@ -46,9 +53,9 @@ describe('service-fabrik-api', function () {
             service_id: service_id,
             plan_id: plan_id,
             context: {
-              platform: 'cloudfoundry',
+              platform: 'cloudfoundry'
             },
-            space_guid: space_guid,
+            space_guid: space_guid
           })
         }
       };
@@ -79,7 +86,7 @@ describe('service-fabrik-api', function () {
       before(function () {
         config.enable_service_fabrik_v2 = false;
         config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         timestampStub = sinon.stub(filename, 'timestamp');
@@ -102,7 +109,7 @@ describe('service-fabrik-api', function () {
 
       after(function () {
         timestampStub.restore();
-        backupStore.cloudProvider = iaas.cloudProvider;
+        backupStore.cloudProvider = cloudProvider;
         cancelScheduleStub.restore();
         scheduleStub.restore();
         getScheduleStub.restore();
@@ -535,7 +542,7 @@ describe('service-fabrik-api', function () {
               expect(res).to.have.status(200);
               const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
               _.set(expectedJobResponse, 'update_required', true);
-              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({
+              _.set(expectedJobResponse, 'update_details', unifyDiffResult({
                 diff: diff
               }));
               expect(res.body).to.eql(expectedJobResponse);

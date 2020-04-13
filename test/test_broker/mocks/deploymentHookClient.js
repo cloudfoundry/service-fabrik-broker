@@ -1,7 +1,7 @@
 'use strict';
 
 const nock = require('nock');
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const deploymentHookUrl = `${config.deployment_hooks.protocol}://${config.deployment_hooks.host}`;
 
 exports.executeDeploymentActions = executeDeploymentActions;

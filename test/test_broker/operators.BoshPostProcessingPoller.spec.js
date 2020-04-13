@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
+const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BaseStatusPoller = require('../../operators/BaseStatusPoller');
+const BaseStatusPoller = require('../../applications/operators/BaseStatusPoller');
 
 describe('operators', function () {
   describe('BoshPostProcessingPoller', function () {
@@ -48,7 +48,7 @@ describe('operators', function () {
         state: 'post_processing',
         lastOperation: {
           type: 'create',
-          parameters: {'foo': 'bar'},
+          parameters: { 'foo': 'bar' },
           context: {
             platform: 'cloudfoundry',
             organization_guid: 'organization_guid',
@@ -68,7 +68,7 @@ describe('operators', function () {
             space_guid: 'space_guid'
           },
           deployment_name: 'deployment_name',
-          task_id: "task_id"
+          task_id: 'task_id'
         }
       }
     };
@@ -97,7 +97,7 @@ describe('operators', function () {
       it('create postprocessing should stay as long as it is processing', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -127,7 +127,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -143,7 +143,7 @@ describe('operators', function () {
       it('update postprocessing should stay as long as it is processing', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -174,7 +174,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -190,7 +190,7 @@ describe('operators', function () {
       it('create postprocessing should succeed', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -221,7 +221,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -237,7 +237,7 @@ describe('operators', function () {
       it('update postprocessing should succeed', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -268,7 +268,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -284,7 +284,7 @@ describe('operators', function () {
       it('create postprocessing should be able to fail', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -315,7 +315,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -332,7 +332,7 @@ describe('operators', function () {
       it('update postprocessing should be able to fail', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {
             'createInstance': function () {
               /* jshint unused:false */
@@ -363,7 +363,7 @@ describe('operators', function () {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, expectedPayload);
         return boshPostProcessingPoller.getStatus(resourceBodyCopy, 'interval_id')
-          .spread((res) => {
+          .spread(res => {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
@@ -379,7 +379,7 @@ describe('operators', function () {
       it('no ops for deployment type unknown', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../operators/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../../applications/operators/bosh-operator/BoshPostProcessingPoller.js', {
           './DirectorService': {}
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);

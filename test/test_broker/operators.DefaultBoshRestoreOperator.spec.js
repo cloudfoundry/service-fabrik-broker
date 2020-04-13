@@ -1,10 +1,10 @@
 'use strict';
 
-const DefaultBoshRestoreOperator = require('../../operators/bosh-restore-operator/DefaultBoshRestoreOperator');
-const BoshRestoreService = require('../../operators/bosh-restore-operator/BoshRestoreService');
-const BaseOperator = require('../../operators/BaseOperator');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh');
+const DefaultBoshRestoreOperator = require('../../applications/operators/bosh-restore-operator/DefaultBoshRestoreOperator');
+const BoshRestoreService = require('../../applications/operators/bosh-restore-operator/BoshRestoreService');
+const BaseOperator = require('../../applications/operators/BaseOperator');
+const { CONST } = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
   describe('DefaultBoshRestoreOperator', function () {
@@ -104,7 +104,7 @@ describe('operators', function () {
             name: 'dummy'
           }
         };
-        let updateResourceStub = sandbox.stub(eventmesh.apiServerClient, 'updateResource');
+        let updateResourceStub = sandbox.stub(apiServerClient, 'updateResource');
         boshRestoreOperator.processRequest(dummyRequestObjectBody)
           .then(() => {
             expect(processInQueueRequestStub.callCount).to.eql(1);

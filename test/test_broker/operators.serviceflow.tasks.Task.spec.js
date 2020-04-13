@@ -1,10 +1,14 @@
 'use strict';
 
 const Promise = require('bluebird');
-const Task = require('../../operators/serviceflow-operator/task/Task');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const CONST = require('../../common/constants');
-const NotImplementedBySubclass = require('../../common/errors').NotImplementedBySubclass;
+const Task = require('../../applications/operators/serviceflow-operator/task/Task');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  errors: {
+    NotImplementedBySubclass
+  }
+} = require('@sf/common-utils');
 
 describe('operators', function () {
   describe('ServiceFlow', function () {

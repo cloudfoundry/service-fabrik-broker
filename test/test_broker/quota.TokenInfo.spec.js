@@ -1,6 +1,6 @@
 'use strict';
 
-const TokenInfo = require('../../quota/TokenInfo');
+const TokenInfo = require('../../data-access-layer/quota/src/TokenInfo');
 
 const tokenType = 'bearer';
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';

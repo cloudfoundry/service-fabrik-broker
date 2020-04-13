@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
+const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BackupService = require('../../operators/backup-operator');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
+const BackupService = require('../../applications/operators/backup-operator');
+const { ApiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
   describe('BackupStatusPoller', function () {
@@ -36,8 +36,8 @@ describe('operators', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const BackupStatusPoller = proxyquire('../../operators/backup-operator/BackupStatusPoller.js', {
-      '../../common/config': config
+    const BackupStatusPoller = proxyquire('../../applications/operators/backup-operator/BackupStatusPoller.js', {
+      '@sf/app-config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
     _.set(instanceInfo_InProgress, 'backup_guid', IN_PROGRESS_BACKUP_GUID);
@@ -78,7 +78,7 @@ describe('operators', function () {
       const registerWatcherFake = function () {
         return Promise.resolve(true);
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       backupOperationStub = sandbox.stub(BackupService.prototype, 'getOperationState');
     });
 

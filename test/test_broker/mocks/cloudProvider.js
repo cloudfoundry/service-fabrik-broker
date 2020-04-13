@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const provider = config.backup.provider;
 const cloudProviderUrl = provider.authUrl;
 const objectStoreUrl = `http://objectstore/v1/AUTH_${provider.tenantId}`;

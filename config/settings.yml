@@ -12,7 +12,7 @@ if(process && process.argv[1] && process.argv[1].indexOf('.js') !== -1){
     filePrefix = `${exeName}-`;
   }
 }
-const log_path = path.join(__dirname, '../..', 'logs', `${filePrefix}${process.env.NODE_ENV}.log`)
+const log_path = path.join(__dirname, '../', 'logs', `${filePrefix}${process.env.NODE_ENV}.log`)
 
 const broker_name = 'service-fabrik-broker';
 const ip = '10.0.2.2';

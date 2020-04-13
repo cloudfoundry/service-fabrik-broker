@@ -2,11 +2,10 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const quota = require('../../quota');
+const { quotaManager } = require('@sf/quota');
 const proxyquire = require('proxyquire');
-const quotaManager = quota.quotaManager;
-const catalog = require('../../common/models/catalog');
-const CloudControllerClient = require('../../data-access-layer/cf/CloudControllerClient');
+const { catalog } = require('@sf/models');
+const CloudControllerClient = require('../../data-access-layer/cf/src/CloudControllerClient');
 
 
 describe('quota', () => {
@@ -124,8 +123,8 @@ describe('quota', () => {
     });
 
     describe('checkQuota', () => {
-      const QuotaManager = proxyquire('../../quota/QuotaManager', {
-        '../common/config': {
+      const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+        '@sf/app-config': {
           quota: {
             enabled: true,
             whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -421,8 +420,8 @@ describe('quota', () => {
       });
 
       it('returns that the org is not whitelisted', () => {
-        const QuotaManager = proxyquire('../../quota/QuotaManager', {
-          '../common/config': {
+        const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+          '@sf/app-config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -438,8 +437,8 @@ describe('quota', () => {
       });
 
       it('returns that the org is whitelisted', () => {
-        const QuotaManager = proxyquire('../../quota/QuotaManager', {
-          '../common/config': {
+        const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+          '@sf/app-config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning', 'dev']

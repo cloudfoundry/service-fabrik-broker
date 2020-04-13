@@ -1,7 +1,7 @@
 'use strict';
 
 const nock = require('nock');
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 
 exports.mockAuthCall = mockAuthCall;
 exports.mockSendUsageRecord = mockSendUsageRecord;

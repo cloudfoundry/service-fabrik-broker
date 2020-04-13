@@ -1,19 +1,21 @@
 'use strict';
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
-const AliClient = require('../../data-access-layer/iaas').AliClient;
+const logger = require('@sf/logger');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    Unauthorized,
+    Forbidden,
+    UnprocessableEntity,
+    Timeout
+  }
+} = require('@sf/common-utils');
+const { AliClient } = require('@sf/iaas');
 const AliStorage = require('ali-oss');
 const AliCompute = require('@alicloud/pop-core');
-const NotFound = errors.NotFound;
-const Unauthorized = errors.Unauthorized;
-const Forbidden = errors.Forbidden;
-const UnprocessableEntity = errors.UnprocessableEntity;
-const Timeout = errors.Timeout;
 
-const CONNECTION_WAIT_SIMULATED_DELAY = 5;
 const config = {
   backup: {
     retention_period_in_days: 14,
@@ -21,7 +23,7 @@ const config = {
     status_check_every: 120000, // (ms) Check the status of backup once every 2 mins
     backup_restore_status_poller_timeout: 86400000, // (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
     backup_restore_status_check_every: 120000, // (ms) Check the status of deployment backup/restore once every 2 mins
-    abort_time_out: 300000, //(ms) Timeout time for abort of backup to complete
+    abort_time_out: 300000, // (ms) Timeout time for abort of backup to complete
     provider: {
       keyId: 'key-id',
       container: 'sample-container',
@@ -39,29 +41,29 @@ const bucketMetadataResponse = {
     id: 'sample-container',
     timeCreated: '2017-12-24T10:23:50.348Z',
     updated: '2017-12-24T10:23:50.348Z',
-    location: 'region-name',
+    location: 'region-name'
   }]
 };
 const bucketMetadataNotFoundResponse = {
   buckets: null
-}
+};
 const bucketMetadataMultipleResponse = {
   buckets: [{
     name: 'sample-container',
     id: 'sample-container',
     timeCreated: '2017-12-24T10:23:50.348Z',
     updated: '2017-12-24T10:23:50.348Z',
-    location: 'region-name',
+    location: 'region-name'
   },
   {
     name: 'sample-container2',
     id: 'sample-container2',
     timeCreated: '2017-12-24T10:23:50.348Z',
     updated: '2017-12-24T10:23:50.348Z',
-    location: 'region-name',
+    location: 'region-name'
   }
   ]
-}
+};
 const listFilesResponse = {
   objects:
     [{
@@ -93,15 +95,15 @@ const bucketStub = function () {
 };
 const incorrectBucketStub = function () {
   return Promise.resolve(bucketMetadataNotFoundResponse);
-}
+};
 const incorrectBucketStub2 = function () {
   return Promise.resolve(bucketMetadataMultipleResponse);
-}
+};
 const listFilesStub = {
   list: () => {
     return Promise.resolve(listFilesResponse);
   },
-  get: (file) => {
+  get: file => {
     if (file === validBlobName) {
       return Promise.resolve(jsonContent);
     } else if (file === invalidBlobName) {
@@ -114,7 +116,7 @@ const listFilesStub = {
   put: () => {
     return Promise.resolve(jsonContent);
   },
-  delete: (file) => {
+  delete: file => {
     if (file === validBlobName) {
       return Promise.resolve(deleteFileSuccessResponse);
     } else if (file === invalidBlobName) {
@@ -138,7 +140,7 @@ const diskDetailsResponse = {
       Status: 'Available'
     }]
   }
-}
+};
 
 const getDiskStub = function () {
   return Promise.resolve(diskDetailsResponse);
@@ -147,7 +149,7 @@ const getDiskFailStub = function () {
   return Promise.reject(new Error('diskFailed'));
 };
 const getDiskTimeoutStub = function () {
-  const timeoutResp = _.clone(diskDetailsResponse)
+  const timeoutResp = _.clone(diskDetailsResponse);
   timeoutResp.Disks.Disk[0].Status = 'Creating';
   return Promise.resolve(timeoutResp);
 };
@@ -285,7 +287,7 @@ describe('iaas', function () {
           })
           .catch(err => {
             expect(err).to.be.an.instanceof(Unauthorized);
-            expect(err.message).to.eql(`Authorization at ali cloud storage provider failed while deleting blob ${invalidBlobName} in container ${settings.container}`)
+            expect(err.message).to.eql(`Authorization at ali cloud storage provider failed while deleting blob ${invalidBlobName} in container ${settings.container}`);
           });
       });
       it('file/blob deletion should fail with Forbidden error', function () {
@@ -296,7 +298,7 @@ describe('iaas', function () {
           })
           .catch(err => {
             expect(err).to.be.an.instanceof(Forbidden);
-            expect(err.message).to.eql(`Authentication at ali cloud storage provider failed while deleting blob ${invalidBlobName2} in container ${settings.container}`)
+            expect(err.message).to.eql(`Authentication at ali cloud storage provider failed while deleting blob ${invalidBlobName2} in container ${settings.container}`);
           });
       });
       it('file/blob deletion should fail with NotFound error', function () {
@@ -307,7 +309,7 @@ describe('iaas', function () {
           })
           .catch(err => {
             expect(err).to.be.an.instanceof(NotFound);
-            expect(err.message).to.eql(`Object '${notFoundBlobName}' not found while deleting in container ${settings.container}`)
+            expect(err.message).to.eql(`Object '${notFoundBlobName}' not found while deleting in container ${settings.container}`);
           });
       });
       it('file/blob download should be successful', function () {
@@ -393,19 +395,19 @@ describe('iaas', function () {
       });
       it('gets disk details successfully', function () {
         return client._getDiskDetails(diskName)
-        .then(res => {
-          expect(res.Status).to.eql('Available')
-          expect(res.DiskId).to.eql(diskName)
-        })
+          .then(res => {
+            expect(res.Status).to.eql('Available');
+            expect(res.DiskId).to.eql(diskName);
+          });
       });
       it('gets disk metadata successfully', function () {
         return client.getDiskMetadata(diskName)
-        .then(res => {
-          expect(res.volumeId).to.eql(diskName);
-          expect(res.size).to.eql(20);
-          expect(res.zone).to.eql(zone);
-          expect(res.type).to.eql('cloud_ssd');
-        })
+          .then(res => {
+            expect(res.volumeId).to.eql(diskName);
+            expect(res.size).to.eql(20);
+            expect(res.zone).to.eql(zone);
+            expect(res.type).to.eql('cloud_ssd');
+          });
       });
       it('throws error if get disk metadata fails', function () {
         sandbox.restore();
@@ -419,21 +421,21 @@ describe('iaas', function () {
         };
         sandbox.stub(AliCompute.prototype, 'request').withArgs('DescribeDisks', failedParams, failedRequestOption).callsFake(getDiskFailStub);
         return client.getDiskMetadata(diskName)
-        .catch(err => {
-          expect(err.message).to.eql('diskFailed')
-        });
+          .catch(err => {
+            expect(err.message).to.eql('diskFailed');
+          });
       });
       it('successfully waits for disk to be available', function () {
         const oldConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
         CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = 0;
         return client._waitForDiskAvailability(diskName)
-        .then(res => {
-          expect(res.DiskId).to.eql(diskName);
-          expect(res.Size).to.eql(20);
-          expect(res.ZoneId).to.eql(zone);
-          expect(res.Category).to.eql('cloud_ssd');
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
-        })
+          .then(res => {
+            expect(res.DiskId).to.eql(diskName);
+            expect(res.Size).to.eql(20);
+            expect(res.ZoneId).to.eql(zone);
+            expect(res.Category).to.eql('cloud_ssd');
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
+          });
       });
       it('wait for disk to be available times out with error', function () {
         const oldDelayConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
@@ -453,23 +455,23 @@ describe('iaas', function () {
         };
         sandbox.stub(AliCompute.prototype, 'request').withArgs('DescribeDisks', failedParams, failedRequestOption).callsFake(getDiskFailStub);
         return client._waitForDiskAvailability(diskName)
-        .catch(Timeout, () => {
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
-        })
+          .catch(Timeout, () => {
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
+          });
       });
       it('successfully creates disk from snapshot', function () {
         const oldConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
         CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = 0;
 
         return client.createDiskFromSnapshot(snapshotName, zone)
-        .then(res => {
-          expect(res.volumeId).to.eql(diskName);
-          expect(res.size).to.eql(20);
-          expect(res.zone).to.eql(zone);
-          expect(res.type).to.eql('cloud_ssd');
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
-        })
+          .then(res => {
+            expect(res.volumeId).to.eql(diskName);
+            expect(res.size).to.eql(20);
+            expect(res.zone).to.eql(zone);
+            expect(res.type).to.eql('cloud_ssd');
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
+          });
       });
       it('throws error if creates disk from snapshot fails', function () {
         const oldConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
@@ -489,9 +491,9 @@ describe('iaas', function () {
         };
         sandbox.stub(AliCompute.prototype, 'request').withArgs('CreateDisk', createDiskFailParams, createDiskFailrequestOption).callsFake(getDiskFailStub);
         return client.createDiskFromSnapshot(snapshotName, zone)
-        .catch(err => {
-          expect(err.message).to.eql('diskFailed');
-        });
+          .catch(err => {
+            expect(err.message).to.eql('diskFailed');
+          });
       });
       it('wait for disk to be available times out', function () {
         const oldDelayConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
@@ -510,18 +512,18 @@ describe('iaas', function () {
         };
         reqStub.withArgs('DescribeDisks', timeParams, timeRequestOption).callsFake(getDiskTimeoutStub);
         return client._waitForDiskAvailability(diskName)
-        .catch(Timeout, (err) => {
-          expect(err.message).to.eql('Volume with diskId disk-sample is not yet available. Current state is: Creating')
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
-          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
-        })
+          .catch(Timeout, err => {
+            expect(err.message).to.eql('Volume with diskId disk-sample is not yet available. Current state is: Creating');
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
+            CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
+          });
       });
 
       it('successfully deletes snapshot', function () {
         return client.deleteSnapshot(snapshotName)
-        .then(res => {
-          expect(res).to.eql({})
-        })
+          .then(res => {
+            expect(res).to.eql({});
+          });
       });    
       it('throws error if delete snapshot fails', function () {
         sandbox.restore();
@@ -536,9 +538,9 @@ describe('iaas', function () {
         };
         sandbox.stub(AliCompute.prototype, 'request').withArgs('DeleteSnapshot', deleteSnapshotFailParams, deleteSnapshotFailRequestOption).callsFake(deleteSnapshotFailStub);
         return client.deleteSnapshot(snapshotName)
-        .catch(err => {
-          expect(err.message).to.eql('snapshotDeletionFailed');
-        });
+          .catch(err => {
+            expect(err.message).to.eql('snapshotDeletionFailed');
+          });
       });   
 
     });

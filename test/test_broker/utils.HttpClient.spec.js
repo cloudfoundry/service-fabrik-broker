@@ -15,7 +15,7 @@ const expectedResultObject = _.assign({}, responseObject, {
   body: responseBody
 });
 
-const HttpClient = proxyquire('../../common/utils/HttpClient', {
+const HttpClient = proxyquire('../../core/utils/src/HttpClient', {
   bluebird: {
     promisify(fun) {
       return fun;
@@ -41,58 +41,58 @@ describe('utils', () => {
     let httpClient = new HttpClient({});
 
     describe('request', () => {
-      it('returns request result (no error occured)', (done) => {
+      it('returns request result (no error occured)', done => {
         let responseStatus = 200;
         httpClient.request({
           expectedStatusCode: responseStatus
-        }).then((res) => {
+        }).then(res => {
           expect(res).to.eql(expectedResultObject);
           done();
         }).catch(done);
       });
 
-      it('returns request result (no error occured) (no expectedStatusCode)', (done) => {
+      it('returns request result (no error occured) (no expectedStatusCode)', done => {
         let responseStatus = 200;
         httpClient.request({
           expectedStatusCode: responseStatus
-        }).then((res) => {
+        }).then(res => {
           expect(res).to.eql(expectedResultObject);
           done();
         }).catch(done);
       });
 
-      it('throws a BadRequest error', (done) => {
+      it('throws a BadRequest error', done => {
         let responseStatus = 400;
         new HttpClient({
-            respondWithStatusCode: responseStatus
-          }).request({}, 200)
+          respondWithStatusCode: responseStatus
+        }).request({}, 200)
           .then(done)
-          .catch((err) => {
+          .catch(err => {
             expect(err.status).to.equal(responseStatus);
             done();
           });
       });
 
-      it('throws a NotFound error', (done) => {
+      it('throws a NotFound error', done => {
         let responseStatus = 404;
         new HttpClient({
-            respondWithStatusCode: responseStatus
-          }).request({}, 200)
+          respondWithStatusCode: responseStatus
+        }).request({}, 200)
           .then(done)
-          .catch((err) => {
+          .catch(err => {
             expect(err.status).to.equal(responseStatus);
             done();
           });
       });
 
-      it('throws an InternalServerError error', (done) => {
+      it('throws an InternalServerError error', done => {
         let responseStatus = 500;
         new HttpClient({
-            respondWithStatusCode: responseStatus,
-            respondWithBody: {}
-          }).request({}, 200)
+          respondWithStatusCode: responseStatus,
+          respondWithBody: {}
+        }).request({}, 200)
           .then(done)
-          .catch((err) => {
+          .catch(err => {
             expect(err.status).to.equal(responseStatus);
             expect(err).to.have.property('error');
             done();
@@ -160,13 +160,13 @@ describe('utils', () => {
           options.respondWithBody || responseBody
         ]);
       };
-      const httpClientWithCircuitBreaker = proxyquire('../../common/utils/HttpClient', {
+      const httpClientWithCircuitBreaker = proxyquire('../../core/utils/src/HttpClient', {
         bluebird: {
           promisify(fun) {
             return fun;
           }
         },
-        '../config': config,
+        '@sf/app-config': config,
         request: {
           defaults(options) {
             return () => httpHandler(options);
@@ -189,7 +189,7 @@ describe('utils', () => {
         commandStub.statisticalWindowNumberOfBuckets.withArgs().returns(cmd);
         commandStub.errorHandler.withArgs().returns(cmd);
         commandStub.build.withArgs().returns(cmd);
-        commandStub.execute = (options) => {
+        commandStub.execute = options => {
           return httpHandler(options)
             .spread((res, body) => {
               const result = {
@@ -220,7 +220,7 @@ describe('utils', () => {
       });
 
       function assertResponse(httpClient) {
-        //Validate base circuit configurations
+        // Validate base circuit configurations
         const cmdBaseKey = `${baseUrl}_base_circuit`;
         expect(commandFactoryStub).to.have.been.calledThrice;
         expect(commandFactoryStub.firstCall.args[0]).to.eql(cmdBaseKey);
@@ -233,7 +233,7 @@ describe('utils', () => {
         expect(commandStub.statisticalWindowLength.firstCall.args[0]).to.eql(5000);
         expect(commandStub.statisticalWindowNumberOfBuckets.firstCall.args[0]).to.eql(10);
         expect(typeof commandStub.errorHandler.firstCall.args[0] === 'function').to.be.true;
-        //Validate HTTP method level circuit configurations
+        // Validate HTTP method level circuit configurations
         const cmdApiOverRideKey = `${baseUrl}_get_circuit`;
         expect(commandFactoryStub.secondCall.args[0]).to.eql(cmdApiOverRideKey);
         expect(commandFactoryStub.secondCall.args[1]).to.eql('Bosh');
@@ -245,7 +245,7 @@ describe('utils', () => {
         expect(commandStub.statisticalWindowLength.secondCall.args[0]).to.eql(5000);
         expect(commandStub.statisticalWindowNumberOfBuckets.secondCall.args[0]).to.eql(10);
         expect(typeof commandStub.errorHandler.secondCall.args[0] === 'function').to.be.true;
-        //validate indivdual HTTP method override configuration even at PATH URL level
+        // validate indivdual HTTP method override configuration even at PATH URL level
         const cmdMethodOverRideKey = `${baseUrl}_get_/deployments_circuit`;
         expect(commandFactoryStub.thirdCall.args[0]).to.eql(cmdMethodOverRideKey);
         expect(commandFactoryStub.thirdCall.args[1]).to.eql('Bosh');
@@ -268,21 +268,21 @@ describe('utils', () => {
           auth: {
             user: 'admin',
             pass: 'admin'
-          },
+          }
         });
         assertResponse(httpClient);
       });
 
       it('builds circuit breaker config at the time of request', function (done) {
         const httpClient = new httpClientWithCircuitBreaker();
-        //Validate base circuit configurations
+        // Validate base circuit configurations
         expect(commandFactoryStub).not.to.be.called;
         let responseStatus = 200;
         httpClient.request({
           url: 'https://192.168.50.4:25555/deployments',
           method: 'GET',
           expectedStatusCode: responseStatus
-        }).then((res) => {
+        }).then(res => {
           expect(res).to.eql(expectedResultObject);
           assertResponse(httpClient);
           done();

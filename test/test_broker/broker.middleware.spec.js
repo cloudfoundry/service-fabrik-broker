@@ -2,32 +2,38 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const middleware = proxyquire('../../broker/lib/middleware', {
+const middleware = proxyquire('../../applications/osb-broker/src/api-controllers/middleware', {
   'basic-auth': function (req) {
     return req.auth;
   }
 });
-const quota = require('../../quota');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
-const quotaManager = quota.quotaManager;
-const utils = require('../../common/utils');
-const errors = require('../../common/errors');
-const BadRequest = errors.BadRequest;
-const Forbidden = errors.Forbidden;
+const {
+  quotaManager
+} = require('@sf/quota');
+const {
+  CONST,
+  errors: {
+    BadRequest,
+    Forbidden
+  },
+  commonFunctions: {
+    isServiceFabrikOperation
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const ServiceFabrikApiController = require('../../applications/extensions/src/api-controllers/ServiceFabrikApiController');
 const PROMISE_WAIT_SIMULATED_DELAY = 30;
 
 class Response {
   constructor() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method] = sinon.spy(function () {
         return this;
       });
     });
   }
   reset() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method].resetHistory();
     });
   }
@@ -63,7 +69,7 @@ describe('#timeout', function () {
   });
   it('should return 503 after timeout occurs', function () {
     return chai.request(app)
-      .get(`/api/v1/info`)
+      .get('/api/v1/info')
       .catch(err => err.response)
       .then(
         res => {
@@ -103,7 +109,7 @@ describe('#checkQuota', () => {
     service_id: service_id,
     plan_id: plan_id_update,
     parameters: operationParameters,
-    //context: context,
+    // context: context,
     previous_values: {
       plan_id: plan_id,
       service_id: service_id
@@ -181,7 +187,7 @@ describe('#checkQuota', () => {
       organization_id: organization_guid
     }
   };
-  var req = {
+  let req = {
     method: 'PATCH',
     path: '/foo',
     auth: {
@@ -193,7 +199,7 @@ describe('#checkQuota', () => {
     }
   };
   beforeEach(function () {
-    isServiceFabrikOperationStub = sinon.stub(utils, 'isServiceFabrikOperation');
+    isServiceFabrikOperationStub = sinon.stub(isServiceFabrikOperation);
     isServiceFabrikOperationStub.withArgs(operationsBody).returns(true);
     checkQuotaStub = sinon.stub(quotaManager, 'checkQuota');
     checkQuotaStub.withArgs(organization_guid, notEntitledPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));

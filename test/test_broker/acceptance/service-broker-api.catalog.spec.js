@@ -2,9 +2,9 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
-const catalog = require('../../../common/models/catalog');
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
+const { catalog } = require('@sf/models');
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
 
 
 describe('service-broker-api', function () {
@@ -44,7 +44,7 @@ describe('service-broker-api', function () {
           }
         }]
       }, {
-        labelSelector: `serviceId=service1`
+        labelSelector: 'serviceId=service1'
       });
       config.apiserver.isServiceDefinitionAvailableOnApiserver = true;
       return chai.request(app)

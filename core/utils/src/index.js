@@ -8,6 +8,7 @@ const errors = require('./errors');
 const JWT = require('./jwt');
 const Repository = require('./Repository');
 const EncryptionManager = require('./EncryptionManager');
+const RetryOperation = require('./RetryOperation');
 
 module.exports = {
   errors,
@@ -17,5 +18,6 @@ module.exports = {
   HttpClient,
   JWT,
   Repository,
-  EncryptionManager
+  EncryptionManager,
+  RetryOperation
 };

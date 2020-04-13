@@ -1,15 +1,18 @@
 'use strict';
 
 const _ = require('lodash');
-const DockerService = require('../../operators/docker-operator/DockerService');
-const DockerImageLoaderService = require('../../operators/docker-operator/DockerImageLoaderService');
+const DockerService = require('../../applications/operators/docker-operator/DockerService');
+const DockerImageLoaderService = require('../../applications/operators/docker-operator/DockerImageLoaderService');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
-const catalog = require('../../common/models').catalog;
+const { catalog } = require('@sf/models');
 const parseUrl = require('url').parse;
 const docker = require('../../data-access-layer/docker');
-const config = require('../../common/config');
-const errors = require('../../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
+const config = require('@sf/app-config');
+const {
+  errors: {
+    ServiceInstanceNotFound
+  }
+} = require('@sf/common-utils');
 
 describe('docker-operator', function () {
   const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
@@ -165,7 +168,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.create(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as no post provisioning is done
+            expect(res).to.eql(undefined); // as no post provisioning is done
             mocks.verify();
           });
       });
@@ -196,7 +199,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.update(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as ensurecontainerisrunning returns undefined if everything goes well
+            expect(res).to.eql(undefined); // as ensurecontainerisrunning returns undefined if everything goes well
             mocks.verify();
           });
       });
@@ -222,7 +225,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.update(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as ensurecontainerisrunning returns undefined if everything goes well
+            expect(res).to.eql(undefined); // as ensurecontainerisrunning returns undefined if everything goes well
             mocks.verify();
           });
       });
@@ -249,7 +252,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
+            expect(res).to.eql(undefined); // as deleteVolumes returns undefined if everything goes well
             mocks.verify();
           });
       });
@@ -282,7 +285,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
+            expect(res).to.eql(undefined); // as deleteVolumes returns undefined if everything goes well
             mocks.verify();
           });
       });
@@ -302,7 +305,7 @@ describe('docker-operator', function () {
         return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
-            expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
+            expect(res).to.eql(undefined); // as deleteVolumes returns undefined if everything goes well
             mocks.verify();
           });
       });

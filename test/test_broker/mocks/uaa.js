@@ -4,8 +4,8 @@ const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 const nock = require('nock');
 const parseUrl = require('url').parse;
-const config = require('../../../common/config');
-const catalog = require('../../../common/models').catalog;
+const config = require('@sf/app-config');
+const { catalog } = require('@sf/models');
 const tokenEndpointUrl = 'https://uaa.bosh-lite.com';
 const authorizationEndpointUrl = 'https://login.bosh-lite.com';
 const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI1MzQwMjMwMDc5OSwidXNlcl9pZCI6Im1lIiwic2NvcGUiOlsib3BlbmlkIiwiY2xvdWRfY29udHJvbGxlci53cml0ZSIsImNsb3VkX2NvbnRyb2xsZXJfc2VydmljZV9wZXJtaXNzaW9ucy5yZWFkIl19.ClDfNqT9T1_5LicTpqNrHJ9Fv-UwkLVZNWG71PjCAVQ';
@@ -60,10 +60,10 @@ function getAccessTokenWithAuthorizationCode(service_id) {
   const dashboard_client = catalog.getService(service_id).dashboard_client;
   const basicAuth = new Buffer(`${dashboard_client.id}:${dashboard_client.secret}`, 'utf8').toString('base64');
   return nock(tokenEndpointUrl, {
-      reqheaders: {
-        authorization: `Basic ${basicAuth}`
-      }
-    })
+    reqheaders: {
+      authorization: `Basic ${basicAuth}`
+    }
+  })
     .post('/oauth/token', {
       grant_type: 'authorization_code',
       code: authorizationCode,
@@ -78,10 +78,10 @@ function getAccessTokenWithAuthorizationCode(service_id) {
 
 function getUserInfo() {
   return nock(tokenEndpointUrl, {
-      reqheaders: {
-        authorization: `Bearer ${jwtToken}`
-      }
-    })
+    reqheaders: {
+      authorization: `Bearer ${jwtToken}`
+    }
+  })
     .get('/userinfo')
     .query({
       schema: 'openid'
@@ -136,7 +136,7 @@ function getAuthorizationCodeLoginHint(service_id, times) {
         client_id: dashboard_client.id,
         redirect_uri: redirect_uri,
         scope: 'cloud_controller_service_permissions.read openid',
-        login_hint: `{"origin":"uaa"}`
+        login_hint: '{"origin":"uaa"}'
       })
       .value()
     )
