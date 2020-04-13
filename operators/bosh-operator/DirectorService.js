@@ -953,8 +953,8 @@ class DirectorService extends BaseDirectorService {
   }
 
   configureAddOnJobs(serviceManifest, context) {
-    _.set(context, 'serviceId', this.service.id);
-    _.set(context, 'connectivityAllowedServicesList', ['6db542eb-8187-4afc-8a85-e08b4a3cc24e']);
+    const shouldEnableConnections = _.get(catalog.getService(this.service.id), 'enable_connections', false);
+    _.set(context, 'shouldEnableConnections', shouldEnableConnections);
     const addOns = new Addons(context).getAll();
     if (serviceManifest.addons) {
       serviceManifest.addons = serviceManifest.addons.concat.apply(serviceManifest.addons, addOns);

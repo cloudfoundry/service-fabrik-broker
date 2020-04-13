@@ -25,13 +25,9 @@ class Addons {
     }
   }
 
-  shouldEnableConnectivity() {
-    const connectivityAllowedServicesList = _.get(this.context, 'connectivityAllowedServicesList');
-    const serviceId = _.get(this.context, 'serviceId');
-    if(Array.isArray(connectivityAllowedServicesList) && connectivityAllowedServicesList.indexOf(serviceId) == -1) {
-      return false;
-    }
-    return _.get(this.context, 'parameters.prepare_migration', false) || _.get(this.context, 'parameters.bucardo', false);
+  shouldEnableConnections() {
+    const shouldEnableConnections = _.get(this.context, 'shouldEnableConnections', false);
+    return shouldEnableConnections && (_.get(this.context, 'parameters.prepare_migration', false) || _.get(this.context, 'parameters.bucardo', false));
   }
 
   getIpTablesManagerJob() {
@@ -47,7 +43,7 @@ class Addons {
         name: CONST.ADD_ON_JOBS.IP_TABLES_MANAGER,
         release: _.get(config, 'release_name', CONST.SERVICE_FABRIK_PREFIX),
         properties: {
-          enable_connection: this.shouldEnableConnectivity(),
+          enable_connection: this.shouldEnableConnections(),
           allow_ips_list: allowIpList.join(','),
           block_ips_list: blockIpList.join(',')
         }
