@@ -410,7 +410,7 @@ describe('fabrik', function () {
           .then(() => {
             throw new InternalServerError('CFPlatformManager must throw an error when input invalid config...');
           })
-          .catch(errors.UnprocessableEntity, () => {})
+          .catch(UnprocessableEntity, () => {})
           .then(() => basePlatformManager.isMultiAzDeploymentEnabled(options))
           .then(() => {
             throw new InternalServerError('BasePlatformManager must throw an error when input invalid config...');

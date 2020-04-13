@@ -10,7 +10,7 @@ const {
     InternalServerError
   }
 } = require('@sf/common-utils');
-const { apiServerClient } = require('@sf/eventmesh');
+const { ApiServerClient } = require('@sf/eventmesh');
 
 const CONSTANTS = {
   UNLOCK_RESOURCE_POLLER_INTERVAL: 200,
@@ -37,9 +37,10 @@ const CONSTANTS = {
 };
 const UnlockResourcePoller = proxyquire('../../data-access-layer/eventmesh/src/UnlockResourcePoller', {
   '@sf/common-utils': {
-    CONST: CONSTANTS
+    CONST: _.defaults({}, CONSTANTS, CONST)
   }
 });
+UnlockResourcePoller.init();
 
 describe('common', function () {
   describe('UnlockResourcePoller', function () {
@@ -59,7 +60,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
@@ -115,7 +116,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -165,7 +166,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -210,7 +211,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -265,7 +266,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -316,7 +317,7 @@ describe('common', function () {
           }
         });
       };
-      registerWatcherStub = sandbox.stub(apiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePollerNew.start();
       return Promise.delay(700)
         .then(() => {

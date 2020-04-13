@@ -7,11 +7,7 @@ const {
     InternalServerError,
     UnprocessableEntity
   },
-  commonFunctions: {
-    uuidV4,
-    unifyDiffResult,
-    getRandomInt
-  },
+  commonFunctions,
   Repository
 } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
@@ -108,7 +104,7 @@ describe('Jobs', function () {
       const plan = catalog.getPlan(plan_id);
       const forcedUpdatePlan = _.cloneDeep(plan);
       forcedUpdatePlan.service.force_update = true;
-      uuidv4Stub = sandbox.stub(uuidV4);
+      uuidv4Stub = sandbox.stub(commonFunctions, 'uuidV4');
       catalogStub = sandbox.stub(catalog, 'getPlan');
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       catalogStub.withArgs(plan_id_forced_update).returns(forcedUpdatePlan);
@@ -273,7 +269,7 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -319,7 +315,7 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -362,7 +358,7 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -403,7 +399,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -444,7 +440,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -490,7 +486,7 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -531,7 +527,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -572,7 +568,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -619,7 +615,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -664,7 +660,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -714,7 +710,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -876,8 +872,8 @@ describe('Jobs', function () {
   describe('#Random', function () {
     let randomIntStub, randomize, randomInt;
     before(function () {
-      randomInt = getRandomInt;
-      randomIntStub = sinon.stub(getRandomInt).callsFake((min, max) => (randomize ? randomInt(min, max) : 1));
+      randomInt = commonFunctions.getRandomInt;
+      randomIntStub = sinon.stub(commonFunctions, 'getRandomInt').callsFake((min, max) => (randomize ? randomInt(min, max) : 1));
     });
     after(function () {
       randomIntStub.restore();

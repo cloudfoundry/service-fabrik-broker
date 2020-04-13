@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const ActionManager = require('../../deployment_hooks/lib/actions/ActionManager');
+const { CONST } = require('@sf/common-utils');
+const ActionManager = require('../../applications/deployment_hooks/lib/actions/ActionManager');
 
 describe('action', function () {
   describe('ActionManager', function () {
@@ -49,10 +49,10 @@ describe('action', function () {
           }
         };
         let response = {};
-        return Promise.map(_.values(CONST.SERVICE_LIFE_CYCLE), (phase) => {
-            return ActionManager.executeActions(phase, actions, context)
-              .then(res => response[phase] = res);
-          })
+        return Promise.map(_.values(CONST.SERVICE_LIFE_CYCLE), phase => {
+          return ActionManager.executeActions(phase, actions, context)
+            .then(res => response[phase] = res);
+        })
           .then(() => {
             expect(response).to.eql(expectedResponse);
           });

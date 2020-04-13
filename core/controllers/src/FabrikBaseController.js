@@ -9,7 +9,7 @@ const {
     ContinueWithNext,
     BadRequest
   },
-  commonFunctions: { uuidV4 },
+  commonFunctions,
   serviceFlowMapper
 } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
@@ -33,7 +33,7 @@ class FabrikBaseController extends BaseController {
         if (operationType === CONST.OPERATION_TYPE.UPDATE) {
           serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
           if (serviceFlowName !== undefined) {
-            return uuidV4()
+            return commonFunctions.uuidV4()
               .tap(id => serviceFlowId = id);
           }
         }

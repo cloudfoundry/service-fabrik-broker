@@ -1,7 +1,7 @@
 'use strict';
 
 const nock = require('nock');
-const logger = require('../../../deployment_hooks/lib/logger');
+const logger = require('@sf/logger');
 
 exports = module.exports = init;
 exports.verify = verify;

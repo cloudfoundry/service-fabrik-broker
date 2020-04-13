@@ -14,7 +14,7 @@ const {
     BadRequest
   }
 } = require('@sf/common-utils');
-const { backupStore } = require('@sf/iaas');
+const backupStore = require('@sf/iaas').backupStoreForOob;
 
 const { director } = require('@sf/bosh');
 const ScheduleManager = require('../ScheduleManager');

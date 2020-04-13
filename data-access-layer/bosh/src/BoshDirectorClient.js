@@ -716,18 +716,20 @@ class BoshDirectorClient extends HttpClient {
                 return resolve(task);
               case 'error':
               case 'cancelled':
-              case 'timeout':
+              case 'timeout': {
                 clearInterval(timer);
                 const errMsg = `Task ${task.deployment} failed at ${timestamp} with error "${task.result}"`;
                 logger.error(errMsg);
                 return reject(new Error(errMsg), task);
-              default:
+              }
+              default: {
                 const time = Date.now() - startTime;
                 if (time >= (timeout || Infinity)) {
                   logger.error(`deployment ${task.deployment} failed! Failed to provision MongoDB!`);
                   return reject(Timeout.timedOut(time), task);
                 }
                 logger.debug(`Task ${task.deployment} - is still - ${task.state}. Task state polling will continue...`);
+              }
             }
           })
           .catch(err => {

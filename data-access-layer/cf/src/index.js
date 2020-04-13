@@ -7,7 +7,7 @@ const TokenInfo = require('./TokenInfo');
 const ResourceStream = require('./ResourceStream');
 const ServiceFabrikClient = require('./ServiceFabrikClient');
 const uaa = new UaaClient();
-const tokenIssuer = new TokenIssuer(exports.uaa);
+const tokenIssuer = new TokenIssuer(uaa);
 const serviceFabrikClient = new ServiceFabrikClient(tokenIssuer);
 const cloudController = new CloudControllerClient(tokenIssuer);
 

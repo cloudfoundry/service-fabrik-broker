@@ -44,8 +44,8 @@ my*
 #ingoring files created during unit tests
 broker/lib/fabrik/actions/js/ReserveIps.js
 broker/lib/fabrik/actions/sh/
-deployment_hooks/lib/actions/js/ReserveIps.js
-deployment_hooks/lib/actions/sh/
+applications/deployment_hooks/lib/actions/js/ReserveIps.js
+applications/deployment_hooks/lib/actions/sh/
 
 interoperator/vendor
 webhooks/vendor

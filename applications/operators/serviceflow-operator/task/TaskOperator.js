@@ -10,7 +10,7 @@ const {
     isServiceFabrikOperationFinished
   }
 } = require('@sf/common-utils');
-const apiServerClient = require('@sf/eventmesh');
+const { apiServerClient } = require('@sf/eventmesh');
 const BaseOperator = require('../../../operators/BaseOperator');
 const TaskFabrik = require('./TaskFabrik');
 

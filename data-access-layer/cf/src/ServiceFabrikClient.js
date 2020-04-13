@@ -1,6 +1,8 @@
 const _ = require('lodash');
 const config = require('@sf/app-config');
-const { HttpClient, errors: InternalServerError, CONST } = require('@sf/common-utils');
+const { HttpClient, errors: {
+  InternalServerError
+}, CONST } = require('@sf/common-utils');
 
 class ServiceFabrikClient extends HttpClient {
   constructor(tokenIssuer) {

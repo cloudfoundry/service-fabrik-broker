@@ -4,7 +4,9 @@ coverage
 logs
 node_modules
 store
+test
 jsdoc
 docs
 tmp
 webhooks
+**/public/*

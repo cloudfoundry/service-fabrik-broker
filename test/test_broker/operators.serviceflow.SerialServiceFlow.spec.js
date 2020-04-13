@@ -9,9 +9,7 @@ const {
     Conflict,
     BadRequest
   },
-  commonFunctions: {
-    uuidV4
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const { apiServerClient } = require('@sf/eventmesh');
 
@@ -89,7 +87,7 @@ describe('operators', function () {
           Promise.resolve(true);
         });
         registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
-        SerialServiceFlowOperator = require('../../operators/serviceflow-operator/SerialServiceFlowOperator');
+        SerialServiceFlowOperator = require('../../applications/operators/serviceflow-operator/SerialServiceFlowOperator');
         updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => {
           return Promise.try(() => {
             if (throwExceptionOnUpdate) {
@@ -104,7 +102,7 @@ describe('operators', function () {
         });
         createResourceStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(true));
         clock = sinon.useFakeTimers(new Date().getTime());
-        utilsStub = sinon.stub(uuidV4).callsFake(() => Promise.resolve(task_id));
+        utilsStub = sinon.stub(commonFunctions, 'uuidV4').callsFake(() => Promise.resolve(task_id));
       });
       afterEach(function () {
         registerWatcherStub.resetHistory();

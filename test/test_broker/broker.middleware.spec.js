@@ -16,9 +16,7 @@ const {
     BadRequest,
     Forbidden
   },
-  commonFunctions: {
-    isServiceFabrikOperation
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const ServiceFabrikApiController = require('../../applications/extensions/src/api-controllers/ServiceFabrikApiController');
@@ -49,22 +47,20 @@ describe('#timeout', function () {
     getInfoStub = sinon.stub(ServiceFabrikApiController.prototype, 'getInfo');
     config.http_timeout = 10;
     delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../api-controllers/routes')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../api-controllers')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
     app = require('./support/apps').external;
   });
   after(function () {
     config.http_timeout = original_http_timeout;
     getInfoStub.restore();
     delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../api-controllers/routes')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../api-controllers')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
     app = require('./support/apps').external;
   });
   it('should return 503 after timeout occurs', function () {
@@ -199,7 +195,7 @@ describe('#checkQuota', () => {
     }
   };
   beforeEach(function () {
-    isServiceFabrikOperationStub = sinon.stub(isServiceFabrikOperation);
+    isServiceFabrikOperationStub = sinon.stub(commonFunctions, 'isServiceFabrikOperation');
     isServiceFabrikOperationStub.withArgs(operationsBody).returns(true);
     checkQuotaStub = sinon.stub(quotaManager, 'checkQuota');
     checkQuotaStub.withArgs(organization_guid, notEntitledPlanId, undefined, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));

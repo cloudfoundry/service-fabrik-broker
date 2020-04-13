@@ -5,9 +5,7 @@ const ServiceInstanceBackupTask = require('../../applications/operators/servicef
 const { apiServerClient } = require('@sf/eventmesh');
 const {
   CONST,
-  commonFunctions: {
-    uuidV4
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 
 describe('operators', function () {
@@ -32,7 +30,7 @@ describe('operators', function () {
         };
         before(function () {
           apiServerClientUpdateStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(taskDetails));
-          utilsStub = sinon.stub(uuidV4).callsFake(() => Promise.resolve(taskId));
+          utilsStub = sinon.stub(commonFunctions, 'uuidV4').callsFake(() => Promise.resolve(taskId));
         });
         after(function () {
           apiServerClientUpdateStub.restore();

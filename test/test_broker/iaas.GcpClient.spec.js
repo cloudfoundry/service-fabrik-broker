@@ -10,9 +10,7 @@ const {
     Forbidden,
     UnprocessableEntity
   },
-  commonFunctions: {
-    streamToPromise
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const { GcpClient } = require('@sf/iaas');
 
@@ -382,7 +380,7 @@ describe('iaas', function () {
         sandbox = sinon.createSandbox();
         client = new GcpClient(settings);
         sandbox.stub(GcpStorage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
-        sandbox.stub(streamToPromise).callsFake(utilsStreamToPromiseStub);
+        sandbox.stub(commonFunctions, 'streamToPromise').callsFake(utilsStreamToPromiseStub);
       });
       after(function () {
         sandbox.restore();

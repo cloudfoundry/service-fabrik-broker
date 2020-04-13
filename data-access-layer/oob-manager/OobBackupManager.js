@@ -11,10 +11,7 @@ const {
     UnprocessableEntity,
     BadRequest
   },
-  commonFunctions: {
-    randomBytes,
-    uuidV4
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const { director } = require('@sf/bosh');
 const Agent = require('../service-agent');
@@ -62,12 +59,12 @@ class OobBackupManager {
     };
 
     function createSecret() {
-      return randomBytes(12)
+      return commonFunctions.randomBytes(12)
         .then(buffer => buffer.toString('base64'));
     }
     return Promise
       .all([
-        uuidV4(),
+        commonFunctions.uuidV4(),
         createSecret(),
         this.boshDirector.getDeploymentIps(deploymentName),
         this.boshDirector.getNormalizedDeploymentVms(deploymentName),

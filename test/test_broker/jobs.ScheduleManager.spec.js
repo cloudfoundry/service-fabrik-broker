@@ -10,9 +10,7 @@ const {
     BadRequest,
     NotFound
   },
-  commonFunctions: {
-    getRandomInt
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const Repo = require('@sf/common-utils').Repository;
 
@@ -232,7 +230,7 @@ describe('Jobs', function () {
     let clock, randomIntStub, repoSinonStub;
     before(function () {
       clock = sinon.useFakeTimers();
-      randomIntStub = sinon.stub(getRandomInt).callsFake(() => 0);
+      randomIntStub = sinon.stub(commonFunctions, 'getRandomInt').callsFake(() => 0);
       // randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
       repoSinonStub = sinon.stub(Repo, 'search').callsFake(() => {
         return Promise.try(() => {

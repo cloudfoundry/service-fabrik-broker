@@ -4,9 +4,7 @@ const _ = require('lodash');
 const logger = require('@sf/logger');
 const {
   CONST,
-  commonFunctions: {
-    uuidV4
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
 const { apiServerClient } = require('@sf/eventmesh');
@@ -15,7 +13,7 @@ const Task = require('./Task');
 class ServiceInstanceBackupTask extends Task {
   static run(taskId, taskDetails) {
     logger.info(`Running ServiceInstanceUpdateTask Task ${taskId} - with Data - ${JSON.stringify((taskDetails))}`);
-    return uuidV4()
+    return commonFunctions.uuidV4()
       .then(backupGuid => {
         const planId = taskDetails.operation_params.plan_id;
         const plan = catalog.getPlan(planId);

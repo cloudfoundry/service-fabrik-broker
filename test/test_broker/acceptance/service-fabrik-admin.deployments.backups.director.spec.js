@@ -11,12 +11,12 @@ const {
 const filename = backupStoreForOob.filename;
 const {
   CONST,
-  commonFunctions: {
-    encodeBase64,
-    decodeBase64,
-    uuidV4
-  }
+  commonFunctions
 } = require('@sf/common-utils');
+const {
+  encodeBase64,
+  decodeBase64
+} = commonFunctions;
 const ScheduleManager = require('@sf/jobs');
 
 describe('service-fabrik-admin', function () {
@@ -72,7 +72,7 @@ describe('service-fabrik-admin', function () {
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');
-      uuidv4Stub = sinon.stub(uuidV4);
+      uuidv4Stub = sinon.stub(commonFunctions, 'uuidV4');
       timestampStub.withArgs().returns(started_at);
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       scheduleStub = sinon.stub(ScheduleManager, 'schedule').callsFake(() => Promise.resolve({}));

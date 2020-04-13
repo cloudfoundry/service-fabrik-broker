@@ -3,9 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
-const NotImplemented = require('./errors').NotImplemented;
-const CONST = require('./constants');
-const config = require('./config');
+const {
+  CONST,
+  errors: {
+    NotImplemented
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 
 function loadActionScripts(actions) {
   function ensureDirectoryExist(filePath) {

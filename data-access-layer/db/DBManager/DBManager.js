@@ -15,12 +15,12 @@ const {
     BadRequest,
     PreconditionFailed
   },
-  commonFunctions: {
-    retry,
-    decodeBase64,
-    encodeBase64
-  }
+  commonFunctions
 } = require('@sf/common-utils');
+const {
+  decodeBase64,
+  encodeBase64
+} = commonFunctions;
 const { apiServerClient } = require('@sf/eventmesh');
 const { BasePlatformManager } = require('@sf/platforms');
 const DirectorService = require('../../../applications/operators/bosh-operator/DirectorService');
@@ -117,7 +117,7 @@ class DBManager {
       if (this.bindInfo) {
         return this.bindInfo;
       }
-      return retry(tries => {
+      return commonFunctions.retry(tries => {
         logger.debug(`+-> Attempt ${tries + 1} to get db binding from apiserver`);
         return apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
@@ -139,7 +139,7 @@ class DBManager {
     logger.info('Connecting to db ...');
     this.dbState = CONST.DB.STATE.CONNECTING;
     this.dbUrl = config.url;
-    return retry(() => dbConnectionManager
+    return commonFunctions.retry(() => dbConnectionManager
       .startUp(config), {
       maxAttempts: 5,
       minDelay: 5000
@@ -272,7 +272,7 @@ class DBManager {
             this.bindInfo = {
               credentials: credentials
             };
-            return retry(() => this.storeBindPropertyOnApiServer({
+            return commonFunctions.retry(() => this.storeBindPropertyOnApiServer({
               id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
               parameters: config.mongodb.provision.bind_params || {},
               credentials: credentials

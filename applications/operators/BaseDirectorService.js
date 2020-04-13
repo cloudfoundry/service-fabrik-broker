@@ -97,7 +97,7 @@ class BaseDirectorService extends BaseService {
   }
 
   reScheduleBackup(opts) {
-    const cf = require('../data-access-layer/cf');
+    const { serviceFabrikClient } = require('@sf/cf');
     const options = {
       instance_id: opts.instance_id,
       repeatInterval: 'daily',
@@ -111,7 +111,7 @@ class BaseDirectorService extends BaseService {
     options.repeatInterval = getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
-    return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+    return retry(() => serviceFabrikClient.scheduleBackup(options), {
       maxAttempts: 3,
       minDelay: 500
     });

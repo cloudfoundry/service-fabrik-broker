@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const BaseAction = require('../../deployment_hooks/lib/actions/js/BaseAction');
+const { CONST } = require('@sf/common-utils');
+const BaseAction = require('../../applications/deployment_hooks/lib/actions/js/BaseAction');
 
 describe('action', function () {
   describe('BaseAction', function () {
@@ -15,10 +15,10 @@ describe('action', function () {
         PreUnbind: 0,
         PreUpdate: 0
       };
-      return Promise.map(_.values(CONST.SERVICE_LIFE_CYCLE), (phase) => {
-          return BaseAction[`execute${phase}`]()
-            .then(res => response[phase] = res);
-        })
+      return Promise.map(_.values(CONST.SERVICE_LIFE_CYCLE), phase => {
+        return BaseAction[`execute${phase}`]()
+          .then(res => response[phase] = res);
+      })
         .then(() => {
           expect(response).to.eql(expectedResponse);
         });

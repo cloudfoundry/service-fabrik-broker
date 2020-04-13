@@ -7,11 +7,7 @@ var moment = require('moment-timezone'); // eslint-disable-line no-var
 
 const config = require('@sf/app-config');
 const {
-  commonFunctions: {
-    getRandomInt,
-    isCronSafe,
-    getRandomCronForEveryDayAtXHoursInterval
-  },
+  commonFunctions,
   CONST,
   errors:{
     BadRequest,
@@ -19,6 +15,10 @@ const {
   },
   Repository
 } = require('@sf/common-utils');
+const {
+  isCronSafe,
+  getRandomCronForEveryDayAtXHoursInterval
+} = commonFunctions;
 const logger = require('@sf/logger');
 
 const Scheduler = require('./Scheduler');
@@ -77,8 +77,8 @@ class ScheduleManager {
   }
 
   static getRandomDailySchedule() {
-    const hr = getRandomInt(0, 23);
-    const min = getRandomInt(0, 59);
+    const hr = commonFunctions.getRandomInt(0, 23);
+    const min = commonFunctions.getRandomInt(0, 59);
     return `${min} ${hr} * * *`;
   }
 

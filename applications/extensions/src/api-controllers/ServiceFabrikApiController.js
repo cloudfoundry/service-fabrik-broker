@@ -4,13 +4,7 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const {
-  commonFunctions:{
-    verifyFeatureSupport,
-    uuidV4,
-    isRestorePossible,
-    getPlatformFromContext,
-    unifyDiffResult
-  },
+  commonFunctions,
   errors: {
     Unauthorized,
     NotFound,
@@ -24,6 +18,12 @@ const {
   CONST,
   JWT
 } = require('@sf/common-utils');
+const {
+  verifyFeatureSupport,
+  isRestorePossible,
+  getPlatformFromContext,
+  unifyDiffResult
+} = commonFunctions;
 const logger = require('@sf/logger');
 
 const {
@@ -381,7 +381,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => this.setPlan(req))
       .then(() => verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
       .then(() => this.checkQuota(req, trigger))
-      .then(() => uuidV4())
+      .then(() => commonFunctions.uuidV4())
       .then(guid => {
         _.set(req.body, 'trigger', trigger);
         backupGuid = guid;
@@ -569,7 +569,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return Promise
       .try(() => this.setPlan(req))
       .then(() => verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
-      .then(() => uuidV4())
+      .then(() => commonFunctions.uuidV4())
       .then(guid => {
         serviceId = req.plan.service.id;
         planId = req.plan.id;

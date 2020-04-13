@@ -101,7 +101,7 @@ class UnlockResourcePoller {
     _.unset(UnlockResourcePoller.pollers, resourceId);
   }
   static init() {
-    this.pollers = {};
+    UnlockResourcePoller.pollers = {};
     pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
       logger.debug('-> Received event ->', eventName);
       if (eventInfo.type === 'internal' && _.get(config, `apiserver.crds['${CONST.APISERVER.RESOURCE_GROUPS.LOCK}_${CONST.APISERVER.API_VERSION}_${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}.yaml']`)) {

@@ -11,10 +11,7 @@ const {
 const filename = backupStore.filename;
 const {
   CONST,
-  commonFunctions: {
-    uuidV4,
-    retry
-  },
+  commonFunctions,
   errors: {
     NotFound
   }
@@ -70,7 +67,7 @@ describe('service-fabrik-admin', function () {
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');
-      uuidv4Stub = sinon.stub(uuidV4);
+      uuidv4Stub = sinon.stub(commonFunctions, 'uuidV4');
       timestampStub.withArgs().returns(started_at);
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       return mocks.setup([
@@ -96,7 +93,7 @@ describe('service-fabrik-admin', function () {
       let getResourceStub, deleteResourceStub, createResourceStub;
       before(function() {
         sandbox = sinon.createSandbox();
-        retryStub = sandbox.stub(retry).callsFake((callback, options) => callback());
+        retryStub = sandbox.stub(commonFunctions, 'retry').callsFake((callback, options) => callback());
       });
 
       beforeEach(function () {

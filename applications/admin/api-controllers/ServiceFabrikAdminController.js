@@ -45,6 +45,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     super();
     this.cloudController = cloudController;
     this.backupStore = backupStore;
+    this.director = bosh.director;
   }
 
   getInstanceId(deploymentName) {

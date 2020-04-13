@@ -144,7 +144,7 @@ describe('service-fabrik-admin', function () {
     let getConfigMapStub;
 
     before(function () {
-      getConfigMapStub = sinon.stub(APIServerClient.prototype, 'getConfigMap');
+      getConfigMapStub = sinon.stub(ApiServerClient.prototype, 'getConfigMap');
     });
 
     after(function () {
@@ -171,7 +171,7 @@ describe('service-fabrik-admin', function () {
     let createUpdateConfigMapStub;
 
     before(function () {
-      createUpdateConfigMapStub = sinon.stub(APIServerClient.prototype, 'createUpdateConfigMapResource');
+      createUpdateConfigMapStub = sinon.stub(ApiServerClient.prototype, 'createUpdateConfigMapResource');
     });
 
     after(function () {

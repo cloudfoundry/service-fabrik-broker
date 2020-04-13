@@ -13,9 +13,7 @@ const {
     Forbidden,
     UnprocessableEntity
   },
-  commonFunctions: {
-    streamToPromise
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 
 const BaseCloudClient = require('./BaseCloudClient');
@@ -167,7 +165,7 @@ class GcpClient extends BaseCloudClient {
   }
 
   download(options) {
-    return streamToPromise(this.storageClient
+    return commonFunctions.streamToPromise(this.storageClient
       .bucket(options.container)
       .file(options.remote)
       .createReadStream())

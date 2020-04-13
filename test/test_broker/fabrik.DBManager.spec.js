@@ -12,10 +12,7 @@ const {
     PreconditionFailed,
     BadRequest
   },
-  commonFunctions: {
-    encodeBase64,
-    retry
-  }
+  commonFunctions
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
@@ -57,7 +54,7 @@ let eventMeshStub = {
         if (bindPropertyFoundOnApiServer) {
           return {
             status: {
-              response: encodeBase64({
+              response: commonFunctions.encodeBase64({
                 credentials: {
                   uri: mongoDBUrl
                 }
@@ -227,7 +224,7 @@ describe('fabrik', function () {
     before(function () {
       sandbox = sinon.createSandbox();
       loggerWarnSpy = sinon.spy(logger, 'warn');
-      retryStub = sandbox.stub(retry).callsFake((callback, options) => callback());
+      retryStub = sandbox.stub(commonFunctions, 'retry').callsFake((callback, options) => callback());
       dbInitializeSpy = sinon.spy(DBManager.prototype, 'initialize');
       dbInitializeForCreateSpy = sinon.spy(DBManagerCreateWithDelayedReconnectRetry.prototype, 'initialize');
       dbInitializeByUrlSpy = sinon.spy(DBManagerByUrl.prototype, 'initialize');

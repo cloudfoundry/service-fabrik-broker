@@ -148,7 +148,7 @@ exports.enableAbsMatchingRouteLookup = function (express) {
 
 exports.isFeatureEnabled = function (featureName) {
   return function (req, res, next) {
-    if (isFeatureEnabled(featureName)) {
+    if (!isFeatureEnabled(featureName)) {
       throw new ServiceUnavailable(`${featureName} feature not enabled`);
     }
     next();

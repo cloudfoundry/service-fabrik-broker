@@ -49,7 +49,7 @@ describe('operators', function () {
             return Promise.resolve(true);
           });
           registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
-          TaskOperator = require('../../operators/serviceflow-operator/task/TaskOperator');
+          TaskOperator = require('../../applications/operators/serviceflow-operator/task/TaskOperator');
           updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve({
             body: changeObject.object
           }));

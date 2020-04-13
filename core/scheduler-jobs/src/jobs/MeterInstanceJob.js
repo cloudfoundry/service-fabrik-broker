@@ -13,7 +13,7 @@ const {
   }
 } = require('@sf/common-utils');
 /* jshint ignore:start */
-const maas = require('@sf/metering').client;
+const maas = require('@sf/metering');
 /* jshint ignore:end */
 const { EventLogInterceptor } = require('@sf/event-logger');
 const BaseJob = require('./BaseJob');

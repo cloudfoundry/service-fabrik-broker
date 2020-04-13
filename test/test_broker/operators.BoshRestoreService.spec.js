@@ -8,7 +8,7 @@ const {
   cloudProvider,
   backupStore
 } = require('@sf/iaas');
-const { director } = require('@sf/iaas');
+const { director } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {

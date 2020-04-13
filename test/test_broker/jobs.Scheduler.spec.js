@@ -208,7 +208,7 @@ const proxyLibs = {
     }
   },
   'agenda': Agenda,
-  '../common/config': {
+  '@sf/app-config': {
     scheduler: schedulerConfig,
     mongodb: {
       backup: {
@@ -219,7 +219,7 @@ const proxyLibs = {
 };
 
 const cloneProxyLibs = _.cloneDeep(proxyLibs);
-cloneProxyLibs['../common/config'].scheduler = schedulerConfig;
+cloneProxyLibs['@sf/app-config'].scheduler = schedulerConfig;
 const SchedulerPubSub = proxyquire('../../core/scheduler-jobs/src/Scheduler', cloneProxyLibs);
 const Scheduler = proxyquire('../../core/scheduler-jobs/src/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 
