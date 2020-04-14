@@ -71,16 +71,12 @@ spec:
           protocol: TCP
         env:
         - name: NODE_ENV
-          value: {{ .Values.broker.node_env }}
-        - name: BROKER_USERNAME
-          value: {{ .Values.broker.username }}
-        - name: BROKER_PASSWORD
-          value: {{ .Values.broker.password }}
+          value: kubernetes
         - name: SETTINGS_PATH
-          value: {{ .Values.broker.settings_mount_path }}/{{ .Values.broker.settings_filename }}
+          value: /opt/sf-config/settings.yml
         volumeMounts:
         - name: settings
-          mountPath: {{.Values.broker.settings_mount_path }}
+          mountPath: /opt/sf-config
         livenessProbe:
           failureThreshold: 3
           httpGet:
