@@ -13,9 +13,12 @@ broker:
   port: 9293
   username: broker
   password: secret
-  node_env: kubernetes
-  settings_filename: settings.yml
-  settings_mount_path: /opt/sf-config
+  quota:
+    enabled: false
+    oauthDomain: https://myauth-domain.com
+    serviceDomain: https://my-tenant-onboarding.com
+    username: quota_user
+    password: quota_password
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
     tag: 0.5.1
