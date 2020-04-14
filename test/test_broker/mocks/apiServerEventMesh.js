@@ -22,6 +22,7 @@ exports.nockCreateNamespace = nockCreateNamespace;
 exports.nockGetSecret = nockGetSecret;
 exports.nockDeleteNamespace = nockDeleteNamespace;
 exports.nockGetResourcesAcrossAllNamespaces = nockGetResourcesAcrossAllNamespaces;
+exports.nockRegisterWatcher = nockRegisterWatcher;
 
 const expectedGetConfigMapResponseEnabled = {
   apiVersion: 'v1',
@@ -54,6 +55,14 @@ const expectedGetConfigMapResponseDisabled = {
     uid: '4e47d831-f881-11e8-9055-123c04a61866'
   }
 };
+
+function nockRegisterWatcher(resourceGroup, resourceType, query, times, response){
+  nock(apiServerHost)
+    .get(`/apis/${resourceGroup}/v1alpha1/watch/${resourceType}`)
+    .query(query)
+    .times(times || 1)
+    .reply(200, response);
+}
 
 function nockCreateCrd(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
