@@ -40,7 +40,8 @@ describe('bosh', () => {
               release: CONST.SERVICE_FABRIK_PREFIX,
               properties: {
                 allow_ips_list: '127.0.0.2,127.1.0.2,127.2.0.2',
-                block_ips_list: '127.0.0.1/26,127.1.0.1/26,127.2.0.1/26'
+                block_ips_list: '127.0.0.1/26,127.1.0.1/26,127.2.0.1/26',
+                enable_connection: false
               }
             }]
           }];
