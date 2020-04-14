@@ -51,6 +51,11 @@ exports.getTimeAgo = getTimeAgo;
 exports.demux = demux;
 exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
 exports.getCronAfterXMinuteFromNow = getCronAfterXMinuteFromNow;
+exports.isBrokerBoshDeployment = isBrokerBoshDeployment;
+
+function isBrokerBoshDeployment() {
+  return !process.env.POD_NAMESPACE;
+}
 
 function parseToken(token) {
   return _

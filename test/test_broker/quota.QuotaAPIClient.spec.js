@@ -20,6 +20,7 @@ describe('quota', function () {
   describe('QuotaAPIClient', function () {
     /* jshint expr:true */
     const org = 'org';
+    const subaccount = 'subaccount';
     const service = 'service';
     const plan = 'plan';
     const bearer = 'bearer';
@@ -59,9 +60,18 @@ describe('quota', function () {
     });
 
     describe('#getQuota', function () {
-      const [options, statusCode] = buildExpectedRequestArgs('GET', `/api/v2.0/orgs/${org}/services/${service}/plan/${plan}`);
-      it('should return integer with Status 200', () => {
-        return quotaAPIClient.getQuota(org, service, plan)
+      it('should return integer with Status 200 for org quota', () => {
+        const [options, statusCode] = buildExpectedRequestArgs('GET', `/api/v2.0/orgs/${org}/services/${service}/plan/${plan}`);
+        return quotaAPIClient.getQuota(org, service, plan, false)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.equal(JSON.parse(body).quota);
+          });
+      });
+      it('should return integer with Status 200 for subaccount quota', () => {
+        const [options, statusCode] = buildExpectedRequestArgs('GET', `/api/v2.0/subaccounts/${subaccount}/services/${service}/plan/${plan}`);
+        return quotaAPIClient.getQuota(subaccount, service, plan, true)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);

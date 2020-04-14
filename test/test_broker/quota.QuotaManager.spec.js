@@ -2,14 +2,16 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const { quotaManager } = require('@sf/quota');
+const {CONST} = require('@sf/common-utils');
+const { getQuotaManagerInstance } = require('@sf/quota');
+const cfquotaManager = getQuotaManagerInstance(CONST.PLATFORM.CF);
 const proxyquire = require('proxyquire');
 const { catalog } = require('@sf/models');
 const CloudControllerClient = require('../../data-access-layer/cf/src/CloudControllerClient');
 
 
 describe('quota', () => {
-  describe('QuotaManager', () => {
+  describe('CFQuotaManager', () => {
     describe('getPlanGuidFromPlanID', () => {
       let sandbox, getServicePlansStub;
       const planId = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -47,7 +49,7 @@ describe('quota', () => {
       });
 
       it('returns a valid service plan guid when provided a unique plan id', () => {
-        return quotaManager.getPlanGuidFromPlanID(planId)
+        return cfquotaManager.getPlanGuidFromPlanID(planId)
           .then(value => {
             expect(value).to.eql('c77ff479-ea63-42ea-b6d1-d824c4012f1c');
           });
@@ -115,7 +117,7 @@ describe('quota', () => {
       });
 
       it('returns a list of valid service plan guids from a list of plan ids', () => {
-        return quotaManager.getAllPlanGuidsFromPlanIDs(planIds)
+        return cfquotaManager.getAllPlanGuidsFromPlanIDs(planIds)
           .then(value => {
             expect(value).to.eql(['c77ff479-ea63-42ea-b6d1-d824c4012f1c', 'cb862bfe-3a50-4d12-a8e2-156d6e11bed4']);
           });
@@ -123,7 +125,7 @@ describe('quota', () => {
     });
 
     describe('checkQuota', () => {
-      const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+      const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
         '@sf/app-config': {
           quota: {
             enabled: true,
@@ -321,7 +323,7 @@ describe('quota', () => {
         getServiceInstancesStub = sandbox.stub(CloudControllerClient.prototype, 'getServiceInstancesInOrgWithPlansGuids');
         getServiceInstancesStub.withArgs(orgId, [smallPlanGuid]).returns(Promise.resolve(serviceInstances));
         isOrgWhitelistedStub = sandbox.stub(QuotaManager.prototype, 'isOrgWhitelisted');
-        isOrgWhitelistedStub.withArgs(orgId).returns(Promise.resolve(false));
+        isOrgWhitelistedStub.withArgs(orgId).returns(false);
       });
       afterEach(function () {
         getServicePlansStub.resetHistory();
@@ -420,7 +422,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is not whitelisted', () => {
-        const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+        const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
           '@sf/app-config': {
             quota: {
               enabled: true,
@@ -437,7 +439,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is whitelisted', () => {
-        const QuotaManager = proxyquire('../../data-access-layer/quota/src/QuotaManager', {
+        const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
           '@sf/app-config': {
             quota: {
               enabled: true,
@@ -465,17 +467,13 @@ describe('quota', () => {
       const serviceName = 'blueprint';
 
       it('returns only v1.0-small plan id when v1.0-small plan name is passed, xsmall is excluded', () => {
-        return quotaManager.getAllPlanIdsWithSameSKU(v1smallPlanName, serviceName, catalog)
-          .then(value => {
-            expect(value).to.eql([v1smallPlanId]);
-          });
+        const value =  cfquotaManager.getAllPlanIdsWithSameSKU(v1smallPlanName, serviceName, catalog);
+        expect(value).to.eql([v1smallPlanId]);
       });
 
       it('returns only v1.0-large plan id when v1.0-large plan name is passed, dev-large is excluded', () => {
-        return quotaManager.getAllPlanIdsWithSameSKU(v1largePlanName, serviceName, catalog)
-          .then(value => {
-            expect(value).to.eql([v1largePlanId]);
-          });
+        const value = cfquotaManager.getAllPlanIdsWithSameSKU(v1largePlanName, serviceName, catalog);
+        expect(value).to.eql([v1largePlanId]);
       });
 
       it('returns v1.0-small and v2.0-small plan id when v1.0-small plan name is passed, xsmall is excluded', () => {
@@ -486,21 +484,18 @@ describe('quota', () => {
         const extendedCatalog = _.cloneDeep(catalog);
         const bpService = _.find(extendedCatalog.services, ['name', serviceName]);
         bpService.plans.push(v2smallPlan);
-
-        return quotaManager.getAllPlanIdsWithSameSKU(v1smallPlanName, serviceName, extendedCatalog)
-          .then(value => {
-            expect(value).to.eql([v1smallPlanId, v2smallPlanId]);
-          });
+        const value = cfquotaManager.getAllPlanIdsWithSameSKU(v1smallPlanName, serviceName, extendedCatalog)
+        expect(value).to.eql([v1smallPlanId, v2smallPlanId]);
       });
 
     });
 
     describe('getSkuNameForPlan', function () {
       it('should return sku names for plan', function () {
-        expect(quotaManager.getSkuNameForPlan('v1.0-xsmall')).to.eql('-xsmall');
-        expect(quotaManager.getSkuNameForPlan('v1.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
-        expect(quotaManager.getSkuNameForPlan('v2.0-xsmall')).to.eql('-xsmall');
-        expect(quotaManager.getSkuNameForPlan('v2.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
+        expect(cfquotaManager.getSkuNameForPlan('v1.0-xsmall')).to.eql('-xsmall');
+        expect(cfquotaManager.getSkuNameForPlan('v1.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
+        expect(cfquotaManager.getSkuNameForPlan('v2.0-xsmall')).to.eql('-xsmall');
+        expect(cfquotaManager.getSkuNameForPlan('v2.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
       });
     });
 
@@ -510,22 +505,22 @@ describe('quota', () => {
       const plan_id_major_version_update = 'gd158c9a-7934-401e-94ab-057082a5073e'; // name: 'v2.0-xsmall'
       const plan_id_update = 'bc158c9a-7934-401e-94ab-057082a5073e'; // name: 'v1.0-small'
       it('previous_plan_id not passed, should return true', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, undefined)).to.be.true;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(plan_id_update, undefined)).to.be.true;
       });
       it('plan_id not passed, should return true', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(undefined, plan_id)).to.be.true;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(undefined, plan_id)).to.be.true;
       });
       it('previous_plan_id sku and plan_id sku are same, should return true', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_major_version_update, plan_id)).to.be.true;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(plan_id_major_version_update, plan_id)).to.be.true;
       });
       it('previous_plan_id and plan_id are same, should return true', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id, plan_id)).to.be.true;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(plan_id, plan_id)).to.be.true;
       });
       it('previous_plan_id and plan_id are not same, should return false', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
       });
       it('previous_plan_id sku and plan_id sku are not same should return false', function () {
-        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
+        expect(cfquotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
       });
     });
   });

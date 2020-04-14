@@ -14,13 +14,14 @@ class QuotaAPIClient extends HttpClient {
     this.tokenIssuer = tokenIssuer;
   }
 
-  getQuota(org, service, plan) {
+  getQuota(orgOrSubaccountId, service, plan, isSubaccount) {
+    const requestUrl = `/api/v2.0/${isSubaccount ? 'subaccounts' : 'orgs'}/${orgOrSubaccountId}/services/${service}/plan/${plan}`;
     return Promise
       .try(() => this.tokenIssuer.getAccessToken())
       .then(accessToken => this
         .request({
           method: 'GET',
-          url: `/api/v2.0/orgs/${org}/services/${service}/plan/${plan}`,
+          url: requestUrl,
           auth: {
             bearer: accessToken
           }

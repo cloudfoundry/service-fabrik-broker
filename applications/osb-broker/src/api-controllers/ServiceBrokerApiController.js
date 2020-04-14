@@ -71,6 +71,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   putInstance(req, res) {
     const params = req.body;
     const planId = params.plan_id;
+    const serviceId = params.service_id;
     const plan = catalog.getPlan(planId);
     const context = _
       .chain({})
@@ -108,6 +109,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         metadata: {
           finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
         },
+        labels: _.merge({
+          plan_id: planId,
+          service_id: serviceId
+        }, params.context),
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
