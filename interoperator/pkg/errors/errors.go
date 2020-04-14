@@ -234,3 +234,17 @@ func NewPreconditionError(fn, message string, err error) *InteroperatorError {
 func PreconditionError(err error) bool {
 	return ErrorCode(err) == CodePreconditionError
 }
+
+// NewSchedulerFailed returns a new error which indicates that scheduler failed
+func NewSchedulerFailed(schedulerType, message string, err error) *InteroperatorError {
+	return &InteroperatorError{
+		Err:     err,
+		Code:    CodeSchedulerFailed,
+		Message: fmt.Sprintf("scheduling with scheduler type %s failed. %s", schedulerType, message),
+	}
+}
+
+// SchedulerFailed is true if the error indicates an SchedulerFailed.
+func SchedulerFailed(err error) bool {
+	return ErrorCode(err) == CodeSchedulerFailed
+}

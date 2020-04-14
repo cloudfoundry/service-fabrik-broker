@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"fmt"
+	"hash/adler32"
+)
+
 //
 // Helper functions to check and remove string from a slice of strings.
 //
@@ -26,4 +31,11 @@ func RemoveString(slice []string, s string) (result []string) {
 		result = append(result, item)
 	}
 	return
+}
+
+// Adler32sum function receives a string, and computes its Adler-32 checksum
+// Use the same definition as used in gotemplate functions
+func Adler32sum(input string) string {
+	hash := adler32.Checksum([]byte(input))
+	return fmt.Sprintf("%d", hash)
 }

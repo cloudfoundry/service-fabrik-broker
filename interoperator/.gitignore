@@ -6,6 +6,8 @@
 *.so
 *.dylib
 bin
+sample*.*
+kubeconfig*.*
 
 # Test binary, build with `go test -c`
 *.test
