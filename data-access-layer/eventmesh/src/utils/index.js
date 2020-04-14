@@ -8,7 +8,10 @@ const decamelizeKeysDeep = require('decamelize-keys-deep');
 const logger = require('@sf/logger');
 const { catalog } = require('@sf/models');
 const { apiServerClient } = require('../');
-const { CONST } = require('@sf/common-utils');
+const {
+  CONST,
+  errors: { NotFound }
+} = require('@sf/common-utils');
 
 function getAllServices() {
   return apiServerClient.getResources({
@@ -43,14 +46,23 @@ function getAllPlansForService(serviceId) {
     });
 }
 
-function registerInterOperatorCrds() {
+function registerSFEventsCrd() {
   return Promise.all([
-    apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
-    apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
-    apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
-    apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS),
     apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT)
   ]);
+}
+
+function waitWhileCRDsAreRegistered() {
+  // We assume here that the Helm chart based deployment or the pre-start script of interoperator job in case of BOSH based deployment will take care of registering the CRDs. While it is not registered, we wait!
+  logger.info('Checking if the CRDs are already registered');
+  return Promise.all([
+    apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR),
+    apiServerClient.getCustomResourceDefinition(CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR)
+  ])
+    .catch(NotFound, () => {
+      logger.info('Waiting for the CRDs to get registered');
+      return Promise.delay(CONST.APISERVER.WAIT_IN_MS_BEFORE_STARTUP).then(() => waitWhileCRDsAreRegistered());
+    });
 }
 
 function getServiceCrdFromConfig(service) {
@@ -144,7 +156,8 @@ function loadCatalogFromAPIServer() {
 
 module.exports = {
   loadCatalogFromAPIServer,
-  registerInterOperatorCrds,
+  registerSFEventsCrd,
+  waitWhileCRDsAreRegistered,
   pushServicePlanToApiServer,
   getServiceCrdFromConfig,
   getAllServices,

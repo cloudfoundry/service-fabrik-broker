@@ -13,8 +13,8 @@ const { CONST } = require('@sf/common-utils');
 
 async function init() {
   try {
-    await utils.registerInterOperatorCrds();
-    // TODO:- To be removed when bosh services also push plan and service CRDs to apiserver
+    await utils.registerSFEventsCrd();
+    await utils.waitWhileCRDsAreRegistered();
     if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
       await utils.loadCatalogFromAPIServer();
     } else{
