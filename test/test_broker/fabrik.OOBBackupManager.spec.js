@@ -10,6 +10,7 @@ const {
   backupStoreForOob,
   BackupStore
 } = require('@sf/iaas');
+const config = require('@sf/app-config');
 const Agent = require('../../data-access-layer/service-agent');
 const { FabrikBaseController } = require('@sf/common-controllers');
 const { CONST } = require('@sf/common-utils');
@@ -200,6 +201,14 @@ describe('fabrik', function () {
         },
         arguments: {
           container: `${backupStoreForOob.containerPrefix}-postgresql`
+        },
+        agent_properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
         }
       };
       const expectedResult = {
@@ -228,6 +237,14 @@ describe('fabrik', function () {
         deploymentName: deploymentName,
         user: {
           name: 'frodo'
+        },
+        agent_properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
         }
       };
       const expectedResult = {
@@ -254,7 +271,15 @@ describe('fabrik', function () {
     it('should return status of the last backup operation successfully', function () {
       const options = {
         deploymentName: deploymentName,
-        agent_ip: '10.11.0.2'
+        agent_ip: '10.11.0.2',
+        agent_properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
+        }
       };
       return oobBackupManager.getLastBackupStatus(options).then(result => {
         expect(result).to.eql(backup_state);
@@ -296,6 +321,14 @@ describe('fabrik', function () {
         backup_guid: db_backup_guid,
         user: {
           name: 'frodo'
+        },
+        agent_properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
         }
       };
       const expectedResult = {
@@ -314,7 +347,15 @@ describe('fabrik', function () {
     it('should return status of the last restore operation successfully', function () {
       const options = {
         deploymentName: deploymentName,
-        agent_ip: '10.11.0.2'
+        agent_ip: '10.11.0.2',
+        agent_properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
+        }
       };
       return oobBackupManager.getLastRestoreStatus(options).then(result => {
         expect(result).to.eql(restore_state);
@@ -331,7 +372,15 @@ describe('fabrik', function () {
       clonedMeta.state = 'succeeded';
       clonedMeta.stage = 'Restore complete';
       const expectedResult = clonedMeta;
-      return oobBackupManager.getRestore(deploymentName).then(result => {
+      const agent_properties = {
+        username: 'admin',
+        password: 'admin',
+        provider: {
+          name: 'openstack',
+          container: config.backup.provider.container
+        }
+      };
+      return oobBackupManager.getRestore(deploymentName, agent_properties).then(result => {
         expect(getRestoreFileStub).to.be.calledOnce;
         expect(getRestoreFileStub.firstCall.args[0]).to.eql(_.assign({
           deployment_name: deploymentName,
