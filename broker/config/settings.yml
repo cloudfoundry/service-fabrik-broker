@@ -1067,6 +1067,39 @@ defaults: &defaults
         - 'Shared Deployment'
         - '1 VirtualHost'
   ####################
+  #MONGODB SERVICE#
+  ####################
+  - &mongodb_service
+    id: '3c266123-8e6e-4034-a2aa-e48e13fbf893'
+    name: 'mongodb'
+    description: &description 'Store JSON-like documents in a document-oriented database.'
+    bindable: true
+    tags:
+    - 'mongodb'
+    - 'document'
+    metadata:
+      displayName: 'MongoDB'
+      longDescription: 'Offers a NoSQL database that uses a document-oriented data model for JSON-like documents. It supports dynamic schema design and ad hoc queries like field, range queries and regular expression searches. Fields can be indexed with primary and secondary indices.'
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://help.sap.com/viewer/product/MongoDB/Cloud/en-US'
+      supportUrl: 'https://docs.mongodb.org/manual/support/'
+      shareable: true
+      imageUrl: 'data:image/svg+xml;base64,PHN2ZyBpZD0icGVyc2lzdGVuY2Utc2VydmljZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTYgNTYiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojNWE3YTk0O30uY2xzLTJ7ZmlsbDojMDA5MmQxO308L3N0eWxlPjwvZGVmcz48dGl0bGU+cGVyc2lzdGVuY2Utc2VydmljZTwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDQuNiw4LjhBMTAuMzE5LDEwLjMxOSwwLDAsMCw0MC44Nyw2LjIsMzIuOTE1LDMyLjkxNSwwLDAsMCwyOCw0LDMyLjkxNSwzMi45MTUsMCwwLDAsMTUuMTMsNi4yLDEwLjMxOSwxMC4zMTksMCwwLDAsMTEuNCw4LjgsNS4yMDgsNS4yMDgsMCwwLDAsMTAsMTIuM1Y0My42YTUuMDI4LDUuMDI4LDAsMCwwLDEuNCwzLjUsMTAuMzE5LDEwLjMxOSwwLDAsMCwzLjczMSwyLjZDMTguMyw1MS4yLDIyLjc3Nyw1MiwyOCw1MmEzMi45MTUsMzIuOTE1LDAsMCwwLDEyLjg3LTIuMkExMC4zMTksMTAuMzE5LDAsMCwwLDQ0LjYsNDcuMiw1LjQsNS40LDAsMCwwLDQ2LDQzLjdWMTIuM0E1LjIwOCw1LjIwOCwwLDAsMCw0NC42LDguOFpNNDMuMDE2LDQzLjdjMCwxLjItMS40LDIuNC0zLjgyNCwzLjNBMzIuMiwzMi4yLDAsMCwxLDI4LDQ4LjcsMzIuMiwzMi4yLDAsMCwxLDE2LjgwOCw0N2MtMi4zMzItLjktMy43MzEtMi4yLTMuNzMxLTMuM1YzOC4yYTE3LjE0MSwxNy4xNDEsMCwwLDAsNS41LDIuNEEzNy44MzksMzcuODM5LDAsMCwwLDI4LDQxLjdhMzkuMTgsMzkuMTgsMCwwLDAsOS41MTMtMS4xLDE2LjgyMywxNi44MjMsMCwwLDAsNS42LTIuNHY1LjVabTAtMTAuNWMwLDEuMi0xLjQsMi40LTMuODI0LDMuM0EzMi4yLDMyLjIsMCwwLDEsMjgsMzguMmEzMi4yLDMyLjIsMCwwLDEtMTEuMTkyLTEuN2MtMi4zMzItLjktMy43MzEtMi4yLTMuNzMxLTMuM1YyNy44YTE3LjE0MiwxNy4xNDIsMCwwLDAsNS41LDIuMywzOC4xMjcsMzguMTI3LDAsMCwwLDkuNDIsMWM2LjUyOCwwLDExLjkzOC0xLjIsMTUuMDE2LTMuNFpNMzkuMTkyLDE1LjdBMzIuMiwzMi4yLDAsMCwxLDI4LDE3LjRhMzIuMiwzMi4yLDAsMCwxLTExLjE5Mi0xLjdjLTIuMzMyLTEtMy43MzEtMi4yLTMuNzMxLTMuNCwwLTIuMSw1LjIyMy01LDE0LjkyMi01LDkuNzkzLDAsMTUuMDE2LDIuOSwxNS4wMTYsNUM0My4wMTYsMTMuNSw0MS42MTcsMTQuNywzOS4xOTIsMTUuN1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik00Mi45NjksMTIuM2MwLDEuMi0xLjQsMi40LTMuODI0LDMuNGEzMi4yLDMyLjIsMCwwLDEtMTEuMTkyLDEuNywzMi4yLDMyLjIsMCwwLDEtMTEuMTkyLTEuN2MtMi4zMzItMS0zLjczMS0yLjItMy43MzEtMy40VjI3LjhhMTcuMTQyLDE3LjE0MiwwLDAsMCw1LjUsMi4zLDM4LjEyNywzOC4xMjcsMCwwLDAsOS40MiwxYzYuNTI4LDAsMTEuOTM4LTEuMiwxNS4wMTYtMy40WiIvPjwvc3ZnPg=='
+    dashboard_client:
+      id: service-fabrik-mongodb-client1
+      secret: 'service-fabrik-postgresql-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &mongodb_plan1
+      id: 'ef44277c-4608-4dab-85a3-001e1d3e2971'
+      name: 'v4.0-xsmall'
+      free: false
+      description: 'MongoDB 4.0 service x-small'
+  ####################
   #POSTGRESQL SERVICE#
   ####################
   - &postgresql_service
