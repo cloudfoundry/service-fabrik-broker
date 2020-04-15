@@ -68,33 +68,33 @@ func (mr *MockResourceManagerMockRecorder) SetOwnerReference(owner, resources, s
 }
 
 // ReconcileResources mocks base method
-func (m *MockResourceManager) ReconcileResources(sourceClient, targetClient client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source) ([]v1alpha1.Source, error) {
+func (m *MockResourceManager) ReconcileResources(client client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source, force bool) ([]v1alpha1.Source, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReconcileResources", sourceClient, targetClient, expectedResources, lastResources)
+	ret := m.ctrl.Call(m, "ReconcileResources", client, expectedResources, lastResources, force)
 	ret0, _ := ret[0].([]v1alpha1.Source)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReconcileResources indicates an expected call of ReconcileResources
-func (mr *MockResourceManagerMockRecorder) ReconcileResources(sourceClient, targetClient, expectedResources, lastResources interface{}) *gomock.Call {
+func (mr *MockResourceManagerMockRecorder) ReconcileResources(client, expectedResources, lastResources, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileResources", reflect.TypeOf((*MockResourceManager)(nil).ReconcileResources), sourceClient, targetClient, expectedResources, lastResources)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileResources", reflect.TypeOf((*MockResourceManager)(nil).ReconcileResources), client, expectedResources, lastResources, force)
 }
 
 // ComputeStatus mocks base method
-func (m *MockResourceManager) ComputeStatus(sourceClient, targetClient client.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
+func (m *MockResourceManager) ComputeStatus(client client.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ComputeStatus", sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
+	ret := m.ctrl.Call(m, "ComputeStatus", client, instanceID, bindingID, serviceID, planID, action, namespace)
 	ret0, _ := ret[0].(*properties.Status)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ComputeStatus indicates an expected call of ComputeStatus
-func (mr *MockResourceManagerMockRecorder) ComputeStatus(sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace interface{}) *gomock.Call {
+func (mr *MockResourceManagerMockRecorder) ComputeStatus(client, instanceID, bindingID, serviceID, planID, action, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeStatus", reflect.TypeOf((*MockResourceManager)(nil).ComputeStatus), sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeStatus", reflect.TypeOf((*MockResourceManager)(nil).ComputeStatus), client, instanceID, bindingID, serviceID, planID, action, namespace)
 }
 
 // DeleteSubResources mocks base method

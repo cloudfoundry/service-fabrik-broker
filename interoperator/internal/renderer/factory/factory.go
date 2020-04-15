@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/helm"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
@@ -28,7 +27,9 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 }
 
 // GetRendererInput contructs the input required for the renderer
-func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SFService, plan *osbv1alpha1.SFPlan, instance *osbv1alpha1.SFServiceInstance, binding *osbv1alpha1.SFServiceBinding, name types.NamespacedName) (renderer.Input, error) {
+func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SFService, plan *osbv1alpha1.SFPlan,
+	instance *osbv1alpha1.SFServiceInstance, binding *osbv1alpha1.SFServiceBinding, name types.NamespacedName) (renderer.Input, error) {
+
 	rendererType := template.Type
 	values := make(map[string]interface{})
 
@@ -90,28 +91,33 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 	}
 }
 
-// GetStatusRendererInput contructs the input required for the renderer
-func GetStatusRendererInput(template *osbv1alpha1.TemplateSpec, name types.NamespacedName, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
-	rendererType := template.Type
-	values := make(map[string]interface{})
+// GetRendererInputFromSources contructs the input required for the renderer
+func GetRendererInputFromSources(template *osbv1alpha1.TemplateSpec, name types.NamespacedName,
+	sources map[string]interface{}) (renderer.Input, error) {
 
-	for key, val := range sources {
-		values[key] = val.Object
+	rendererType := template.Type
+	action := template.Action
+
+	var content string
+	if template.Content != "" {
+		content = template.Content
+	} else if template.ContentEncoded != "" {
+		decodedContent, err := base64.StdEncoding.DecodeString(template.ContentEncoded)
+		content = string(decodedContent)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode base64 content %v", err)
+		}
 	}
 
 	switch rendererType {
-	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		var content string
-		if template.Content != "" {
-			content = template.Content
-		} else if template.ContentEncoded != "" {
-			decodedContent, err := base64.StdEncoding.DecodeString(template.ContentEncoded)
-			content = string(decodedContent)
-			if err != nil {
-				return nil, fmt.Errorf("unable to decode base64 content %v", err)
-			}
+	case "helm", "Helm", "HELM":
+		if action == osbv1alpha1.SourcesAction || action == osbv1alpha1.StatusAction {
+			return nil, fmt.Errorf("%s renderer type not supported for %s action", rendererType, action)
 		}
-		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, template.Action), values)
+		input := helm.NewInput(template.URL, name.Name, name.Namespace, content, sources)
+		return input, nil
+	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
+		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, action), sources)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)

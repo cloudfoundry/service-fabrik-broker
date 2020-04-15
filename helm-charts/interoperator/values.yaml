@@ -13,12 +13,15 @@ broker:
   port: 9293
   username: broker
   password: secret
-  node_env: kubernetes
-  settings_filename: settings.yml
-  settings_mount_path: /opt/sf-config
+  quota:
+    enabled: false
+    oauthDomain: https://myauth-domain.com
+    serviceDomain: https://my-tenant-onboarding.com
+    username: quota_user
+    password: quota_password
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
-    tag: 0.5.0
+    tag: 0.5.1
     pullPolicy: Always
   service:
     type: LoadBalancer
@@ -26,18 +29,18 @@ broker:
 interoperator:
   image:
     repository: servicefabrikjenkins/service-fabrik-interoperator
-    tag: 0.5.0
+    tag: 0.5.1
     pullPolicy: Always
   resources:
     limits:
-      cpu: 200m
-      memory: 60Mi
+      cpu: 800m
+      memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 20Mi
+      cpu: 400m
+      memory: 256Mi
   config:
-    instanceWorkerCount: 10
-    bindingWorkerCount: 20
-    schedulerWorkerCount: 10
-    provisionerWorkerCount: 10
+    instanceWorkerCount: 2
+    bindingWorkerCount: 4
+    schedulerWorkerCount: 2
+    provisionerWorkerCount: 2
     schedulerType: label-selector
