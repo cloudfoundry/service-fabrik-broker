@@ -1067,6 +1067,38 @@ defaults: &defaults
         - 'Shared Deployment'
         - '1 VirtualHost'
   ####################
+  #MONGODB SERVICE#
+  ####################
+  - &mongodb_service
+    id: '3c266123-8e6e-4034-a2aa-e48e13fbf893'
+    name: 'mongodb'
+    description: &description 'Store JSON-like documents in a document-oriented database.'
+    bindable: true
+    tags:
+    - 'mongodb'
+    - 'document'
+    metadata:
+      displayName: 'MongoDB'
+      longDescription: 'Offers a NoSQL database that uses a document-oriented data model for JSON-like documents. It supports dynamic schema design and ad hoc queries like field, range queries and regular expression searches. Fields can be indexed with primary and secondary indices.'
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://help.sap.com/viewer/product/MongoDB/Cloud/en-US'
+      supportUrl: 'https://docs.mongodb.org/manual/support/'
+      shareable: true
+    dashboard_client:
+      id: service-fabrik-mongodb-client1
+      secret: 'service-fabrik-postgresql-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &mongodb_plan1
+      id: 'ef44277c-4608-4dab-85a3-001e1d3e2971'
+      name: 'v4.0-xsmall'
+      free: false
+      description: 'MongoDB 4.0 service x-small'
+  ####################
   #POSTGRESQL SERVICE#
   ####################
   - &postgresql_service
