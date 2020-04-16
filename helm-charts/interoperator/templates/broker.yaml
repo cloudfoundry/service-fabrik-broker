@@ -74,6 +74,10 @@ spec:
           value: kubernetes
         - name: SETTINGS_PATH
           value: /opt/sf-config/settings.yml
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         volumeMounts:
         - name: settings
           mountPath: /opt/sf-config
