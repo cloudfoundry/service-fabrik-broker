@@ -1,4 +1,4 @@
-# FROM node:12.13-alpine also works here for a smaller image
+# FROM node:12.14-alpine also works here for a smaller image
 FROM node:12.14-alpine
 
 # set our node environment, either development or production

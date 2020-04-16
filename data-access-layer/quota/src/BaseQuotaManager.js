@@ -44,15 +44,15 @@ class BaseQuotaManager {
           return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         } else {
           const planIdsWithSameSKU = this.getAllPlanIdsWithSameSKU(planName, serviceName, catalog);
-          const instanceCount = await this.getInstanceCountonPlatform(orgOrSubaccountId, planIdsWithSameSKU);
+          const instanceCount = await this.getInstanceCountonPlatform(orgOrSubaccountId, planIdsWithSameSKU, useSubaccountForQuotaCheck);
           logger.debug(`Number of instances are ${instanceCount} & Quota number for current org space and service_plan is ${quota}`);
           return instanceCount >= quota ? CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA : CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         }
       }
     }
   }
-  async getInstanceCountonPlatform(orgOrSubaccountId, planGuids) {
-    throw new NotImplementedBySubclass(`getInstanceCountonPlatform - ${orgOrSubaccountId}, ${planGuids}`);
+  async getInstanceCountonPlatform(orgOrSubaccountId, planGuids, useSubaccountForQuotaCheck) {
+    throw new NotImplementedBySubclass(`getInstanceCountonPlatform - ${orgOrSubaccountId}, ${planGuids}, ${useSubaccountForQuotaCheck}`);
   }
   getAllPlanIdsWithSameSKU(planName, serviceName, serviceCatalog) {
     const planManagerName = _.find(catalog.plans, ['name', planName]).manager.name;
