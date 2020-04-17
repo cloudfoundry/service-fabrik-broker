@@ -184,14 +184,14 @@ Dependencies on other processes: broker process is dependent on deployment hooks
 
 Before starting broker process SETTINGS_PATH env variable has to be set.
 ```shell
-export SETTINGS_PATH=$(pwd)/broker/config/settings.yml
+export SETTINGS_PATH=$(pwd)/config/settings.yml
 ```
 If you need  to change the `settings.yml` configuration you should copy the file and point the broker to your settings file via the environment variable `SETTINGS_PATH`.
 ```shell
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
 # cp $(pwd)/broker/config/settings.yml $(pwd)/broker/config/my-settings.yml
-# export SETTINGS_PATH=$(pwd)/broker/config/my-settings.yml
+# export SETTINGS_PATH=$(pwd)/config/my-settings.yml
 npm run -s start
 ```
 Check endpoint with curl

@@ -1,16 +1,19 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
+const {
+  CONST,
+  errors: {
+    NotFound
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 const moment = require('moment');
-const JobFabrik = require('../../jobs/JobFabrik');
-const BaseJob = require('../../jobs/BaseJob');
-const ScheduleManager = require('../../jobs/ScheduleManager');
-const errors = require('../../common/errors');
-const NotFound = errors.NotFound;
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const filename = require('../../data-access-layer/iaas').backupStore.filename;
+const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const { backupStore } = require('@sf/iaas');
+const filename = backupStore.filename;
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -41,7 +44,7 @@ describe('Jobs', function () {
     const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started33DaysPrior}.json`;
     const pathname16 = `/${container}/${fileName16Daysprior}`;
     const pathname18 = `/${container}/${fileName18DaysPrior}`;
-    //For OOB
+    // For OOB
     const fileName16DayspriorOob = `${prefixOob}.${backup_guidOob}.${started31DaysPrior}.json`;
     const fileName18DaysPriorOob = `${prefixOob}.${backup_guid2Oob}.${started33DaysPrior}.json`;
     const pathname16Oob = `/${container}/${fileName16DayspriorOob}`;
@@ -59,9 +62,9 @@ describe('Jobs', function () {
           service_id: service_id,
           plan_id: plan_id,
           context: {
-            platform: 'cloudfoundry',
+            platform: 'cloudfoundry'
           },
-          space_guid: space_guid,
+          space_guid: space_guid
         })
       }
     };
@@ -173,7 +176,7 @@ describe('Jobs', function () {
       mocks.cloudProvider.remove(pathname16);
       mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename1]);
       mocks.cloudProvider.remove(archivePathname1);
-      //Out of 3 files 1 day prior is filtered out will not be deleted
+      // Out of 3 files 1 day prior is filtered out will not be deleted
       mocks.cloudProvider.download(pathname16, scheduled_data);
 
       // For Oob
@@ -183,12 +186,12 @@ describe('Jobs', function () {
       mocks.cloudProvider.remove(pathname16Oob);
       mocks.cloudProvider.list(blueprintContainer, backup_guidOob, [archiveFilename1]);
       mocks.cloudProvider.remove(archivePathname1);
-      //Out of 3 files 1 day prior is filtered out will not be deleted
+      // Out of 3 files 1 day prior is filtered out will not be deleted
       mocks.cloudProvider.list(container, `${prefixOob}.${backup_guidOob}`, [
         fileName16DayspriorOob
       ]);
       mocks.cloudProvider.download(pathname16Oob, scheduled_data_oob, 2);
-      //Mocks done
+      // Mocks done
       getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
@@ -337,7 +340,7 @@ describe('Jobs', function () {
       mocks.cloudProvider.remove(pathname16);
       mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename1]);
       mocks.cloudProvider.remove(archivePathname1);
-      //Out of 3 files 1 day prior is filtered out will not be deleted
+      // Out of 3 files 1 day prior is filtered out will not be deleted
       mocks.cloudProvider.download(pathname16, scheduled_data);
 
       // For Oob
@@ -348,7 +351,7 @@ describe('Jobs', function () {
         fileName16DayspriorOob
       ]);
       mocks.cloudProvider.download(pathname16Oob, _.chain(scheduled_data_oob).omit('container').value());
-      //Mocks done
+      // Mocks done
       getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();

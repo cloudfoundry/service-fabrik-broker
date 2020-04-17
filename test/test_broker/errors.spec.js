@@ -1,7 +1,9 @@
 'use strict';
 
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
+const {
+  CONST,
+  errors
+} = require('@sf/common-utils');
 const HttpError = errors.HttpError;
 const HttpClientError = errors.HttpClientError;
 const Timeout = errors.Timeout;
@@ -374,7 +376,7 @@ describe('errors', () => {
     it('sets the class properties correctly', () => {
       expect(asyncRequired.status).to.eql(422);
       expect(asyncRequired.reason).to.eql('Unprocessable Entity');
-      expect(asyncRequired.message).to.eql(`Service Plan requires support for asynchronous operations`);
+      expect(asyncRequired.message).to.eql('Service Plan requires support for asynchronous operations');
     });
   });
 

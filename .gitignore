@@ -1,8 +1,20 @@
 .DS_Store
 .idea
+.vscode
+lerna-debug.log
+package-lock.json
+node_modules
+coverage
 
-# Ignore node_modules.
-/node_modules
+**/node_modules
+**/coverage
+**/package-lock.json
+**/.env
+**/lerna-debug.log
+**/npm-debug.log
+**/.idea
+**/store/sessions
+**/config/**/settings.*.yml
 
 # Ignore documentation
 /jsdoc
@@ -11,7 +23,7 @@
 # Ignore all logfiles and tempfiles.
 /logs/*.log
 /tmp
-/store/sessions
+**/store/sessions
 npm-debug.log
 package-lock.json
 
@@ -32,8 +44,8 @@ my*
 #ingoring files created during unit tests
 broker/lib/fabrik/actions/js/ReserveIps.js
 broker/lib/fabrik/actions/sh/
-deployment_hooks/lib/actions/js/ReserveIps.js
-deployment_hooks/lib/actions/sh/
+applications/deployment_hooks/lib/actions/js/ReserveIps.js
+applications/deployment_hooks/lib/actions/sh/
 
 interoperator/vendor
 webhooks/vendor

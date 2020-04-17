@@ -3,14 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const proxyquire = require('proxyquire');
-const ScriptExecutor = require('../../deployment_hooks/lib/utils/ScriptExecutor');
+const ScriptExecutor = require('../../applications/deployment_hooks/lib/utils/ScriptExecutor');
 describe('deployment_hooks', function () {
   describe('utils', function () {
     describe('#ScriptExecuter', function () {
       it('should throw not found if path does not exist', function () {
         let actionScriptAbsPath = 'randompath';
         try {
-          /*jshint unused:false*/
+          /* jshint unused:false*/
           let executor = new ScriptExecutor(actionScriptAbsPath);
         } catch (err) {
           expect(err).to.have.status(404);
@@ -35,7 +35,7 @@ describe('deployment_hooks', function () {
       });
 
       it('should execute script successfully with seccomp enabled', function () {
-        const testScriptExecutor = proxyquire('../../deployment_hooks/lib/utils/ScriptExecutor', {
+        const testScriptExecutor = proxyquire('../../applications/deployment_hooks/lib/utils/ScriptExecutor', {
           '../config': {
             enable_syscall_filters: true,
             whitelisted_syscalls: 'read'

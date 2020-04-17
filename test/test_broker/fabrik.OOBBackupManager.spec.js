@@ -2,15 +2,19 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
-const BackupStore = require('../../data-access-layer/iaas/BackupStore');
+const {
+  director,
+  BoshDirectorClient
+} = require('@sf/bosh');
+const {
+  backupStoreForOob,
+  BackupStore
+} = require('@sf/iaas');
+const config = require('@sf/app-config');
 const Agent = require('../../data-access-layer/service-agent');
-const FabrikBaseController = require('../../api-controllers/FabrikBaseController');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
+const { FabrikBaseController } = require('@sf/common-controllers');
+const { CONST } = require('@sf/common-utils');
 const OobBackupManager = require('../../data-access-layer/oob-manager/OobBackupManager');
-const bosh = require('../../data-access-layer/bosh');
-const backupStoreForOob = require('../../data-access-layer/iaas').backupStoreForOob;
 
 
 describe('fabrik', function () {
@@ -181,7 +185,7 @@ describe('fabrik', function () {
     });
 
     it('should retrieve DB VM Details from bosh successfully', function () {
-      return bosh.director.getNormalizedDeploymentVms(deploymentName).then(dbVms => {
+      return director.getNormalizedDeploymentVms(deploymentName).then(dbVms => {
         expect(getDeploymentVMsStub).to.be.calledOnce;
         expect(getDeploymentVMsStub.firstCall.args[0]).to.eql(deploymentName);
         expect(dbVms).to.have.length(2);

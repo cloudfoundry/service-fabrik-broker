@@ -2,15 +2,15 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const proxyquire = require('proxyquire');
-const CONST = require('../../../common/constants');
-const ServiceFabrikAdminController = require('../../../api-controllers/ServiceFabrikAdminController');
-const APIServerClient = require('../../../data-access-layer/eventmesh/ApiServerClient');
+const { CONST } = require('@sf/common-utils');
+const ServiceFabrikAdminController = require('../../../applications/admin/api-controllers/ServiceFabrikAdminController');
+const { ApiServerClient } = require('@sf/eventmesh');
 const numOfInstances = 2 * config.mongodb.record_max_fetch_count;
-const ScheduleManager = require('../../../jobs');
+const ScheduleManager = require('@sf/jobs');
 
-const getInstance = (instanceId) => {
+const getInstance = instanceId => {
   return Promise.resolve({
     _id: `${instanceId}-12121`,
     data: {
@@ -53,8 +53,8 @@ describe('service-fabrik-admin', function () {
   describe('#runNow', function () {
     const dateNow = new Date();
     let jobResponse = {
-      name: `fakeJobName`,
-      lastRunAt: dateNow,
+      name: 'fakeJobName',
+      lastRunAt: dateNow
     };
 
     let sandbox = sinon.createSandbox();
@@ -144,7 +144,7 @@ describe('service-fabrik-admin', function () {
     let getConfigMapStub;
 
     before(function () {
-      getConfigMapStub = sinon.stub(APIServerClient.prototype, 'getConfigMap');
+      getConfigMapStub = sinon.stub(ApiServerClient.prototype, 'getConfigMap');
     });
 
     after(function () {
@@ -171,7 +171,7 @@ describe('service-fabrik-admin', function () {
     let createUpdateConfigMapStub;
 
     before(function () {
-      createUpdateConfigMapStub = sinon.stub(APIServerClient.prototype, 'createUpdateConfigMapResource');
+      createUpdateConfigMapStub = sinon.stub(ApiServerClient.prototype, 'createUpdateConfigMapResource');
     });
 
     after(function () {
@@ -213,8 +213,8 @@ describe('service-fabrik-admin', function () {
   });
 
   describe('#getInstancesWithUpdateScheduled', function () {
-    const adminController = proxyquire('../../../api-controllers/ServiceFabrikAdminController', {
-      '../common/db': {
+    const adminController = proxyquire('../../../applications/admin/api-controllers/ServiceFabrikAdminController', {
+      '@sf/common-utils': {
         Repository: Repository
       }
     });

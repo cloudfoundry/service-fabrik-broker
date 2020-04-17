@@ -2,14 +2,20 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../common/config');
-const logger = require('../../common/logger');
-const utils = require('../../common/utils');
+
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  errors: {
+    DockerServiceUnavailable
+  },
+  commonFunctions:{
+    retry
+  }
+} = require('@sf/common-utils');
 const DockerClient = require('./DockerClient');
 const DockerPortRegistry = require('./DockerPortRegistry');
 const DockerCredentials = require('./DockerCredentials');
-const errors = require('../../common/errors');
-const DockerServiceUnavailable = errors.DockerServiceUnavailable;
 
 class Docker {
   constructor() {
@@ -39,11 +45,10 @@ class Docker {
   }
 
   bootstrap() {
-    return utils
-      .retry(() => this.client.versionAsync(), {
-        maxAttempts: 8,
-        minDelay: 4696
-      })
+    return retry(() => this.client.versionAsync(), {
+      maxAttempts: 8,
+      minDelay: 4696
+    })
       .tap(versionInfo => logger.debug('Docker version information:', versionInfo))
       .then(() => Promise.all([
         this.fetchImages(),

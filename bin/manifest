@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const _ = require('lodash');
+const uuid = require('uuid');
+const catalog = require('../lib/models/catalog');
+
+const argv = process.argv.slice(2);
+if (argv.length < 1) {
+  console.log('Please specify a service name. The following services exist.\n');
+  _.each(catalog.services, service=>{
+    console.log(`${service.name}`);
+  });
+  process.exit(0);
+}
+const service = _.find(catalog.services, ['name', argv[0]]);
+if (argv.length < 2) {
+  console.log('Please specify a plan name. The following plans exist.\n');
+  _(service.plans).filter(['manager.name', 'director']).each(plan=>{
+    console.log(plan.name);
+  });
+  process.exit(0);
+}
+
+const plan = _.find(service.plans, ['name', argv[1]]);
+const instance_id = _.get(argv, '2', uuid.v4());
+const index = _.get(argv, '3', _.random(1, 1024));
+const manifest = catalog.getPlan(plan.id).getManager().getManifest(instance_id, index);
+console.log('---\n' + manifest);
+

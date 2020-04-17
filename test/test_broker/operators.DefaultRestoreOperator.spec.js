@@ -1,9 +1,9 @@
 'use strict';
 
-const DefaultRestoreOperator = require('../../operators/restore-operator/DefaultRestoreOperator');
-const RestoreService = require('../../operators/restore-operator/RestoreService');
-const BaseOperator = require('../../operators/BaseOperator');
-const CONST = require('../../common/constants');
+const DefaultRestoreOperator = require('../../applications/operators/restore-operator/DefaultRestoreOperator');
+const RestoreService = require('../../applications/operators/restore-operator/RestoreService');
+const BaseOperator = require('../../applications/operators/BaseOperator');
+const { CONST } = require('@sf/common-utils');
 // const logger = require('../../common/logger');
 // const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';

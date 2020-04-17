@@ -3,12 +3,16 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const moment = require('moment');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const errors = require('../../common/errors');
-const maintenanceManager = require('../../maintenance').maintenanceManager;
-const serviceFabrikClient = require('../../data-access-layer/cf').serviceFabrikClient;
-const logger = require('../../common/logger');
+const {
+  CONST,
+  errors: {
+    DBUnavailable
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const { maintenanceManager } = require('../../applications/scheduler/maintenance');
+const { serviceFabrikClient } = require('@sf/cf');
+const logger = require('@sf/logger');
 
 describe('JobScheduler', function () {
   /* jshint expr:true */
@@ -50,7 +54,7 @@ describe('JobScheduler', function () {
       fork: () => {
         count++;
         logger.info('forking child..', count);
-        const js = proxyquire('../../broker/JobScheduler', {
+        const js = proxyquire('../../applications/scheduler/JobScheduler', {
           'cluster': {
             isMaster: false,
             on: on,
@@ -58,7 +62,7 @@ describe('JobScheduler', function () {
               id: count
             }
           },
-          '../common/config': {
+          '@sf/app-config': {
             scheduler: {
               max_workers: 5,
               start_delay: 0,
@@ -73,21 +77,21 @@ describe('JobScheduler', function () {
         const worker = {
           pid: count,
           id: count,
-          send: (msg) => js.handleMessage(msg)
+          send: msg => js.handleMessage(msg)
         };
         workers[count] = worker;
         JobWorkers.push(js);
         return worker;
       }
     },
-    '../common/config': {
+    '@sf/app-config': {
       scheduler: schedulerConfig
     }
   };
 
   after(function () {
     logger.info('unhooking all workers... cleaning up..!');
-    _.each(JobWorkers, (worker) => worker.unhook());
+    _.each(JobWorkers, worker => worker.unhook());
   });
 
   describe('#Start', function () {
@@ -138,14 +142,14 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 4;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
             logger.info('count is>>', count);
             clock.tick(0);
             const EXPECTED_NUM_OF_WORKERS = 4 - 1;
-            //Fork should be invoked 1 less than number of cpus.
+            // Fork should be invoked 1 less than number of cpus.
             for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
@@ -160,7 +164,7 @@ describe('JobScheduler', function () {
       it('Create workers based on max_worker config & on error recreate the worker', function () {
         count = 0;
         cpus = 8;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
         const js = JobScheduler
           .ready
@@ -172,11 +176,11 @@ describe('JobScheduler', function () {
               id: 1
             }, 2, null);
             clock.tick(CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
-            //Simulate kill one of the workers by invoking the exit handler callback.
+            // Simulate kill one of the workers by invoking the exit handler callback.
             return Promise.try(() => {
               expect(count).to.eql(6);
-              //Fork should be invoked based on max_workers in config
-              //In the above case because callback also results in additional call
+              // Fork should be invoked based on max_workers in config
+              // In the above case because callback also results in additional call
               JobScheduler.unhook();
             });
           });
@@ -188,7 +192,7 @@ describe('JobScheduler', function () {
         cpus = 1;
         throwUnhandledError = true;
         const EXPECTED_NUM_OF_WORKERS = cpus;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -198,14 +202,14 @@ describe('JobScheduler', function () {
             }
             logger.info('count is>>', count);
             expect(count).to.eql(1);
-            JobScheduler.processUnhandledRejection(new errors.DBUnavailable('DB Down ...Simulated expected error ...'));
+            JobScheduler.processUnhandledRejection(new DBUnavailable('DB Down ...Simulated expected error ...'));
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(publishStub).to.be.calledOnce;
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
             expect(processExitStub).to.be.calledOnce;
             expect(processExitStub.firstCall.args[0]).to.eql(2);
             JobScheduler.handleMessage('INVALID_MESSAGE');
-            //Nothing should be done when an invalid message is sent.
+            // Nothing should be done when an invalid message is sent.
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
@@ -215,7 +219,7 @@ describe('JobScheduler', function () {
         count = 0;
         cpus = 8;
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -223,23 +227,23 @@ describe('JobScheduler', function () {
               clock.tick(delay);
             }
             delete workers[1];
-            //ensure that key is removed from workers as its going to be terminated
+            // ensure that key is removed from workers as its going to be terminated
             workerExitHandlers[0]({
               id: 1
             }, CONST.ERR_CODES.SF_IN_MAINTENANCE, null);
             workerExitHandlers[0]({
               id: 1
             }, 2, null);
-            //Should ignore any other exit signals recieved while in maintenance
-            //Simulate kill one of the workers by invoking the exit handler callback & flag that system is in maintenance.
+            // Should ignore any other exit signals recieved while in maintenance
+            // Simulate kill one of the workers by invoking the exit handler callback & flag that system is in maintenance.
             expect(count).to.eql(5);
             for (let x = 0; x < EXPECTED_NUM_OF_WORKERS - 1; x++) {
               clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             }
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME * EXPECTED_NUM_OF_WORKERS);
-            //count - indicates how many workers were created.
-            expect(processExitStub.callCount).to.equal(5); //4 from workers and 1 from main scheduler.
-            expect(JobScheduler.workerCount).to.eql(4); //4 workers because 1 is removed from the seccond exit handler which sends exit code:2
+            // count - indicates how many workers were created.
+            expect(processExitStub.callCount).to.equal(5); // 4 from workers and 1 from main scheduler.
+            expect(JobScheduler.workerCount).to.eql(4); // 4 workers because 1 is removed from the seccond exit handler which sends exit code:2
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
@@ -266,7 +270,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -348,7 +352,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -374,7 +378,7 @@ describe('JobScheduler', function () {
         }));
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -406,7 +410,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -446,7 +450,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -486,7 +490,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -521,13 +525,13 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = false;
-        JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
             logger.info('count is>>>>', count);
             JobScheduler.addJobWorker();
-            //When in maintenance mode invoking addJobWorker will not create the worker.
+            // When in maintenance mode invoking addJobWorker will not create the worker.
             expect(JobScheduler.workerCount).to.eql(0);
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(getMaintenanceStub.callCount).to.equal(2); // 3times from the JobScheduler & 1 from test.
@@ -584,7 +588,7 @@ describe('JobScheduler', function () {
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {
       count = 0;
       cpus = 1;
-      JobScheduler = proxyquire('../../broker/JobScheduler', proxyLibs);
+      JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
       const js = JobScheduler
         .ready
         .then(() => {
@@ -598,7 +602,7 @@ describe('JobScheduler', function () {
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
             expect(publishStub.secondCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
             expect(count).to.eql(1);
-            //Fork should be invoked 1 less than number of cpus.
+            // Fork should be invoked 1 less than number of cpus.
             JobScheduler.unhook();
           });
         });

@@ -1,9 +1,12 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const errors = require('../../common/errors');
-const ServiceNotFound = errors.ServiceNotFound;
-const ServicePlanNotFound = errors.ServicePlanNotFound;
+const {
+  errors: {
+    ServiceNotFound,
+    ServicePlanNotFound
+  }
+} = require('@sf/common-utils');
 
 let plan1 = {
   id: 1,
@@ -21,8 +24,8 @@ let service1 = {
   plans: [plan1, plan2]
 };
 
-const catalog = proxyquire('../../common/models/catalog', {
-  '../config': {
+const catalog = proxyquire('../../core/models/src/catalog', {
+  '@sf/app-config': {
     services: [service1]
   },
   './Service': class {

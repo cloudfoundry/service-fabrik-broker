@@ -1,0 +1,20 @@
+{
+  "name": "@sf/bosh",
+  "version": "1.0.0",
+  "description": "Module to access bosh director",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
+    "@sf/cf": "file:../cf",
+    "@sf/common-utils": "file:../../core/utils",
+    "@sf/eventmesh": "file:../eventmesh",
+    "@sf/express-commons": "file:../../core/express-commons",
+    "@sf/logger": "file:../../core/logging"
+  }
+}

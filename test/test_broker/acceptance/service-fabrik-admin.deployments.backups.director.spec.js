@@ -1,15 +1,23 @@
 'use strict';
 
 const _ = require('lodash');
-const logger = require('../../../common/logger');
+const logger = require('@sf/logger');
 const app = require('../support/apps').internal;
-const config = require('../../../common/config');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStoreForOob;
-const filename = backupStore.filename;
-const CONST = require('../../../common/constants');
-const utils = require('../../../common/utils');
-const ScheduleManager = require('../../../jobs/ScheduleManager');
+const config = require('@sf/app-config');
+const {
+  backupStoreForOob,
+  CloudProviderClient
+} = require('@sf/iaas');
+const filename = backupStoreForOob.filename;
+const {
+  CONST,
+  commonFunctions
+} = require('@sf/common-utils');
+const {
+  encodeBase64,
+  decodeBase64
+} = commonFunctions;
+const ScheduleManager = require('@sf/jobs');
 
 describe('service-fabrik-admin', function () {
   describe('oob-deployment', function () {
@@ -20,7 +28,7 @@ describe('service-fabrik-admin', function () {
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
-    const container = backupStore.containerName;
+    const container = backupStoreForOob.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
     const filenameObject = {
@@ -68,16 +76,16 @@ describe('service-fabrik-admin', function () {
 
     before(function () {
       mocks.reset();
-      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+      backupStoreForOob.cloudProvider = new CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');
-      uuidv4Stub = sinon.stub(utils, 'uuidV4');
+      uuidv4Stub = sinon.stub(commonFunctions, 'uuidV4');
       timestampStub.withArgs().returns(started_at);
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       scheduleStub = sinon.stub(ScheduleManager, 'schedule').callsFake(() => Promise.resolve({}));
       return mocks.setup([
-        backupStore.cloudProvider.getContainer()
+        backupStoreForOob.cloudProvider.getContainer()
       ]);
     });
 
@@ -146,13 +154,13 @@ describe('service-fabrik-admin', function () {
             expect(res).to.have.status(202);
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_backup);
-            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            expect(decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
             mocks.verify();
           });
       });
 
       it('should return the status of last ccdb backup operation', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'backup'
@@ -238,12 +246,12 @@ describe('service-fabrik-admin', function () {
             expect(res).to.have.status(202);
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_backup);
-            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            expect(decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
           });
       });
 
       it('should return the status of last bosh-sf deployment backup operation', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'backup'
@@ -366,7 +374,7 @@ describe('service-fabrik-admin', function () {
             expect(res).to.have.status(202);
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_restore);
-            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            expect(decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
             mocks.verify();
           });
       });
@@ -396,7 +404,7 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should return the status of ccdb restore operation', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'restore'
@@ -426,7 +434,7 @@ describe('service-fabrik-admin', function () {
       });
 
       it('res should return the status of last ccdb restore operation', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'restore'
@@ -509,12 +517,12 @@ describe('service-fabrik-admin', function () {
             expect(scheduleStub).to.be.calledOnce;
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_restore);
-            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            expect(decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
           });
       });
 
       it('should return the status of bosh-sf deployment restore operation', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'restore'

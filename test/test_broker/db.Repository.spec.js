@@ -4,8 +4,10 @@ const Mongoose = require('mongoose');
 const Promise = require('bluebird');
 Promise.promisifyAll([require('mongoose/lib/model')]);
 const mongoModel = require('mongoose/lib/model');
-const CONST = require('../../common/constants');
-const Repository = require('../../common/db').Repository;
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
 
 const time = Date.now();
 const repeatInterval = '*/1 * * * *';
@@ -68,8 +70,8 @@ describe('db', function () {
       sandbox = sinon.createSandbox();
       modelStub = function () {
         this.saveAsync = mongoModel.saveAsync;
-        //All the below extension methods will not be inherited as they are not assigned against prototype.
-        //Hence this special one method being added.
+        // All the below extension methods will not be inherited as they are not assigned against prototype.
+        // Hence this special one method being added.
       };
       modelStub.findOne = sandbox.stub(mongoModel, 'findOne');
       modelStub.schema = {
@@ -141,7 +143,7 @@ describe('db', function () {
 
     it('Should return the object with requested id and populate opts from DB successfully', function () {
       return Repository.findById(CONST.DB_MODEL.JOB, {
-        _id: instance_id,
+        _id: instance_id
       }, populateOpts).then(response => {
         expect(modelStub.findByIdAsync).to.be.calledOnce;
         expect(modelStub.populateAsync).to.be.calledOnce;

@@ -3,10 +3,13 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const CloudControllerClient = require('../../data-access-layer/cf/CloudControllerClient');
-const errors = require('../../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const SecurityGroupNotFound = errors.SecurityGroupNotFound;
+const CloudControllerClient = require('../../data-access-layer/cf/src/CloudControllerClient');
+const {
+  errors: {
+    ServiceInstanceNotFound,
+    SecurityGroupNotFound
+  }
+} = require('@sf/common-utils');
 
 describe('cf', function () {
   describe('CloudControllerClient', function () {
@@ -142,10 +145,10 @@ describe('cf', function () {
 
       it('should return the JSON body with Status 200 with bearer specified', function () {
         return cloudController.getServiceInstancePermissions(id, {
-            auth: {
-              bearer: bearer
-            }
-          })
+          auth: {
+            bearer: bearer
+          }
+        })
           .then(result => {
             expect(getAccessTokenSpy).not.to.be.called;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);

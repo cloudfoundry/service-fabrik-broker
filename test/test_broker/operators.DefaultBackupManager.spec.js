@@ -4,11 +4,13 @@ const _ = require('lodash');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const catalog = require('../../common/models/catalog');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const apiserver = new eventmesh();
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const {
+  ApiServerClient,
+  apiServerClient
+} = require('@sf/eventmesh');
 
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -19,13 +21,13 @@ const DefaultBackupOperatorDummy = {
   startBackupDummy: () => {},
   abortBackupDummy: () => {},
   deleteBackupDummy: () => {},
-  getOperationOptionsDummy: () => {},
+  getOperationOptionsDummy: () => {}
 };
 const resultOptions = {
   plan_id: plan_id
 };
-const DefaultBackupOperator = proxyquire('../../operators/backup-operator/DefaultBackupOperator', {
-  '../../data-access-layer/eventmesh': {
+const DefaultBackupOperator = proxyquire('../../applications/operators/backup-operator/DefaultBackupOperator', {
+  '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
         DefaultBackupOperatorDummy.getOperationOptionsDummy(opts);
@@ -37,18 +39,18 @@ const DefaultBackupOperator = proxyquire('../../operators/backup-operator/Defaul
     'createService': function (plan) {
       DefaultBackupOperatorDummy.createServiceDummy(plan);
       return Promise.resolve({
-        'startBackup': (opts) => {
+        'startBackup': opts => {
           DefaultBackupOperatorDummy.startBackupDummy(opts);
           return Promise.resolve({});
         },
-        'abortLastBackup': (opts) => {
+        'abortLastBackup': opts => {
           DefaultBackupOperatorDummy.abortBackupDummy(opts);
           return Promise.resolve({});
         },
-        'deleteBackup': (opts) => {
+        'deleteBackup': opts => {
           DefaultBackupOperatorDummy.deleteBackupDummy(opts);
           return Promise.resolve({});
-        },
+        }
       });
     }
   }
@@ -90,7 +92,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
@@ -125,13 +127,13 @@ describe('operators', function () {
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         _.chain(changeObject.object)
-        .cloneDeep()
-        .merge('metadata', {
-          annotations: config.broker_ip
-        })
-        .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+          .cloneDeep()
+          .merge('metadata', {
+            annotations: config.broker_ip
+          })
+          .value(), 2);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -168,8 +170,8 @@ describe('operators', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -207,8 +209,8 @@ describe('operators', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -243,8 +245,8 @@ describe('operators', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -280,8 +282,8 @@ describe('operators', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 409);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -317,8 +319,8 @@ describe('operators', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -351,8 +353,8 @@ describe('operators', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -394,8 +396,8 @@ describe('operators', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      const crdJsonBackup = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))

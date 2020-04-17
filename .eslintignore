@@ -9,3 +9,4 @@ jsdoc
 docs
 tmp
 webhooks
+**/public/*

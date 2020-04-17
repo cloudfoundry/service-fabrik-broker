@@ -1,17 +1,23 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
+const {
+  CONST,
+  errors: {
+    ServiceUnavailable
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
 const moment = require('moment');
 const Promise = require('bluebird');
-const errors = require('../../common/errors');
-const ScheduleManager = require('../../jobs/ScheduleManager');
-const JobFabrik = require('../../jobs/JobFabrik');
-const BaseJob = require('../../jobs/BaseJob');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
-const filename = require('../../data-access-layer/iaas').backupStore.filename;
-const iaas = require('../../data-access-layer/iaas');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const { 
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
+const filename = backupStore.filename;
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -65,9 +71,9 @@ describe('Jobs', function () {
             service_id: service_id,
             plan_id: plan_id,
             context: {
-              platform: 'cloudfoundry',
+              platform: 'cloudfoundry'
             },
-            space_guid: space_guid,
+            space_guid: space_guid
           })
         }
       };
@@ -140,20 +146,20 @@ describe('Jobs', function () {
       let baseJobLogRunHistoryStub, cancelScheduleStub, runAtStub, scheduleStub, delayStub;
 
       before(function () {
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
         baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
         delayStub = sinon.stub(Promise, 'delay').callsFake(() => Promise.resolve());
         cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule');
-        cancelScheduleStub.withArgs(failed_instance_id).returns(Promise.reject(new errors.ServiceUnavailable('Scheduler Unavailable')));
+        cancelScheduleStub.withArgs(failed_instance_id).returns(Promise.reject(new ServiceUnavailable('Scheduler Unavailable')));
         cancelScheduleStub.returns(Promise.resolve({}));
         runAtStub = sinon.stub(ScheduleManager, 'runAt');
-        runAtStub.withArgs(failed_instance_id).throws(new errors.ServiceUnavailable('Scheduler Unavailable'));
+        runAtStub.withArgs(failed_instance_id).throws(new ServiceUnavailable('Scheduler Unavailable'));
         runAtStub.returns(Promise.resolve({}));
         scheduleStub = sinon.stub(ScheduleManager, 'schedule');
-        scheduleStub.withArgs(failed_instance_id).throws(new errors.ServiceUnavailable('Scheduler Unavailable'));
+        scheduleStub.withArgs(failed_instance_id).throws(new ServiceUnavailable('Scheduler Unavailable'));
         scheduleStub.returns(Promise.resolve({}));
         return mocks.setup([backupStore.cloudProvider.getContainer()]);
       });
@@ -193,27 +199,27 @@ describe('Jobs', function () {
           fileName1Daysprior
         ]);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //3 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 3 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+        }
         ]);
-        //Out of 4 files 1 and 14 day prior is filtered out 
+        // Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14, scheduled_data);
         mocks.cloudProvider.download(pathname16, scheduled_data16);
@@ -259,27 +265,27 @@ describe('Jobs', function () {
           fileName1Daysprior
         ]);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+        }
         ]);
-        //Out of 4 files 1 and 14 day prior is filtered out 
+        // Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14,
           getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
@@ -328,27 +334,27 @@ describe('Jobs', function () {
           fileName1Daysprior
         ]);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        }
         ]);
-        //Out of 4 files 1 day prior is filtered out.
+        // Out of 4 files 1 day prior is filtered out.
         mocks.cloudProvider.download(pathname14,
           getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
         mocks.cloudProvider.download(pathname16,
@@ -394,27 +400,27 @@ describe('Jobs', function () {
           fileName1Daysprior
         ]);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+        }
         ]);
-        //Out of 4 files 1 day prior is filtered out.
+        // Out of 4 files 1 day prior is filtered out.
         mocks.cloudProvider.download(pathname14,
           getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
         mocks.cloudProvider.download(pathname16,
@@ -424,7 +430,7 @@ describe('Jobs', function () {
         mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid, false);
         mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid, false);
         mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid, false);
-        //Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
+        // Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname18);
         mocks.cloudProvider.remove(transactionLogsPathname16);
@@ -460,27 +466,27 @@ describe('Jobs', function () {
         }, backupResponse);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+        }
         ]);
-        //Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
+        // Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname18);
         mocks.cloudProvider.remove(transactionLogsPathname16);
@@ -578,7 +584,7 @@ describe('Jobs', function () {
               delete_backup_status: 'failed'
             };
             expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-            expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+            expect(scheduleStub.callCount).to.be.eql(3); // Retry mechanism to schedule runAt is 3 times on error
             expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
             expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
             expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(_.chain(_.cloneDeep(job.attrs)).set('data.attempt', max_attmpts).value());
@@ -604,7 +610,7 @@ describe('Jobs', function () {
               delete_backup_status: 'failed'
             };
             expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-            expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+            expect(scheduleStub.callCount).to.be.eql(3); // Retry mechanism to schedule runAt is 3 times on error
             expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
             expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
             expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -649,35 +655,35 @@ describe('Jobs', function () {
           fileName1Daysprior
         ]);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName19Daysprior,
-            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
-          },
-          {
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName19Daysprior,
+          last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName16DaysPrior,
+          last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 // 30 mins = buffer time
+        },
+        {
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName18DaysPrior,
+          last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+        }
         ]);
         // This list method will be invoked after the deletion. The transaction logs which are not older than 14 days should remain.
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
-            file_name: transactionLogsFileName14DaysPrior,
-            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
-          },
-          {
-            file_name: transactionLogsFileName1Daysprior,
-            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
-          }
+          file_name: transactionLogsFileName14DaysPrior,
+          last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+        },
+        {
+          file_name: transactionLogsFileName1Daysprior,
+          last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+        }
         ]);
         mocks.cloudProvider.download(pathname14, scheduled_data);
         mocks.cloudProvider.download(pathname16, scheduled_data16);
@@ -701,7 +707,7 @@ describe('Jobs', function () {
               instance_deleted: true
             }
           };
-          //expect(baseJobLogRunHistoryStub).to.be.calledTwice;
+          // expect(baseJobLogRunHistoryStub).to.be.calledTwice;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedJobResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -712,7 +718,7 @@ describe('Jobs', function () {
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.cloudProvider.list(container, prefix, []);
-        //Since, all the backups are deleted the list is returning empty.
+        // Since, all the backups are deleted the list is returning empty.
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [], 2);
         return ScheduleBackupJob.run(job, () => {}).then(() => {
           mocks.verify();

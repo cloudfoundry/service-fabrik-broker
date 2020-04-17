@@ -1,8 +1,10 @@
 'use strict';
 
-const CONST = require('../../common/constants');
-const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
-const backupStoreForOob = require('../../data-access-layer/iaas').backupStoreForOob;
+const { CONST } = require('@sf/common-utils');
+const {
+  backupStoreForOob,
+  CloudProviderClient
+} = require('@sf/iaas');
 
 describe('iaas', function () {
   describe('backupStoreForOob', function () {
@@ -24,7 +26,7 @@ describe('iaas', function () {
       const backup_guid = 'some-guid';
       const started_at = new Date().toISOString();
       const backup_guid2 = 'some-guid2';
-      const started_at2 = new Date().toISOString(); //latest date
+      const started_at2 = new Date().toISOString(); // latest date
       let sandbox, listStub;
       before(function () {
         sandbox = sinon.createSandbox();

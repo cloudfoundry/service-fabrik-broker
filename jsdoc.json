@@ -5,8 +5,7 @@
   "source": {
     "include": [
       "./README.md",
-      "./broker/server.js",
-      "./broker/lib"
+      "applications/osb-broker/src/server.js"
     ],
     "includePattern": ".js$",
     "excludePattern": "(node_modules/|docs)"

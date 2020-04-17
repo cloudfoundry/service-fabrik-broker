@@ -1,0 +1,25 @@
+{
+  "name": "@sf/jobs",
+  "version": "1.0.0",
+  "description": "Schedule manager for service fabrik scheduled jobs",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../app-config",
+    "@sf/bosh": "file:../../data-access-layer/bosh",
+    "@sf/broker-client": "file:../../data-access-layer/broker-client",
+    "@sf/cf": "file:../../data-access-layer/cf",
+    "@sf/common-utils": "file:../utils",
+    "@sf/event-logger": "file:../../data-access-layer/event-logger",
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
+    "@sf/iaas": "file:../../data-access-layer/iaas",
+    "@sf/logger": "file:../logging",
+    "@sf/metering": "file:../../data-access-layer/metering",
+    "@sf/models": "file:../models"
+  }
+}

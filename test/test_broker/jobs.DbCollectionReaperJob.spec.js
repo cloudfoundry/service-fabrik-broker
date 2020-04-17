@@ -2,11 +2,13 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const BaseJob = require('../../jobs/BaseJob');
-const ScheduleManager = require('../../jobs');
-const Repository = require('../../common/db').Repository;
-const DbCollectionReaperJob = require('../../jobs/DbCollectionReaperJob');
-const CONST = require('../../common/constants');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const DbCollectionReaperJob = require('../../core/scheduler-jobs/src/jobs/DbCollectionReaperJob');
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
 
 describe('Jobs', function () {
   /* jshint expr:true */

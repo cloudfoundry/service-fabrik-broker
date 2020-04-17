@@ -1,14 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const catalog = require('../../common/models/catalog');
-const BoshRestoreService = require('../../operators/bosh-restore-operator/BoshRestoreService');
-const CONST = require('../../common/constants');
-const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
-const bosh = require('../../data-access-layer/bosh');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const errors = require('../../common/errors');
-const backupStore = require('../../data-access-layer/iaas').backupStore;
+const { catalog } = require('@sf/models');
+const BoshRestoreService = require('../../applications/operators/bosh-restore-operator/BoshRestoreService');
+const { CONST } = require('@sf/common-utils');
+const {
+  cloudProvider,
+  backupStore
+} = require('@sf/iaas');
+const { director } = require('@sf/bosh');
+const { apiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
   describe('BoshRestoreService', function () {
@@ -56,17 +57,17 @@ describe('operators', function () {
         'username': 'admin_service-fabrik'
       };
       let getPersistentDisksInfo = [{
-          'job_name': 'blueprint',
-          'id': 'id1',
-          'disk_cid': 'vol1',
-          'az': 'az1'
-        },
-        {
-          'job_name': 'blueprint',
-          'id': 'id2',
-          'disk_cid': 'vol2',
-          'az': 'az2'
-        }
+        'job_name': 'blueprint',
+        'id': 'id1',
+        'disk_cid': 'vol1',
+        'az': 'az1'
+      },
+      {
+        'job_name': 'blueprint',
+        'id': 'id2',
+        'disk_cid': 'vol2',
+        'az': 'az2'
+      }
       ];
       let serviceInfo = {
         restore_operation: {
@@ -88,7 +89,7 @@ describe('operators', function () {
         findDeploymentNameByInstanceIdStub.withArgs(instanceId).returns(Promise.resolve(deploymentName));
         getServiceStub = sandbox.stub(catalog, 'getService');
         getServiceStub.withArgs(serviceId).callsFake(() => serviceInfo);
-        getPersistentDisksStub = sandbox.stub(bosh.director, 'getPersistentDisks');
+        getPersistentDisksStub = sandbox.stub(director, 'getPersistentDisks');
         getPersistentDisksStub.withArgs(deploymentName, instanceGroup).resolves(getPersistentDisksInfo);
         getDiskMetadataStub = sandbox.stub(cloudProvider, 'getDiskMetadata');
         getDiskMetadataStub.resolves({
@@ -135,7 +136,7 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        _.forEach(functions, (fn) => {
+        _.forEach(functions, fn => {
           stubs.push(sandbox.stub(BoshRestoreService.prototype, fn).resolves());
         });
       });
@@ -164,13 +165,13 @@ describe('operators', function () {
         };
         return BoshRestoreService.createService(plan)
           .then(rs => {
-            return Promise.map(RESTORE_STATES, (state) => {
+            return Promise.map(RESTORE_STATES, state => {
               _.set(restoreResource, 'status.state', state);
               return rs.processState(restoreResource);
             });
           })
           .then(() => {
-            _.forEach(stubs, (stub) => {
+            _.forEach(stubs, stub => {
               expect(stub.callCount).to.eql(1);
             });
           });
@@ -186,7 +187,7 @@ describe('operators', function () {
           }
         };
         _.set(restoreResource, 'status.state', 'invalid-state');
-        let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        let patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
         let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
         let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
         return BoshRestoreService.createService(plan)
@@ -208,7 +209,7 @@ describe('operators', function () {
           }
         };
         _.set(restoreResource, 'status.state', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`);
-        let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        let patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
         stubs[0].restore();
         let processBoshStopStub = sandbox.stub(BoshRestoreService.prototype, 'processBoshStop').rejects('some error');
         let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
@@ -233,9 +234,9 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        stopDeploymentStub = sandbox.stub(bosh.director, 'stopDeployment');
-        pollTaskStatusTillCompleteStub = sandbox.stub(bosh.director, 'pollTaskStatusTillComplete');
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        stopDeploymentStub = sandbox.stub(director, 'stopDeployment');
+        pollTaskStatusTillCompleteStub = sandbox.stub(director, 'pollTaskStatusTillComplete');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
       });
       afterEach(() => {
         sandbox.restore();
@@ -282,26 +283,26 @@ describe('operators', function () {
         'deploymentName': deploymentName,
         'snapshotId': snapshotId,
         'deploymentInstancesInfo': [{
-            'id': 'id-1',
-            'az': 'us-east-1a',
-            'oldDiskInfo': {
-              'type': 'dummyType'
-            }
-          },
-          {
-            'id': 'id-2',
-            'az': 'us-east-1a',
-            'oldDiskInfo': {
-              'type': 'dummyType'
-            }
+          'id': 'id-1',
+          'az': 'us-east-1a',
+          'oldDiskInfo': {
+            'type': 'dummyType'
           }
+        },
+        {
+          'id': 'id-2',
+          'az': 'us-east-1a',
+          'oldDiskInfo': {
+            'type': 'dummyType'
+          }
+        }
         ]
       };
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
         createDiskFromSnapshotStub = sandbox.stub(cloudProvider, 'createDiskFromSnapshot');
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
       });
       afterEach(() => {
         sandbox.restore();
@@ -312,14 +313,14 @@ describe('operators', function () {
           restoreMetadata: restoreMetadata
         };
         createDiskFromSnapshotStub.withArgs(snapshotId, 'us-east-1a', {
-            type: 'dummyType'
-          })
+          type: 'dummyType'
+        })
           .onFirstCall().resolves({
             'volumeId': 'vol-new-1'
           });
         createDiskFromSnapshotStub.withArgs(snapshotId, 'us-east-1a', {
-            type: 'dummyType'
-          })
+          type: 'dummyType'
+        })
           .onSecondCall().resolves({
             'volumeId': 'vol-new-2'
           });
@@ -345,26 +346,26 @@ describe('operators', function () {
         restoreMetadata = {
           'deploymentName': deploymentName,
           'deploymentInstancesInfo': [{
-              'id': 'id-1',
-              'job_name': 'blueprint',
-              'newDiskInfo': {
-                'volumeId': 'vol-new-1'
-              }
-            },
-            {
-              'id': 'id-2',
-              'job_name': 'blueprint',
-              'newDiskInfo': {
-                'volumeId': 'vol-new-2'
-              }
+            'id': 'id-1',
+            'job_name': 'blueprint',
+            'newDiskInfo': {
+              'volumeId': 'vol-new-1'
             }
+          },
+          {
+            'id': 'id-2',
+            'job_name': 'blueprint',
+            'newDiskInfo': {
+              'volumeId': 'vol-new-2'
+            }
+          }
           ]
         };
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        pollTaskStatusTillCompleteStub = sandbox.stub(bosh.director, 'pollTaskStatusTillComplete');
-        createDiskAttachmentStub = sandbox.stub(bosh.director, 'createDiskAttachment');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
+        pollTaskStatusTillCompleteStub = sandbox.stub(director, 'pollTaskStatusTillComplete');
+        createDiskAttachmentStub = sandbox.stub(director, 'createDiskAttachment');
       });
       afterEach(() => {
         sandbox.restore();
@@ -377,10 +378,10 @@ describe('operators', function () {
         const task_1 = 'task-1';
         const task_2 = 'task-2';
         createDiskAttachmentStub.withArgs(deploymentName, restoreMetadata.deploymentInstancesInfo[0].newDiskInfo.volumeId,
-            restoreMetadata.deploymentInstancesInfo[0].job_name, restoreMetadata.deploymentInstancesInfo[0].id)
+          restoreMetadata.deploymentInstancesInfo[0].job_name, restoreMetadata.deploymentInstancesInfo[0].id)
           .resolves(task_1);
         createDiskAttachmentStub.withArgs(deploymentName, restoreMetadata.deploymentInstancesInfo[1].newDiskInfo.volumeId,
-            restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
+          restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
           .resolves(task_2);
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processAttachDisk(restoreOptions))
@@ -404,7 +405,7 @@ describe('operators', function () {
         patchResourceStub.resolves();
         const task_2 = 'task-2';
         createDiskAttachmentStub.withArgs(deploymentName, restoreMetadata.deploymentInstancesInfo[1].newDiskInfo.volumeId,
-            restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
+          restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
           .resolves(task_2);
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processAttachDisk(restoreOptions))
@@ -427,13 +428,13 @@ describe('operators', function () {
       let restoreMetadata = {
         'deploymentName': deploymentName,
         'deploymentInstancesInfo': [{
-            job_name: 'blueprint',
-            id: 'id-1'
-          },
-          {
-            job_name: 'blueprint',
-            id: 'id-2'
-          }
+          job_name: 'blueprint',
+          id: 'id-1'
+        },
+        {
+          job_name: 'blueprint',
+          id: 'id-2'
+        }
         ],
         'arguments': {
           time_stamp: 'dummyTimestamp',
@@ -450,8 +451,8 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        runSshStub = sandbox.stub(bosh.director, 'runSsh');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
+        runSshStub = sandbox.stub(director, 'runSsh');
         getServiceStub = sandbox.stub(catalog, 'getService');
       });
       afterEach(() => {
@@ -494,13 +495,13 @@ describe('operators', function () {
     describe('#getInstancesForErrands', function () {
       it('should return appropriate instances in correct format based on instanceOption', () => {
         let deploymentInstancesInfo = [{
-            job_name: 'blueprint',
-            id: 'id-1'
-          },
-          {
-            job_name: 'blueprint',
-            id: 'id-2'
-          }
+          job_name: 'blueprint',
+          id: 'id-1'
+        },
+        {
+          job_name: 'blueprint',
+          id: 'id-2'
+        }
         ];
         plan = catalog.getPlan(planId);
         return BoshRestoreService.createService(plan)
@@ -532,20 +533,20 @@ describe('operators', function () {
           'instances': 'all'
         },
         'deploymentInstancesInfo': [{
-            job_name: 'blueprint',
-            id: 'id-1'
-          },
-          {
-            job_name: 'blueprint',
-            id: 'id-2'
-          }
-        ],
+          job_name: 'blueprint',
+          id: 'id-1'
+        },
+        {
+          job_name: 'blueprint',
+          id: 'id-2'
+        }
+        ]
       };
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        runDeploymentErrandStub = sandbox.stub(bosh.director, 'runDeploymentErrand');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
+        runDeploymentErrandStub = sandbox.stub(director, 'runDeploymentErrand');
       });
       afterEach(() => {
         sandbox.restore();
@@ -609,7 +610,7 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
         triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
       });
       afterEach(() => {
@@ -644,7 +645,7 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
         triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
       });
       afterEach(() => {
@@ -679,8 +680,8 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        startDeploymentStub = sandbox.stub(bosh.director, 'startDeployment');
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        startDeploymentStub = sandbox.stub(director, 'startDeployment');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
       });
       afterEach(() => {
         sandbox.restore();
@@ -712,7 +713,7 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
         triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
       });
       afterEach(() => {
@@ -746,7 +747,7 @@ describe('operators', function () {
       beforeEach(() => {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
-        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        patchResourceStub = sandbox.stub(apiServerClient, 'patchResource');
       });
       afterEach(() => {
         sandbox.restore();
@@ -769,7 +770,7 @@ describe('operators', function () {
             expect(patchResourceStub.callCount).to.eql(1);
             expect(getRestoreFileStub.callCount).to.eql(1);
             expect(patchRestoreFileStub.callCount).to.eql(1);
-        });
+          });
       });
     });
   });

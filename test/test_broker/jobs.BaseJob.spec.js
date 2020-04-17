@@ -1,9 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const BaseJob = require('../../jobs/BaseJob');
-const Repository = require('../../common/db').Repository;
-const CONST = require('../../common/constants');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
 
 describe('Jobs', function () {
   describe('BaseJob', function () {
@@ -119,7 +121,7 @@ describe('Jobs', function () {
         repositorySaveStub.withArgs().returns(Promise.try(() => {
           throw new Error('Db unreachable');
         }));
-        return BaseJob.logRunHistory(err2, failureJobResponse, job).then((responseCode) => {
+        return BaseJob.logRunHistory(err2, failureJobResponse, job).then(responseCode => {
           expect(repositorySaveStub).to.be.calledOnce;
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);

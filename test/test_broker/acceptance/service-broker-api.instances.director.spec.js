@@ -2,11 +2,13 @@
 
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
-const config = require('../../../common/config');
-const catalog = require('../../../common/models').catalog;
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
-const ScheduleManager = require('../../../jobs');
+const config = require('@sf/app-config');
+const { catalog } = require('@sf/models');
+const {
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
+const ScheduleManager = require('@sf/jobs');
 
 describe('service-broker-api', function () {
   describe('instances', function () {
@@ -31,7 +33,7 @@ describe('service-broker-api', function () {
       let getScheduleStub;
 
       before(function () {
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
@@ -222,7 +224,7 @@ describe('service-broker-api', function () {
               space_guid: space_guid
             },
             parameters: {
-              enum_foo: 'not_bar',
+              enum_foo: 'not_bar'
             },
             accepts_incomplete: accepts_incomplete
           })

@@ -4,10 +4,13 @@ const proxyquire = require('proxyquire');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const errors = require('../../common/errors');
-const InternalServerError = errors.InternalServerError;
+const {
+  CONST,
+  errors: {
+    InternalServerError
+  }
+} = require('@sf/common-utils');
+const { ApiServerClient } = require('@sf/eventmesh');
 
 const CONSTANTS = {
   UNLOCK_RESOURCE_POLLER_INTERVAL: 200,
@@ -32,9 +35,12 @@ const CONSTANTS = {
     WATCHER_ERROR_DELAY: 1200000
   }
 };
-const UnlockResourcePoller = proxyquire('../../common/UnlockResourcePoller', {
-  './constants': CONSTANTS
+const UnlockResourcePoller = proxyquire('../../data-access-layer/eventmesh/src/UnlockResourcePoller', {
+  '@sf/common-utils': {
+    CONST: _.defaults({}, CONSTANTS, CONST)
+  }
 });
+UnlockResourcePoller.init();
 
 describe('common', function () {
   describe('UnlockResourcePoller', function () {
@@ -46,7 +52,7 @@ describe('common', function () {
       sandbox.restore();
     });
 
-    it('Should start unlock resource poller successfully and register watch', (done) => {
+    it('Should start unlock resource poller successfully and register watch', done => {
       const jsonStream = new JSONStream();
       const registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -54,7 +60,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
@@ -67,7 +73,7 @@ describe('common', function () {
       done();
     });
 
-    it('Should finish polling for lock if operation succeeded after receiving event', (done) => {
+    it('Should finish polling for lock if operation succeeded after receiving event', done => {
       const options = {
         lockTime: new Date(),
         lockedResourceDetails: {
@@ -110,7 +116,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -127,7 +133,7 @@ describe('common', function () {
         });
     });
 
-    it('Should continue polling for lock if operation not finished after receiving event', (done) => {
+    it('Should continue polling for lock if operation not finished after receiving event', done => {
       const options = {
         lockTime: new Date(),
         lockedResourceDetails: {
@@ -160,7 +166,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -177,7 +183,7 @@ describe('common', function () {
         });
     });
 
-    it('Should clear poller for lock if operation not finished but lock is expired', (done) => {
+    it('Should clear poller for lock if operation not finished but lock is expired', done => {
       const options = {
         lockTime: new Date(new Date() - 100000000),
         lockedResourceDetails: {
@@ -205,7 +211,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -221,7 +227,7 @@ describe('common', function () {
         });
     });
 
-    it('Should finish polling for lock if operation resource is not found after receiving event', (done) => {
+    it('Should finish polling for lock if operation resource is not found after receiving event', done => {
       const options = {
         lockTime: new Date(),
         lockedResourceDetails: {
@@ -260,7 +266,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -276,14 +282,14 @@ describe('common', function () {
         });
     });
 
-    it('Should retry register watch in case of error', (done) => {
+    it('Should retry register watch in case of error', done => {
       const NEWCONST = {
         APISERVER: {
           RESOURCE_GROUPS: {
-            LOCK: 'lock.servicefabrik.io',
+            LOCK: 'lock.servicefabrik.io'
           },
           RESOURCE_TYPES: {
-            DEPLOYMENT_LOCKS: 'deploymentlocks',
+            DEPLOYMENT_LOCKS: 'deploymentlocks'
           },
           RESOURCE_STATE: {
             UNLOCKED: 'unlocked'
@@ -292,8 +298,10 @@ describe('common', function () {
           WATCHER_ERROR_DELAY: 300
         }
       };
-      const UnlockResourcePollerNew = proxyquire('../../common/UnlockResourcePoller', {
-        './constants': NEWCONST
+      const UnlockResourcePollerNew = proxyquire('../../data-access-layer/eventmesh/src/UnlockResourcePoller', {
+        '@sf/common-utils': {
+          CONST: NEWCONST
+        }
       });
 
       const jsonStream = new JSONStream();
@@ -309,7 +317,7 @@ describe('common', function () {
           }
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePollerNew.start();
       return Promise.delay(700)
         .then(() => {

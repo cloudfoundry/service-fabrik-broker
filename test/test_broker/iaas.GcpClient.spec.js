@@ -3,13 +3,16 @@ const _ = require('lodash');
 const GcpStorage = require('@google-cloud/storage');
 const GcpCompute = require('@google-cloud/compute');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const GcpClient = require('../../data-access-layer/iaas').GcpClient;
-const NotFound = errors.NotFound;
-const Forbidden = errors.Forbidden;
-const UnprocessableEntity = errors.UnprocessableEntity;
+const logger = require('@sf/logger');
+const {
+  errors: {
+    NotFound,
+    Forbidden,
+    UnprocessableEntity
+  },
+  commonFunctions
+} = require('@sf/common-utils');
+const { GcpClient } = require('@sf/iaas');
 
 const CONNECTION_WAIT_SIMULATED_DELAY = 5;
 const config = {
@@ -19,7 +22,7 @@ const config = {
     status_check_every: 120000, // (ms) Check the status of backup once every 2 mins
     backup_restore_status_poller_timeout: 86400000, // (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
     backup_restore_status_check_every: 120000, // (ms) Check the status of deployment backup/restore once every 2 mins
-    abort_time_out: 300000, //(ms) Timeout time for abort of backup to complete
+    abort_time_out: 300000, // (ms) Timeout time for abort of backup to complete
     provider: {
       name: 'gcp',
       projectId: 'my-gcp-dev',
@@ -104,65 +107,65 @@ const zoneStub = {
 };
 
 const bucketMetadataResponse = [{
-    /* Bucket Object */
-  },
-  {
-    kind: 'storage#bucket',
-    id: 'sample-container',
-    selfLink: 'https://myaccounts.com/storage/v1/b/sample-container',
-    projectNumber: '00000000000',
-    name: 'sample-container',
-    timeCreated: '2017-12-24T10:23:50.348Z',
-    updated: '2017-12-24T10:23:50.348Z',
-    metageneration: '1',
-    location: 'EUROPE-WEST1',
-    storageClass: 'REGIONAL',
-    etag: 'aaa'
-  }
+  /* Bucket Object */
+},
+{
+  kind: 'storage#bucket',
+  id: 'sample-container',
+  selfLink: 'https://myaccounts.com/storage/v1/b/sample-container',
+  projectNumber: '00000000000',
+  name: 'sample-container',
+  timeCreated: '2017-12-24T10:23:50.348Z',
+  updated: '2017-12-24T10:23:50.348Z',
+  metageneration: '1',
+  location: 'EUROPE-WEST1',
+  storageClass: 'REGIONAL',
+  etag: 'aaa'
+}
 ];
 const getFilesResponse = [
   [{
+    name: 'blob1.txt',
+    metadata: {
+      kind: 'storage#object',
+      id: 'sample-container/blob1.txt/1111111',
+      selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob1.txt',
       name: 'blob1.txt',
-      metadata: {
-        kind: 'storage#object',
-        id: 'sample-container/blob1.txt/1111111',
-        selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob1.txt',
-        name: 'blob1.txt',
-        bucket: 'sample-container',
-        generation: '1111111',
-        metageneration: '1',
-        timeCreated: '2018-03-08T14:15:49.655Z',
-        updated: '2018-03-08T14:15:49.655Z',
-        storageClass: 'REGIONAL',
-        timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
-        size: '26877',
-        md5Hash: 'aaaaaaa',
-        mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob1.txt?generation=1111111&alt=media',
-        crc32c: 'aaa',
-        etag: 'bbb'
-      }
-    },
-    {
-      name: 'blob2.txt',
-      metadata: {
-        kind: 'storage#object',
-        id: 'sample-container/blob2.txt/222222',
-        selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob2.txt',
-        name: 'blob2.txt',
-        bucket: 'sample-container',
-        generation: '222222',
-        metageneration: '1',
-        timeCreated: '2018-03-08T14:15:49.655Z',
-        updated: '2018-03-08T14:15:49.655Z',
-        storageClass: 'REGIONAL',
-        timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
-        size: '2687',
-        md5Hash: 'bbbbb',
-        mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob2.txt?generation=222222&alt=media',
-        crc32c: 'aaa',
-        etag: 'bbb'
-      }
+      bucket: 'sample-container',
+      generation: '1111111',
+      metageneration: '1',
+      timeCreated: '2018-03-08T14:15:49.655Z',
+      updated: '2018-03-08T14:15:49.655Z',
+      storageClass: 'REGIONAL',
+      timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
+      size: '26877',
+      md5Hash: 'aaaaaaa',
+      mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob1.txt?generation=1111111&alt=media',
+      crc32c: 'aaa',
+      etag: 'bbb'
     }
+  },
+  {
+    name: 'blob2.txt',
+    metadata: {
+      kind: 'storage#object',
+      id: 'sample-container/blob2.txt/222222',
+      selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob2.txt',
+      name: 'blob2.txt',
+      bucket: 'sample-container',
+      generation: '222222',
+      metageneration: '1',
+      timeCreated: '2018-03-08T14:15:49.655Z',
+      updated: '2018-03-08T14:15:49.655Z',
+      storageClass: 'REGIONAL',
+      timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
+      size: '2687',
+      md5Hash: 'bbbbb',
+      mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob2.txt?generation=222222&alt=media',
+      crc32c: 'aaa',
+      etag: 'bbb'
+    }
+  }
   ]
 ];
 const deleteFileSuccessResponse = [
@@ -193,28 +196,28 @@ const fileForbiddenResponse = {
 };
 let deleteSnapshotEventHandlers = {};
 const deleteSnapshotResponse = [{
-    on: (event, callback) => {
-      _.set(deleteSnapshotEventHandlers, event, callback);
-      return true;
-    },
-    removeAllListeners: () => {
-      deleteSnapshotEventHandlers = {};
-      return true;
-    }
+  on: (event, callback) => {
+    _.set(deleteSnapshotEventHandlers, event, callback);
+    return true;
   },
-  {
-    kind: 'compute#operation',
-    id: '333333',
-    name: 'operation-xxxxxx',
-    operationType: 'delete',
-    targetLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/snapshots/snapshot-1',
-    targetId: '11111',
-    status: 'PENDING',
-    user: 'my-test-user@my-gcp-dev.iam.myaccounts.com',
-    progress: 0,
-    insertTime: '2018-03-15T08:31:05.592-07:00',
-    selfLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/operations/operation-xxxxxx'
+  removeAllListeners: () => {
+    deleteSnapshotEventHandlers = {};
+    return true;
   }
+},
+{
+  kind: 'compute#operation',
+  id: '333333',
+  name: 'operation-xxxxxx',
+  operationType: 'delete',
+  targetLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/snapshots/snapshot-1',
+  targetId: '11111',
+  status: 'PENDING',
+  user: 'my-test-user@my-gcp-dev.iam.myaccounts.com',
+  progress: 0,
+  insertTime: '2018-03-15T08:31:05.592-07:00',
+  selfLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/operations/operation-xxxxxx'
+}
 ];
 let streamEventHandlers = {};
 const jsonContent = '{"content": "This is a sample content"}';
@@ -236,7 +239,7 @@ const utilsStreamToPromiseStub = function streamToPromise(stream) {
     stream.on('end', () => {
       resolve(jsonContent);
     });
-    stream.on('error', (err) => {
+    stream.on('error', err => {
       reject(err);
     });
   });
@@ -271,7 +274,7 @@ const bucketStub = {
   getFiles: () => {
     return Promise.resolve(getFilesResponse);
   },
-  file: (file) => {
+  file: file => {
     if (file === validBlobName) {
       return fileStub;
     } else if (file === notFoundBlobName) {
@@ -300,7 +303,7 @@ describe('iaas', function () {
         expect(() => GcpClient.validateParams(null)).to.throw();
       });
       it('should throw error if projectId is not provided in config', function () {
-        var config = {
+        let config = {
           name: 'gcp',
           credentials: {
             'type': 'service_account',
@@ -318,14 +321,14 @@ describe('iaas', function () {
         expect(() => GcpClient.validateParams(config)).to.throw();
       });
       it('should throw error if credentials are not provided in config', function () {
-        var config = {
+        let config = {
           name: 'gcp',
           projectId: 'my-project-id'
         };
         expect(() => GcpClient.validateParams(config)).to.throw();
       });
       it('should throw an error if credentials object provided in config is missing any params', function () {
-        var config = {
+        let config = {
           name: 'gcp',
           projectId: 'my-project-id',
           credentials: {
@@ -337,7 +340,7 @@ describe('iaas', function () {
             'client_id': '000000000000000',
             'auth_uri': 'https://myaccounts.com/oauth2/auth',
             'token_uri': 'https://myaccounts.com/oauth2/token',
-            'auth_provider_x509_cert_url': 'https://myaccounts.com/oauth2/v1/certs',
+            'auth_provider_x509_cert_url': 'https://myaccounts.com/oauth2/v1/certs'
             // missing client_x509_cert_url param
           }
         };
@@ -377,7 +380,7 @@ describe('iaas', function () {
         sandbox = sinon.createSandbox();
         client = new GcpClient(settings);
         sandbox.stub(GcpStorage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
-        sandbox.stub(utils, 'streamToPromise').callsFake(utilsStreamToPromiseStub);
+        sandbox.stub(commonFunctions, 'streamToPromise').callsFake(utilsStreamToPromiseStub);
       });
       after(function () {
         sandbox.restore();
@@ -405,13 +408,13 @@ describe('iaas', function () {
           prefix: 'blob'
         };
         const expectedResponse = [{
-            name: 'blob1.txt',
-            lastModified: '2018-03-08T14:15:49.655Z'
-          },
-          {
-            name: 'blob2.txt',
-            lastModified: '2018-03-08T14:15:49.655Z'
-          }
+          name: 'blob1.txt',
+          lastModified: '2018-03-08T14:15:49.655Z'
+        },
+        {
+          name: 'blob2.txt',
+          lastModified: '2018-03-08T14:15:49.655Z'
+        }
         ];
         return client.list(options)
           .then(result => {
@@ -447,7 +450,7 @@ describe('iaas', function () {
           .catch(err => expect(err).to.be.instanceof(Forbidden));
       });
       it('file/blob upload should be successful', function () {
-        var uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
+        let uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.finish && _.isFunction(streamEventHandlers.finish)) {
@@ -467,7 +470,7 @@ describe('iaas', function () {
       });
       it('file/blob upload should fail', function () {
         const uploadErrMsg = 'Upload failed';
-        var uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
+        let uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.error && _.isFunction(streamEventHandlers.error)) {
@@ -485,7 +488,7 @@ describe('iaas', function () {
           });
       });
       it('file/blob download should be successful', function () {
-        var downloadJsonPromise = client.downloadJson(validBlobName);
+        let downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.end && _.isFunction(streamEventHandlers.end)) {
@@ -504,7 +507,7 @@ describe('iaas', function () {
       });
       it('file/blob download should fail', function () {
         const downloadErrMsg = 'Download failed';
-        var downloadJsonPromise = client.downloadJson(validBlobName);
+        let downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.error && _.isFunction(streamEventHandlers.error)) {
@@ -522,7 +525,7 @@ describe('iaas', function () {
           });
       });
       it('file/blob download should fail with NotFound error', function () {
-        var downloadJsonPromise = client.downloadJson(validBlobName);
+        let downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.error && _.isFunction(streamEventHandlers.error)) {
@@ -540,7 +543,7 @@ describe('iaas', function () {
           });
       });
       it('file/blob download should fail with UnprocessableEntity error', function () {
-        var downloadJsonPromise = client.downloadJson(validBlobName);
+        let downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (streamEventHandlers.error && _.isFunction(streamEventHandlers.error)) {
@@ -657,7 +660,7 @@ describe('iaas', function () {
       });
 
       it('snapshot should be deleted successfully', function () {
-        var deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
+        let deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (deleteSnapshotEventHandlers.complete && _.isFunction(deleteSnapshotEventHandlers.complete)) {
@@ -675,7 +678,7 @@ describe('iaas', function () {
           });
       });
       it('snapshot delete should fail', function () {
-        var deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
+        let deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
             if (deleteSnapshotEventHandlers.error && _.isFunction(deleteSnapshotEventHandlers.error)) {

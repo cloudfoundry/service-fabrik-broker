@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const cloudControllerUrl = config.cf.url;
 const prefix = 'service-fabrik';
-const DirectorService = require('../../../operators/bosh-operator/DirectorService');
+const DirectorService = require('../../../applications/operators/bosh-operator/DirectorService');
 
 exports.url = cloudControllerUrl;
 exports.getInfo = getInfo;
@@ -34,7 +34,7 @@ function getInfo(options) {
     .replyContentLength()
     .get('/v2/info')
     .reply(200, _.assign({
-      api_version: '2.55.0',
+      api_version: '2.55.0'
     }, options));
 }
 
@@ -142,7 +142,7 @@ function getSpace(guid, entity, times) {
 
 function findServiceBrokerByName(broker_guid, broker_name) {
   return nock(cloudControllerUrl)
-    .get(`/v2/service_brokers`)
+    .get('/v2/service_brokers')
     .query({
       q: `name:${broker_name}`
     })
@@ -258,7 +258,7 @@ function findServicePlan(instance_id, plan_unique_id, times) {
     }
   } : '';
   return nock(cloudControllerUrl)
-    .get(`/v2/service_plans`)
+    .get('/v2/service_plans')
     .times(times || 1)
     .query({
       q: `service_instance_guid:${instance_id}`
@@ -285,7 +285,7 @@ function getServiceInstances(plan_guid, size, space_guid, org_guid) {
     }))
     .value();
   return nock(cloudControllerUrl)
-    .get(`/v2/service_instances`)
+    .get('/v2/service_instances')
     .query({
       q: `service_plan_guid IN ${plan_guid}`
     })
@@ -304,7 +304,7 @@ function getServiceInstancesInSpaceWithName(instance_name, space_guid, present) 
     }];
   }
   return nock(cloudControllerUrl)
-    .get(`/v2/service_instances`)
+    .get('/v2/service_instances')
     .query({
       q: [`space_guid:${space_guid}`, `name:${instance_name}`]
     })
@@ -336,36 +336,36 @@ function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, res
 function getSpaceDevelopers(space_guid, includeUser) {
   let resources = [{
     metadata: {
-      guid: 'me',
+      guid: 'me'
     },
     entity: {
-      username: 'me',
+      username: 'me'
     }
   }, {
     metadata: {
-      guid: 'admin',
+      guid: 'admin'
     },
     entity: {
-      username: 'admin',
+      username: 'admin'
     }
   }];
 
   if (includeUser) {
     resources.push({
       metadata: {
-        guid: includeUser,
+        guid: includeUser
       },
       entity: {
-        username: includeUser,
+        username: includeUser
       }
     });
   }
 
   return nock(cloudControllerUrl, {
-      reqheaders: {
-        authorization: /^bearer/i
-      }
-    })
+    reqheaders: {
+      authorization: /^bearer/i
+    }
+  })
     .get(`/v2/spaces/${space_guid}/developers`)
     .reply(200, {
       next_url: null,

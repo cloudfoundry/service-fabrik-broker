@@ -1,7 +1,9 @@
 'use strict';
 
-const serviceFlowMapper = require('../../common/utils/ServiceFlowMapper');
-const CONST = require('../../common/constants');
+const {
+  CONST,
+  serviceFlowMapper
+} = require('@sf/common-utils');
 
 describe('utils', function () {
   describe('ServiceFlowMapper', function () {

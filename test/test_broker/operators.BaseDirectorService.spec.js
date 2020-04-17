@@ -1,7 +1,7 @@
 'use strict';
 
 // const _ = require('lodash');
-const BaseDirectorService = require('../../operators/BaseDirectorService');
+const BaseDirectorService = require('../../applications/operators/BaseDirectorService');
 // const CONST = require('../../common/constants');
 
 describe('operators', function () {

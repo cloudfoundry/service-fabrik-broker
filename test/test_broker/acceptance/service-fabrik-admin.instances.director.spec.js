@@ -1,11 +1,13 @@
 'use strict';
 
 const _ = require('lodash');
-const Repository = require('../../../common/db').Repository;
 const apps = require('../support/apps');
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
-const DirectorService = require('../../../operators/bosh-operator/DirectorService');
+const config = require('@sf/app-config');
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
+const DirectorService = require('../../../applications/operators/bosh-operator/DirectorService');
 
 describe('service-fabrik-admin', function () {
   describe('instances', function () {
@@ -118,25 +120,25 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getSpaces(broker_guid, space_guid);
           mocks.cloudController.getOrganizations(broker_guid, org_guid);
           const apiServerResponse = _
-          .chain(mocks.director.getDeploymentNames(numberOfDeployments))
-          .map(deployment => ({
-            metadata: {
-              name: _.nth(DirectorService.parseDeploymentName(deployment.name), 2)
-            },
-            spec: {
-              options: {
-                context : {
-                  space_guid: space_guid
-                },
-                service_plan_guid: plan_guid,                
-                plan_id: plan_unique_id
+            .chain(mocks.director.getDeploymentNames(numberOfDeployments))
+            .map(deployment => ({
+              metadata: {
+                name: _.nth(DirectorService.parseDeploymentName(deployment.name), 2)
+              },
+              spec: {
+                options: {
+                  context : {
+                    space_guid: space_guid
+                  },
+                  service_plan_guid: plan_guid,                
+                  plan_id: plan_unique_id
+                }
+              },
+              status: {
+                lastOperation: {}
               }
-            },
-            status: {
-              lastOperation: {}
-            }
-          }))
-          .value();
+            }))
+            .value();
           mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED], apiServerResponse, 1, 200);
           return chai
             .request(apps.internal)
@@ -175,7 +177,7 @@ describe('service-fabrik-admin', function () {
       describe('#updateDeployment', function () {
         it('should initiate a service-fabrik-operation via an update at broker', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
-          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
             return body.plan_id === plan_unique_id;
           }, {
             status: 202
@@ -194,7 +196,7 @@ describe('service-fabrik-admin', function () {
         });
         it('should initiate a service-fabrik-(update)operation with forbidden manifest changes disable', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
-          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
             return body.plan_id === plan_unique_id;
           }, {
             status: 202
@@ -233,7 +235,7 @@ describe('service-fabrik-admin', function () {
           let deploymentResource = resourceDetails();
           _.unset(deploymentResource, 'status.appliedOptions');
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, deploymentResource);
-          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
             return body.plan_id === plan_unique_id;
           }, {
             status: 202
@@ -268,7 +270,7 @@ describe('service-fabrik-admin', function () {
           createdAt: '2017-08-02T18:23:32.602Z',
           progress: [
             'Going to start Service-Fabrik deployment update'
-          ],
+          ]
         };
         let listStore = [];
 

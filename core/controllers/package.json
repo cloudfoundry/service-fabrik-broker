@@ -1,0 +1,16 @@
+{
+  "name": "@sf/common-controllers",
+  "version": "1.0.0",
+  "description": "Common controllers used by broker applications",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {},
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../app-config",
+    "@sf/common-utils": "file:../utils",
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
+    "@sf/models": "file:../models"
+  }
+}

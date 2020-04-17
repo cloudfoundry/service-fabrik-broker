@@ -1,9 +1,12 @@
 'use strict';
 
-const api = require('../../api-controllers').serviceBrokerApi;
-const errors = require('../../common/errors');
-const PreconditionFailed = errors.PreconditionFailed;
-const ContinueWithNext = errors.ContinueWithNext;
+const api = require('../../applications/osb-broker/src/api-controllers').serviceBrokerApi;
+const {
+  errors: {
+    PreconditionFailed,
+    ContinueWithNext
+  }
+} = require('@sf/common-utils');
 
 describe('fabrik', function () {
   describe('ServiceBrokerApi', function () {

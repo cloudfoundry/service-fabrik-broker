@@ -1,9 +1,9 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
-const logger = require('../../common/logger');
-var EventEmitter = require('events').EventEmitter;
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+let EventEmitter = require('events').EventEmitter;
 const _ = require('lodash');
 
 const pubSubStub = {
@@ -13,7 +13,7 @@ const pubSubStub = {
 
 const netConnectionStub = {
   /* jshint unused:false */
-  write: (event) => true,
+  write: event => true,
   end: () => true
 };
 
@@ -36,7 +36,7 @@ class Connection extends EventEmitter {
     netConnectionStub.end();
   }
 }
-const DomainSocketClient = proxyquire('../../common/utils/EventLogDomainSocketClient', {
+const DomainSocketClient = proxyquire('../../data-access-layer/event-logger/src/EventLogDomainSocketClient', {
   net: {
     createConnection: (path, callback) => {
       return new Connection(path, callback);
@@ -119,7 +119,7 @@ describe('utils', function () {
           options: {}
         });
         process.nextTick(() => {
-          //Being done in nextTick as connect callbacks are fired in nextTick() - see above.
+          // Being done in nextTick as connect callbacks are fired in nextTick() - see above.
           expect(netConnWriteSpy).to.be.calledOnce;
           expect(netConnEndSpy).to.be.calledOnce;
           const testResponse = netConnWriteSpy.firstCall.args[0];

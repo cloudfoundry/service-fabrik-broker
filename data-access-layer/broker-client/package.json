@@ -1,0 +1,17 @@
+{
+  "name": "@sf/broker-client",
+  "version": "1.0.0",
+  "description": "A client to access broker apis",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
+    "@sf/common-utils": "file:../../core/utils",
+    "@sf/logger": "file:../../core/logging"
+  },
+  "repository": {},
+  "license": "Apache-2.0"
+}

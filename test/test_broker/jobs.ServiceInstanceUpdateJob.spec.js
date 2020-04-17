@@ -1,16 +1,21 @@
 'use strict';
 const _ = require('lodash');
 const Promise = require('bluebird');
-const CONST = require('../../common/constants');
-const catalog = require('../../common/models/catalog');
-const utils = require('../../common/utils');
-const config = require('../../common/config');
-const errors = require('../../common/errors');
-const BaseJob = require('../../jobs/BaseJob');
-const JobFabrik = require('../../jobs/JobFabrik');
-const ScheduleManager = require('../../jobs/ScheduleManager');
-const Repository = require('../../common/db').Repository;
-const NetworkSegmentIndex = require('../../data-access-layer/bosh/NetworkSegmentIndex');
+const {
+  CONST,
+  errors: {
+    InternalServerError,
+    UnprocessableEntity
+  },
+  commonFunctions,
+  Repository
+} = require('@sf/common-utils');
+const { catalog } = require('@sf/models');
+const config = require('@sf/app-config');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const { NetworkSegmentIndex } = require('@sf/bosh');
 
 describe('Jobs', function () {
   const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
@@ -99,7 +104,7 @@ describe('Jobs', function () {
       const plan = catalog.getPlan(plan_id);
       const forcedUpdatePlan = _.cloneDeep(plan);
       forcedUpdatePlan.service.force_update = true;
-      uuidv4Stub = sandbox.stub(utils, 'uuidV4');
+      uuidv4Stub = sandbox.stub(commonFunctions, 'uuidV4');
       catalogStub = sandbox.stub(catalog, 'getPlan');
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       catalogStub.withArgs(plan_id_forced_update).returns(forcedUpdatePlan);
@@ -264,11 +269,11 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 202
@@ -310,11 +315,11 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 202
@@ -353,11 +358,11 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 202
@@ -394,7 +399,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -435,7 +440,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -470,7 +475,7 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 202
@@ -481,7 +486,7 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_response: {},
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -512,7 +517,7 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 500
@@ -522,7 +527,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -531,7 +536,7 @@ describe('Jobs', function () {
         .then(() => {
           mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof InternalServerError).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
@@ -542,7 +547,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it(`if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded`, function (done) {
+    it('if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
@@ -553,7 +558,7 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 500
@@ -563,7 +568,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -576,7 +581,7 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof InternalServerError).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
@@ -584,7 +589,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it(`if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
+    it('if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
@@ -595,14 +600,14 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 422,
         body: {
           error: 'Unprocessable Entity',
           status: 422,
-          description: `Service Instance ${job.attrs.data.instance_id} ${CONST.OPERATION_TYPE.LOCK} at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup`,
+          description: `Service Instance ${job.attrs.data.instance_id} ${CONST.OPERATION_TYPE.LOCK} at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup`
         }
       });
       const expectedResponse = {
@@ -610,7 +615,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -622,7 +627,7 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.UnprocessableEntity).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof UnprocessableEntity).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql('Backup in-progress. Update cannot be initiated');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -634,7 +639,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it(`if instance is outdated, update initiation attempt fails due to backup  then it must not schedule itself if update will run beyond current update window`, function (done) {
+    it('if instance is outdated, update initiation attempt fails due to backup  then it must not schedule itself if update will run beyond current update window', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
@@ -645,7 +650,7 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 500
@@ -655,7 +660,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -672,7 +677,7 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof InternalServerError).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
@@ -680,7 +685,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it(`if instance is outdated & if update initiation attempt fails due to bosh rate limits exceeded then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
+    it('if instance is outdated & if update initiation attempt fails due to bosh rate limits exceeded then it must Schedule itself even if max re-try attempts are exceeded', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
@@ -691,7 +696,7 @@ describe('Jobs', function () {
       mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, body => {
         return body.plan_id === plan_id && body.parameters.scheduled === true;
       }, {
         status: 422,
@@ -705,7 +710,7 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({
+        diff: commonFunctions.unifyDiffResult({
           diff: diff
         })
       };
@@ -717,7 +722,7 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.UnprocessableEntity).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof UnprocessableEntity).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql('Deployment attempt rejected due to BOSH overload. Update cannot be initiated');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -803,7 +808,7 @@ describe('Jobs', function () {
     after(function () {
       repositoryStub.restore();
     });
-    it(`Returns successful last run status`, function () {
+    it('Returns successful last run status', function () {
       returnResponse = CONST.OPERATION.SUCCEEDED;
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
@@ -812,14 +817,14 @@ describe('Jobs', function () {
           expect(runstatus.diff.after).to.eql([]);
         });
     });
-    it(`Returns null last run status when job run details are not found`, function () {
+    it('Returns null last run status when job run details are not found', function () {
       returnResponse = undefined;
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
           expect(runstatus).to.be.equal(null);
         });
     });
-    it(`Returns failed last run status with user initiate updae in-progress scenario`, function () {
+    it('Returns failed last run status with user initiate updae in-progress scenario', function () {
       returnResponse = CONST.OPERATION.FAILED;
       failedBecauseOfBackupInProgress = false;
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
@@ -830,7 +835,7 @@ describe('Jobs', function () {
           expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
         });
     });
-    it(`Returns failed last run status with backup in-progress scenario`, function () {
+    it('Returns failed last run status with backup in-progress scenario', function () {
       returnResponse = CONST.OPERATION.FAILED;
       failedBecauseOfBackupInProgress = true;
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
@@ -841,7 +846,7 @@ describe('Jobs', function () {
           expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
         });
     });
-    it(`Returns last run status as succeeded but diff after is returned as in-progress`, function () {
+    it('Returns last run status as succeeded but diff after is returned as in-progress', function () {
       returnResponse = CONST.OPERATION.SUCCEEDED;
       onlyFirstRunComplete = true;
       const updateInProgressMsg = 'TBD';
@@ -853,7 +858,7 @@ describe('Jobs', function () {
           expect(runstatus.diff.after).to.eql(updateInProgressMsg);
         });
     });
-    it(`Returns in-progress last run status`, function () {
+    it('Returns in-progress last run status', function () {
       returnResponse = CONST.OPERATION.IN_PROGRESS;
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
@@ -867,20 +872,20 @@ describe('Jobs', function () {
   describe('#Random', function () {
     let randomIntStub, randomize, randomInt;
     before(function () {
-      randomInt = utils.getRandomInt;
-      randomIntStub = sinon.stub(utils, 'getRandomInt').callsFake((min, max) => (randomize ? randomInt(min, max) : 1));
+      randomInt = commonFunctions.getRandomInt;
+      randomIntStub = sinon.stub(commonFunctions, 'getRandomInt').callsFake((min, max) => (randomize ? randomInt(min, max) : 1));
     });
     after(function () {
       randomIntStub.restore();
     });
-    it(`Returns random schedule interval for the service instance update Job`, function () {
+    it('Returns random schedule interval for the service instance update Job', function () {
       const oldRun = config.scheduler.jobs.service_instance_update.run_every_xdays;
       config.scheduler.jobs.service_instance_update.run_every_xdays = 7;
       const repeatInterval = ServiceInstanceUpdateJob.getRandomRepeatInterval();
       expect(repeatInterval).to.equal('1 1 * * 1');
       config.scheduler.jobs.service_instance_update.run_every_xdays = oldRun;
     });
-    it(`Returns random schedule between the defined start end times`, function () {
+    it('Returns random schedule between the defined start end times', function () {
       randomize = true;
       const oldConfig = _.clone(config.scheduler.jobs.service_instance_update);
       config.scheduler.jobs.service_instance_update.run_every_xdays = 7;

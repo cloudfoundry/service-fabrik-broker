@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const assert = require('assert');
-const config = require('../../../common/config');
+const config = require('@sf/app-config');
 const app = require('../support/apps').external;
 
 describe('service-fabrik-api', function () {

@@ -1,8 +1,8 @@
 'use strict';
 
 const app = require('./support/apps').hook;
-const CONST = require('../../deployment_hooks/lib/constants');
-const config = require('./../../deployment_hooks/lib/config');
+const { CONST } = require('@sf/common-utils');
+const config = require('@sf/app-config');
 
 describe('deployment-hooks', function () {
   /* jshint expr:true */

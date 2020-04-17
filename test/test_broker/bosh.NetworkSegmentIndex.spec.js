@@ -1,7 +1,7 @@
 'use strict';
 
-const catalog = require('../../common/models').catalog;
-const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const { catalog } = require('@sf/models');
+const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 const proxyquire = require('proxyquire');
@@ -29,7 +29,7 @@ let networks = [{
 
 let mock_config;
 
-const NetworkSegmentIndex = proxyquire('../../data-access-layer/bosh/NetworkSegmentIndex', {
+const NetworkSegmentIndex = proxyquire('../../data-access-layer/bosh/src/NetworkSegmentIndex', {
   lodash: {
     sample: function (collection) {
       return collection[2];
@@ -108,10 +108,10 @@ describe('bosh', () => {
       it('returns an array that contains two four-digit integers', () => {
         let expectedUsedIndices = [1234, 9876];
         let usedIndices = NetworkSegmentIndex.getUsedIndices([{
-            name: `${DirectorService.prefix}-${expectedUsedIndices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
-          },
-          `${DirectorService.prefix}-${expectedUsedIndices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`,
-          'no-match'
+          name: `${DirectorService.prefix}-${expectedUsedIndices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
+        },
+        `${DirectorService.prefix}-${expectedUsedIndices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`,
+        'no-match'
         ], directorService.service.subnet);
         expect(usedIndices).to.eql(expectedUsedIndices);
       });
@@ -119,13 +119,13 @@ describe('bosh', () => {
       it('return indices used by public deployments alone', () => {
         let indices = [1234, 9876, 3456, 5678];
         let usedIndices = NetworkSegmentIndex.getUsedIndices([{
-            name: `${DirectorService.prefix}-${indices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
-          },
-          `${DirectorService.prefix}-${indices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`, {
-            name: `${DirectorService.prefix}_public-${indices[2]}-5432abcd-1098-abcd-7654-3210abcd9876`
-          },
-          `${DirectorService.prefix}_public-${indices[3]}-5678abcd-9012-abcd-3456-7890abcd1234`,
-          'no-match'
+          name: `${DirectorService.prefix}-${indices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
+        },
+        `${DirectorService.prefix}-${indices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`, {
+          name: `${DirectorService.prefix}_public-${indices[2]}-5432abcd-1098-abcd-7654-3210abcd9876`
+        },
+        `${DirectorService.prefix}_public-${indices[3]}-5678abcd-9012-abcd-3456-7890abcd1234`,
+        'no-match'
         ], 'public');
         expect(usedIndices).to.eql(indices.splice(2, 3));
       });

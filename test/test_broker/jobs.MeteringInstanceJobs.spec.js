@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const MeterInstanceJob = require('../../jobs/MeterInstanceJob');
-const CONST = require('../../common/constants');
-const EventLogInterceptor = require('../../common/EventLogInterceptor');
+const MeterInstanceJob = require('../../core/scheduler-jobs/src/jobs/MeterInstanceJob');
+const { CONST } = require('@sf/common-utils');
+const { EventLogInterceptor } = require('@sf/event-logger');
 
 const meterGuid = 'meter-guid';
 const not_excluded_plan = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -157,7 +157,7 @@ describe('Jobs', () => {
         options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
         options_json.service.plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
         const dummy_event = getDummyEvent(options_json);
-        const val = MeterInstanceJob.getInstanceType(dummy_event)
+        const val = MeterInstanceJob.getInstanceType(dummy_event);
         expect(val).to.eql(CONST.INSTANCE_TYPE.DOCKER);
       });
       it('should get the instance type as director when SKU does not contain dev', () => {
@@ -165,7 +165,7 @@ describe('Jobs', () => {
         options_json.service.plan_guid = 'bc158c9a-7934-401e-94ab-057082a5073f';
         options_json.service.plan = undefined;
         const dummy_event = getDummyEvent(options_json);
-        const val = MeterInstanceJob.getInstanceType(dummy_event)
+        const val = MeterInstanceJob.getInstanceType(dummy_event);
         expect(val).to.eql(CONST.INSTANCE_TYPE.DIRECTOR);
       });
       it('should get the instance type as docker when document is already enriched', () => {
@@ -173,7 +173,7 @@ describe('Jobs', () => {
         options_json.service.plan_guid = 'bc158c9a-7934-401e-94ab-057082a5073f';
         options_json.service.plan = 'dev';
         const dummy_event = getDummyEvent(options_json);
-        const val = MeterInstanceJob.getInstanceType(dummy_event)
+        const val = MeterInstanceJob.getInstanceType(dummy_event);
         expect(val).to.eql(CONST.INSTANCE_TYPE.DOCKER);
       });
     });
@@ -184,13 +184,13 @@ describe('Jobs', () => {
       publishAndAuditLogEventStub = sinon.stub(EventLogInterceptor.prototype, 'publishAndAuditLogEvent');
 
       beforeEach(function () {
-          publishAndAuditLogEventStub.resetHistory();
+        publishAndAuditLogEventStub.resetHistory();
       });
       afterEach(function () {
         publishAndAuditLogEventStub.resetHistory();
       });
 
-      after(function(){
+      after(function() {
         publishAndAuditLogEventStub.restore();
       });
 
@@ -243,7 +243,7 @@ describe('Jobs', () => {
             expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
             expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
             expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
-              "event_type": 'update',
+              'event_type': 'update',
               instance_id: 'fake_instance_id'
             });
             expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: 200 });
@@ -277,12 +277,12 @@ describe('Jobs', () => {
             expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
             expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
             expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
-              "event_type": 'update',
+              'event_type': 'update',
               instance_id: 'fake_instance_id'
             });
             expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: CONST.HTTP_STATUS_CODE.TIMEOUT });
             mocks.verify();
-          })
+          });
       });
       it('should retry if sending document fails', () => {
         const expectedResponse = {
@@ -322,7 +322,7 @@ describe('Jobs', () => {
     describe('#_logMeteringEvent', () => {
       it('should send log event for success when err is undefined', () => {
         const dummy_event = getDummyEvent(options_json);
-        return Promise.try( () => MeterInstanceJob._logMeteringEvent(undefined, dummy_event))
+        return Promise.try(() => MeterInstanceJob._logMeteringEvent(undefined, dummy_event))
           .then(res => {
             expect(res.eventName).to.eql('broker.0.service-fabrik.director.send_metering_usage');
             expect(res.metric).to.eql(0);
@@ -334,7 +334,7 @@ describe('Jobs', () => {
         const err = { 
           status: CONST.HTTP_STATUS_CODE.TIMEOUT
         };
-        return Promise.try( () => MeterInstanceJob._logMeteringEvent(err, dummy_event))
+        return Promise.try(() => MeterInstanceJob._logMeteringEvent(err, dummy_event))
           .then(res => {
             expect(res.eventName).to.eql('broker.0.service-fabrik.director.send_metering_usage');
             expect(res.metric).to.eql(1);
@@ -373,7 +373,7 @@ describe('Jobs', () => {
     const mock_token = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
     describe('#meter', () => {
       it('Should send event for all documents', () => {
-        //Send doucments to metering service 2 times
+        // Send doucments to metering service 2 times
         const mock_response_code = 200;
         const expectedResponse = {
           status: 200
@@ -409,7 +409,7 @@ describe('Jobs', () => {
           .catch(err => expect(err).to.be.undefined);
       });
       it('Should keep tab of failed events', () => {
-        //Send doucments to metering service 2 times
+        // Send doucments to metering service 2 times
         const mock_response_code = 200;
         const mock_response_code_failure = 400;
         const expectedResponse = {

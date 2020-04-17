@@ -2,7 +2,11 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const utils = require('../../../common/utils');
+const {
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
 
 const config = {
   backup: {
@@ -55,7 +59,7 @@ function auth(times) {
     .replyContentLength()
     .post(`/${provider.tenant_id}/oauth2/token?api-version=1.0`, body => _.isObject(body))
     .times(times || 1)
-    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"' + utils.encodeBase64(token) + '\"}', {
+    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"' + encodeBase64(token) + '\"}', {
       'cache-control': 'no-cache, no-store',
       pragma: 'no-cache',
       'content-type': 'application/json; charset=utf-8',

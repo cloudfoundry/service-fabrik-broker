@@ -1,18 +1,24 @@
 'use strict';
 
 const _ = require('lodash');
-var moment = require('moment-timezone');
+let moment = require('moment-timezone');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
 const os = require('os');
-var EventEmitter = require('events').EventEmitter;
-const CONST = require('../../common/constants');
-const logger = require('../../common/logger');
-const errors = require('../../common/errors');
-const BaseJob = require('../../jobs/BaseJob');
-const maintenanceManager = require('../../maintenance').maintenanceManager;
+let EventEmitter = require('events').EventEmitter;
+const {
+  CONST,
+  errors: {
+    ServiceUnavailable,
+    BadRequest,
+    ServiceInMaintenance
+  }
+} = require('@sf/common-utils');
+const logger = require('@sf/logger');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const { maintenanceManager } = require('../../applications/scheduler/maintenance');
 
 const MONGO_INIT_SUCCEEDED = 2;
 const MONGO_INIT_FAILED = 1;
@@ -27,15 +33,15 @@ const pubSubStub = {
 const agendaStub = {
   init: () => undefined,
   on: (event, cb) => undefined,
-  processEvery: (ms) => undefined,
-  maxConcurrency: (count) => undefined,
-  defaultConcurrency: (count) => undefined,
-  defaultLockLifetime: (count) => undefined,
+  processEvery: ms => undefined,
+  maxConcurrency: count => undefined,
+  defaultConcurrency: count => undefined,
+  defaultLockLifetime: count => undefined,
   start: () => undefined,
   jobsAsync: () => undefined,
   define: (name, cb) => undefined,
   create: (name, data) => undefined,
-  cancelAsync: (criteria) => undefined,
+  cancelAsync: criteria => undefined,
   everyAsync: (interval, jobName, data, options) => undefined,
   scheduleAsync: (runAt, jobName, data) => undefined,
   nowAsync: (jobName, data) => undefined,
@@ -44,8 +50,8 @@ const agendaStub = {
 
 const jobStub = {
   attrs: {},
-  unique: (data) => undefined,
-  repeatEvery: (interval) => undefined,
+  unique: data => undefined,
+  repeatEvery: interval => undefined,
   computeNextRunAt: () => undefined,
   schedule: () => undefined,
   runAsync: () => {
@@ -133,14 +139,14 @@ class Agenda extends EventEmitter {
   start() {
     agendaStub.start();
     if (schedulerStartFailed) {
-      throw new errors.ServiceUnavailable('Error occurred while starting agenda');
+      throw new ServiceUnavailable('Error occurred while starting agenda');
     }
   }
   define(name, cb) {
     agendaJobs.push(cb);
     agendaStub.define(name, cb);
     if (schedulerStartFailed) {
-      throw new errors.ServiceUnavailable('Error occurred while starting agenda');
+      throw new ServiceUnavailable('Error occurred while starting agenda');
     }
   }
   create(name, data) {
@@ -202,7 +208,7 @@ const proxyLibs = {
     }
   },
   'agenda': Agenda,
-  '../common/config': {
+  '@sf/app-config': {
     scheduler: schedulerConfig,
     mongodb: {
       backup: {
@@ -213,9 +219,9 @@ const proxyLibs = {
 };
 
 const cloneProxyLibs = _.cloneDeep(proxyLibs);
-cloneProxyLibs['../common/config'].scheduler = schedulerConfig;
-const SchedulerPubSub = proxyquire('../../jobs/Scheduler', cloneProxyLibs);
-const Scheduler = proxyquire('../../jobs/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
+cloneProxyLibs['@sf/app-config'].scheduler = schedulerConfig;
+const SchedulerPubSub = proxyquire('../../core/scheduler-jobs/src/Scheduler', cloneProxyLibs);
+const Scheduler = proxyquire('../../core/scheduler-jobs/src/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 
 describe('Jobs', function () {
   let clock;
@@ -302,8 +308,8 @@ describe('Jobs', function () {
         expect(subscribeSpy.thirdCall.args[1]).to.be.a('function');
       });
       it('should set agenda initialization status to 1 on recieving mongo init failure event', function () {
-        //PUBSUB is exclusively used only in test cases to test for mongo event handler.
-        //In all other test cases it uses the stub version of pub-sub
+        // PUBSUB is exclusively used only in test cases to test for mongo event handler.
+        // In all other test cases it uses the stub version of pub-sub
         const scheduler = new SchedulerPubSub();
         pubsub.publishSync(CONST.TOPIC.MONGO_INIT_FAILED, {
           mongoose: mongooseConnectionStub
@@ -330,7 +336,7 @@ describe('Jobs', function () {
         expect(agendaSpy.defaultConcurrency.firstCall.args[0]).to.eql(20);
         expect(agendaSpy.defaultLockLifetime).to.be.calledOnce;
         expect(agendaSpy.defaultLockLifetime.firstCall.args[0]).to.eql(180000);
-        expect(agendaSpy.on).to.be.calledTwice; //on 'ready' & on 'error'
+        expect(agendaSpy.on).to.be.calledTwice; // on 'ready' & on 'error'
         expect(agendaSpy.on.firstCall.args[0]).to.eql('ready');
       });
       it('should initialize agenda on recieving mongo operational event & process once every (#of cpus)-1 mintues', function () {
@@ -355,7 +361,7 @@ describe('Jobs', function () {
         expect(agendaSpy.defaultConcurrency.firstCall.args[0]).to.eql(20);
         expect(agendaSpy.defaultLockLifetime).to.be.calledOnce;
         expect(agendaSpy.defaultLockLifetime.firstCall.args[0]).to.eql(180000);
-        expect(agendaSpy.on).to.be.calledTwice; //on 'ready' & on 'error'
+        expect(agendaSpy.on).to.be.calledTwice; // on 'ready' & on 'error'
         expect(agendaSpy.on.firstCall.args[0]).to.eql('ready');
       });
       it('should register job definitions & start agenda successfully', function () {
@@ -367,7 +373,7 @@ describe('Jobs', function () {
           .ready()
           .then(() => {
             scheduler.shutDownHook();
-            //jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
+            // jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
             expect(agendaSpy.define).to.be.calledTwice;
             expect(agendaSpy.define.firstCall.args[0]).to.eql('ScheduledBackup');
             expect(agendaSpy.define.secondCall.args[0]).to.eql('ScheduledOobDeploymentBackup');
@@ -388,13 +394,13 @@ describe('Jobs', function () {
           .ready()
           .then(() => {
             scheduler.shutDownHook();
-            //jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
+            // jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
             expect(agendaSpy.define).to.be.calledTwice;
             expect(agendaSpy.define.firstCall.args[0]).to.eql('ScheduledBackup');
             expect(agendaSpy.define.secondCall.args[0]).to.eql('ScheduledOobDeploymentBackup');
             expect(agendaSpy.start).to.be.calledOnce;
             expect(publishSpy).not.to.be.called;
-            expect(logSpy).to.be.calledThrice; //twice from registerJobDefinitions and once from startScheduler
+            expect(logSpy).to.be.calledThrice; // twice from registerJobDefinitions and once from startScheduler
             expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
           });
       });
@@ -407,7 +413,7 @@ describe('Jobs', function () {
           .error()
           .then(() => {
             scheduler.shutDownHook();
-            //jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
+            // jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
             expect(agendaSpy.define).not.to.be.called;
             expect(publishSpy).not.to.be.called;
             expect(logSpy).to.be.calledOnce;
@@ -425,7 +431,7 @@ describe('Jobs', function () {
           .then(() => {
             delete schedulerConfig.run_with_web_process;
             scheduler.shutDownHook();
-            //jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
+            // jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
             expect(agendaSpy.define).to.be.calledTwice;
             expect(agendaSpy.define.firstCall.args[0]).to.eql('ScheduledBackup');
             expect(agendaSpy.define.secondCall.args[0]).to.eql('ScheduledOobDeploymentBackup');
@@ -445,7 +451,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -472,7 +478,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -505,7 +511,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -534,7 +540,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -566,7 +572,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -592,7 +598,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -617,7 +623,7 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
@@ -639,19 +645,19 @@ describe('Jobs', function () {
         });
         return scheduler.startScheduler().then(() => {
           expect(agendaSpy.define).to.be.calledTwice;
-          //The above count is for the two job types defined in config
+          // The above count is for the two job types defined in config
           expect(agendaSpy.start).to.be.calledOnce;
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           resetSpies();
           const unConfiguredJobType = 'SystemUpdate';
           scheduler.jobTypeList = [];
-          //Just clearing the job list. Ideally scheduler.job_types list in config has to be updated to enable/disable
+          // Just clearing the job list. Ideally scheduler.job_types list in config has to be updated to enable/disable
           return scheduler.schedule('NONAME', CONST.JOB.SCHEDULED_BACKUP, '*/1 * * * * ', {
             instance_id: '888888888',
             type: 'Online',
             trigger: 'User_Scheduled'
           }).catch(error => {
-            expect(error.name).to.eql((new errors.ServiceUnavailable()).name);
+            expect(error.name).to.eql((new ServiceUnavailable()).name);
             expect(error.message).to.eql(`${CONST.JOB.SCHEDULED_BACKUP} is not enabled in the system. Cannot be scheduled`);
             scheduler.shutDownHook();
           });
@@ -671,11 +677,11 @@ describe('Jobs', function () {
               throw new Error('Test Failed. Shouldve thrown exception');
             })
             .catch(error => {
-              if (!(error instanceof errors.BadRequest)) {
+              if (!(error instanceof BadRequest)) {
                 throw error;
               }
               scheduler.shutDownHook();
-              expect(error.name).to.eql((new errors.BadRequest()).name);
+              expect(error.name).to.eql((new BadRequest()).name);
               expect(error.message).to.eql(`Invalid interval - ${invalidInterval}. Must be a valid cron expression or a valid human readable duration`);
             });
         });
@@ -691,7 +697,7 @@ describe('Jobs', function () {
             timeZone: 'INVALID_TIME_ZONE'
           }).catch(error => {
             scheduler.shutDownHook();
-            expect(error.name).to.eql((new errors.BadRequest()).name);
+            expect(error.name).to.eql((new BadRequest()).name);
             expect(error.message).to.contain('Invalid timezone. Valid zones:');
           });
         });
@@ -710,7 +716,7 @@ describe('Jobs', function () {
             trigger: 'User_Scheduled'
           })
           .catch(error => {
-            expect(error.name).to.eql((new errors.ServiceUnavailable().name));
+            expect(error.name).to.eql((new ServiceUnavailable().name));
             scheduler.shutDownHook();
           });
       });
@@ -722,12 +728,12 @@ describe('Jobs', function () {
         expect(scheduler.initialized).to.eql(MONGO_INIT_FAILED);
         const runAt = '10 minutes from now';
         return scheduler.runAt('NONAME', CONST.JOB.SCHEDULED_BACKUP, runAt, {
-            instance_id: '888888888',
-            type: 'Online',
-            trigger: 'User_Scheduled'
-          })
+          instance_id: '888888888',
+          type: 'Online',
+          trigger: 'User_Scheduled'
+        })
           .catch(error => {
-            expect(error.name).to.eql((new errors.ServiceUnavailable().name));
+            expect(error.name).to.eql((new ServiceUnavailable().name));
             scheduler.shutDownHook();
           });
       });
@@ -738,12 +744,12 @@ describe('Jobs', function () {
         });
         expect(scheduler.initialized).to.eql(MONGO_INIT_FAILED);
         return scheduler.runNow('NONAME', CONST.JOB.SCHEDULED_BACKUP, {
-            instance_id: '888888888',
-            type: 'Online',
-            trigger: 'User_Scheduled'
-          })
+          instance_id: '888888888',
+          type: 'Online',
+          trigger: 'User_Scheduled'
+        })
           .catch(error => {
-            expect(error.name).to.eql((new errors.ServiceUnavailable().name));
+            expect(error.name).to.eql((new ServiceUnavailable().name));
             scheduler.shutDownHook();
           });
       });
@@ -835,7 +841,7 @@ describe('Jobs', function () {
         return scheduler
           .getJob('1234-5678-8888-3333', CONST.JOB.SCHEDULED_BACKUP)
           .catch(error => {
-            expect(error.name).to.eql((new errors.ServiceUnavailable().name));
+            expect(error.name).to.eql((new ServiceUnavailable().name));
             scheduler.shutDownHook();
           });
       });
@@ -936,10 +942,10 @@ describe('Jobs', function () {
         baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory').callsFake(() => Promise.resolve({}));
         maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo').callsFake(
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
-          (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
-            maintenance: true,
-            progress: [`${schedulerConfig.downtime_maintenance_phases[0]} at ${new Date()}`],
-          })));
+            (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
+              maintenance: true,
+              progress: [`${schedulerConfig.downtime_maintenance_phases[0]} at ${new Date()}`]
+            })));
         jobDoneSpy = sinon.spy();
         processExitStub = runSandBox.stub(process, 'exit');
         jobTypesOld = schedulerConfig.job_types;
@@ -966,12 +972,12 @@ describe('Jobs', function () {
           mongoose: mongooseConnectionStub
         });
         return scheduler.startScheduler().then(() => {
-            expect(agendaSpy.define).to.be.calledOnce;
-            //The above count is for the two job types defined in config
-            expect(agendaSpy.start).to.be.calledOnce;
-            expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
-            resetSpies();
-          })
+          expect(agendaSpy.define).to.be.calledOnce;
+          // The above count is for the two job types defined in config
+          expect(agendaSpy.start).to.be.calledOnce;
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          resetSpies();
+        })
           .then(() => {
             return scheduler.schedule('NONAME', CONST.JOB.BLUEPRINT_JOB, '*/1 * * * *', {
               instance_id: '888888888',
@@ -1009,12 +1015,12 @@ describe('Jobs', function () {
         });
         maintenanceStatus = 2;
         return scheduler.startScheduler().then(() => {
-            expect(agendaSpy.define).to.be.calledOnce;
-            //The above count is for the two job types defined in config
-            expect(agendaSpy.start).to.be.calledOnce;
-            expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
-            resetSpies();
-          })
+          expect(agendaSpy.define).to.be.calledOnce;
+          // The above count is for the two job types defined in config
+          expect(agendaSpy.start).to.be.calledOnce;
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          resetSpies();
+        })
           .then(() => {
             return scheduler.schedule('NONAME', CONST.JOB.BLUEPRINT_JOB, '*/1 * * * *', {
               instance_id: '888888888',
@@ -1036,7 +1042,7 @@ describe('Jobs', function () {
           })
           .then(() => {
             expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-            expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.ServiceInMaintenance).to.eql(true);
+            expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof ServiceInMaintenance).to.eql(true);
             expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql('System in maintenance');
             expect(baseJobLogRunHistoryStub.firstCall.args[2]).to.equal(job);
             expect(jobDoneSpy).to.be.calledOnce;
@@ -1078,7 +1084,7 @@ describe('Jobs', function () {
               criteria.push({
                 nextRunAt: null
               });
-              //nextRunAt null indicates that its a one time job which will not run in future.
+              // nextRunAt null indicates that its a one time job which will not run in future.
               criteria.push({
                 type: 'normal'
               });

@@ -1,7 +1,11 @@
 'use strict';
 
-const RetryOperation = require('../../common/utils').RetryOperation;
-const Timeout = require('../../common/errors').Timeout;
+const {
+  errors: {
+    Timeout
+  },
+  RetryOperation
+} = require('@sf/common-utils');
 
 describe('utils', function () {
   describe('RetryOperation', function () {

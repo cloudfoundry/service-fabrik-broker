@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const ServiceFabrikClient = require('../../data-access-layer/cf/ServiceFabrikClient');
-const CONST = require('../../common/constants');
+const ServiceFabrikClient = require('../../data-access-layer/cf/src/ServiceFabrikClient');
+const { CONST } = require('@sf/common-utils');
 
 const tokenIssuerStub = {
   getAccessToken: () => undefined
@@ -107,7 +107,7 @@ describe('cf', function () {
           ready: true
         };
         const [options, statusCode] = buildExpectedRequestArgs('GET',
-          `/api/v1/info`,
+          '/api/v1/info',
           200);
         return sfClient.getInfo()
           .then(result => {

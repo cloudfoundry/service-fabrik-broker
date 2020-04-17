@@ -1,0 +1,112 @@
+{
+    "env": {
+      "es6": true,
+      "jasmine": true,
+      "mocha": true,
+      "node": true
+    },
+    "globals": {
+      "chai": true,
+      "sinon": true,
+      "spy": true,
+      "stub": true
+    },
+    "extends": "eslint:recommended",
+    "parser": "babel-eslint",
+    "parserOptions": {
+      "ecmaVersion": 2017,
+      "sourceType": "module"
+    },
+    "plugins": ["mocha", "prettier"],
+    "rules": {
+      "arrow-parens": [2, "as-needed"],
+      "block-scoped-var": 2,
+      "brace-style": [
+        2,
+        "1tbs",
+        {
+          "allowSingleLine": false
+        }
+      ],
+      "camelcase": [
+        0,
+        {
+          "properties": "never"
+        }
+      ],
+      "comma-dangle": [2, "never"],
+      "complexity": [2, 20],
+      "consistent-return": 0,
+      "curly": [2, "all"],
+      "dot-notation": 2,
+      "eol-last": 2,
+      "func-style": [0, "expression"],
+      "generator-star-spacing": [2, "neither"],
+      "indent": [
+        2,
+        2,
+        {
+          "SwitchCase": 1
+        }
+      ],
+      "key-spacing": 0,
+      "max-len": [
+        0,
+        200,
+        {
+          "ignoreStrings": true,
+          "ignoreTemplateLiterals": true
+        }
+      ],
+      "mocha/no-exclusive-tests": 1,
+      "new-cap": 0,
+      "no-else-return": 0,
+      "no-eq-null": 2,
+      "no-eval": 2,
+      "no-extra-parens": [
+        0,
+        "all",
+        {
+          "nestedBinaryExpressions": false
+        }
+      ],
+      "no-floating-decimal": 2,
+      "no-lonely-if": 0,
+      "no-multi-spaces": 2,
+      "no-param-reassign": 0,
+      "no-self-compare": 2,
+      "no-shadow": 0,
+      "no-underscore-dangle": 0,
+      "no-unused-expressions": 2,
+      "no-unused-vars": [
+        2,
+        {
+          "args": "none"
+        }
+      ],
+      "no-use-before-define": 0,
+      "no-var": 2,
+      "object-curly-spacing": [1, "always"],
+      "prettier/prettier": 0,
+      "quotes": [2, "single", {
+        "avoidEscape": true
+      }],
+      "semi": [2, "always"],
+      "space-after-keywords": 0,
+      "space-before-blocks": 2,
+      "space-before-function-paren": [
+        2,
+        {
+          "anonymous": "ignore",
+          "asyncArrow": "ignore",
+          "named": "never"
+        }
+      ],
+      "space-in-brackets": 0,
+      "space-in-parens": [2, "never"],
+      "space-infix-ops": 2,
+      "spaced-comment": [2, "always"],
+      "valid-jsdoc": 0,
+      "wrap-iife": [2, "inside"]
+    }
+  }

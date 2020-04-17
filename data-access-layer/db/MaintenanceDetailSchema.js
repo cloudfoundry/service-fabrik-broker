@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const Mongoose = require('mongoose');
-const CONST = require('../../common/constants');
+const { CONST } = require('@sf/common-utils');
 
 function validateState(state) {
   return _

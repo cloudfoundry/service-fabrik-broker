@@ -3,13 +3,20 @@
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const _ = require('lodash');
-const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
-const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
-const cloudController = require('../../data-access-layer/cf').cloudController;
+const CfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
+const { BasePlatformManager } = require('@sf/platforms');
+const { cloudController } = require('@sf/cf');
 const assert = require('assert');
-const errors = require('../../common/errors');
-let config = require('../../common/config');
-let CONST = require('../../common/constants');
+const {
+  CONST,
+  errors: {
+    CrossOrganizationSharingNotAllowed,
+    InstanceSharingNotAllowed,
+    UnprocessableEntity,
+    InternalServerError
+  }
+} = require('@sf/common-utils');
+let config = require('@sf/app-config');
 
 describe('fabrik', function () {
   describe('CfPlatformManager', function () {
@@ -179,11 +186,11 @@ describe('fabrik', function () {
       const disallow_org_sharing = {
         enable_cross_organization_sharing: false
       };
-      const CfPlatformManagerAllowOrgSharing = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': allow_org_sharing
+      const CfPlatformManagerAllowOrgSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': allow_org_sharing
       });
-      const CfPlatformManagerDisallowOrgSharing = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': disallow_org_sharing
+      const CfPlatformManagerDisallowOrgSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': disallow_org_sharing
       });
       let getSpaceStub;
       before(function () {
@@ -219,7 +226,7 @@ describe('fabrik', function () {
         let cfPlatformManager = new CfPlatformManagerDisallowOrgSharing('cf');
         return cfPlatformManager.isCrossOrganizationSharingEnabled(options)
           .catch(err => {
-            expect(err instanceof errors.CrossOrganizationSharingNotAllowed).to.equal(true);
+            expect(err instanceof CrossOrganizationSharingNotAllowed).to.equal(true);
           });
       });
       it('should be true if cross organization sharing is disabled and same org binding is received', function () {
@@ -276,11 +283,11 @@ describe('fabrik', function () {
           AllowInstanceSharing: false
         }
       };
-      const CfPlatformManagerAllowSharing = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': allowSharingConfig
+      const CfPlatformManagerAllowSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': allowSharingConfig
       });
-      const CfPlatformManagerDisallowSharing = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': disallowSharingConfig
+      const CfPlatformManagerDisallowSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': disallowSharingConfig
       });
 
       it('should run successfully for shared instance and enabled sharing', function () {
@@ -299,10 +306,10 @@ describe('fabrik', function () {
       it('should fail for enabled sharing and invalid sharing request', function () {
         let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
         cfPlatformManager.isInstanceSharingRequest = () => true;
-        cfPlatformManager.isCrossOrganizationSharingEnabled = () => Promise.reject(new errors.CrossOrganizationSharingNotAllowed());
+        cfPlatformManager.isCrossOrganizationSharingEnabled = () => Promise.reject(new CrossOrganizationSharingNotAllowed());
         return cfPlatformManager.preBindOperations({})
           .catch(err => {
-            expect(err instanceof errors.CrossOrganizationSharingNotAllowed).to.equal(true);
+            expect(err instanceof CrossOrganizationSharingNotAllowed).to.equal(true);
           });
       });
 
@@ -311,7 +318,7 @@ describe('fabrik', function () {
         cfPlatformManager.isInstanceSharingRequest = () => true;
         return cfPlatformManager.preBindOperations({})
           .catch(err => {
-            expect(err instanceof errors.InstanceSharingNotAllowed).to.equal(true);
+            expect(err instanceof InstanceSharingNotAllowed).to.equal(true);
           });
       });
     });
@@ -323,11 +330,11 @@ describe('fabrik', function () {
           whitelist: ['test']
         }
       };
-      const CfPlatformManagerInternal = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': multi_az_internal_config
+      const CfPlatformManagerInternal = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': multi_az_internal_config
       });
-      const BasePlatformManagerInternal = proxyquire('../../platform-managers/BasePlatformManager', {
-        '../common/config': multi_az_internal_config
+      const BasePlatformManagerInternal = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+        '@sf/app-config': multi_az_internal_config
       });
       const multi_az_all_config = {
         multi_az_enabled: CONST.ALL
@@ -336,17 +343,17 @@ describe('fabrik', function () {
       const multi_az_all_config_wrong = {
         multi_az_enabled: 'INCORRECT_VAL'
       };
-      const CfPlatformManagerExterrnal = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': multi_az_all_config
+      const CfPlatformManagerExterrnal = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': multi_az_all_config
       });
-      const BasePlatformManagerExterrnal = proxyquire('../../platform-managers/BasePlatformManager', {
-        '../common/config': multi_az_all_config
+      const BasePlatformManagerExterrnal = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+        '@sf/app-config': multi_az_all_config
       });
-      const CfPlatformManagerWrongConfig = proxyquire('../../platform-managers/CfPlatformManager', {
-        '../common/config': multi_az_all_config_wrong
+      const CfPlatformManagerWrongConfig = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+        '@sf/app-config': multi_az_all_config_wrong
       });
-      const BasePlatformManagerWrongConfig = proxyquire('../../platform-managers/BasePlatformManager', {
-        '../common/config': multi_az_all_config_wrong
+      const BasePlatformManagerWrongConfig = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+        '@sf/app-config': multi_az_all_config_wrong
       });
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
@@ -401,14 +408,14 @@ describe('fabrik', function () {
         const basePlatformManager = new BasePlatformManagerWrongConfig('cf');
         return cfPlatformManager.isMultiAzDeploymentEnabled(options)
           .then(() => {
-            throw new errors.InternalServerError('CFPlatformManager must throw an error when input invalid config...');
+            throw new InternalServerError('CFPlatformManager must throw an error when input invalid config...');
           })
-          .catch(errors.UnprocessableEntity, () => {})
+          .catch(UnprocessableEntity, () => {})
           .then(() => basePlatformManager.isMultiAzDeploymentEnabled(options))
           .then(() => {
-            throw new errors.InternalServerError('BasePlatformManager must throw an error when input invalid config...');
+            throw new InternalServerError('BasePlatformManager must throw an error when input invalid config...');
           })
-          .catch(errors.UnprocessableEntity, () => {});
+          .catch(UnprocessableEntity, () => {});
       });
     });
   });

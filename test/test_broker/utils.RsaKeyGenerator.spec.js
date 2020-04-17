@@ -58,7 +58,7 @@ describe('utils', () => {
       }
     };
     before(() => {
-      KeyGenSubjectFailure2 = proxyquire('../../common/utils/RsaKeyGenerator', {
+      KeyGenSubjectFailure2 = proxyquire('../../core/utils/src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
@@ -67,7 +67,7 @@ describe('utils', () => {
           tmpdir: () => __dirname
         }
       });
-      KeyGenSubjectFailure = proxyquire('../../common/utils/RsaKeyGenerator', {
+      KeyGenSubjectFailure = proxyquire('../../core/utils/src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
@@ -79,7 +79,7 @@ describe('utils', () => {
           spawn: spawnStub
         }
       });
-      KeyGenSubject = proxyquire('../../common/utils/RsaKeyGenerator', {
+      KeyGenSubject = proxyquire('../../core/utils/src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
@@ -143,25 +143,25 @@ describe('utils', () => {
     });
     it('should fail when force deletion fails', () => {
       return failSubject2.forceDeleteFiles()
-        .catch((err) => {
+        .catch(err => {
           expect(err.message).to.eql(failSubject2.location);
         });
     });
     it('should pass when ssh-keygen is invoked', () => {
       return subject.runSshKeygen()
-        .then((msg) => {
+        .then(msg => {
           expect(msg).to.eql('exit');
         });
     });
     it('should fail on create key pair when read file fails', () => {
       return failSubject.createKeyPair()
-        .catch((err) => {
+        .catch(err => {
           expect(err.message).to.eql(failSubject.location + 'utf8');
         });
     });
     it('should return public key and private key on successful key pair generation', () => {
       return subject.createKeyPair()
-        .then((obj) => {
+        .then(obj => {
           expect(obj.privateKey).to.eql(actual);
           expect(obj.publicKey).to.eql(actual);
         });

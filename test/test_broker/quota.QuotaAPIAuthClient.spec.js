@@ -4,14 +4,14 @@ const Promise = require('bluebird');
 const uuid = require('uuid');
 const proxyquire = require('proxyquire');
 
-const QuotaAPIAuthClient = proxyquire('../../quota/QuotaAPIAuthClient', {
-  '../common/config': {
+const QuotaAPIAuthClient = proxyquire('../../data-access-layer/quota/src/QuotaAPIAuthClient', {
+  '@sf/app-config': {
     quota: {
       enabled: false,
       oauthDomain: 'sap-provisioning',
       serviceDomain: 'tenant-onboarding-develop',
       username: 'clientId',
-      password: 'clientSecret',
+      password: 'clientSecret'
     }
   }
 });
@@ -36,12 +36,12 @@ class MockQuotaAPIAuthClient extends QuotaAPIAuthClient {
 describe('quota', () => {
   describe('QuotaAPIAuthClient', () => {
     describe('#accessWithClientCredentials', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let body = {
           uuid: uuid.v4()
         };
 
-        new MockQuotaAPIAuthClient(JSON.stringify(body), 200).accessWithClientCredentials().then((content) => {
+        new MockQuotaAPIAuthClient(JSON.stringify(body), 200).accessWithClientCredentials().then(content => {
           expect(content).to.eql(body);
           done();
         }).catch(done);

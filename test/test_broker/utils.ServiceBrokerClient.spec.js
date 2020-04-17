@@ -1,6 +1,6 @@
 'use strict';
 
-const brokerClient = require('../../common/utils/ServiceBrokerClient');
+const { serviceBrokerClient } = require('@sf/broker-client');
 
 describe('Utils', function () {
   describe('ServiceBrokerClient', function () {
@@ -18,7 +18,7 @@ describe('Utils', function () {
       let requestSpy;
 
       beforeEach(function () {
-        requestSpy = sinon.stub(brokerClient, 'request');
+        requestSpy = sinon.stub(serviceBrokerClient, 'request');
         requestSpy.returns(Promise.resolve(response));
         mocks.verify();
       });

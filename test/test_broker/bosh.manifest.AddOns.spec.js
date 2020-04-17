@@ -1,8 +1,8 @@
 'use strict';
 
-const Addons = require('../../data-access-layer/bosh/manifest/Addons');
-const CONST = require('../../common/constants');
-const Networks = require('../../data-access-layer/bosh/manifest/Networks');
+const Addons = require('../../data-access-layer/bosh/src/manifest/Addons');
+const { CONST } = require('@sf/common-utils');
+const Networks = require('../../data-access-layer/bosh/src/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {
@@ -14,16 +14,16 @@ describe('bosh', () => {
           name: 'random'
         },
         subnets: [{
-            az: 'z1',
-            range: '127.0.0.1/26'
-          }, {
-            az: 'z2',
-            range: '127.1.0.1/26'
-          },
-          {
-            az: 'z3',
-            range: '127.2.0.1/26'
-          }
+          az: 'z1',
+          range: '127.0.0.1/26'
+        }, {
+          az: 'z2',
+          range: '127.1.0.1/26'
+        },
+        {
+          az: 'z3',
+          range: '127.2.0.1/26'
+        }
         ]
       }], 1, {
         size: 1

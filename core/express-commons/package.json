@@ -1,0 +1,16 @@
+{
+  "name": "@sf/express-commons",
+  "version": "1.0.0",
+  "description": "Common ExpressJS utilities including asynchronous route handlers",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {},
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../app-config",
+    "@sf/common-utils": "file:../utils",
+    "@sf/event-logger": "file:../../data-access-layer/event-logger",
+    "@sf/logger": "file:../logging"
+  }
+}

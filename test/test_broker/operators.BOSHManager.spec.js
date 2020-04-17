@@ -3,10 +3,12 @@
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const apiserver = new eventmesh();
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const {
+  ApiServerClient,
+  apiServerClient
+} = require('@sf/eventmesh');
 
 const service_id = '3c266123-8e6e-4034-a2aa-e48e13fbf893';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -21,13 +23,13 @@ const BoshOperatorDummy = {
   createDummy: () => {},
   updateDummy: () => {},
   deleteDummy: () => {},
-  getOperationOptionsDummy: () => {},
+  getOperationOptionsDummy: () => {}
 };
 const resultOptions = {
   plan_id: plan_id
 };
-const BoshOperator = proxyquire('../../operators/bosh-operator/BoshOperator', {
-  '../../data-access-layer/eventmesh': {
+const BoshOperator = proxyquire('../../applications/operators/bosh-operator/BoshOperator', {
+  '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
         BoshOperatorDummy.getOperationOptionsDummy(opts);
@@ -39,18 +41,18 @@ const BoshOperator = proxyquire('../../operators/bosh-operator/BoshOperator', {
     'createInstance': function (instance_id, options) {
       BoshOperatorDummy.createDirectorServiceDummy(instance_id, options);
       return Promise.resolve({
-        'create': (opts) => {
+        'create': opts => {
           BoshOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
-        'update': (opts) => {
+        'update': opts => {
           BoshOperatorDummy.updateDummy(opts);
           return Promise.resolve({});
         },
-        'delete': (opts) => {
+        'delete': opts => {
           BoshOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
-        },
+        }
       });
     }
   }
@@ -91,7 +93,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
@@ -135,7 +137,7 @@ describe('operators', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
 
 
@@ -178,7 +180,7 @@ describe('operators', function () {
         }
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
 
 
@@ -219,7 +221,7 @@ describe('operators', function () {
         }
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
 
 
@@ -260,7 +262,7 @@ describe('operators', function () {
         }
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
 
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
@@ -302,7 +304,7 @@ describe('operators', function () {
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -345,7 +347,7 @@ describe('operators', function () {
         }
       };
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -383,7 +385,7 @@ describe('operators', function () {
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 409);
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -421,7 +423,7 @@ describe('operators', function () {
       };
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 404);
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -461,7 +463,7 @@ describe('operators', function () {
         }
       };
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -500,7 +502,7 @@ describe('operators', function () {
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object);
       mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 404);
 
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {

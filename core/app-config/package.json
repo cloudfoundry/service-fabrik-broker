@@ -1,0 +1,10 @@
+{
+  "name": "@sf/app-config",
+  "version": "1.0.0",
+  "description": "Configuration for applications",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {},
+  "repository": {},
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@sf/logger",
+  "version": "1.0.0",
+  "description": "Logging module for sf applications",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {},
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../app-config"
+  }
+}

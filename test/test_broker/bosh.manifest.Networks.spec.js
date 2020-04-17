@@ -1,6 +1,6 @@
 'use strict';
 
-const Networks = require('../../data-access-layer/bosh/manifest/Networks');
+const Networks = require('../../data-access-layer/bosh/src/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {
@@ -59,7 +59,7 @@ describe('bosh', () => {
         it('returns one element', () => {
           let names = [];
 
-          networks.each((net) => {
+          networks.each(net => {
             names.push(net.name);
           });
 

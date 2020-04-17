@@ -3,10 +3,16 @@
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
-const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const Repo = require('../../common/db').Repository;
+const {
+  CONST,
+  errors: {
+    DBUnavailable,
+    BadRequest,
+    NotFound
+  },
+  commonFunctions
+} = require('@sf/common-utils');
+const Repo = require('@sf/common-utils').Repository;
 
 const instance_id = '9999-8888-7777-6666';
 let jobType = CONST.JOB.SCHEDULED_BACKUP;
@@ -130,7 +136,7 @@ class Scheduler {
 }
 
 let DbDown = false;
-const DbUnavailable = new errors.DBUnavailable('DB Down..Simulated Expected error..');
+const DbUnavailable = new DBUnavailable('DB Down..Simulated Expected error..');
 const DELETE_RESPONSE = {
   result: {
     n: 10
@@ -189,9 +195,9 @@ class Repository {
 }
 
 describe('Jobs', function () {
-  const ScheduleManager = proxyquire('../../jobs/ScheduleManager', {
+  const ScheduleManager = proxyquire('../../core/scheduler-jobs/src/ScheduleManager', {
     './Scheduler': Scheduler,
-    '../common/db': {
+    '@sf/common-utils': {
       Repository: Repository
     }
   });
@@ -224,8 +230,8 @@ describe('Jobs', function () {
     let clock, randomIntStub, repoSinonStub;
     before(function () {
       clock = sinon.useFakeTimers();
-      randomIntStub = sinon.stub(utils, 'getRandomInt').callsFake(() => 0);
-      //randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
+      randomIntStub = sinon.stub(commonFunctions, 'getRandomInt').callsFake(() => 0);
+      // randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
       repoSinonStub = sinon.stub(Repo, 'search').callsFake(() => {
         return Promise.try(() => {
           const runStatus = _.cloneDeep(lastRunStatus);
@@ -261,7 +267,7 @@ describe('Jobs', function () {
       it('should schedule a job in agenda and save it in mongodb successfully', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SCHEDULED_BACKUP, interval, jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             expect(jobResponse).to.eql(mergedJob);
             expect(schedulerSpy.schedule).to.be.calledOnce;
             expect(schedulerSpy.schedule.firstCall.args[0][0]).to.eql(instance_id);
@@ -288,12 +294,12 @@ describe('Jobs', function () {
           .then(() => {
             throw 'Test should have thrown an error, but it did not!';
           })
-          .catch(errors.BadRequest, () => {});
+          .catch(BadRequest, () => {});
       });
       it('should schedule a job with random hourly schedule when input with human interval of hrs and save it in mongodb successfully', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, '8 hours', jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedRandomInterval = '0 0,8,16 * * *';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
@@ -333,7 +339,7 @@ describe('Jobs', function () {
       it('should schedule a job with input human interval of x hrs (where multiple of x!=24) and save it in mongodb successfully', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, '7 hours', jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedRandomInterval = '7 hours';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
@@ -373,7 +379,7 @@ describe('Jobs', function () {
       it('should schedule a job with random schedule and save it in mongodb successfully', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, CONST.SCHEDULE.RANDOM, jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedRandomInterval = '0 0 * * 0';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
@@ -413,7 +419,7 @@ describe('Jobs', function () {
       it('should schedule a job in agenda with daily random schedule and save it in mongodb successfully', function () {
         return ScheduleManager
           .scheduleDaily(instance_id, CONST.JOB.SCHEDULED_BACKUP, jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedResponse = _.cloneDeep(mergedJob);
             const randomInterval = '0 0 * * *';
             expectedResponse.repeatInterval = randomInterval;
@@ -441,7 +447,7 @@ describe('Jobs', function () {
         const scheduleAt = '10 mins from now';
         return ScheduleManager
           .runAt(instance_id, CONST.JOB.SCHEDULED_BACKUP, scheduleAt, jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedResponse = _.cloneDeep(mergedJob);
             delete expectedResponse.lastRunDetails;
             expectedResponse.repeatInterval = scheduleAt;
@@ -471,7 +477,7 @@ describe('Jobs', function () {
         const scheduleAt = 'now';
         return ScheduleManager
           .runNow(instance_id, CONST.JOB.SCHEDULED_BACKUP, jobData, user)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const expectedResponse = _.cloneDeep(mergedJob);
             delete expectedResponse.lastRunDetails;
             expectedResponse.repeatInterval = scheduleAt;
@@ -502,7 +508,7 @@ describe('Jobs', function () {
       it('should return the job schedule for scheduled job by merging job details from agenda & mongodb successfully', function () {
         return ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             expect(jobResponse).to.eql(mergedJob);
             expect(schedulerSpy.getJob).to.be.calledOnce;
             expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql(instance_id);
@@ -515,7 +521,7 @@ describe('Jobs', function () {
       it('should error when queried for schedule for a job which is not yet scheduled', function () {
         return ScheduleManager
           .getSchedule('0625-6252-7654-9999', CONST.JOB.SCHEDULED_BACKUP)
-          .catch(errors.NotFound, () => {
+          .catch(NotFound, () => {
             expect(schedulerSpy.getJob).to.be.calledOnce;
             expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
             expect(schedulerSpy.getJob.firstCall.args[0][1]).to.eql(jobType);
@@ -525,7 +531,7 @@ describe('Jobs', function () {
       it('should return even the last run status for job types which can return the same', function () {
         return ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
             mergedJobServInsUpd.lastRunAt = dbStartedAt;
@@ -555,7 +561,7 @@ describe('Jobs', function () {
       it('should cancel the schedule for only repeat job (not all jobs) in agenda and delete the job from mongodb successfully', function () {
         return ScheduleManager
           .cancelSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             expect(jobResponse).to.eql(DELETE_RESPONSE);
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql(instance_id);
@@ -577,7 +583,7 @@ describe('Jobs', function () {
         };
         return ScheduleManager
           .cancelSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP, cancelAllJobs)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             expect(jobResponse).to.eql(DELETE_RESPONSE);
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql(instance_id);
@@ -592,7 +598,7 @@ describe('Jobs', function () {
       it('should not error if cancel job is requested for an non-existent job', function () {
         return ScheduleManager
           .cancelSchedule('0625-6252-7654-9999', CONST.JOB.SCHEDULED_BACKUP)
-          .then((jobResponse) => {
+          .then(jobResponse => {
             expect(jobResponse).to.eql(DELETE_RESPONSE);
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
@@ -609,7 +615,7 @@ describe('Jobs', function () {
       it('should purge old finished jobs successfully', function () {
         return ScheduleManager
           .purgeOldFinishedJobs()
-          .then((response) => {
+          .then(response => {
             const expectedResponse = {
               collection: CONST.DB_MODEL.JOB,
               delete_count: DELETE_RESPONSE.result.n
@@ -621,7 +627,7 @@ describe('Jobs', function () {
         DbDown = true;
         return ScheduleManager
           .purgeOldFinishedJobs()
-          .then((response) => {
+          .then(response => {
             DbDown = false;
             const expectedResponse = {
               collection: CONST.DB_MODEL.JOB,
@@ -636,30 +642,30 @@ describe('Jobs', function () {
       const systemJobConfig = {
         scheduler: {
           system_jobs: [{
-              name: 'service-fabrik-mongodb',
-              type: 'ScheduledOobDeploymentBackup',
-              interval: '0 12 * * *',
-              job_data: {
-                type: 'online',
-                deployment_name: 'service-fabrik-mongodb',
-                trigger: 'scheduled',
-                container: 'service-fabrik-mongodb'
-              }
-            },
-            {
-              name: 'Backup_Reaper',
-              type: 'BackupReaper',
-              interval: '0 1 * * *',
-              job_data: {
-                delete_delay: 1000
-              }
-            },
-            {
-              name: 'MongoDB',
-              type: 'ScheduledOobDeploymentBackup',
-              interval: '0 1 * * *',
-              enabled: false
+            name: 'service-fabrik-mongodb',
+            type: 'ScheduledOobDeploymentBackup',
+            interval: '0 12 * * *',
+            job_data: {
+              type: 'online',
+              deployment_name: 'service-fabrik-mongodb',
+              trigger: 'scheduled',
+              container: 'service-fabrik-mongodb'
             }
+          },
+          {
+            name: 'Backup_Reaper',
+            type: 'BackupReaper',
+            interval: '0 1 * * *',
+            job_data: {
+              delete_delay: 1000
+            }
+          },
+          {
+            name: 'MongoDB',
+            type: 'ScheduledOobDeploymentBackup',
+            interval: '0 1 * * *',
+            enabled: false
+          }
           ]
         }
       };
@@ -671,18 +677,18 @@ describe('Jobs', function () {
         sandbox = sinon.createSandbox();
         subStub = sandbox.stub(pubsub, 'subscribe').callsFake((topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
-        ScheduleManager2 = proxyquire('../../jobs/ScheduleManager', {
-          '../common/config': systemJobConfig
+        ScheduleManager2 = proxyquire('../../core/scheduler-jobs/src/ScheduleManager', {
+          '@sf/app-config': systemJobConfig
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');
-        getScheduleStub = sandbox.stub(ScheduleManager2, 'getSchedule').callsFake((name) => {
+        getScheduleStub = sandbox.stub(ScheduleManager2, 'getSchedule').callsFake(name => {
           return Promise.try(() => {
             if (notFound) {
               return {};
             } else {
               return {
-                repeatInterval: _.filter(systemJobConfig.scheduler.system_jobs, (item) => item.name === name)[0].interval
+                repeatInterval: _.filter(systemJobConfig.scheduler.system_jobs, item => item.name === name)[0].interval
               };
             }
           });

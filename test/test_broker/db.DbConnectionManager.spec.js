@@ -4,7 +4,9 @@ const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
-const CONST = require('../../common/constants');
+const {
+  CONST
+} = require('@sf/common-utils');
 const dbManager = require('../../data-access-layer/db/DBManager');
 
 const handlers = {};
@@ -109,8 +111,8 @@ describe('db', function () {
       const dbInit = dbInitializer.startUp(config);
       return Promise.delay(30)
         .then(() => {
-          expect(mongooseConnectionStub.connect).to.be.calledTwice; //Once for initial connect and second during retry
-          expect(mongooseConnectionStub.on.callCount).to.equal(6); //3*2 - 3 more times during retry.
+          expect(mongooseConnectionStub.connect).to.be.calledTwice; // Once for initial connect and second during retry
+          expect(mongooseConnectionStub.on.callCount).to.equal(6); // 3*2 - 3 more times during retry.
           expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
           expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
           expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');

@@ -2,32 +2,38 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const middleware = proxyquire('../../broker/lib/middleware', {
+const middleware = proxyquire('../../applications/osb-broker/src/api-controllers/middleware', {
   'basic-auth': function (req) {
     return req.auth;
   }
 });
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
-const quotaManager = require('../../quota/cf-platform-quota-manager').cfPlatformQuotaManager;
-const k8squotaManager = require('../../quota/k8s-platform-quota-manager').k8sPlatformQuotaManager;
-const utils = require('../../common/utils');
-const errors = require('../../common/errors');
-const BadRequest = errors.BadRequest;
-const Forbidden = errors.Forbidden;
+const {
+  getQuotaManagerInstance
+} = require('@sf/quota');
+const {
+  CONST,
+  errors: {
+    BadRequest,
+    Forbidden
+  },
+  commonFunctions
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const ServiceFabrikApiController = require('../../applications/extensions/src/api-controllers/ServiceFabrikApiController');
+const quotaManager = getQuotaManagerInstance(CONST.PLATFORM.CF);
+const k8squotaManager = getQuotaManagerInstance(CONST.PLATFORM.K8S);
 const PROMISE_WAIT_SIMULATED_DELAY = 30;
 
 class Response {
   constructor() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method] = sinon.spy(function () {
         return this;
       });
     });
   }
   reset() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method].resetHistory();
     });
   }
@@ -43,27 +49,25 @@ describe('#timeout', function () {
     getInfoStub = sinon.stub(ServiceFabrikApiController.prototype, 'getInfo');
     config.http_timeout = 10;
     delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../api-controllers/routes')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../api-controllers')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
     app = require('./support/apps').external;
   });
   after(function () {
     config.http_timeout = original_http_timeout;
     getInfoStub.restore();
     delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../api-controllers/routes')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../api-controllers')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
     app = require('./support/apps').external;
   });
   it('should return 503 after timeout occurs', function () {
     return chai.request(app)
-      .get(`/api/v1/info`)
+      .get('/api/v1/info')
       .catch(err => err.response)
       .then(
         res => {
@@ -208,7 +212,7 @@ describe('#checkQuota', () => {
       organization_id: organization_guid
     }
   };
-  var req = {
+  let req = {
     method: 'PATCH',
     path: '/foo',
     auth: {
@@ -220,7 +224,7 @@ describe('#checkQuota', () => {
     }
   };
   beforeEach(function () {
-    isServiceFabrikOperationStub = sinon.stub(utils, 'isServiceFabrikOperation');
+    isServiceFabrikOperationStub = sinon.stub(commonFunctions, 'isServiceFabrikOperation');
     isServiceFabrikOperationStub.withArgs(operationsBody).returns(true);
     checkQuotaStub = sinon.stub(quotaManager, 'checkQuota');
     checkK8SQuotaStub = sinon.stub(k8squotaManager, 'checkQuota');

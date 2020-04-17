@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "applications/**",
+    "core/*",
+    "data-access-layer/*"
+  ],
+  "version": "1.0.0"
+}

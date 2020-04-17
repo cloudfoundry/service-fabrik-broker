@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').external;
-const CONST = require('../../../common/constants');
+const { CONST } = require('@sf/common-utils');
 const docker = require('../../../data-access-layer/docker');
 
 

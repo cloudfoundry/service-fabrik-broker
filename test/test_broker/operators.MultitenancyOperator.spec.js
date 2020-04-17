@@ -4,11 +4,13 @@ const _ = require('lodash');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const MultitenancyService = require('../../operators/multitenancy-operator/MultitenancyService');
-const apiserver = new eventmesh();
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const {
+  ApiServerClient,
+  apiServerClient
+} = require('@sf/eventmesh');
+const MultitenancyService = require('../../applications/operators/multitenancy-operator/MultitenancyService');
 const service_id = '6db542eb-8187-4afc-8a85-e08b4a3cc24e';
 const plan_id = '2fcf6682-5a4a-4297-a7cd-a97bbe085b8e';
 const instance_id = 'e68446f8-023a-404a-af84-12d1ab4c8ac1';
@@ -27,7 +29,7 @@ const MultitenancyOperatorDummy = {
   updateDummy: () => {},
   deleteDummy: () => {},
   getOperationOptionsDummy: () => {},
-  createInstanceFake: () => {},
+  createInstanceFake: () => {}
 
 };
 const resultOptions = {
@@ -35,15 +37,15 @@ const resultOptions = {
 };
 
 
-const MultitenancyOperator = proxyquire('../../operators/multitenancy-operator/MultitenancyOperator', {
-  '../../data-access-layer/eventmesh': {
+const MultitenancyOperator = proxyquire('../../applications/operators/multitenancy-operator/MultitenancyOperator', {
+  '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
         MultitenancyOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
-  },
+  }
 });
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
@@ -76,14 +78,14 @@ describe('multitenancy-operator', function () {
             MultitenancyOperatorDummy.createDummy();
             return Promise.resolve({});
           },
-          'update': (opts) => {
+          'update': opts => {
             MultitenancyOperatorDummy.updateDummy(opts);
             return Promise.resolve({});
           },
-          'delete': (opts) => {
+          'delete': opts => {
             MultitenancyOperatorDummy.deleteDummy(opts);
             return Promise.resolve({});
-          },
+          }
         });
       });
 
@@ -99,7 +101,7 @@ describe('multitenancy-operator', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
@@ -116,7 +118,7 @@ describe('multitenancy-operator', function () {
     });
 
     it('Should process create request successfully', () => {
-      //const MS = ServiceType.getService(CONST.MULTITENANCY_SERVICE_TYPE.MULTITENANCYSERVICE);
+      // const MS = ServiceType.getService(CONST.MULTITENANCY_SERVICE_TYPE.MULTITENANCYSERVICE);
       const options = {
         plan_id: plan_id,
         service_id: service_id,
@@ -148,7 +150,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -195,7 +197,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -241,7 +243,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -281,7 +283,7 @@ describe('multitenancy-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -323,7 +325,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 409);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -365,7 +367,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -404,7 +406,7 @@ describe('multitenancy-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -452,7 +454,7 @@ describe('multitenancy-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.POSTGRESQL_MT);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {

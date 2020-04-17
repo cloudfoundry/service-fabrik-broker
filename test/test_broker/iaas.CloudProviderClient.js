@@ -1,7 +1,7 @@
 'use strict';
 
 const pkgcloud = require('pkgcloud');
-const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
+const { CloudProviderClient } = require('@sf/iaas');
 
 describe('iaas', function () {
   describe('CloudProviderClient', function () {
@@ -61,8 +61,8 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-            VolumeIds: [diskId]
-          })
+          VolumeIds: [diskId]
+        })
           .returns({
             promise: () => Promise.resolve(waitForResponse)
           });
@@ -150,8 +150,8 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-            VolumeIds: [diskId]
-          })
+          VolumeIds: [diskId]
+        })
           .returns({
             promise: () => Promise.reject(new Error('diskwaiterror'))
           });

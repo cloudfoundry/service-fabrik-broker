@@ -2,20 +2,22 @@
 
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
-const Repository = require('../../common/db').Repository;
-const CONST = require('../../common/constants');
+const {
+  CONST,
+  Repository
+} = require('@sf/common-utils');
 
 describe('utils', function () {
   /* jshint expr:true */
   describe('EventLogDBClient', function () {
-    const EventLogDBClient = proxyquire('../../common/utils/EventLogDBClient', {
-      '../config': {
+    const EventLogDBClient = proxyquire('../../data-access-layer/event-logger/src/EventLogDBClient', {
+      '@sf/app-config': {
         monitoring: {
           events_logged_in_db: 'get_backup_by_guid,update_instance'
         }
       }
     });
-    let subscribeStub, saveStub, processAppEventHandler, initializeHandler, shutDownHandler;
+    let subscribeStub, saveStub, processAppEventHandler, shutDownHandler;
 
     before(function () {
       subscribeStub = sinon.stub(pubsub, 'subscribe').callsFake((eventType, handler) => {

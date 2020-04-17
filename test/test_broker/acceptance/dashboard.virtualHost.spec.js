@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../../common/constants');
+const { CONST } = require('@sf/common-utils');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').external;
 

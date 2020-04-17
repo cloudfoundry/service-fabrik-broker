@@ -3,14 +3,20 @@
 const _ = require('lodash');
 const app = require('../support/apps').internal;
 const dbManager = require('../../../data-access-layer/db/DBManager');
-const config = require('../../../common/config');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
+const config = require('@sf/app-config');
+const {
+  backupStore,
+  CloudProviderClient
+} = require('@sf/iaas');
 const filename = backupStore.filename;
-const CONST = require('../../../common/constants');
-const utils = require('../../../common/utils');
-const eventmesh = require('../../../data-access-layer/eventmesh');
-const errors = require('../../../common/errors');
+const {
+  CONST,
+  commonFunctions,
+  errors: {
+    NotFound
+  }
+} = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 
 describe('service-fabrik-admin', function () {
   describe('internal-db-lifecycle', function () {
@@ -40,7 +46,7 @@ describe('service-fabrik-admin', function () {
               space_guid: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID
             },
             parameters: {
-              '_runImmediately': true,
+              '_runImmediately': true
             },
             network_index: config.mongodb.provision.network_index,
             skip_addons: true,
@@ -50,18 +56,18 @@ describe('service-fabrik-admin', function () {
             plan_id: config.mongodb.provision.plan_id
           },
           deployment_name: 'service-fabrik-mongodb',
-          sf_operations_args: {},
+          sf_operations_args: {}
         }
       };
 
-      //By default config is not configured for DB. So just for the test cases in this suite
-      //setting up plan id and reinitializing DBManager.
+      // By default config is not configured for DB. So just for the test cases in this suite
+      // setting up plan id and reinitializing DBManager.
       dbManager.initialize();
-      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+      backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');
-      uuidv4Stub = sinon.stub(utils, 'uuidV4');
+      uuidv4Stub = sinon.stub(commonFunctions, 'uuidV4');
       timestampStub.withArgs().returns(started_at);
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
       return mocks.setup([
@@ -85,21 +91,21 @@ describe('service-fabrik-admin', function () {
       let clock;
       let sandbox, retryStub;
       let getResourceStub, deleteResourceStub, createResourceStub;
-      before(function(){
+      before(function() {
         sandbox = sinon.createSandbox();
-        retryStub = sandbox.stub(utils, 'retry').callsFake((callback, options) => callback());
+        retryStub = sandbox.stub(commonFunctions, 'retry').callsFake((callback, options) => callback());
       });
 
       beforeEach(function () {
         clock = sinon.useFakeTimers(new Date().getTime());
-        getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
-        createResourceStub = sandbox.stub(eventmesh.apiServerClient, 'createResource');
-        deleteResourceStub = sandbox.stub(eventmesh.apiServerClient, 'deleteResource');
+        getResourceStub = sandbox.stub(apiServerClient, 'getResource');
+        createResourceStub = sandbox.stub(apiServerClient, 'createResource');
+        deleteResourceStub = sandbox.stub(apiServerClient, 'deleteResource');
         getResourceStub.withArgs().returns(Promise.try(() => {
-          throw new errors.NotFound('resource not found on ApiServer');
+          throw new NotFound('resource not found on ApiServer');
         }));
         deleteResourceStub.withArgs().returns(Promise.try(() => {
-          throw new errors.NotFound('resource not found on ApiServer');
+          throw new NotFound('resource not found on ApiServer');
         }));
 
         createResourceStub.withArgs().returns(Promise.resolve());
@@ -196,8 +202,8 @@ describe('service-fabrik-admin', function () {
             expect(res.body.status).to.be.oneOf(['CREATE_UPDATE_IN_PROGRESS', 'DISCONNECTED']);
             expect(res.body.url).to.be.oneOf([mocks.agent.credentials.uri, '']);
             clock.restore();
-            //If test case is run in isolation then URI will be blank initially.
-            //However if the test suite is run, then create operation sets the URI which will be returned as part of update.
+            // If test case is run in isolation then URI will be blank initially.
+            // However if the test suite is run, then create operation sets the URI which will be returned as part of update.
             expect(res).to.have.status(202);
             setTimeout(() => {
               mocks.verify();

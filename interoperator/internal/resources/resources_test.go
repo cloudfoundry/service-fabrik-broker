@@ -33,7 +33,7 @@ const timeout = time.Second * 5
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "broker", "config", "crds")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
 	}
 
 	var err error

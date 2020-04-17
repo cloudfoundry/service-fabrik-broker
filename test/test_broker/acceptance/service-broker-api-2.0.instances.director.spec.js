@@ -3,13 +3,17 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
-const utils = require('../../../common/utils');
-const config = require('../../../common/config');
-const catalog = require('../../../common/models').catalog;
-const ScheduleManager = require('../../../jobs');
-const CONST = require('../../../common/constants');
-const iaas = require('../../../data-access-layer/iaas');
-const backupStore = iaas.backupStore;
+const config = require('@sf/app-config');
+const { catalog } = require('@sf/models');
+const ScheduleManager = require('@sf/jobs');
+const {
+  CONST,
+  commonFunctions
+} = require('@sf/common-utils');
+const {
+  CloudProviderClient,
+  backupStore
+} = require('@sf/iaas');
 const camelcaseKeys = require('camelcase-keys');
 
 function enableServiceFabrikV2() {
@@ -58,7 +62,7 @@ describe('service-broker-api-2.0', function () {
 
       before(function () {
         enableServiceFabrikV2();
-        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
@@ -582,7 +586,7 @@ describe('service-broker-api-2.0', function () {
         let utilsStub;
 
         before(function () {
-          utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(workflowId));
+          utilsStub = sinon.stub(commonFunctions, 'uuidV4').callsFake(() => Promise.resolve(workflowId));
         });
         after(function () {
           utilsStub.restore();
@@ -626,7 +630,7 @@ describe('service-broker-api-2.0', function () {
           });
           const testPayload = _.cloneDeep(payload1);
           testPayload.spec = camelcaseKeys(payload1.spec);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, {spec: {parameters: null}});
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, testPayload);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -634,7 +638,7 @@ describe('service-broker-api-2.0', function () {
               service_id: service_id,
               plan_id: plan_id_update,
               parameters: parameters,
-              //context: context,
+              // context: context,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -645,7 +649,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'update'
               }));
               mocks.verify();
@@ -674,7 +678,7 @@ describe('service-broker-api-2.0', function () {
           });
           const testPayload = _.cloneDeep(payload);
           testPayload.spec = camelcaseKeys(payload.spec);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, {spec: {parameters: null}});
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, testPayload);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -693,7 +697,7 @@ describe('service-broker-api-2.0', function () {
             .then(res => {
               mocks.verify();
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'update'
               }));
             });
@@ -823,7 +827,7 @@ describe('service-broker-api-2.0', function () {
             .then(res => {
               mocks.verify();
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'update',
                 serviceflow_name: 'upgrade_to_multi_az',
                 serviceflow_id: workflowId
@@ -865,7 +869,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'delete'
               }));
               mocks.verify();
@@ -933,7 +937,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'delete'
               }));
               mocks.verify();
@@ -968,7 +972,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
                 'type': 'delete'
               }));
               mocks.verify();
@@ -1283,7 +1287,7 @@ describe('service-broker-api-2.0', function () {
             .query({
               service_id: service_id,
               plan_id: plan_id,
-              operation: utils.encodeBase64({
+              operation: commonFunctions.encodeBase64({
                 'type': 'delete'
               })
             })
@@ -1307,7 +1311,7 @@ describe('service-broker-api-2.0', function () {
             .query({
               service_id: service_id,
               plan_id: plan_id,
-              operation: utils.encodeBase64({
+              operation: commonFunctions.encodeBase64({
                 'type': 'delete'
               })
             })
@@ -1339,7 +1343,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64({credentials: mocks.agent.credentials})
+              response: commonFunctions.encodeBase64({ credentials: mocks.agent.credentials })
             }
           });
           return chai.request(app)
@@ -1386,7 +1390,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64({credentials: mocks.agent.credentials})
+              response: commonFunctions.encodeBase64({ credentials: mocks.agent.credentials })
             }
           });
           return chai.request(app)
@@ -1433,7 +1437,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64({credentials: mocks.agent.credentials})
+              response: commonFunctions.encodeBase64({ credentials: mocks.agent.credentials })
             }
           });
           return chai.request(app)

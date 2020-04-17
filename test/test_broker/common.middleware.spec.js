@@ -2,26 +2,29 @@
 
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const commonMiddleware = proxyquire('../../common/middleware', {
+const commonMiddleware = proxyquire('../../core/express-commons/src/middleware', {
   'basic-auth': function (req) {
     return req.auth;
   }
 });
-const errors = require('../../common/errors');
-const MethodNotAllowed = errors.MethodNotAllowed;
-const NotFound = errors.NotFound;
-const Unauthorized = errors.Unauthorized;
+const {
+  errors: {
+    MethodNotAllowed,
+    NotFound,
+    Unauthorized
+  }
+} = require('@sf/common-utils');
 
 class Response {
   constructor() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method] = sinon.spy(function () {
         return this;
       });
     });
   }
   reset() {
-    this.constructor.methods.forEach((method) => {
+    this.constructor.methods.forEach(method => {
       this[method].resetHistory();
     });
   }
@@ -135,7 +138,7 @@ describe('middleware', () => {
       it('should respond with an error in html format', () => {
         responseFormatter.text();
         let responseText = _.first(res.send.firstCall.args);
-        let parsedResponseText = _.chain(responseText).split('\n').map((line) => {
+        let parsedResponseText = _.chain(responseText).split('\n').map(line => {
           let [key, val] = line.split(/:\s*/);
           return [key, key !== 'status' ? val : parseInt(val)];
         }).fromPairs().value();

@@ -1,10 +1,12 @@
 'use strict';
 
 const Promise = require('bluebird');
-const ServiceInstanceBackupTask = require('../../operators/serviceflow-operator/task/ServiceInstanceBackupTask');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
+const ServiceInstanceBackupTask = require('../../applications/operators/serviceflow-operator/task/ServiceInstanceBackupTask');
+const { apiServerClient } = require('@sf/eventmesh');
+const {
+  CONST,
+  commonFunctions
+} = require('@sf/common-utils');
 
 describe('operators', function () {
   describe('ServiceFlow', function () {
@@ -28,7 +30,7 @@ describe('operators', function () {
         };
         before(function () {
           apiServerClientUpdateStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(taskDetails));
-          utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(taskId));
+          utilsStub = sinon.stub(commonFunctions, 'uuidV4').callsFake(() => Promise.resolve(taskId));
         });
         after(function () {
           apiServerClientUpdateStub.restore();

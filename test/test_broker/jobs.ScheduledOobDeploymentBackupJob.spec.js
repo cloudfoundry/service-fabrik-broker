@@ -2,15 +2,19 @@
 
 const moment = require('moment');
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const utils = require('../../common/utils');
-const BaseJob = require('../../jobs/BaseJob');
-const ScheduleManager = require('../../jobs/ScheduleManager');
-const iaas = require('../../data-access-layer/iaas');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const iaas = require('@sf/iaas');
 const backupStore = iaas.backupStoreForOob;
 const filename = iaas.backupStoreForOob.filename;
-const ScheduledOobDeploymentBackupJob = require('../../jobs/ScheduledOobDeploymentBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../../core/scheduler-jobs/src/jobs/ScheduledOobDeploymentBackupJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -82,7 +86,7 @@ describe('Jobs', function () {
 
     describe('#RunBackup', function () {
       it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful', function () {
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'backup'
@@ -175,7 +179,7 @@ describe('Jobs', function () {
             start_backup_status: {
               operation: 'backup',
               backup_guid: backup_guid,
-              token: utils.encodeBase64({
+              token: encodeBase64({
                 backup_guid: backup_guid,
                 agent_ip: mocks.agent.ip,
                 operation: 'backup'
@@ -254,7 +258,7 @@ describe('Jobs', function () {
 
       it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful (for bosh-sf deployments)', function (done) {
 
-        const token = utils.encodeBase64({
+        const token = encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
           operation: 'backup'

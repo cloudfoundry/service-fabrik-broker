@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const BaseOperator = require('../../operators/BaseOperator');
-const TaskFabrik = require('../../operators/serviceflow-operator/task/TaskFabrik');
-const CONST = require('../../common/constants');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
+const BaseOperator = require('../../applications/operators/BaseOperator');
+const TaskFabrik = require('../../applications/operators/serviceflow-operator/task/TaskFabrik');
+const { CONST } = require('@sf/common-utils');
+const { apiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
   describe('ServiceFlow', function () {
@@ -49,7 +49,7 @@ describe('operators', function () {
             return Promise.resolve(true);
           });
           registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
-          TaskOperator = require('../../operators/serviceflow-operator/task/TaskOperator');
+          TaskOperator = require('../../applications/operators/serviceflow-operator/task/TaskOperator');
           updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve({
             body: changeObject.object
           }));
@@ -119,10 +119,10 @@ describe('operators', function () {
           const to = new TaskOperator();
           return to.init()
             .then(() => startTaskStatusPollerCallBack(changeObject.object))
-            .then((response) => {
+            .then(response => {
               expect(response).to.equal(CONST.APISERVER.HOLD_PROCESSING_LOCK);
               expect(_.keys(to.pollers).length).to.equal(1);
-              //If poller is already set, then invoking the start poller should not have any impact.
+              // If poller is already set, then invoking the start poller should not have any impact.
               return startTaskStatusPollerCallBack(changeObject.object)
                 .then(resp => {
                   expect(resp).to.equal(undefined);
@@ -136,11 +136,11 @@ describe('operators', function () {
                       return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
                         .then(resp => {
                           expect(resp).to.equal(true);
-                          expect(updateResourceStub).to.be.calledTwice; //Once to update DONE status , Second time to release processing lock
+                          expect(updateResourceStub).to.be.calledTwice; // Once to update DONE status , Second time to release processing lock
                           expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.TASK_STATE.DONE);
                           resolve(true);
                         })
-                        .catch((err) => {
+                        .catch(err => {
                           console.log(err);
                           reject(false);
                         });
@@ -154,10 +154,10 @@ describe('operators', function () {
         it('check if task poller continues to hold lock', () => {
           const to = new TaskOperator();
           return to.init()
-            .then(() => to.handleResource(changeObject, (input) => to.startTaskStatusPoller(input), CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK))
-            .then((response) => {
+            .then(() => to.handleResource(changeObject, input => to.startTaskStatusPoller(input), CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK))
+            .then(response => {
               expect(response).to.equal(CONST.APISERVER.HOLD_PROCESSING_LOCK);
-              _.each(to.pollers, (interval) => to.clearPoller(changeObject.object, interval));
+              _.each(to.pollers, interval => to.clearPoller(changeObject.object, interval));
             });
         });
         describe('TaskPoller', function () {
@@ -179,7 +179,7 @@ describe('operators', function () {
             const to = new TaskOperator();
             return to.init()
               .then(() => to.startTaskStatusPoller(changeObject.object))
-              .then((response) => {
+              .then(response => {
                 expect(response).to.equal(CONST.APISERVER.HOLD_PROCESSING_LOCK);
                 expect(_.keys(to.pollers).length).to.equal(1);
                 expect(_.keys(to.pollers)[0]).to.equal(instance_id);
@@ -191,13 +191,13 @@ describe('operators', function () {
                     return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
                       .then(resp => {
                         expect(resp).to.equal(false);
-                        //expect(updateResourceStub).to.be.calledOnce; //Continue to hold lock
+                        // expect(updateResourceStub).to.be.calledOnce; //Continue to hold lock
                         expect(updateResourceStub.firstCall.args[0].metadata.annotations.lockedByManager).to.equal('10.0.2.2');
                         expect(new Date(updateResourceStub.firstCall.args[0].metadata.annotations.processingStartedAt).getTime()).to.equal(new Date().getTime());
                         clearInterval(intervalId);
                         resolve(true);
                       })
-                      .catch((err) => {
+                      .catch(err => {
                         console.log(err);
                         reject(err);
                       });

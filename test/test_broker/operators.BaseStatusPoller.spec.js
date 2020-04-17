@@ -4,10 +4,13 @@ const proxyquire = require('proxyquire');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const _ = require('lodash');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const errors = require('../../common/errors');
-const InternalServerError = errors.InternalServerError;
+const {
+  CONST,
+  errors: {
+    InternalServerError
+  }
+} = require('@sf/common-utils');
+const { ApiServerClient } = require('@sf/eventmesh');
 
 const CONSTANTS = {
   POLLER_RELAXATION_TIME: 1000000,
@@ -29,8 +32,10 @@ const CONSTANTS = {
   }
 };
 
-const BaseStatusPoller = proxyquire('../../operators/BaseStatusPoller', {
-  '../common/constants': CONSTANTS
+const BaseStatusPoller = proxyquire('../../applications/operators/BaseStatusPoller', {
+  '@sf/common-utils': {
+    CONST: CONSTANTS
+  }
 });
 
 describe('operators', function () {
@@ -44,7 +49,7 @@ describe('operators', function () {
       sandbox.restore();
     });
 
-    it('Should start status poller successfully and register watch', (done) => {
+    it('Should start status poller successfully and register watch', done => {
       const jsonStream = new JSONStream();
       const registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -52,7 +57,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -71,7 +76,7 @@ describe('operators', function () {
       done();
     });
 
-    it('Should retry register watch in case of error', (done) => {
+    it('Should retry register watch in case of error', done => {
       const NEWCONST = {
         APISERVER: {
           RESOURCE_GROUPS: {
@@ -90,8 +95,10 @@ describe('operators', function () {
           WATCHER_ERROR_DELAY: 10
         }
       };
-      const BaseStatusPollerNew = proxyquire('../../operators/BaseStatusPoller', {
-        '../common/constants': NEWCONST
+      const BaseStatusPollerNew = proxyquire('../../applications/operators/BaseStatusPoller', {
+        '@sf/common-utils': {
+          CONST: NEWCONST
+        }
       });
 
       const jsonStream = new JSONStream();
@@ -107,7 +114,7 @@ describe('operators', function () {
           }
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPollerNew({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -130,7 +137,7 @@ describe('operators', function () {
     });
 
 
-    it('Should start poller with given poll interval after receiving event', (done) => {
+    it('Should start poller with given poll interval after receiving event', done => {
       const changeObject = {
         type: 'ADDED',
         object: {
@@ -147,7 +154,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -170,7 +177,7 @@ describe('operators', function () {
         });
     });
 
-    it('Should not start poller if poller is already running', (done) => {
+    it('Should not start poller if poller is already running', done => {
       const changeObject = {
         type: 'ADDED',
         object: {
@@ -187,7 +194,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -212,7 +219,7 @@ describe('operators', function () {
     });
 
 
-    it('Should not get polling lock if lock is already present', (done) => {
+    it('Should not get polling lock if lock is already present', done => {
       const changeObject = {
         type: 'ADDED',
         object: {
@@ -236,7 +243,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -282,7 +289,7 @@ describe('operators', function () {
         });
     });
 
-    it('Should continue polling if not able to acquire lock', (done) => {
+    it('Should continue polling if not able to acquire lock', done => {
       const changeObject = {
         type: 'ADDED',
         object: {
@@ -306,7 +313,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -347,7 +354,7 @@ describe('operators', function () {
         });
     });
 
-    it('Should clear poller in case of error', (done) => {
+    it('Should clear poller in case of error', done => {
       const changeObject = {
         type: 'ADDED',
         object: {
@@ -371,7 +378,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,

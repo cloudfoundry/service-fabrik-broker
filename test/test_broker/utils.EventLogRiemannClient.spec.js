@@ -1,10 +1,9 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
+const config = require('@sf/app-config');
 const _ = require('lodash');
-const Promise = require('bluebird');
-const CONST = require('../../common/constants');
+const { CONST } = require('@sf/common-utils');
 
 const pubSubStub = {
   publish: () => undefined,
@@ -14,12 +13,12 @@ const pubSubStub = {
 const riemannJSStub = {
   send: () => true,
   /* jshint unused:false */
-  Event: (event) => true,
+  Event: event => true,
   disconnect: () => true
 };
 
 let riemannClientEventHandlers = {};
-const RiemannClient = proxyquire('../../common/utils/EventLogRiemannClient', {
+const RiemannClient = proxyquire('../../data-access-layer/event-logger/src/EventLogRiemannClient', {
   'riemannjs': {
     createClient: function () {
       return {
@@ -537,7 +536,7 @@ describe('utils', function () {
       it('should enque request when MAX_QUEUE_SIZE is not exceeded', function () {
         const info = {
           metric: 0,
-          state: 'ok',
+          state: 'ok'
         };
         riemannClient._enqueRequest(info, 1);
         const expectedQueue = [{
@@ -550,39 +549,39 @@ describe('utils', function () {
         const prevQueueSize = CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE;
         CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE = 2;
         riemannClient.QUEUED_REQUESTS = [{
-            info: {
-              metric: 0,
-              state: 'ok'
-            },
-            attempt: 0
+          info: {
+            metric: 0,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
-          }
+          attempt: 0
+        },
+        {
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }
         ];
         const info = {
           metric: 2,
-          state: 'ok',
+          state: 'ok'
         };
         riemannClient._enqueRequest(info, 2);
         const expectedQueue = [{
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
+          info: {
+            metric: 1,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 2,
-              state: 'ok'
-            },
-            attempt: 2
-          }
+          attempt: 1
+        },
+        {
+          info: {
+            metric: 2,
+            state: 'ok'
+          },
+          attempt: 2
+        }
         ];
         expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
         CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE = prevQueueSize;
@@ -602,19 +601,19 @@ describe('utils', function () {
       });
       it('should deque request from queue', function () {
         riemannClient.QUEUED_REQUESTS = [{
-            info: {
-              metric: 0,
-              state: 'ok'
-            },
-            attempt: 0
+          info: {
+            metric: 0,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
-          }
+          attempt: 0
+        },
+        {
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }
         ];
         const expectedQueue = [{
           info: {
@@ -649,19 +648,19 @@ describe('utils', function () {
       });
       it('should return true when queue is not empty', function () {
         riemannClient.QUEUED_REQUESTS = [{
-            info: {
-              metric: 0,
-              state: 'ok'
-            },
-            attempt: 0
+          info: {
+            metric: 0,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
-          }
+          attempt: 0
+        },
+        {
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }
         ];
         expect(riemannClient._isRequestQueueNonEmpty()).to.be.true;
       });
@@ -678,19 +677,19 @@ describe('utils', function () {
       it('should process all events when sendEvent is successful', function () {
         const sendEventSpy = sinon.stub(riemannClient, 'sendEvent').returns(true);
         riemannClient.QUEUED_REQUESTS = [{
-            info: {
-              metric: 0,
-              state: 'ok'
-            },
-            attempt: 0
+          info: {
+            metric: 0,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
-          }
+          attempt: 0
+        },
+        {
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }
         ];
         riemannClient._processOutStandingRequest();
         expect(sendEventSpy).to.be.calledTwice;
@@ -700,19 +699,19 @@ describe('utils', function () {
       it('should process one event when sendEvent fails', function () {
         const sentEventSpy = sinon.stub(riemannClient, 'sendEvent').returns(false);
         riemannClient.QUEUED_REQUESTS = [{
-            info: {
-              metric: 0,
-              state: 'ok'
-            },
-            attempt: 0
+          info: {
+            metric: 0,
+            state: 'ok'
           },
-          {
-            info: {
-              metric: 1,
-              state: 'ok'
-            },
-            attempt: 1
-          }
+          attempt: 0
+        },
+        {
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }
         ];
         const expectedQueue = [{
           info: {

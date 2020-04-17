@@ -2,25 +2,29 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const backupStore = require('../../data-access-layer/iaas').backupStoreForOob;
-const Agent = require('../../data-access-layer/service-agent');
-const utils = require('../../common/utils');
-const errors = require('../../common/errors');
-const bosh = require('../../data-access-layer/bosh');
-const NotFound = errors.NotFound;
-const UnprocessableEntity = errors.UnprocessableEntity;
-const CONST = require('../../common/constants');
+const logger = require('@sf/logger');
+const backupStore = require('@sf/iaas').backupStoreForOob;
+const {
+  CONST,
+  errors: {
+    NotFound,
+    UnprocessableEntity,
+    BadRequest
+  },
+  commonFunctions
+} = require('@sf/common-utils');
+const { director } = require('@sf/bosh');
+const Agent = require('../service-agent');
 
 class OobBackupManager {
 
   constructor() {
-    this.boshDirector = bosh.director;
+    this.boshDirector = director;
   }
 
   startBackup(opts) {
     if (_.isEmpty(opts.deploymentName)) {
-      throw new errors.BadRequest('Deployment name is mandatory to start deployment.');
+      throw new BadRequest('Deployment name is mandatory to start deployment.');
     }
     const deploymentName = opts.deploymentName;
     const args = opts.arguments;
@@ -55,13 +59,12 @@ class OobBackupManager {
     };
 
     function createSecret() {
-      return utils
-        .randomBytes(12)
+      return commonFunctions.randomBytes(12)
         .then(buffer => buffer.toString('base64'));
     }
     return Promise
       .all([
-        utils.uuidV4(),
+        commonFunctions.uuidV4(),
         createSecret(),
         this.boshDirector.getDeploymentIps(deploymentName),
         this.boshDirector.getNormalizedDeploymentVms(deploymentName),
@@ -94,6 +97,7 @@ class OobBackupManager {
     }
 
     const deploymentName = opts.deploymentName;
+
     return Promise.try(() => {
       if(!opts.agent_properties) {
         return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);
@@ -225,6 +229,7 @@ class OobBackupManager {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
     const deploymentName = opts.deploymentName;
+
     return Promise.try(() => {
       if(!opts.agent_properties) {
         return this.boshDirector.getAgentPropertiesFromManifest(deploymentName);

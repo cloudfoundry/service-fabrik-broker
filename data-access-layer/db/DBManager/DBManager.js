@@ -2,20 +2,29 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../../common/config');
-const logger = require('../../../common/logger');
-const catalog = require('../../../common/models/catalog');
-const DirectorService = require('../../../operators/bosh-operator/DirectorService');
-const bosh = require('../../../data-access-layer/bosh');
-const utils = require('../../../common/utils');
-const errors = require('../../../common/errors');
-const Timeout = errors.Timeout;
-const NotFound = errors.NotFound;
-const PageNotFound = errors.PageNotFound;
-const CONST = require('../../../common/constants');
-const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
-const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
-const eventmesh = require('../../../data-access-layer/eventmesh');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const { catalog } = require('@sf/models');
+const bosh = require('@sf/bosh');
+const {
+  CONST,
+  errors: {
+    Timeout,
+    NotFound,
+    PageNotFound,
+    BadRequest,
+    PreconditionFailed
+  },
+  commonFunctions
+} = require('@sf/common-utils');
+const {
+  decodeBase64,
+  encodeBase64
+} = commonFunctions;
+const { apiServerClient } = require('@sf/eventmesh');
+const { BasePlatformManager } = require('@sf/platforms');
+const DirectorService = require('../../../applications/operators/bosh-operator/DirectorService');
+const dbConnectionManager = require('../DbConnectionManager');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
@@ -108,9 +117,9 @@ class DBManager {
       if (this.bindInfo) {
         return this.bindInfo;
       }
-      return utils.retry(tries => {
+      return commonFunctions.retry(tries => {
         logger.debug(`+-> Attempt ${tries + 1} to get db binding from apiserver`);
-        return eventmesh.apiServerClient.getResource({
+        return apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
           resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
@@ -122,7 +131,7 @@ class DBManager {
         predicate: err => !(err instanceof NotFound && !(err instanceof PageNotFound))
       }) 
         .catch(Timeout, throwTimeoutError)
-        .then(resource => utils.decodeBase64(_.get(resource, 'status.response')));
+        .then(resource => decodeBase64(_.get(resource, 'status.response')));
     });
   }
 
@@ -130,12 +139,11 @@ class DBManager {
     logger.info('Connecting to db ...');
     this.dbState = CONST.DB.STATE.CONNECTING;
     this.dbUrl = config.url;
-    return utils
-      .retry(() => dbConnectionManager
-        .startUp(config), {
-        maxAttempts: 5,
-        minDelay: 5000
-      })
+    return commonFunctions.retry(() => dbConnectionManager
+      .startUp(config), {
+      maxAttempts: 5,
+      minDelay: 5000
+    })
       .then(() => this.dbInitialized = true)
       .catch(err => {
         this.dbState = CONST.DB.STATE.CONNECTION_FAILED;
@@ -151,7 +159,7 @@ class DBManager {
         _.get(config, 'mongodb.provision.plan_id') === undefined) {
         this.dbState = CONST.DB.STATE.NOT_CONFIGURED;
         logger.error('Cannot provision the Database as mongodb.provision.plan_id & mongodb.deployment_name must be configured');
-        throw new errors.PreconditionFailed('Cannot provision the Database as mongodb.provision.plan_id & mongodb.deployment_name must be configured');
+        throw new PreconditionFailed('Cannot provision the Database as mongodb.provision.plan_id & mongodb.deployment_name must be configured');
       }
       logger.info(`DB ${operation} initiated for:${config.mongodb.deployment_name} > plan: ${config.mongodb.provision.plan_id}`);
       return this.director
@@ -161,7 +169,7 @@ class DBManager {
           if (createIfNotPresent) {
             logger.error(`Trying to create exisiting ${config.mongodb.deployment_name} once again. Run deployment with mongodb.update flag instead of create flag`);
             // DB already exists. Ignore the create request
-            throw new errors.BadRequest('MongoDB already exists. Use update instead of create operation');
+            throw new BadRequest('MongoDB already exists. Use update instead of create operation');
           }
           return this.dbCreateUpdate(createIfNotPresent);
         })
@@ -220,13 +228,13 @@ class DBManager {
       }
       if (config.mongodb.provision.network_index === undefined) {
         logger.error(`mongodb.provision.network_index is undefined in mongodb configuration. Mongodb ${operation} cannot continue`);
-        throw new errors.PreconditionFailed('mongodb.provision.network_index is undefined for mongodb deployment');
+        throw new PreconditionFailed('mongodb.provision.network_index is undefined for mongodb deployment');
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
       return Promise.try(() => {
         if (createIfNotPresent) {
-          return eventmesh.apiServerClient.deleteResource({
+          return apiServerClient.deleteResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
             resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
@@ -266,7 +274,7 @@ class DBManager {
             this.bindInfo = {
               credentials: credentials
             };
-            return utils.retry(() => this.storeBindPropertyOnApiServer({
+            return commonFunctions.retry(() => this.storeBindPropertyOnApiServer({
               id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
               parameters: config.mongodb.provision.bind_params || {},
               credentials: credentials
@@ -286,8 +294,8 @@ class DBManager {
   }
 
   storeBindPropertyOnApiServer(bindProperty) {
-    let encodedBindProperty = utils.encodeBase64(bindProperty);
-    return eventmesh.apiServerClient.createResource({
+    let encodedBindProperty = encodeBase64(bindProperty);
+    return apiServerClient.createResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
       resourceId: bindProperty.id,

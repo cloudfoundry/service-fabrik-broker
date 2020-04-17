@@ -1,0 +1,25 @@
+{
+  "name": "@sf/extensions",
+  "version": "1.0.0",
+  "description": "Extension server providing backup, restore apis",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
+    "@sf/broker-client": "file:../../data-access-layer/broker-client",
+    "@sf/cf": "file:../../data-access-layer/cf",
+    "@sf/common-controllers": "file:../../core/controllers",
+    "@sf/common-utils": "file:../../core/utils",
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
+    "@sf/express-commons": "file:../../core/express-commons",
+    "@sf/iaas": "file:../../data-access-layer/iaas",
+    "@sf/jobs": "file:../../core/scheduler-jobs",
+    "@sf/logger": "file:../../core/logging",
+    "@sf/models": "file:../../core/models"
+  }
+}

@@ -298,6 +298,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 				return c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 			}, timeout).Should(gomega.Succeed())
 		}
+		time.Sleep(time.Second * 2)
 	}
 }
 

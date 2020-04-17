@@ -4,10 +4,12 @@ const _ = require('lodash');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
-const CONST = require('../../common/constants');
-const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
-const apiserver = new eventmesh();
+const config = require('@sf/app-config');
+const { CONST } = require('@sf/common-utils');
+const {
+  ApiServerClient,
+  apiServerClient
+} = require('@sf/eventmesh');
 
 const service_id = '3c266123-8e6e-4034-a2aa-e48e13fbf893';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -22,13 +24,13 @@ const DockerOperatorDummy = {
   createDummy: () => {},
   updateDummy: () => {},
   deleteDummy: () => {},
-  getOperationOptionsDummy: () => {},
+  getOperationOptionsDummy: () => {}
 };
 const resultOptions = {
   plan_id: plan_id
 };
-const DockerOperator = proxyquire('../../operators/docker-operator/DockerOperator', {
-  '../../data-access-layer/eventmesh': {
+const DockerOperator = proxyquire('../../applications/operators/docker-operator/DockerOperator', {
+  '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
         DockerOperatorDummy.getOperationOptionsDummy(opts);
@@ -40,18 +42,18 @@ const DockerOperator = proxyquire('../../operators/docker-operator/DockerOperato
     'createInstance': function (instance_id, options) {
       DockerOperatorDummy.createDockerServiceDummy(instance_id, options);
       return Promise.resolve({
-        'create': (opts) => {
+        'create': opts => {
           DockerOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
-        'update': (opts) => {
+        'update': opts => {
           DockerOperatorDummy.updateDummy(opts);
           return Promise.resolve({});
         },
-        'delete': (opts) => {
+        'delete': opts => {
           DockerOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
-        },
+        }
       });
     }
   }
@@ -91,7 +93,7 @@ describe('docker-operator', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
+      registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
@@ -137,7 +139,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -181,7 +183,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -226,7 +228,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -268,7 +270,7 @@ describe('docker-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -310,7 +312,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 409);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -352,7 +354,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -391,7 +393,7 @@ describe('docker-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
@@ -439,7 +441,7 @@ describe('docker-operator', function () {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {

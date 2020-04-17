@@ -1,9 +1,13 @@
 'use strict';
 
 const Promise = require('bluebird');
-const CONST = require('../../common/constants');
-const VirtualHostService = require('../../operators/virtualhost-operator/VirtualHostService');
-const utils = require('../../common/utils');
+const {
+  CONST,
+  commonFunctions: {
+    encodeBase64
+  }
+} = require('@sf/common-utils');
+const VirtualHostService = require('../../applications/operators/virtualhost-operator/VirtualHostService');
 
 describe('#VirtualHostService', function () {
   describe('instances', function () {
@@ -149,7 +153,7 @@ describe('#VirtualHostService', function () {
           mocks.virtualHostAgent.deleteCredentials(instance_id);
           let dummyBindResource = {
             status: {
-              response: utils.encodeBase64(mocks.virtualHostAgent.credentials),
+              response: encodeBase64(mocks.virtualHostAgent.credentials),
               state: 'succeeded'
             }
           };

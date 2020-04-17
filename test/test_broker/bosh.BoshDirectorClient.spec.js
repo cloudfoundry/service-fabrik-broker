@@ -3,22 +3,29 @@
 const Promise = require('bluebird');
 const uuid = require('uuid');
 const _ = require('lodash');
-const errors = require('../../common/errors');
-const CONST = require('../../common/constants');
-const config = require('../../common/config');
-const logger = require('../../common/logger');
-const NotFound = errors.NotFound;
-const BadRequest = errors.BadRequest;
-const InternalServerError = errors.InternalServerError;
-const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
-const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
-const BoshSshClient = require('../../data-access-layer/bosh/BoshSshClient');
-const utils = require('../../common/utils');
-const HttpClient = utils.HttpClient;
-const UaaClient = require('../../data-access-layer/cf/UaaClient');
-const TokenIssuer = require('../../data-access-layer/cf/TokenIssuer');
-const eventmesh = require('../../data-access-layer/eventmesh');
-const EncryptionManager = require('../../common/utils/EncryptionManager');
+const {
+  CONST,
+  errors: {
+    NotFound,
+    BadRequest,
+    InternalServerError,
+    DirectorServiceUnavailable,
+    UnprocessableEntity
+  },
+  HttpClient,
+  EncryptionManager
+} = require('@sf/common-utils');
+const config = require('@sf/app-config');
+const logger = require('@sf/logger');
+const {
+  BoshDirectorClient,
+  BoshSshClient
+} = require('@sf/bosh');
+const {
+  UaaClient,
+  TokenIssuer
+} = require('@sf/cf');
+const { apiServerClient } = require('@sf/eventmesh');
 const yaml = require('js-yaml');
 const assert = require('assert');
 const id = uuid.v4();
@@ -48,67 +55,67 @@ class MockBoshDirectorClient extends BoshDirectorClient {
   makeRequest(options, expectedStatusCode) {
     if (this.res.statusCode && !this.res.code) {
       switch (this.res.statusCode) {
-      case 400:
-        this.res.statusCode = 204;
-        return Promise.reject(new BadRequest(''));
-      case 404:
-        this.res.statusCode = 204;
-        return Promise.reject(new NotFound(''));
-      case 502:
-      case 503:
-      case 500:
-        this.res.statusCode = 500;
-        return Promise.reject(new InternalServerError(''));
-      default:
-        expect(expectedStatusCode).to.equal(this.res.statusCode);
-        expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
+        case 400:
+          this.res.statusCode = 204;
+          return Promise.reject(new BadRequest(''));
+        case 404:
+          this.res.statusCode = 204;
+          return Promise.reject(new NotFound(''));
+        case 502:
+        case 503:
+        case 500:
+          this.res.statusCode = 500;
+          return Promise.reject(new InternalServerError(''));
+        default:
+          expect(expectedStatusCode).to.equal(this.res.statusCode);
+          expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
 
-        return Promise.resolve({
-          body: this.res.body,
-          statusCode: this.res.statusCode,
-          headers: this.res.headers
-        });
+          return Promise.resolve({
+            body: this.res.body,
+            statusCode: this.res.statusCode,
+            headers: this.res.headers
+          });
       }
     }
     switch (this.res.code) {
-    case 'ECONNREFUSED':
-      let e = new Error('ECONNREFUSED');
-      e.code = 'ECONNREFUSED';
-      throw e;
+      case 'ECONNREFUSED':
+        let e = new Error('ECONNREFUSED');
+        e.code = 'ECONNREFUSED';
+        throw e;
     }
   }
 
   makeRequestWithConfig(options, expectedStatusCode) {
     if (this.res.statusCode && !this.res.code) {
       switch (this.res.statusCode) {
-      case 400:
-        this.res.statusCode = 204;
-        return Promise.reject(new BadRequest(''));
-      case 404:
-        this.res.statusCode = 204;
-        return Promise.reject(new NotFound(''));
-      case 502:
-      case 503:
-      case 500:
-        this.res.statusCode = 500;
-        return Promise.reject(new InternalServerError(''));
-      default:
-        expect(expectedStatusCode).to.equal(this.res.statusCode);
-        expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
+        case 400:
+          this.res.statusCode = 204;
+          return Promise.reject(new BadRequest(''));
+        case 404:
+          this.res.statusCode = 204;
+          return Promise.reject(new NotFound(''));
+        case 502:
+        case 503:
+        case 500:
+          this.res.statusCode = 500;
+          return Promise.reject(new InternalServerError(''));
+        default:
+          expect(expectedStatusCode).to.equal(this.res.statusCode);
+          expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
 
-        return Promise.resolve({
-          body: this.res.body,
-          statusCode: this.res.statusCode,
-          headers: this.res.headers
-        });
+          return Promise.resolve({
+            body: this.res.body,
+            statusCode: this.res.statusCode,
+            headers: this.res.headers
+          });
       }
     }
 
     switch (this.res.code) {
-    case 'ECONNREFUSED':
-      let e = new Error('ECONNREFUSED');
-      e.code = 'ECONNREFUSED';
-      throw e;
+      case 'ECONNREFUSED':
+        let e = new Error('ECONNREFUSED');
+        e.code = 'ECONNREFUSED';
+        throw e;
     }
   }
 
@@ -133,14 +140,14 @@ describe('bosh', () => {
     describe('#getDirectorForOperation', function () {
       it('should return the active primary as the director for create operations', function () {
         return new MockBoshDirectorClient({}, {}).getDirectorForOperation('create', deployment_name)
-          .then((out) => {
+          .then(out => {
             expect(out).to.eql(MockBoshDirectorClient.getActivePrimary()[0]);
           });
       });
 
       it('should return the director for non-create operations', function () {
         return new MockBoshDirectorClient({}, {}).getDirectorForOperation('update', deployment_name)
-          .then((out) => {
+          .then(out => {
             expect(out).to.not.eql(undefined);
           });
       });
@@ -188,7 +195,7 @@ describe('bosh', () => {
     });
 
     describe('#getInfo', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: '/info'
@@ -200,7 +207,7 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getInfo().then((content) => {
+        new MockBoshDirectorClient(request, response).getInfo().then(content => {
           expect(content).to.eql(JSON.parse(response.body));
           done();
         }).catch(done);
@@ -212,7 +219,7 @@ describe('bosh', () => {
 
       });
       after(function () {});
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: '/tasks',
@@ -223,33 +230,33 @@ describe('bosh', () => {
         };
         let response = {
           body: JSON.stringify([{
-              id: 1,
-              state: 'processing',
-              context_id: 'Fabrik::Operation::Auto'
-            },
-            {
-              id: 2,
-              state: 'cancelling',
-              context_id: 'Fabrik::Operation::Auto'
-            },
-            {
-              id: 3,
-              state: 'processing',
-              context_id: 'Fabrik::Operation::create'
-            },
-            {
-              id: 4,
-              state: 'cancelling',
-              context_id: 'Fabrik::Operation::update'
-            },
-            {
-              id: 5,
-              state: 'processing'
-            }
+            id: 1,
+            state: 'processing',
+            context_id: 'Fabrik::Operation::Auto'
+          },
+          {
+            id: 2,
+            state: 'cancelling',
+            context_id: 'Fabrik::Operation::Auto'
+          },
+          {
+            id: 3,
+            state: 'processing',
+            context_id: 'Fabrik::Operation::create'
+          },
+          {
+            id: 4,
+            state: 'cancelling',
+            context_id: 'Fabrik::Operation::update'
+          },
+          {
+            id: 5,
+            state: 'processing'
+          }
           ]),
           statusCode: 200
         };
-        new MockBoshDirectorClient(request, response).getCurrentTasks().then((content) => {
+        new MockBoshDirectorClient(request, response).getCurrentTasks().then(content => {
           expect(content).to.eql({
             create: 1,
             update: 1,
@@ -272,7 +279,7 @@ describe('bosh', () => {
       after(function () {
         clock.restore();
       });
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -283,13 +290,13 @@ describe('bosh', () => {
           }),
           statusCode: 200
         };
-        new MockBoshDirectorClient(request, response).getDeployments().then((content) => {
+        new MockBoshDirectorClient(request, response).getDeployments().then(content => {
           expect(content).to.eql([JSON.parse(response.body)]);
           done();
         }).catch(done);
       });
 
-      it('returns deployment names from cache', (done) => {
+      it('returns deployment names from cache', done => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -300,12 +307,12 @@ describe('bosh', () => {
           }),
           statusCode: 200
         };
-        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache().then((content) => {
+        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache().then(content => {
           expect(content).to.eql([deployment_name]);
           done();
         }).catch(done);
       });
-      it('returns deployment names from cache for input bosh', (done) => {
+      it('returns deployment names from cache for input bosh', done => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -316,12 +323,12 @@ describe('bosh', () => {
           }),
           statusCode: 200
         };
-        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache('bosh').then((content) => {
+        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache('bosh').then(content => {
           expect(content).to.eql([deployment_name]);
           done();
         }).catch(done);
       });
-      it('waits in case of cache load if cache details are to be returned back', (done) => {
+      it('waits in case of cache load if cache details are to be returned back', done => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -335,7 +342,7 @@ describe('bosh', () => {
         populateConfigCacheInProgress = true;
         const director = new MockBoshDirectorClient(request, response);
         const deployments = director
-          .getDeploymentNamesFromCache('bosh').then((content) => {
+          .getDeploymentNamesFromCache('bosh').then(content => {
             expect(content).to.eql([deployment_name]);
             done();
           }).catch(done);
@@ -345,7 +352,7 @@ describe('bosh', () => {
         return deployments;
       });
 
-      it('returns DirectorServiceUnavailable error: 503', (done) => {
+      it('returns DirectorServiceUnavailable error: 503', done => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -354,7 +361,7 @@ describe('bosh', () => {
           statusCode: 503
         };
         new MockBoshDirectorClient(request, response).getDeployments()
-          .catch((res) => {
+          .catch(res => {
             expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           }).catch(done);
@@ -362,7 +369,7 @@ describe('bosh', () => {
     });
 
     describe('#getDeployment', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: `/deployments/${id}`
@@ -374,7 +381,7 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getDeployment(id).then((content) => {
+        new MockBoshDirectorClient(request, response).getDeployment(id).then(content => {
           expect(content).to.eql(JSON.parse(response.body));
           done();
         }).catch(done);
@@ -382,7 +389,7 @@ describe('bosh', () => {
     });
 
     describe('#getDeploymentManifest', () => {
-      it('returns a YAML object', (done) => {
+      it('returns a YAML object', done => {
         let request = {
           method: 'GET',
           url: `/deployments/${id}`
@@ -394,7 +401,7 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getDeploymentManifest(id).then((content) => {
+        new MockBoshDirectorClient(request, response).getDeploymentManifest(id).then(content => {
           expect(content).to.eql(id);
           done();
         }).catch(done);
@@ -402,7 +409,7 @@ describe('bosh', () => {
     });
 
     describe('#createOrUpdateDeployment', () => {
-      it('returns an integer (task-id): mongodb update', (done) => {
+      it('returns an integer (task-id): mongodb update', done => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
@@ -425,13 +432,13 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true, true)
-          .then((content) => {
+          .then(content => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();
           })
           .catch(done);
       });
-      it('returns an integer (task-id): scheduled instance update', (done) => {
+      it('returns an integer (task-id): scheduled instance update', done => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
@@ -454,13 +461,13 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true)
-          .then((content) => {
+          .then(content => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();
           })
           .catch(done);
       });
-      it('returns an integer (task-id): user-triggered create', (done) => {
+      it('returns an integer (task-id): user-triggered create', done => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
@@ -483,14 +490,14 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.CREATE, manifest)
-          .then((content) => {
+          .then(content => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();
           })
           .catch(done);
       });
 
-      it('returns an integer (task-id): user-triggered update', (done) => {
+      it('returns an integer (task-id): user-triggered update', done => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
@@ -513,14 +520,14 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
-          .then((content) => {
+          .then(content => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();
           })
           .catch(done);
       });
 
-      it('returns service unavailable exception: ECONNREFUSED : user-triggered update', (done) => {
+      it('returns service unavailable exception: ECONNREFUSED : user-triggered update', done => {
         let request = {
           method: 'POST',
           url: '/deployments',
@@ -536,14 +543,14 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
-          .catch((res) => {
+          .catch(res => {
             expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           })
           .catch(done);
       });
 
-      it('returns service unavailable exception: 502 : user-triggered update', (done) => {
+      it('returns service unavailable exception: 502 : user-triggered update', done => {
         let request = {
           method: 'POST',
           url: '/deployments',
@@ -559,7 +566,7 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
-          .catch((res) => {
+          .catch(res => {
             expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           })
@@ -569,7 +576,7 @@ describe('bosh', () => {
     });
 
     describe('#deleteDeployment', () => {
-      it('returns an integer (task-id)', (done) => {
+      it('returns an integer (task-id)', done => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'DELETE',
@@ -585,13 +592,13 @@ describe('bosh', () => {
           }
         };
 
-        new MockBoshDirectorClient(request, response).deleteDeployment(id).then((content) => {
+        new MockBoshDirectorClient(request, response).deleteDeployment(id).then(content => {
           expect(content).to.eql(`${deployment_name}_${taskId}`);
           done();
         }).catch(done);
       });
 
-      it('returns DirectorServiceUnavailable: 502', (done) => {
+      it('returns DirectorServiceUnavailable: 502', done => {
         let request = {
           method: 'DELETE',
           url: `/deployments/${deployment_name}`
@@ -601,7 +608,7 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response).deleteDeployment(id)
-          .catch((res) => {
+          .catch(res => {
             expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           }).catch(done);
@@ -738,65 +745,65 @@ describe('bosh', () => {
 
       it('should get persistent disks for deployment where cloud properties show availability zone', () => {
         const response = [{
-            vm_cid: 'vmid1',
-            active: true,
-            vm_created_at: '2019-01-16T10:52:18Z',
-            cloud_properties: {
-              availability_zone: 'zone',
-              ephemeral_disk: {
-                size: 10240,
-                type: 'gp2'
-              },
-              instance_type: 't2.large'
+          vm_cid: 'vmid1',
+          active: true,
+          vm_created_at: '2019-01-16T10:52:18Z',
+          cloud_properties: {
+            availability_zone: 'zone',
+            ephemeral_disk: {
+              size: 10240,
+              type: 'gp2'
             },
-            disk_cid: 'vol1',
-            disk_cids: ['vol1'],
-            ips: ['1.2.3.4'],
-            job_name: 'postgresql',
-            index: 0,
-            job_state: 'running',
-            state: 'started',
-            vm_type: 'service_fabrik_vm_large',
-            vitals: {
-              stuff: true
-            },
-            processes: {
-              stuff: true
-            },
-            resurrection_paused: false,
-            az: 'z1',
-            id: 'abcd'
+            instance_type: 't2.large'
           },
-          {
-            vm_cid: 'vmid2',
-            active: true,
-            vm_created_at: '2019-01-16T10:52:18Z',
-            cloud_properties: {
-              availability_zone: 'zone',
-              ephemeral_disk: {
-                size: 10240,
-                type: 'gp2'
-              },
-              instance_type: 't2.large'
+          disk_cid: 'vol1',
+          disk_cids: ['vol1'],
+          ips: ['1.2.3.4'],
+          job_name: 'postgresql',
+          index: 0,
+          job_state: 'running',
+          state: 'started',
+          vm_type: 'service_fabrik_vm_large',
+          vitals: {
+            stuff: true
+          },
+          processes: {
+            stuff: true
+          },
+          resurrection_paused: false,
+          az: 'z1',
+          id: 'abcd'
+        },
+        {
+          vm_cid: 'vmid2',
+          active: true,
+          vm_created_at: '2019-01-16T10:52:18Z',
+          cloud_properties: {
+            availability_zone: 'zone',
+            ephemeral_disk: {
+              size: 10240,
+              type: 'gp2'
             },
-            disk_cid: 'vol2',
-            disk_cids: ['vol2'],
-            ips: ['1.2.3.4'],
-            job_name: 'pgpool',
-            index: 0,
-            job_state: 'running',
-            state: 'started',
-            vm_type: 'service_fabrik_vm_large',
-            vitals: {
-              stuff: true
-            },
-            processes: {
-              stuff: true
-            },
-            resurrection_paused: false,
-            az: 'z1',
-            id: 'abcd'
-          }
+            instance_type: 't2.large'
+          },
+          disk_cid: 'vol2',
+          disk_cids: ['vol2'],
+          ips: ['1.2.3.4'],
+          job_name: 'pgpool',
+          index: 0,
+          job_state: 'running',
+          state: 'started',
+          vm_type: 'service_fabrik_vm_large',
+          vitals: {
+            stuff: true
+          },
+          processes: {
+            stuff: true
+          },
+          resurrection_paused: false,
+          az: 'z1',
+          id: 'abcd'
+        }
         ];
 
         let mockBoshClient = new MockBoshDirectorClient();
@@ -816,65 +823,65 @@ describe('bosh', () => {
 
       it('should get persistent disks for deployment where cloud properties show zone', () => {
         const response = [{
-            vm_cid: 'vmid1',
-            active: true,
-            vm_created_at: '2019-01-16T10:52:18Z',
-            cloud_properties: {
-              zone: 'zone',
-              ephemeral_disk: {
-                size: 10240,
-                type: 'gp2'
-              },
-              instance_type: 't2.large'
+          vm_cid: 'vmid1',
+          active: true,
+          vm_created_at: '2019-01-16T10:52:18Z',
+          cloud_properties: {
+            zone: 'zone',
+            ephemeral_disk: {
+              size: 10240,
+              type: 'gp2'
             },
-            disk_cid: 'vol1',
-            disk_cids: ['vol1'],
-            ips: ['1.2.3.4'],
-            job_name: 'postgresql',
-            index: 0,
-            job_state: 'running',
-            state: 'started',
-            vm_type: 'service_fabrik_vm_large',
-            vitals: {
-              stuff: true
-            },
-            processes: {
-              stuff: true
-            },
-            resurrection_paused: false,
-            az: 'z1',
-            id: 'abcd'
+            instance_type: 't2.large'
           },
-          {
-            vm_cid: 'vmid2',
-            active: true,
-            vm_created_at: '2019-01-16T10:52:18Z',
-            cloud_properties: {
-              zone: 'zone',
-              ephemeral_disk: {
-                size: 10240,
-                type: 'gp2'
-              },
-              instance_type: 't2.large'
+          disk_cid: 'vol1',
+          disk_cids: ['vol1'],
+          ips: ['1.2.3.4'],
+          job_name: 'postgresql',
+          index: 0,
+          job_state: 'running',
+          state: 'started',
+          vm_type: 'service_fabrik_vm_large',
+          vitals: {
+            stuff: true
+          },
+          processes: {
+            stuff: true
+          },
+          resurrection_paused: false,
+          az: 'z1',
+          id: 'abcd'
+        },
+        {
+          vm_cid: 'vmid2',
+          active: true,
+          vm_created_at: '2019-01-16T10:52:18Z',
+          cloud_properties: {
+            zone: 'zone',
+            ephemeral_disk: {
+              size: 10240,
+              type: 'gp2'
             },
-            disk_cid: 'vol2',
-            disk_cids: ['vol2'],
-            ips: ['1.2.3.4'],
-            job_name: 'pgpool',
-            index: 0,
-            job_state: 'running',
-            state: 'started',
-            vm_type: 'service_fabrik_vm_large',
-            vitals: {
-              stuff: true
-            },
-            processes: {
-              stuff: true
-            },
-            resurrection_paused: false,
-            az: 'z1',
-            id: 'abcd'
-          }
+            instance_type: 't2.large'
+          },
+          disk_cid: 'vol2',
+          disk_cids: ['vol2'],
+          ips: ['1.2.3.4'],
+          job_name: 'pgpool',
+          index: 0,
+          job_state: 'running',
+          state: 'started',
+          vm_type: 'service_fabrik_vm_large',
+          vitals: {
+            stuff: true
+          },
+          processes: {
+            stuff: true
+          },
+          resurrection_paused: false,
+          az: 'z1',
+          id: 'abcd'
+        }
         ];
 
         let mockBoshClient = new MockBoshDirectorClient();
@@ -999,7 +1006,7 @@ describe('bosh', () => {
     });
 
     describe('#getTasks', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: '/tasks',
@@ -1018,7 +1025,7 @@ describe('bosh', () => {
 
         new MockBoshDirectorClient(request, response).getTasks({
           deployment: deployment_name
-        }).then((content) => {
+        }).then(content => {
           let body = JSON.parse(response.body)[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
@@ -1026,7 +1033,7 @@ describe('bosh', () => {
         }).catch(done);
       });
 
-      it('returns Service Unavailable Error : 500', (done) => {
+      it('returns Service Unavailable Error : 500', done => {
         let request = {
           method: 'GET',
           url: '/tasks',
@@ -1041,7 +1048,7 @@ describe('bosh', () => {
 
         new MockBoshDirectorClient(request, response).getTasks({
           deployment: deployment_name
-        }).catch((res) => {
+        }).catch(res => {
           expect(res instanceof DirectorServiceUnavailable).to.eql(true);
           done();
         }).catch(done);
@@ -1086,7 +1093,7 @@ describe('bosh', () => {
         /* jshint expr:true */
         mockBoshDirectorClient.getTasks({
           deployment: deployment_name
-        }, true).then((content) => {
+        }, true).then(content => {
           let body = JSON.parse(response.body)[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
@@ -1097,7 +1104,7 @@ describe('bosh', () => {
     });
 
     describe('#getTask', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: `/tasks/${taskId}`
@@ -1109,19 +1116,19 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getTask(bosh_taskId).then((content) => {
+        new MockBoshDirectorClient(request, response).getTask(bosh_taskId).then(content => {
           expect(content).to.eql(JSON.parse(response.body));
           done();
         }).catch(done);
       });
 
       it('throws exception when taskId is in wrong format', () => {
-        expect(() => new MockBoshDirectorClient().getTask(taskId)).to.throw(errors.UnprocessableEntity);
+        expect(() => new MockBoshDirectorClient().getTask(taskId)).to.throw(UnprocessableEntity);
       });
     });
 
     describe('#getTaskResult', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object', done => {
         let request = {
           method: 'GET',
           url: `/tasks/${taskId}/output`,
@@ -1137,14 +1144,14 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        return new MockBoshDirectorClient(request, response).getTaskResult(bosh_taskId).then((content) => {
+        return new MockBoshDirectorClient(request, response).getTaskResult(bosh_taskId).then(content => {
           expect(content).to.eql([body]);
           done();
         });
       });
 
       it('throws exception when taskId is in wrong format', () => {
-        expect(() => new MockBoshDirectorClient().getTaskResult(taskId)).to.throw(errors.UnprocessableEntity);
+        expect(() => new MockBoshDirectorClient().getTaskResult(taskId)).to.throw(UnprocessableEntity);
       });
     });
 
@@ -1163,8 +1170,8 @@ describe('bosh', () => {
           body: `{\"uuid\": \"${id1}\"}\n{\"uuid\": \"${id2}\"}\n{"uuid": ${id2}}\n`,
           statusCode: 200
         };
-        //Purposefully json is created errorneously to handle error scenarios.
-        return new MockBoshDirectorClient(request, response).getTaskEvents(bosh_taskId).then((content) => {
+        // Purposefully json is created errorneously to handle error scenarios.
+        return new MockBoshDirectorClient(request, response).getTaskEvents(bosh_taskId).then(content => {
           expect(content).to.be.a('Array');
           expect(content).to.have.length(2);
           expect(content[0].uuid).to.eql(id1);
@@ -1173,7 +1180,7 @@ describe('bosh', () => {
       });
 
       it('throws exception when taskId is in wrong format', () => {
-        expect(() => new MockBoshDirectorClient().getTaskEvents(taskId)).to.throw(errors.UnprocessableEntity);
+        expect(() => new MockBoshDirectorClient().getTaskEvents(taskId)).to.throw(UnprocessableEntity);
       });
     });
 
@@ -1186,7 +1193,7 @@ describe('bosh', () => {
     });
 
     describe('#lastSegment', () => {
-      it('returns a string', (done) => {
+      it('returns a string', done => {
         let content = new MockBoshDirectorClient().lastSegment('https://user:pass@url.com:1000/this/is/a/long/path');
         expect(content).to.be.a('string');
         expect(content).to.equal('path');
@@ -1196,7 +1203,7 @@ describe('bosh', () => {
 
     describe('#determineDirectorAuthenticationMethod', () => {
       it('should set uaaEnabled true when valid config is provided', () => {
-        //inject test config in config.directors
+        // inject test config in config.directors
         let prevConfigDirectors = config.directors;
         config.directors = [{
           'name': 'bosh',
@@ -1208,7 +1215,7 @@ describe('bosh', () => {
           }
         }];
         let mockBoshClient = new MockBoshDirectorClient();
-        //clear uaa objects cache
+        // clear uaa objects cache
         mockBoshClient.uaaObjects = {};
         mockBoshClient.determineDirectorAuthenticationMethod();
         assert(config.directors[0].uaaEnabled === true);
@@ -1249,7 +1256,7 @@ describe('bosh', () => {
         let mockBoshClient = new MockBoshDirectorClient();
         mockBoshClient.populateUAAObjects(directorConfig);
 
-        //assert whether valid objects were popoulatd or not 
+        // assert whether valid objects were popoulatd or not 
         assert(mockBoshClient.uaaObjects[directorConfig.name] !== undefined);
         assert(mockBoshClient.uaaObjects[directorConfig.name].clientId === directorConfig.uaa.client_id);
         assert(mockBoshClient.uaaObjects[directorConfig.name].clientSecret === directorConfig.uaa.client_secret);
@@ -1266,7 +1273,7 @@ describe('bosh', () => {
         mockBoshClient.populateUAAObjects(directorConfig);
         assert(mockBoshClient.uaaObjects[directorConfig.name] === undefined);
 
-        //To cover the branch when uaa_url is not provided
+        // To cover the branch when uaa_url is not provided
         directorConfig = {
           'name': 'bosh',
           'uaa': {
@@ -1283,7 +1290,7 @@ describe('bosh', () => {
     });
 
     describe('#makeRequestWithConfigWithUAA', () => {
-      it('should make request with token based auth', (done) => {
+      it('should make request with token based auth', done => {
         /* jshint expr:true */
         let prevConfigDirectors = config.directors;
         config.directors = [{
@@ -1309,7 +1316,7 @@ describe('bosh', () => {
           'uaaEnabled': true
         };
         let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
-        //create actual boshDirectorClient
+        // create actual boshDirectorClient
         let dummyBoshDirectorClient = new BoshDirectorClient();
         let sandbox = sinon.createSandbox();
         let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
@@ -1327,7 +1334,7 @@ describe('bosh', () => {
     });
 
     describe('#getDeploymentIpsFromResource', () => {
-      it('should return deployment IPs if present in resource', (done) => {
+      it('should return deployment IPs if present in resource', done => {
         /* jshint expr:true */
         let dummyResource = {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703',
@@ -1338,7 +1345,7 @@ describe('bosh', () => {
           }
         };
         let sandbox = sinon.createSandbox();
-        let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
+        let getResourceStub = sandbox.stub(apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
@@ -1381,7 +1388,7 @@ describe('bosh', () => {
           }
         };
         let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
-        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).then((content) => {
+        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).then(content => {
           expect(content).to.eql(response);
         });
       });
@@ -1406,7 +1413,7 @@ describe('bosh', () => {
           statusCode: 500
         };
         let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
-        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).catch((error) => {
+        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).catch(error => {
           expect(error instanceof InternalServerError).to.eql(true);
         });
       });
@@ -1443,7 +1450,7 @@ describe('bosh', () => {
           }
         };
         let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
-        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).then((content) => {
+        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).then(content => {
           expect(content).to.eql(response);
         });
       });
@@ -1469,7 +1476,7 @@ describe('bosh', () => {
           statusCode: 500
         };
         let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
-        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).catch((error) => {
+        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).catch(error => {
           expect(error instanceof InternalServerError).to.eql(true);
         });
       });
@@ -1714,7 +1721,7 @@ describe('bosh', () => {
     });
 
     describe('#getDeploymentIps', () => {
-      it('should return from cache if entry exists', (done) => {
+      it('should return from cache if entry exists', done => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
         dummyBoshDirectorClient.deploymentIpsCache[deploymentName] = ['10.244.10.216', '10.244.10.217'];
@@ -1732,7 +1739,7 @@ describe('bosh', () => {
           });
       });
 
-      it('should make call to ApiServer if entry doesn\'t exist in cache', (done) => {
+      it('should make call to ApiServer if entry doesn\'t exist in cache', done => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
         let sandbox = sinon.createSandbox();
@@ -1745,7 +1752,7 @@ describe('bosh', () => {
             }
           }
         };
-        let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
+        let getResourceStub = sandbox.stub(apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
           .then(ips => {
@@ -1757,7 +1764,7 @@ describe('bosh', () => {
           });
       });
 
-      it('should make call to director if entry not found in ApiServer', (done) => {
+      it('should make call to director if entry not found in ApiServer', done => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
         let sandbox = sinon.createSandbox();
@@ -1767,7 +1774,7 @@ describe('bosh', () => {
         let dummyInstance = [{
           'ips': ['10.244.10.216', '10.244.10.217']
         }];
-        let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
+        let getResourceStub = sandbox.stub(apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
         let getDeploymentInstancesStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentInstances');
         getDeploymentInstancesStub.returns(Promise.resolve(dummyInstance));

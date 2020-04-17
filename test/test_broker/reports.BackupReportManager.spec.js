@@ -1,10 +1,10 @@
 'use strict';
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const config = require('../../common/config');
+const config = require('@sf/app-config');
 const moment = require('moment-timezone');
-const CONST = require('../../common/constants');
-const getInstance = (instanceId) => {
+const { CONST } = require('@sf/common-utils');
+const getInstance = instanceId => {
   return Promise.resolve({
     _id: `${instanceId}-12121`,
     data: {
@@ -106,8 +106,8 @@ class Repository {
 
 
 describe('BackupReportManager', function () {
-  const BackupReportManager = proxyquire('../../reports/BackupReportManager', {
-    '../common/db': {
+  const BackupReportManager = proxyquire('../../applications/reports/api-controllers/BackupReportManager', {
+    '@sf/common-utils': {
       Repository: Repository
     }
   });
@@ -328,7 +328,7 @@ describe('BackupReportManager', function () {
         });
     });
     it('should return correct start time for report if jobdetails are not present', function () {
-      /*jshint -W080 */
+      /* jshint -W080 */
       let jobdetails = undefined;
       let instanceRecord = {};
       return BackupReportManager.getReportStartTime(instanceId, jobdetails, instanceRecord, startTime, endTime)
@@ -364,7 +364,7 @@ describe('BackupReportManager', function () {
         });
     });
     it('should return end start time for report if lastrundetails are not present', function () {
-      /*jshint -W080 */
+      /* jshint -W080 */
       let lastrundetails = undefined;
       let instanceRecord = {};
       return BackupReportManager.getReportEndTime(instanceId, lastrundetails, instanceRecord, endTime)
