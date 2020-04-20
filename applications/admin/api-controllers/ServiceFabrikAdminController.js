@@ -291,9 +291,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         )
         .value();
     }
-
+    const serviceBrokerName = _.get(req.query, 'service_broker', this.serviceBrokerName);
     return this
-      .findOutdatedDeployments()
+      .findOutdatedDeployments(serviceBrokerName)
       .then(deployments => {
         const mappedDeployments = _.map(deployments, mapDeployment);
         const locals = {
@@ -337,7 +337,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       });
   }
 
-  findAllDeployments(fetchFromApiServer) {
+  findAllDeployments(fetchFromApiServer, serviceBrokerName = this.serviceBrokerName) {
     return Promise
       .all([
         this.getServiceFabrikDeployments(),
@@ -345,7 +345,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           if (fetchFromApiServer) {
             return this.getServiceInstancesFromApiServer();
           } else {
-            return this.getServiceInstancesForServiceBroker(this.serviceBrokerName);
+            return this.getServiceInstancesForServiceBroker(serviceBrokerName);
           }
         })
       ])
@@ -357,10 +357,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       );
   }
 
-  findOutdatedDeployments() {
-    logger.info('Searching for outdated deployments...');
+  findOutdatedDeployments(serviceBrokerName) {
+    logger.info(`Searching for outdated deployments using broker ${serviceBrokerName}...`);
     return this
-      .findAllDeployments()
+      .findAllDeployments(false, serviceBrokerName)
       .filter(deployment => {
         if (!deployment.name) {
           logger.warn(`Found service instance '${deployment.entity.name} [${deployment.metadata.guid}]' without deployment`);
