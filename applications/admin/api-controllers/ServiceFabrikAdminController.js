@@ -337,7 +337,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       });
   }
 
-  findAllDeployments(fetchFromApiServer, serviceBrokerName=this.serviceBrokerName) {
+  findAllDeployments(fetchFromApiServer, serviceBrokerName = this.serviceBrokerName) {
     return Promise
       .all([
         this.getServiceFabrikDeployments(),
@@ -358,7 +358,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   findOutdatedDeployments(serviceBrokerName) {
-    logger.info('Searching for outdated deployments...');
+    logger.info(`Searching for outdated deployments using broker ${serviceBrokerName}...`);
     return this
       .findAllDeployments(false, serviceBrokerName)
       .filter(deployment => {
