@@ -13,6 +13,8 @@ broker:
   port: 9293
   username: broker
   password: secret
+  enable_namespaced_separation: true
+  services_namespace: "services"
   quota:
     enabled: false
     oauthDomain: https://myauth-domain.com
