@@ -15,6 +15,10 @@ spec:
       labels:
         control-plane: {{ .Release.Name }}-controller-manager
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443

@@ -46,3 +46,7 @@ interoperator:
     schedulerWorkerCount: 2
     provisionerWorkerCount: 2
     schedulerType: label-selector
+
+#imagePullSecrets:
+#- name: docker-dmz
+#- name: docker-dmz2
