@@ -45,22 +45,22 @@ import (
 )
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
-	osbv1alpha1.TemplateSpec{
+	{
 		Action:  "provision",
 		Type:    "gotemplate",
 		Content: "provisioncontent",
 	},
-	osbv1alpha1.TemplateSpec{
+	{
 		Action:  "bind",
 		Type:    "gotemplate",
 		Content: "bindcontent",
 	},
-	osbv1alpha1.TemplateSpec{
+	{
 		Action:  "status",
 		Type:    "gotemplate",
 		Content: "statuscontent",
 	},
-	osbv1alpha1.TemplateSpec{
+	{
 		Action:  "sources",
 		Type:    "gotemplate",
 		Content: "sourcescontent",
@@ -197,7 +197,7 @@ func TestReconcile(t *testing.T) {
 	var expectedResources = []*unstructured.Unstructured{nil}
 
 	var appliedResources = []osbv1alpha1.Source{
-		osbv1alpha1.Source{},
+		{},
 	}
 	err1 := fmt.Errorf("Some error")
 
@@ -225,11 +225,12 @@ func TestReconcile(t *testing.T) {
 	}
 
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(expectedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.UnbindAction, "default").Return(nil, errors.NewTemplateNotFound("unbind", "plan-id", nil)).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterRegistry.EXPECT().GetClient("1").Return(controller, nil).AnyTimes()
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(&properties.Status{
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", gomock.Any(), "default").Return(&properties.Status{
 		Bind: properties.GenericStatus{
 			State:    "succeeded",
 			Response: "foo",
@@ -520,7 +521,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.BindAction, "default").
+						osbv1alpha1.UnbindAction, "default").
 					Return(nil, errors.NewMarshalError("", nil))
 			},
 			args: args{
@@ -534,7 +535,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.BindAction, "default").
+						osbv1alpha1.UnbindAction, "default").
 					Return(nil, errors.NewSFServiceInstanceNotFound("instance-id", nil))
 			},
 			args: args{
@@ -548,7 +549,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.BindAction, "default").
+						osbv1alpha1.UnbindAction, "default").
 					Return(nil, errors.NewSFServiceBindingNotFound("binding-id", nil)).AnyTimes()
 			},
 			args: args{

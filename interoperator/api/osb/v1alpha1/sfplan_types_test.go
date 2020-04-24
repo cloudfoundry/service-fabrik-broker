@@ -49,6 +49,11 @@ func TestStorageSfPlan(t *testing.T) {
 			Type:    "gotemplate",
 			Content: "sourcescontent",
 		},
+		TemplateSpec{
+			Action:  "unbind",
+			Type:    "gotemplate",
+			Content: "unbindcontent",
+		},
 	}
 	key := types.NamespacedName{
 		Name:      "plan-id",

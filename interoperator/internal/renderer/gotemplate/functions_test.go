@@ -69,4 +69,50 @@ func TestGoTemplateFunctions(t *testing.T) {
 	} else {
 		g.Expect(ok).To(gomega.BeTrue())
 	}
+
+	if f, ok := funcMap["toToml"].(func(str interface{}) string); ok {
+		objTomlStr := f(obj)
+		g.Expect(objTomlStr).To(gomega.Equal(`hello = "world"
+hi = "india"
+`))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
+
+	if f, ok := funcMap["toYaml"].(func(str interface{}) string); ok {
+		objYamlStr := f(obj)
+		g.Expect(objYamlStr).To(gomega.Equal(`hello: world
+hi: india`))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
+
+	if f, ok := funcMap["toJson"].(func(str interface{}) string); ok {
+		objJSONStr := f(obj)
+		g.Expect(objJSONStr).To(gomega.Equal(`{"hello":"world","hi":"india"}`))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
+
+	if f, ok := funcMap["fromYaml"].(func(str string) map[string]interface{}); ok {
+		yamlObj := f(`hello: world
+hi: india`)
+		g.Expect(yamlObj).To(gomega.Equal(obj))
+
+		yamlObj = f(`hello: world
+					hi: india`)
+		g.Expect(yamlObj).To(gomega.Equal(map[string]interface{}{"Error": "error converting YAML to JSON: yaml: line 2: found a tab character that violates indentation"}))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
+
+	if f, ok := funcMap["fromJson"].(func(str string) map[string]interface{}); ok {
+		jsonObj := f(`{"hello":"world","hi":"india"}`)
+		g.Expect(jsonObj).To(gomega.Equal(obj))
+
+		jsonObj = f(`{"hello":"world"d}`)
+		g.Expect(jsonObj).To(gomega.Equal(map[string]interface{}{"Error": "invalid character 'd' after object key:value pair"}))
+	} else {
+		g.Expect(ok).To(gomega.BeTrue())
+	}
 }
