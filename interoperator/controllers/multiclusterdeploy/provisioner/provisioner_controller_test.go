@@ -280,6 +280,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		time.Sleep(time.Second * 2)
 		t.Run(tt.name, func(t *testing.T) {
 			if err := r.registerSFCrds(tt.args.clusterID, tt.args.targetClient); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileProvisioner.registerSFCrds() error = %v, wantErr %v", err, tt.wantErr)
@@ -298,7 +299,6 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 				return c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 			}, timeout).Should(gomega.Succeed())
 		}
-		time.Sleep(time.Second * 2)
 	}
 }
 

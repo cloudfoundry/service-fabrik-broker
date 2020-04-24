@@ -79,18 +79,18 @@ func TestGetRenderer(t *testing.T) {
 
 func TestGetRendererInput(t *testing.T) {
 	templateSpec := []osbv1alpha1.TemplateSpec{
-		osbv1alpha1.TemplateSpec{
+		{
 			Action:  "provision",
 			Type:    "helm",
 			URL:     "../helm/samples/postgresql",
 			Content: "valuesTemplate:valuesTemplate",
 		},
-		osbv1alpha1.TemplateSpec{
+		{
 			Action:  "status",
 			Type:    "gotemplate",
 			Content: "statusContent",
 		},
-		osbv1alpha1.TemplateSpec{
+		{
 			Action:  "sources",
 			Type:    "gotemplate",
 			Content: "sourcesContent",
@@ -362,6 +362,35 @@ func TestGetRendererInputFromSources(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+		},
+		{
+			name: "testInvalidInput helm type for status action",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action: "status",
+					Type:   "helm",
+					URL:    "invalid url",
+				},
+				name:    name,
+				sources: nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "testValidInputHelm with content",
+			args: args{
+				template: &osbv1alpha1.TemplateSpec{
+					Action:  "provision",
+					Type:    "helm",
+					URL:     "../helm/samples/postgresql",
+					Content: "valuesContent",
+				},
+				name:    name,
+				sources: nil,
+			},
+			want:    helm.NewInput("../helm/samples/postgresql", name.Name, name.Namespace, "valuesContent", nil),
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

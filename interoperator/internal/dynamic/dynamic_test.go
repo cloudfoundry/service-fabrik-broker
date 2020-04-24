@@ -191,10 +191,12 @@ func TestDeepUpdate(t *testing.T) {
 	currentMap["abc"] = "def"
 	currentArray[0] = currentMap
 	currentObj["array"] = currentArray
+	currentObj["array2"] = currentArray
 	currentTags := make([]interface{}, 2)
 	currentTags[0] = "foo"
 	currentTags[1] = "bar"
 	currentObj["tags"] = currentTags
+	currentObj["tags2"] = currentTags
 
 	newObj := make(map[string]interface{})
 	newArray := make([]map[string]interface{}, 1)
@@ -202,11 +204,16 @@ func TestDeepUpdate(t *testing.T) {
 	newMap["foo"] = "bar2"
 	newMap["foo2"] = "bar2"
 	newArray[0] = newMap
+	newArray2 := append(newArray[:0:0], newMap, newMap)
 	newObj["array"] = newArray
+	newObj["array2"] = newArray2
 	newTags := make([]interface{}, 2)
 	newTags[0] = "foo"
 	newTags[1] = "baz"
+	newTags2 := append(newTags[:0:0], newTags...)
+	newTags2 = append(newTags2, "bar")
 	newObj["tags"] = newTags
+	newObj["tags2"] = newTags2
 
 	updatedObj := make(map[string]interface{})
 	updatedArray := make([]map[string]interface{}, 1)
@@ -216,7 +223,10 @@ func TestDeepUpdate(t *testing.T) {
 	updatedMap["abc"] = "def"
 	updatedArray[0] = updatedMap
 	updatedObj["array"] = updatedArray
+	updatedArray2 := append(updatedArray[:0:0], updatedArray...)
+	updatedObj["array2"] = append(updatedArray2, newMap)
 	updatedObj["tags"] = newTags
+	updatedObj["tags2"] = newTags2
 
 	type args struct {
 		currentObj interface{}
