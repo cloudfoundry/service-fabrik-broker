@@ -12,6 +12,7 @@ const apiserver = apiServerClient;
 const { CONST } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
+const AssertionError = require('assert').AssertionError;
 
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
@@ -750,6 +751,7 @@ describe('eventmesh', () => {
         const expectedResponse = {};
         nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace', expectedResponse);
         mocks.apiServerEventMesh.nockDeleteNamespace('namespace', {}, 1);
+        config.apiserver.enable_namespaced_separation = true;
         return apiserver.deleteResource({
           resourceId: 'deployment1',
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -760,6 +762,7 @@ describe('eventmesh', () => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
             verify();
+            config.apiserver.enable_namespaced_separation = false;
           });
       });
       it('Throws error when delete fails', () => {
@@ -1127,11 +1130,13 @@ describe('eventmesh', () => {
             name: 'namespace1'
           }
         };
+        config.apiserver.enable_namespaced_separation = true;
         mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload);
         return apiserver.createNamespace('namespace1')
           .then(res => {
             expect(res.body).to.eql({});
             mocks.verify();
+            config.apiserver.enable_namespaced_separation = false;
           });
       });
       it('Doesnt create namespace if already present', () => {
@@ -1169,6 +1174,21 @@ describe('eventmesh', () => {
           });
       });
     });
+    describe('getNamespaceId', () => {
+      it('returns resource namespace as default by if enable_namespaced_separation is false (default setting for BOSH based deployment)', () => {
+        expect(apiServerClient.getNamespaceId('resource')).to.eql('default');
+      });
+      it('returns resource namespace by if enable_namespaced_separation is true', () => {
+        config.apiserver.enable_namespaced_separation = true
+        expect(apiServerClient.getNamespaceId('abcd-efgh')).to.eql('sf-abcd-efgh');
+        config.apiserver.enable_namespaced_separation = false
+      });
+      it('returns resource namespace as default by if enable_namespaced_separation is false and services_namespace is not null', () => {
+        config.apiserver.services_namespace = 'random'
+        expect(apiServerClient.getNamespaceId('resource')).to.eql('random');
+        config.apiserver.services_namespace = null
+      });
+    });
     describe('getSecret', () => {
       it('Gets secret successfully with namespace', () => {
         mocks.apiServerEventMesh.nockGetSecret('secret', 'namespace', {}, 1);
@@ -1178,17 +1198,12 @@ describe('eventmesh', () => {
             mocks.verify();
           });
       });
-      it('Gets secret successfully without namespace', () => {
-        mocks.apiServerEventMesh.nockGetSecret('secret', 'default', {}, 1);
-        return apiserver.getSecret('secret')
-          .then(res => {
-            expect(res).to.eql({});
-            mocks.verify();
-          });
+      it('Throws assertion error without namespace', () => {
+        expect(apiserver.getSecret.bind(apiserver, 'secret')).to.throw(AssertionError);
       });
       it('Throws error if get secret call fails', () => {
-        mocks.apiServerEventMesh.nockGetSecret('secret', 'default', {}, 1, 500);
-        return apiserver.getSecret('secret')
+        mocks.apiServerEventMesh.nockGetSecret('secret', 'namespace', {}, 1, 500);
+        return apiserver.getSecret('secret', 'namespace')
           .catch(err => {
             expect(err.status).to.eql(500);
             verify();

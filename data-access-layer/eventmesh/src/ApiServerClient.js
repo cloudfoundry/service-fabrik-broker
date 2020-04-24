@@ -329,7 +329,7 @@ class ApiServerClient {
    */
   createNamespace(name) {
     assert.ok(name, 'Property \'name\' is required to create namespace');
-    if (name === CONST.APISERVER.DEFAULT_NAMESPACE) {
+    if (!_.get(config, 'apiserver.enable_namespaced_separation')) {
       return Promise.resolve();
     }
     const resourceBody = {
@@ -357,19 +357,20 @@ class ApiServerClient {
   }
 
   getNamespaceId(resourceId) {
-    return _.get(config, 'apiserver.enable_namespace') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+    return _.get(config, 'apiserver.enable_namespaced_separation') ? `sf-${resourceId}` : (_.get(config, 'apiserver.services_namespace') ? _.get(config, 'apiserver.services_namespace') : CONST.APISERVER.DEFAULT_NAMESPACE);
   }
 
   /**
    * @description Gets secret
    * @param {string} secretId - Secret Id
-   * @param {string} namespaceId - Optional; Namespace id if given
+   * @param {string} namespaceId - mandatory namespaceId
    */
   getSecret(secretId, namespaceId) {
     assert.ok(secretId, 'Property \'secretId\' is required to get Secret');
+    assert.ok(namespaceId, 'Property \'namespaceId\' is required to get Secret');
     return Promise.try(() => apiserver
       .api[CONST.APISERVER.SECRET_API_VERSION]
-      .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
+      .namespaces(namespaceId)
       .secrets(secretId).get())
       .then(secret => secret.body)
       .catch(err => {
@@ -540,7 +541,7 @@ class ApiServerClient {
     return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
       .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
       .then(res => {
-        if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
+        if (_.get(config, 'apiserver.enable_namespaced_separation') && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);
         }
         return res;
@@ -589,7 +590,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get resource');
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get resource');
-    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
+    const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
     return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
       .namespaces(namespaceId)[opts.resourceType](opts.resourceId).get())
       .then(resource => {
@@ -630,7 +631,7 @@ class ApiServerClient {
     if (opts.query) {
       query.qs = opts.query;
     }
-    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
+    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE; // Currently most callers are calling this function with allNamespaces: true, only metering jobs are calling without NS and defaults to. Should not be used in any other context.
     return Promise.try(() => {
       if (!_.get(opts, 'allNamespaces', false)) {
         return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
@@ -691,7 +692,7 @@ class ApiServerClient {
       data: data
     };
     return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
         body: resourceBody
       }))
       .catch(err => {
@@ -702,7 +703,7 @@ class ApiServerClient {
   getConfigMapResource(configName) {
     logger.debug('Get resource with opts: ', configName);
     return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get()) // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
       .then(resource => {
         return resource.body;
       })
@@ -728,7 +729,7 @@ class ApiServerClient {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
         return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-          .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
+          .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
             body: resourceBody
           });
       })
@@ -1012,7 +1013,7 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to remove finalizer');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to remove finalizer');
     assert.ok(opts.finalizer, 'Property \'finalizer\' is required to remove finalizer');
-    opts.namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
+    assert.ok(opts.namespaceId, 'Property \'namespaceId\' is required to remove finalizer');
     return this.getResource(opts)
       .then(resourceBody => {
         opts.metadata = {
@@ -1033,7 +1034,7 @@ class ApiServerClient {
     const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
     return Promise.try(() => apiserver
       .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
         body: crd
       }))
       .catch(err => {
@@ -1041,7 +1042,7 @@ class ApiServerClient {
       })
       .catch(Conflict, () => apiserver
         .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType](crd.metadata.name).patch({
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType](crd.metadata.name).patch({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
           body: crd,
           headers: {
             'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
