@@ -79,7 +79,7 @@
   "scripts": {
     "add": "lerna add",
     "link": "lerna link convert",
-    "clean": "learna clean",
+    "clean": "lerna clean",
     "start": "node applications/osb-broker/src/server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js .",
     "jsdoc": "jsdoc -c jsdoc.json",
