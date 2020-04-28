@@ -155,6 +155,58 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
+        it('returns 202 Accepted -- fetching correct values for labels from context', function () {
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec.plan_id = plan_id_custom_dashboard;
+          const testContext = {
+            platform: 'sapcp',
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            organization_name: 'test',
+            space_name: 'service-fabrik',
+            instance_name: 'bp-monitor',
+            landscape_label: 'cf-eu10-canary',
+            origin: 'cloudfoundry',
+            zone_id: 'service-fabrik',
+            global_account_id: '9808a7d5-5c36-4149-b62d-1095373bdfaa',
+            license_type: 'LSS script',
+            subaccount_id: 'service-fabrik',
+            subdomain: 'service-fabrik'
+          };
+          testPayload.spec.context = testContext;
+          testPayload.spec = camelcaseKeys(testPayload.spec);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            metadata:{
+              name:  instance_id
+            },
+            spec: {
+              clusterId: 1,
+              planId: plan_id_custom_dashboard,
+              serviceId: service_id,
+            }
+          });
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_custom_dashboard,
+              context: testContext,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url === dashboard_url_with_template);
+              mocks.verify();
+            });
+        });
+        
         it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
           const oldTemp = config.services[0].plans[4].manager.settings.dashboard_url_template;
           config.services[0].plans[4].manager.settings.dashboard_url_template = new Buffer('${instance.spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+instance.metadata.name+\'?planId=\'+instance.spec.planId+\'&serviceId=\'+instance.spec.serviceId : \'\'}').toString('base64');
