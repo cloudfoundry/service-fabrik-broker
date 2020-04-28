@@ -79,8 +79,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('plan', plan)
       .value();
     const contextLabels = _.pick(params.context, [
-      'plan_id',
-      'service_id',
       'platform',
       'organization_guid',
       'space_guid',
