@@ -78,7 +78,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .merge(req.params, req.body)
       .set('plan', plan)
       .value();
-
+    const contextLabels = _.pick(params.context, [
+      'platform',
+      'organization_guid',
+      'space_guid',
+      'origin',
+      'zone_id',
+      'global_account_id',
+      'subaccount_id',
+      'subdomain'
+    ]); 
     function done(sfserviceinstance) {
       _.set(context, 'instance', sfserviceinstance);
       const dashboardUrl = this.getDashboardUrl(context);
@@ -112,7 +121,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         labels: _.merge({
           plan_id: planId,
           service_id: serviceId
-        }, params.context),
+        }, contextLabels),
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
