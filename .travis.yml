@@ -74,6 +74,7 @@ matrix:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
+        - "npm install"
         - "npm run -s test-coverall"
         - pod
     - language: node_js
@@ -83,6 +84,7 @@ matrix:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
+        - "npm install"
         - "npm run -s eslint"
         - "npm run -s jsdoc"
         - popd
