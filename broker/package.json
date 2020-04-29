@@ -68,14 +68,6 @@
   "engines": {
     "node": ">= 6.2.1"
   },
-  "files": [
-    "LICENSE",
-    "NOTICE",
-    "README.md",
-    "broker/server.js",
-    "common/app.js",
-    "broker/lib/"
-  ],
   "scripts": {
     "add": "lerna add",
     "link": "lerna link convert",
