@@ -76,7 +76,7 @@ matrix:
         - pushd broker
         - "npm install"
         - "npm run -s test-coverall"
-        - pod
+        - popd
     - language: node_js
       node_js:
         - "12.14"
