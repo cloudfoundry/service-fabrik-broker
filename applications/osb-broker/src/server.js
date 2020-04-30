@@ -27,11 +27,11 @@ async function init() {
           title: app.get('title')
         });
       });
+      app.use('/:platform(cf|k8s|sm)', routes.broker);
       if (!_.includes(config.disabled_apis, 'admin')) {
         const adminRoute = require('../../admin');
         app.use('/admin', adminRoute.admin);
       }
-      app.use('/:platform(cf|k8s|sm)', routes.broker);
     });
     HttpServer.start(internal);
     HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054
