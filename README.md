@@ -179,8 +179,8 @@ For running lifecycle operations, corresponding operator processes have to be st
 
 Assuming that all required env variables (SETTINGS_PATH, NODE_ENV) are already set. Both bosh operator and docker operator can be launched.
 ```shell
-node operators/StartBoshOperators.js #to start bosh operator
-node operators/StartDockerOperators.js #to start docker operator
+node applications/operators/StartBoshOperators.js #to start bosh operator
+node applications/operators/StartDockerOperators.js #to start docker operator
 ```
 
 #### Installing Golang Prerequisites and Running Golang Processes
