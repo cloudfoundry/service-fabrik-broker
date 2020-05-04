@@ -1,10 +1,10 @@
 .DS_Store
 .idea
 .vscode
-broker/lerna-debug.log
-broker/package-lock.json
-broker/node_modules
-broker/coverage
+**/lerna-debug.log
+**/package-lock.json
+**/node_modules
+**/coverage
 
 **/node_modules
 **/coverage
@@ -20,7 +20,7 @@ broker/coverage
 **/jsdoc
 
 # Ignore all logfiles and tempfiles.
-broker/logs/*.log
+**/*.log
 /tmp
 **/store/sessions
 */*/kubeconfig.yaml
