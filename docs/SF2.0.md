@@ -18,24 +18,3 @@ plans similar to [this](https://github.com/cloudfoundry-incubator/service-fabrik
    1. Register the CRD with Service Fabrik APIServer.
    2. Start watching on the CRD for state change.
    3. Process create/update/delete depending  on the state change.
-
-
-## Configs supported by Interoperator
-The number of workers for the service instance controller and service binding controller can be configured using a config map. The name of the config map must be `interoperator-config` and the namespace must be `default`. Sample config map is:
-```
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
- name: interoperator-config
- namespace: default
-data:
- instanceWorkerCount: "5"
- bindingWorkerCount: "10"
-```
-​
-The current supported configs are
-* instanceWorkerCount - number of workers for the service instance controller
-* bindingWorkerCount - number of workers for the service binding controller. 
-
-If the config map is updated, interoperator must be restarted for the configs like number of workers to take effect.
