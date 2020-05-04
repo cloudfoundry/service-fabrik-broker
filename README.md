@@ -56,9 +56,6 @@ helm install --set cluster.host=sf.ingress.< clusterdomain > --name interoperato
 
 **NOTE:** `cluster.host` should be within the [63 character limit](http://man7.org/linux/man-pages/man7/hostname.7.html).
 
-
-The default scheduler which gets deployed by the helm chart supports only one cluster with name "1". The scheduler type can be configured using `--set interoperator.config.schedulerType=<type>`  parameter to the helm install command. The current supported scheduler tyes are `default` and `round-robin`.
-
 ### Upgrade existing Interoperator deployment
 
 To check how you can upgrade existing interoperator deployment, please check this document [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/inter-operator/architecture/update.md).
@@ -172,7 +169,7 @@ If you need  to change the `settings.yml` configuration you should copy the file
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
 # cp $(pwd)/deployment_hooks/config/settings.yml $(pwd)/deployment_hooks/config/my-settings.yml
 # export SETTINGS_PATH=$(pwd)/deployment_hooks/config/my-settings.yml
-node $(pwd)/deployment_hooks/HookServer.js
+node $(pwd)/applications/deployment_hooks/HookServer.js
 ```
 * Launch the Operators
 For running lifecycle operations, corresponding operator processes have to be started. Currently Service Fabrik Broker supports Bosh Director based and Docker Based services.
