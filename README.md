@@ -58,7 +58,7 @@ helm install --set cluster.host=sf.ingress.< clusterdomain > --name interoperato
 
 ### Upgrade existing Interoperator deployment
 
-To check how you can upgrade existing interoperator deployment, please check this document [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/inter-operator/architecture/update.md).
+To check how you can upgrade existing interoperator deployment, please check this document [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/interoperator-upgrades.md).
 
 ### Deploy SFClusters, SFServices and SFPlans and Register with Interoperator
 
