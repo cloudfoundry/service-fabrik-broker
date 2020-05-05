@@ -44,7 +44,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
         - [Remote Templates](#remote-templates)
         - [In-line templates](#in-line-templates)
     - [SFServiceInstance](#sfserviceinstance)
-      - [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
+      - [Rationale behind introducing the `SFServiceInstance` resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     - [SFServiceBinding](#sfservicebinding)
 - [Multi-Cluster provisioning Support for Interoperator](#multi-cluster-provisioning-support-for-interoperator)
   - [Why Multi Cluster Support is needed](#why-multi-cluster-support-is-needed)
@@ -65,6 +65,8 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   - [Runtime Flow](#runtime-flow)
   - [Limitations with Multi-Cluster deployment](#limitations-with-multi-cluster-deployment)
 - [Mass Update of Custom Resources for Interoperator Custom Resource changes](#mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
+  - [Context](#context-1)
+  - [Solution](#solution)
 
 
 ## Context
@@ -88,7 +90,7 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 1. Templates of the Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
 1. Mapping of OSB actions such as `provision`, `deprovision`, `bind`, `unbind` etc. to the templated of Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
 
-![Inter-operator Design](images/inter-operator.png)
+![Inter-operator Design](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/inter-operator.png)
 
 ### Service Fabrik Inter-operator Broker
 
@@ -104,7 +106,7 @@ The inter-operator provisioner is a [custom controller](https://kubernetes.io/do
 
 ### Catalog
 
-![Service Fabrik Inter-operator Basic Control-flow Catalog](images/basic-control-flow-catalog.png)
+![Service Fabrik Inter-operator Basic Control-flow Catalog](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-catalog.png)
 
 #### Service and Plan registration
 
@@ -137,7 +139,7 @@ The Service Fabrik Broker watches for registered `sfservices` and `sfplans`. It 
 
 This section presumes that the `SFService` and `sfplans` are already registered as describe [above](#catalog).
 
-![Service Fabrik Inter-operator Basic Control-flow Provision](images/basic-control-flow-provision.png)
+![Service Fabrik Inter-operator Basic Control-flow Provision](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-provision.png)
 
 #### Service Fabrik Inter-operator Broker
 
@@ -166,7 +168,7 @@ This section presumes the following steps have already been performed.
 1. `SFService` and `sfplans` are already registered as describe [above](#catalog).
 1. A service instance is `provision`ed as described [above](#provision).
 
-![Service Fabrik Inter-operator Basic Control-flow Last Operator](images/basic-control-flow-last-operation.png)
+![Service Fabrik Inter-operator Basic Control-flow Last Operator](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-last-operation.png)
 
 #### Service Operator
 
@@ -194,7 +196,7 @@ This section presumes the following steps have already been performed.
 1. `SFService` and `sfplans` are already registered as describe [above](#catalog).
 1. A service instance is `provision`ed as described [above](#provision).
 
-![Service Fabrik Inter-operator Basic Control-flow Bind](images/basic-control-flow-bind.png)
+![Service Fabrik Inter-operator Basic Control-flow Bind](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-bind.png)
 
 #### Service Fabrik Inter-operator Broker
 
@@ -224,7 +226,7 @@ The following custom resources are introduced as part of the Service Fabrik inte
 
 ### SFService
 
-The [`SFService`](../../config/crds/osb_v1alpha1_sfservice.yaml) captures the catalog/manifest details of an [`OSB Service`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-offering-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
+The [`SFService`](/config/crds/osb.servicefabrik.io_v1alpha1_sfservices.yaml) captures the catalog/manifest details of an [`OSB Service`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-offering-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
 
 For example,
 ```yaml
@@ -281,7 +283,7 @@ Deregistration of `sfservices` is handled using Kubernetes [finalizers](https://
 
 ### SFPlan
 
-The [`SFPlan`](../../config/crds/osb_v1alpha1_sfplan.yaml) captures the catalog/manifest details of an [`OSB Service Plan`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
+The [`SFPlan`](/config/crds/osb.servicefabrik.io_v1alpha1_sfplans.yaml) captures the catalog/manifest details of an [`OSB Service Plan`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
 
 For example,
 ```yaml
@@ -411,9 +413,9 @@ The `action` field can be used to specify the OSB action for which the template 
 
 The `type` field can be used to specify the type of template itself. For example, [`gotemplate`](https://golang.org/pkg/text/template/), [`helm`](https://helm.sh/) etc. In future, additional template types could be supported such as [`jsonnet`](https://jsonnet.org/).
 
-Refer [here](./templates.md#gotemplates) for details on additional functions provided by interoperator along with `gotemplate`. Currently, only a single resource is expected to be generated by the `gotemplates`. The type `helm` supports the generation of multiple resources.
+Refer [here](./Interoperator-templates.md#gotemplates) for details on additional functions provided by interoperator along with `gotemplate`. Currently, only a single resource is expected to be generated by the `gotemplates`. The type `helm` supports the generation of multiple resources.
 
-Refer [here](./templates.md#helm) for details on helm templates.
+Refer [here](./Interoperator-templates.md#helm) for details on helm templates.
 
 ##### Remote Templates
 
@@ -468,7 +470,7 @@ templates:
 
 ### SFServiceInstance
 
-The [`SFServiceInstance`](../../config/crds/osb_v1alpha1_sfserviceinstance.yaml) captures all the details from an OSB `provision` request.
+The [`SFServiceInstance`](/config/crds/osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml) captures all the details from an OSB `provision` request.
 
 For example,
 ```yaml
@@ -518,7 +520,7 @@ In such a scenario, it makes sense to leverage the first resource on the Service
 
 ### SFServiceBinding
 
-The [`SFServiceBinding`](../../config/crds/osb_v1alpha1_sfservicebinding.yaml) captures all the details from an OSB `bind` request.
+The [`SFServiceBinding`](/config/crds/osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml) captures all the details from an OSB `bind` request.
 
 For example,
 ```yaml
@@ -631,10 +633,10 @@ Following are the flow for a deployment of Interoperator.
 3. [Provisioner Controller](#provisioner-controller) then takes care of replicating the provisioner component to all sister clusters and [Service Replicator](#service-replicator) takes care of replicating the SFServices and SFPlans in all the clusters.
 
 Now the setup is ready for taking requests. We depict this in the picture below.
-![Inter-operator Deployment Flow](images/Deployment%20Flow%20Updated.png)
+![Inter-operator Deployment Flow](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Deployment%20Flow%20Updated.png)
 ## Runtime Flow
 After the interoperator is ready and setup across multiple clusters as described [above](#deployment-flow), service instance and service binding can be created. When in the master cluster, broker creates an `SFServiceInstance`, Scheduler picks it up first and schedules/assigns a cluster where service needs to be provisioned. Then [Service Instance Reconciler](#service-instance-reconciler) reconciles that `SFServiceInstance` in the sister cluster where it is scheduled. Once that is done, [provisioner](#provisioner) residing in the sister cluster takes over and from then onwards, the process described in [service provisioning](#service-fabrik-inter-operator-provisioner-1) is followed. For another `SFServiceInstance`, it is again scheduled in one of the sister cluster and provisioner provisions the service there. The picture below describes the steps.
-![Inter-operator Runtime Flow](images/Runtime%20Flow%20Updated.png)
+![Inter-operator Runtime Flow](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Runtime%20Flow%20Updated.png)
 
 ## Limitations with Multi-Cluster deployment
 1. Interoperator currently does not take care of the cluster off-boarding.

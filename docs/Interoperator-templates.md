@@ -19,12 +19,30 @@ b64dec          Takes a base64 encoded string and returns the base64 decoded out
                 of its argument. Will return an error in case the input cannot be
                 decoded in base64.
 
-unmarshalJSON   Takes a stringified JSOn as input converts it to a map of type
+unmarshalJSON   Takes a stringified JSON as input converts it to a map of type
                 map[string]interface{}. Returns an error if it fails to convert.
 
 marshalJSON     The function encodes an item into a JSON string. If the item
                 cannot be converted to JSON the function will return an error.
                 The input argument is expected to be of type map[string]interface{}
+
+toToml          The function encodes an item into a TOML string. If the item
+                cannot be converted to TOML the output string, the output is the error message. 
+                The input argument is expected to be of type map[string]interface{}
+
+toYaml          The function encodes an item into a TOML string. If the item
+                cannot be converted to TOML the output string, the output is an empty string. 
+                The input argument is expected to be of type map[string]interface{}
+
+fromYaml        Takes a stringified YAML as input converts it to a map of type map[string]interface{}.
+                On error return a map with key "Error" containing the error message.
+
+toJson          The function encodes an item into a JSON string. If the item
+                cannot be converted to JSON, the output is an empty string.
+                The input argument is expected to be of type map[string]interface{}
+
+fromJson        Takes a stringified JSON as input converts it to a map of type map[string]interface{}.
+                On error return a map with key "Error" containing the error message.
 ```
 
 ### Debugging
@@ -39,7 +57,7 @@ Field Name| Required | Description
 **action** | Yes | The action for which the template is used. Helm charts are supported only for `provision` and `bind` actions.
 **type** | Yes | The type of the template. Must be `helm` for helm charts.
 **url** | Yes | The URL to the helm chart. Url must point to the helm chart `tgz`.
-**content** | No | The `gotemplate` for generating the `values` for the helm release. Refer [here](./gotemplate.md) for gotemplates docs. For `provision` and `bind` actions, *SFService* object (as `.service`), *SFPlan* object (as `.plan`) and *SFServiceInstance* object (as `.instance`) are available within the gotemplate to use. For `bind` action in addition to these objects *SFServiceBinding* object (as `.binding`) is also available. Refer [Service Fabrik Inter-operator Custom Resources](./basic.md#service-fabrik-inter-operator-custom-resources) for details about these objects. The template must render to a valid yaml string which will be provided to the helm release as the custom `values`.
+**content** | No | The `gotemplate` for generating the `values` for the helm release. Refer [here](#gotemplates) for gotemplates docs. For `provision` and `bind` actions, *SFService* object (as `.service`), *SFPlan* object (as `.plan`) and *SFServiceInstance* object (as `.instance`) are available within the gotemplate to use. For `bind` action in addition to these objects *SFServiceBinding* object (as `.binding`) is also available. Refer [Service Fabrik Inter-operator Custom Resources](./Interoperator.md#service-fabrik-inter-operator-custom-resources) for details about these objects. The template must render to a valid yaml string which will be provided to the helm release as the custom `values`.
 **contentEncoded** | No | The gotemplate described in `content` field as a base64 encoded string. This field is used only if `content` field is empty.
 
 ### Release Name
@@ -205,7 +223,7 @@ Supported types | Required | Template Variables
 `gotemplate` | Yes | `.service`, `.plan`, `.instance`, `.binding` (when rendered in the context of binding) and objects specified in the `sources` template
 
 ## Cluster Selector
-The `clusterSelector` template must render and generate a valid kubernetes [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors). This template is used for [Label Selector based Scheduler](./basic.md#label-selector-based-scheduler).
+The `clusterSelector` template must render and generate a valid kubernetes [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors). This template is used for [Label Selector based Scheduler](./Interoperator.md#label-selector-based-scheduler).
 
 Supported types | Required | Template Variables
 --- | --- | ---
