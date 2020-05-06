@@ -71,17 +71,23 @@ matrix:
       node_js:
         - "12.14"
       env:
-        - SETTINGS_PATH="$(pwd)/config/settings.yml"
+        - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
+        - pushd broker
+        - "npm install"
         - "npm run -s test-coverall"
+        - popd
     - language: node_js
       node_js:
         - "12.14"
       env:
-        - SETTINGS_PATH="$(pwd)/config/settings.yml"
+        - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
+        - pushd broker
+        - "npm install"
         - "npm run -s eslint"
         - "npm run -s jsdoc"
+        - popd
     - language: node_js
       node_js:
         - "12.14"
