@@ -4,7 +4,7 @@
   },
   "source": {
     "include": [
-      "./README.md",
+      "../README.md",
       "applications/osb-broker/src/server.js"
     ],
     "includePattern": ".js$",

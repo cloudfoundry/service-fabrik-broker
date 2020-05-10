@@ -12,12 +12,12 @@ EXPOSE 9292 9293
 RUN npm i npm@latest -g
 
 # install dependencies first, in a different location for easier app bind mounting for local development
-WORKDIR /opt/service-fabrik-broker
+WORKDIR /opt/service-fabrik-broker/broker
 COPY . ./
 RUN npm install --no-optional && npm cache clean --force
 # copy in our source code last, as it changes the most
 
-ENV CONF_DIR /opt/service-fabrik-broker/config
+ENV CONF_DIR /opt/service-fabrik-broker/broker/config
 ENV SETTINGS_PATH=$CONF_DIR/settings.yml
 
 # the official node image provides an unprivileged user as a security best practice
