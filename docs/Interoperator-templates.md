@@ -180,6 +180,35 @@ The `bind` template is used to determine the kubernetes resources to be created 
   content: "---"
 ```
 
+The `bind` template also supports updating existing resources created using provision template. If existing resources are updated in `bind` template, it is mandatory to provide and `unbind` template. For example if a postgresql resource is created using `provision` template and during binding it needs to be updated, the `bind` template can look like 
+```
+- action: bind
+  type: gotemplate
+  content: |
+    {{- $bindingId := "" }}
+    {{- with .binding.metadata.name }} {{ $bindingId = . }} {{ end }}
+    {{- $postgresql := .postgresql }}
+    {{- $postgresqlSpec := get $postgresql "spec" }}
+    {{- $users := get $postgresqlSpec "users" }}
+    {{- $_ := set $users $bindingId (list "superuser") }}
+    {{ toYaml $postgresql }}
+```
+
+## Unbind
+The `unbind` template is used during unbind (delete service key) osb action. The `unbind` template is an optional template. It is mandatory only when existing resources are updated in `bind` template. If `unbind` template is not provided the resources created during `bind` action are deleted during the `unbind` action. The `unbind` template, if provided, must render and generate a valid yaml for a kubernetes resource(s). If `unbind` template is provided, during the `unbind` action instead of deleting any resources created during `bind` action, the `unbind` template is rendered and the output kubernetes resource(s) are applied.  A sample unbind template will look like
+```
+- action: unbind
+  type: gotemplate
+  content: |
+    {{- $bindingId := "" }}
+    {{- with .binding.metadata.name }} {{ $bindingId = . }} {{ end }}
+    {{- $postgresql := .postgresql }}
+    {{- $postgresqlSpec := get $postgresql "spec" }}
+    {{- $users := get $postgresqlSpec "users" }}
+    {{- $_ := unset $users $bindingId }}
+    {{ toYaml $postgresql }}
+```
+
 ## Sources
 The `sources` template must render and generate a valid yaml. This yaml defines the kubernetes objects which are required as template variables for rendering the `status` template. A kubernetes object can be identified by: 
 Field Name | Required | Description
@@ -212,6 +241,8 @@ Here two kubernetes object are specified in the sources template.
 Supported types | Required | Template Variables
 --- | --- | ---
 `gotemplate` | Yes | `.service`, `.plan`, `.instance`, `.binding` (when rendered in the context of binding)
+
+The `sources` template also determines the resources on which interoperator watches for a change. The provision controller of interoperator watches on a resource only if the resource is created by interoperator during provisioning and the resource is specified in the `sources` template. Similarly the binding controller of interoperator watches on a resource only if the resource is created/updated by interoperator during binding and the resource is specified in the `sources` template.  
 
 
 ## Status

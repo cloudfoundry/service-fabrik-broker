@@ -178,7 +178,7 @@ This section presumes the following steps have already been performed.
 
 #### Service Fabrik Inter-operator Provisioner
 
-1. The inter-operator provisioner watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template). It notices that some of the resources have been updated.
+1. The inter-operator provisioner watches for `sfserviceinstances` and the individual service operator's Kubernetes API resources (created using the `provision` template and listed in the `sources` template). It notices that some of the resources have been updated.
 1. It uses the `status` template to extract the status information relevant to be propagated to the `SFServiceInstance`.
 1. It updates the `SFServiceInstance`'s `status`.
 
@@ -407,7 +407,7 @@ More variables such as the actual resources created by the template might also b
 
 ##### Actions
 
-The `action` field can be used to specify the OSB action for which the template supplied is applicable. Typically, these would include `provision`, `bind` etc. But these could be extended to custom/generic actions. The current supported actions are `provision`, `bind`, `sources`, `status` and `clusterSelector`
+The `action` field can be used to specify the OSB action for which the template supplied is applicable. Typically, these would include `provision`, `bind` etc. But these could be extended to custom/generic actions. The current supported actions are `provision`, `bind`, `sources`, `status`, `unbind` and `clusterSelector`
 
 ##### Types
 
