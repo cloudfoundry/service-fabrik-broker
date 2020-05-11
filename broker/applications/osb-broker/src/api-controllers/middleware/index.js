@@ -17,6 +17,7 @@ const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
 const { lockManager } = require('@sf/eventmesh');
+const QuotaClient = require('./QuotaClient');
 
 exports.validateCreateRequest = function () {
   return function (req, res, next) {
@@ -58,21 +59,19 @@ exports.checkQuota = function () {
       const subaccountId = _.get(req, 'body.context.subaccount_id');
       if (orgId === undefined && subaccountId === undefined) {
         next(new BadRequest('organization_id and subaccountId are undefined'));
-      } else {
-        /*
-          case 1 : BOSH + CF => org API and CF
-          case 2: BOSH + SM => org API and CF
-          case 3 : K8S + CF => org API and apiserver
-          case 4 : K8S + SM (CF + K8S) => subaccount based API and apiserver
-          */
-        const quotaModule = require('@sf/quota');
-        const quotaManager = commonFunctions.isBrokerBoshDeployment() ?
-          quotaModule.getQuotaManagerInstance(CONST.PLATFORM.CF) : 
-          quotaModule.getQuotaManagerInstance(CONST.PLATFORM.K8S);
-          
+      } else {  
         const useSubaccountForQuotaCheck = !commonFunctions.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
-        logger.info(useSubaccountForQuotaCheck ? subaccountId : orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, useSubaccountForQuotaCheck);
-        return quotaManager.checkQuota(useSubaccountForQuotaCheck ? subaccountId : orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method, useSubaccountForQuotaCheck)
+        const quotaClient = new QuotaClient({});
+        const quotaClientOptions = {
+          orgOrSubaccountId: useSubaccountForQuotaCheck ? subaccountId : orgId,
+          queryParams: {
+            planId: req.body.plan_id,
+            previousPlanId: _.get(req, 'body.previous_values.plan_id'),
+            isSubaccountFlag: useSubaccountForQuotaCheck,
+            reqMethod: req.method
+          }
+        };
+        return quotaClient.getQuotaValidStatus(quotaClientOptions)
           .then(quotaValid => {
             const plan = getPlanFromRequest(req);
             logger.debug(`quota api response : ${quotaValid}`);
