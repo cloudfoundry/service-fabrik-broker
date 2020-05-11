@@ -10,7 +10,7 @@ defaults: &defaults
   username: {{ .Values.broker.username }}
   password: {{ .Values.broker.password }}
   skip_ssl_validation: true
-  log_path: /opt/service-fabrik-broker/logs/kubernetes.log
+  log_path: /opt/service-fabrik-broker/broker/logs/kubernetes.log
   log_level: silly
   colorize_log: false
   sys_log_level: info
