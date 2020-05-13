@@ -11,7 +11,7 @@ const routes = require('./routes');
 
 async function init() {
   try {
-    const quotaApp = ExpressApp.create('quotaApp', app => {
+    const quotaApp = ExpressApp.create('quota_app', app => {
       app.use('/v1', routes.v1);
     });
     HttpServer.start(quotaApp);

@@ -165,17 +165,11 @@ defaults: &defaults
   ##############################
   # QUOTA APP SETTINGS #
   ##############################
-  quotaApp:
+  quota_app:
     log_event: false
-    trust_proxy: 2
     port: <%= quotaApp.port %>
     protocol: <%= quotaApp.protocol %>
     host: <%= `${quotaApp.ip}:${quotaApp.port}` %>
-    cookie_secret: 'cookie_secret'
-    cookie_secure: <%= quotaApp.protocol === 'https' %>
-    session_expiry: 86400
-  
-  quota_app:
     username: quota
     password: secret
     quota_app_url: <%= `http://${quotaApp.ip}:${quotaApp.port}` %>
