@@ -45,6 +45,11 @@ exports.isPlanDeprecated = function () {
   };
 };
 
+function supportsInstanceBasedQuota(service_id) {
+  const serviceQuotaCheckType = _.get(catalog.getService(service_id), 'quota_check_type', 'instance');
+  return serviceQuotaCheckType === 'instance';
+}
+
 exports.checkQuota = function () {
   return function (req, res, next) {
     if (!_.get(config.quota, 'enabled')) {
@@ -60,8 +65,8 @@ exports.checkQuota = function () {
       if (orgId === undefined && subaccountId === undefined) {
         next(new BadRequest('organization_id and subaccountId are undefined'));
       } else {  
-        const useSubaccountForQuotaCheck = !commonFunctions.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
         const quotaClient = new QuotaClient({});
+        const useSubaccountForQuotaCheck = !commonFunctions.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
         const quotaClientOptions = {
           orgOrSubaccountId: useSubaccountForQuotaCheck ? subaccountId : orgId,
           queryParams: {
@@ -70,8 +75,12 @@ exports.checkQuota = function () {
             isSubaccountFlag: useSubaccountForQuotaCheck,
             reqMethod: req.method
           }
-        };
-        return quotaClient.getQuotaValidStatus(quotaClientOptions)
+        }
+        const instanceBasedQuota = supportsInstanceBasedQuota(req.body.service_id);
+        if(!instanceBasedQuota) {
+          quotaClientOptions.data = _.cloneDeep(req.body);
+        }
+        return quotaClient.checkQuotaValidity(quotaClientOptions, instanceBasedQuota)
           .then(quotaValid => {
             const plan = getPlanFromRequest(req);
             logger.debug(`quota api response : ${quotaValid}`);
