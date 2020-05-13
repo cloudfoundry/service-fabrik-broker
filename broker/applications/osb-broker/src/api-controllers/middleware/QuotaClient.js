@@ -7,6 +7,7 @@ const {
   CONST,
   HttpClient
 } = require('@sf/common-utils');
+const logger = require('@sf/logger');
 
 class QuotaClient extends HttpClient {
   constructor(options) {
@@ -33,7 +34,8 @@ class QuotaClient extends HttpClient {
       qs: _.get(options, 'queryParams'),
       json: true
     }, CONST.HTTP_STATUS_CODE.OK);
-    return JSON.parse(res.body).quotaValidStatus;
+    logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
+    return res.body.quotaValidStatus;
   }
 }
 
