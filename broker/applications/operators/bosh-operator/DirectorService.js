@@ -519,7 +519,7 @@ class DirectorService extends BaseDirectorService {
       })
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
       .then(preDeployResponse => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
-      .tap(manifest => logger.info('+-> Deployment manifest:\n', manifest))
+      .tap(manifest => logger.debug('+-> Deployment manifest:\n', manifest))
       .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
       .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
       .catch(err => {

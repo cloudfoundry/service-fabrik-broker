@@ -5,43 +5,26 @@
 **/package-lock.json
 **/node_modules
 **/coverage
-
-**/node_modules
-**/coverage
-**/package-lock.json
 **/.env
-**/lerna-debug.log
 **/npm-debug.log
 **/.idea
+**/vendor
+**/logs
 **/store/sessions
 **/config/**/settings.*.yml
-
 # Ignore documentation
 **/jsdoc
-
 # Ignore all logfiles and tempfiles.
 **/*.log
 /tmp
-**/store/sessions
 */*/kubeconfig.yaml
-
-# Ignore developer's settings files
-broker/config/settings.*.yml
-
 # Ignore all files starting with "my"
 my*
-
 # Ignore coverage results
 broker/coverage
 .vscode/
-
-
 #ingoring files created during unit tests
 broker/lib/fabrik/actions/js/ReserveIps.js
 broker/lib/fabrik/actions/sh/
 broker/applications/deployment_hooks/lib/actions/js/ReserveIps.js
 broker/applications/deployment_hooks/lib/actions/sh/
-
-interoperator/vendor
-webhooks/vendor
-webhooks/logs
