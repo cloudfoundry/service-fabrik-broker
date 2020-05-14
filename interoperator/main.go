@@ -58,10 +58,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
-	leaderElectionNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if leaderElectionNamespace == "" {
-		leaderElectionNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	leaderElectionNamespace := constants.InteroperatorNamespace
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,

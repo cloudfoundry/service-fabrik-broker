@@ -19,7 +19,6 @@ package sfserviceinstance
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,8 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
-
-var ownClusterID string
 
 // ReconcileSFServiceInstance reconciles a SFServiceInstance object
 type ReconcileSFServiceInstance struct {
@@ -122,7 +120,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		log.Error(err, "failed to get clusterID")
 		return r.handleError(instance, ctrl.Result{}, err, state, 0)
 	}
-	if clusterID != ownClusterID {
+	if clusterID != constants.OwnClusterID {
 		return ctrl.Result{}, nil
 	}
 
@@ -525,11 +523,6 @@ func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	interoperatorCfg := cfgManager.GetConfig()
 
-	ownClusterID = os.Getenv(constants.OwnClusterIDEnvKey)
-	if ownClusterID == "" {
-		ownClusterID = constants.DefaultMasterClusterID
-	}
-
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("instance").
 		WithOptions(controller.Options{
@@ -553,6 +546,7 @@ func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
 				OwnerType:    &osbv1alpha1.SFServiceInstance{},
 			})
 	}
+	builder = builder.WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)
 }

@@ -70,7 +70,7 @@ var templateSpec = []osbv1alpha1.TemplateSpec{
 var service = &osbv1alpha1.SFService{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "service-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels:    map[string]string{"serviceId": "service-id"},
 	},
 	Spec: osbv1alpha1.SFServiceSpec{
@@ -96,7 +96,7 @@ var service = &osbv1alpha1.SFService{
 var plan = &osbv1alpha1.SFPlan{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "plan-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"serviceId": "service-id",
 			"planId":    "plan-id",
@@ -121,7 +121,7 @@ var plan = &osbv1alpha1.SFPlan{
 var serviceInstance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
@@ -141,7 +141,7 @@ var serviceInstance = &osbv1alpha1.SFServiceInstance{
 var binding = &osbv1alpha1.SFServiceBinding{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "binding-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
@@ -160,8 +160,8 @@ var binding = &osbv1alpha1.SFServiceBinding{
 
 var c client.Client
 
-var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: "default"}}
+var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}}
 
 const timeout = time.Second * 5
 
@@ -181,7 +181,7 @@ func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -224,13 +224,13 @@ func TestReconcile(t *testing.T) {
 		clusterRegistry: mockClusterRegistry,
 	}
 
-	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(expectedResources, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.UnbindAction, "default").Return(nil, errors.NewTemplateNotFound("unbind", "plan-id", nil)).AnyTimes()
+	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, constants.InteroperatorNamespace).Return(expectedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.UnbindAction, constants.InteroperatorNamespace).Return(nil, errors.NewTemplateNotFound("unbind", "plan-id", nil)).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterRegistry.EXPECT().GetClient("1").Return(controller, nil).AnyTimes()
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", gomock.Any(), "default").Return(&properties.Status{
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", gomock.Any(), constants.InteroperatorNamespace).Return(&properties.Status{
 		Bind: properties.GenericStatus{
 			State:    "succeeded",
 			Response: "foo",
@@ -273,7 +273,7 @@ func TestReconcile(t *testing.T) {
 
 	secret := &corev1.Secret{}
 	secretRef := serviceBinding.Status.Response.SecretRef
-	secretKey := types.NamespacedName{Name: secretRef, Namespace: "default"}
+	secretKey := types.NamespacedName{Name: secretRef, Namespace: constants.InteroperatorNamespace}
 	g.Expect(c.Get(context.TODO(), secretKey, secret)).NotTo(gomega.HaveOccurred())
 	g.Expect(secret.Data).Should(gomega.HaveKeyWithValue("response", []byte("foo")))
 
@@ -332,7 +332,7 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 	binding := &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "binding-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state":                 "in_queue",
 				constants.ErrorCountKey: "10",
@@ -466,7 +466,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 	binding := &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "binding-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state":                    "in_progress",
 				constants.LastOperationKey: "delete",
@@ -488,7 +488,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 					APIVersion: "v1",
 					Kind:       "ConfigMap",
 					Name:       "dummy",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 		},
@@ -521,7 +521,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.UnbindAction, "default").
+						osbv1alpha1.UnbindAction, constants.InteroperatorNamespace).
 					Return(nil, errors.NewMarshalError("", nil))
 			},
 			args: args{
@@ -535,7 +535,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.UnbindAction, "default").
+						osbv1alpha1.UnbindAction, constants.InteroperatorNamespace).
 					Return(nil, errors.NewSFServiceInstanceNotFound("instance-id", nil))
 			},
 			args: args{
@@ -549,7 +549,7 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 			setup: func() {
 				mockResourceManager.EXPECT().
 					ComputeStatus(r, "instance-id", "binding-id", "service-id", "plan-id",
-						osbv1alpha1.UnbindAction, "default").
+						osbv1alpha1.UnbindAction, constants.InteroperatorNamespace).
 					Return(nil, errors.NewSFServiceBindingNotFound("binding-id", nil)).AnyTimes()
 			},
 			args: args{

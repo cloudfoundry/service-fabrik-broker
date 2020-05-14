@@ -9,6 +9,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/gotemplate"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/helm"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -99,7 +100,7 @@ func TestGetRendererInput(t *testing.T) {
 	plan := osbv1alpha1.SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFPlanSpec{
 			Name:          "plan-name",
@@ -121,20 +122,20 @@ func TestGetRendererInput(t *testing.T) {
 	service := osbv1alpha1.SFService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 
 	name := types.NamespacedName{
 		Name:      "foo",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 
 	spec := osbv1alpha1.SFServiceInstanceSpec{}
 	instance := osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: spec,
 		Status: osbv1alpha1.SFServiceInstanceStatus{
@@ -148,7 +149,7 @@ func TestGetRendererInput(t *testing.T) {
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
 					Name:       "dddd",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 		},
@@ -157,7 +158,7 @@ func TestGetRendererInput(t *testing.T) {
 	binding := osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 
@@ -287,7 +288,7 @@ func TestGetRendererInput(t *testing.T) {
 func TestGetRendererInputFromSources(t *testing.T) {
 	name := types.NamespacedName{
 		Name:      "foo",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 
 	invalidTemplate := osbv1alpha1.TemplateSpec{

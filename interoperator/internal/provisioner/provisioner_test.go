@@ -86,7 +86,7 @@ func Test_provisioner_Fetch(t *testing.T) {
 			name: "should fail if deployment not found",
 			fields: fields{
 				c:         c,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			wantErr: true,
 		},
@@ -94,7 +94,7 @@ func Test_provisioner_Fetch(t *testing.T) {
 			name: "should fetch deployment",
 			fields: fields{
 				c:         c,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			wantErr: false,
 			setup: func(p *provisioner) {
@@ -165,7 +165,7 @@ func Test_provisioner_Get(t *testing.T) {
 			name: "should do nothing if deployment already fetched",
 			fields: fields{
 				c:          c,
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 				deployment: &appsv1.Deployment{},
 			},
 			want:    &appsv1.Deployment{},
@@ -175,7 +175,7 @@ func Test_provisioner_Get(t *testing.T) {
 			name: "should fail if deployment not found",
 			fields: fields{
 				c:         c,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			wantErr: true,

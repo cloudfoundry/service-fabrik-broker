@@ -22,6 +22,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -246,7 +247,8 @@ func (r *ReconcileSFServices) SetupWithManager(mgr ctrl.Manager) error {
 		}).
 		Watches(&source.Kind{Type: &osbv1alpha1.SFPlan{}}, &handler.EnqueueRequestsFromMapFunc{
 			ToRequests: mapFn,
-		})
+		}).
+		WithEventFilter(watches.NamespaceFilter())
 
 	return builder.Complete(r)
 }

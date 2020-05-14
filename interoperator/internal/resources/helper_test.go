@@ -8,6 +8,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,10 +24,10 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 	instance := _getDummyInstance()
 	binding := _getDummyBinding()
 
-	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
-	var planKey = types.NamespacedName{Name: "plan-id", Namespace: "default"}
-	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
-	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
+	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
+	var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
+	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
 
 	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
@@ -73,7 +74,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 				bindingID:  "binding-id",
 				serviceID:  "service-id",
 				planID:     "plan-id",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    instance,
 			want1:   binding,
@@ -90,7 +91,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 				bindingID:  "binding-id",
 				serviceID:  "service-id",
 				planID:     "plan-id",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,
@@ -107,7 +108,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 				bindingID:  "binding-id2",
 				serviceID:  "service-id",
 				planID:     "plan-id",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,
@@ -124,7 +125,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 				bindingID:  "binding-id",
 				serviceID:  "service-id2",
 				planID:     "plan-id",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,
@@ -141,7 +142,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 				bindingID:  "binding-id",
 				serviceID:  "service-id",
 				planID:     "plan-id2",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,
@@ -218,13 +219,13 @@ func Test_resourceManager_findUnstructuredObject(t *testing.T) {
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("osb.servicefabrik.io/v1alpha1")
 	resource.SetKind("SFServiceInstance")
-	resource.SetNamespace("default")
+	resource.SetNamespace(constants.InteroperatorNamespace)
 	resource.SetName("instance-id")
 
 	resource2 := &unstructured.Unstructured{}
 	resource2.SetAPIVersion("osb.servicefabrik.io/v1alpha1")
 	resource2.SetKind("SFServiceInstance")
-	resource2.SetNamespace("default")
+	resource2.SetNamespace(constants.InteroperatorNamespace)
 	resource2.SetName("instance-id2")
 
 	tests := []struct {
@@ -269,7 +270,7 @@ func Test_deleteSubResource(t *testing.T) {
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("v1")
 	resource.SetKind("ConfigMap")
-	resource.SetNamespace("default")
+	resource.SetNamespace(constants.InteroperatorNamespace)
 	resource.SetName("configmap")
 	tests := []struct {
 		name    string
@@ -316,7 +317,7 @@ func Test_computeInputObjects(t *testing.T) {
 	configResource := &unstructured.Unstructured{}
 	configResource.SetAPIVersion("v1")
 	configResource.SetKind("ConfigMap")
-	configResource.SetNamespace("default")
+	configResource.SetNamespace(constants.InteroperatorNamespace)
 	configResource.SetName("instance-id")
 	err := c.Create(context.TODO(), configResource)
 	if err != nil {
@@ -324,7 +325,7 @@ func Test_computeInputObjects(t *testing.T) {
 	}
 	err = c.Get(context.TODO(), types.NamespacedName{
 		Name:      "instance-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}, configResource)
 	if err != nil {
 		t.Errorf("Failed to get configmap %v", err)
@@ -462,7 +463,8 @@ func Test_computeInputObjects(t *testing.T) {
 {{- $bindingID := "" }}
 {{- with .instance.metadata.name }} {{ $instanceID = . }} {{ end }}
 {{- with .binding.metadata.name }} {{ $bindingID = . }} {{ end }}
-{{- $namespace := "default" }}
+{{- $namespace := "" }}
+{{- with .instance.metadata.namespace }} {{ $namespace = . }} {{ end }}
 config:
  apiVersion: "v1"
   kind: ConfigMap
@@ -643,7 +645,7 @@ func _getDummyInstance() *osbv1alpha1.SFServiceInstance {
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{
 			ServiceID: "service-id",
@@ -659,7 +661,7 @@ func _getDummyInstance() *osbv1alpha1.SFServiceInstance {
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
 					Name:       "dddd",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 		},
@@ -670,7 +672,7 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 	return &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "binding-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 }
@@ -683,7 +685,7 @@ func _getDummyService() *osbv1alpha1.SFService {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "service-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id"},
 		},
 		Spec: osbv1alpha1.SFServiceSpec{
@@ -731,7 +733,8 @@ func _getDummyPlan() *osbv1alpha1.SFPlan {
 {{- $bindingID := "" }}
 {{- with .instance.metadata.name }} {{ $instanceID = . }} {{ end }}
 {{- with .binding.metadata.name }} {{ $bindingID = . }} {{ end }}
-{{- $namespace := "default" }}
+{{- $namespace := "" }}
+{{- with .instance.metadata.namespace }} {{ $namespace = . }} {{ end }}
 config:
   apiVersion: "v1"
   kind: ConfigMap
@@ -746,7 +749,7 @@ config:
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id", "planId": "plan-id"},
 		},
 		Spec: osbv1alpha1.SFPlanSpec{

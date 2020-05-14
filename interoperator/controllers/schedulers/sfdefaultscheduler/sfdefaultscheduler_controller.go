@@ -22,6 +22,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +57,7 @@ func (r *SFDefaultScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 	if instance.Spec.ClusterID == "" {
-		instance.Spec.ClusterID = constants.DefaultMasterClusterID
+		instance.Spec.ClusterID = constants.OwnClusterID
 		if err := r.Update(context.Background(), instance); err != nil {
 			log.Error(err, "failed to set cluster id")
 			return ctrl.Result{}, err
@@ -83,5 +84,6 @@ func (r *SFDefaultScheduler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_default").
 		For(&osbv1alpha1.SFServiceInstance{}).
+		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)
 }

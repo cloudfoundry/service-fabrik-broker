@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -74,7 +75,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	if clusterID == constants.DefaultMasterClusterID {
+	if clusterID == constants.OwnClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
 		return ctrl.Result{}, nil
@@ -302,7 +303,8 @@ func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_instance").
 		For(&osbv1alpha1.SFServiceInstance{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{})
+		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
+		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)
 }

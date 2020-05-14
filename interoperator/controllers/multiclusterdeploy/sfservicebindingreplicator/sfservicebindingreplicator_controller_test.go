@@ -42,9 +42,9 @@ import (
 var c, c2 client.Client
 var secretID = "sf-binding-id"
 var bindingID = "binding-id"
-var namespace = "default"
-var bindingKey = types.NamespacedName{Name: bindingID, Namespace: "default"}
-var secretKey = types.NamespacedName{Name: secretID, Namespace: "default"}
+var namespace = constants.InteroperatorNamespace
+var bindingKey = types.NamespacedName{Name: bindingID, Namespace: constants.InteroperatorNamespace}
+var secretKey = types.NamespacedName{Name: secretID, Namespace: constants.InteroperatorNamespace}
 var serviceInstance *osbv1alpha1.SFServiceInstance
 var binding, replicaBinding *osbv1alpha1.SFServiceBinding
 
@@ -52,7 +52,7 @@ const timeout = time.Second * 5
 
 var objectMetaInstance = metav1.ObjectMeta{
 	Name:      "instance-id",
-	Namespace: "default",
+	Namespace: constants.InteroperatorNamespace,
 	Labels: map[string]string{
 		"state": "in_queue",
 	},
@@ -71,7 +71,7 @@ var specInstance = osbv1alpha1.SFServiceInstanceSpec{
 
 var objectMetaBinding = metav1.ObjectMeta{
 	Name:      "binding-id",
-	Namespace: "default",
+	Namespace: constants.InteroperatorNamespace,
 	Labels: map[string]string{
 		"state": "in_queue",
 	},
@@ -272,7 +272,7 @@ func TestReconcileMultiClusterBind(t *testing.T) {
 
 	replicaSecret := &corev1.Secret{}
 	replicaSecret.SetName(secretID)
-	replicaSecret.SetNamespace("default")
+	replicaSecret.SetNamespace(constants.InteroperatorNamespace)
 	err = c2.Create(context.TODO(), replicaSecret)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -350,7 +350,7 @@ func TestReconcileMultiClusterUnbind(t *testing.T) {
 
 	bindingSecret := &corev1.Secret{}
 	bindingSecret.SetName(secretID)
-	bindingSecret.SetNamespace("default")
+	bindingSecret.SetNamespace(constants.InteroperatorNamespace)
 	g.Expect(c.Create(context.TODO(), bindingSecret)).NotTo(gomega.HaveOccurred())
 
 	mockClusterRegistry.EXPECT().GetClient("2").Return(c2, nil).AnyTimes()

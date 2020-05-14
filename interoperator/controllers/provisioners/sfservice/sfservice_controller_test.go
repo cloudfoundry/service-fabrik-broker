@@ -23,6 +23,7 @@ import (
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,7 @@ import (
 
 var c client.Client
 
-var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
+var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
 var expectedRequest = reconcile.Request{NamespacedName: serviceKey}
 
 const timeout = time.Second * 5
@@ -44,7 +45,7 @@ const timeout = time.Second * 5
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	instance := &osbv1alpha1.SFService{
-		ObjectMeta: metav1.ObjectMeta{Name: "service-id", Namespace: "default"},
+		ObjectMeta: metav1.ObjectMeta{Name: "service-id", Namespace: constants.InteroperatorNamespace},
 		Spec: osbv1alpha1.SFServiceSpec{
 			Name:                "service-name",
 			ID:                  "service-id",

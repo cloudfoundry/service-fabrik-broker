@@ -1,6 +1,7 @@
 package constants
 
 import (
+	"os"
 	"time"
 )
 
@@ -12,24 +13,44 @@ const (
 	LastOperationKey                      = "interoperator.servicefabrik.io/lastoperation"
 	ErrorThreshold                        = 10
 
-	ConfigMapName          = "interoperator-config"
-	ConfigMapKey           = "config"
-	NamespaceEnvKey        = "POD_NAMESPACE"
-	OwnClusterIDEnvKey     = "CLUSTER_ID"
-	DefaultMasterClusterID = "1"
-	ProvisionerName        = "provisioner"
+	ConfigMapName   = "interoperator-config"
+	ConfigMapKey    = "config"
+	ProvisionerName = "provisioner"
+
+	namespaceEnvKey    = "POD_NAMESPACE"
+	OwnClusterIDEnvKey = "CLUSTER_ID"
+
+	NamespaceLabelKey = "OWNER_INTEROPERATOR_NAMESPACE"
 
 	MultiClusterWatchTimeout = 28800 // 8 hours in seconds
 
-	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
 	DefaultProvisionerWorkerCount = 10
 
-	DefaultSchedulerType       = "default"
+	DefaultSchedulerType = "default"
+
 	LabelSelectorSchedulerType = "label-selector"
 	GoTemplateType             = "gotemplate"
 
 	PlanWatchDrainTimeout = time.Second * 2
 )
+
+// Configs initialized at startup
+var (
+	InteroperatorNamespace = "default"
+	OwnClusterID           = "1" // "1" is the DefaultMasterClusterID
+)
+
+func init() {
+	interoperatorNamespace, ok := os.LookupEnv(namespaceEnvKey)
+	if ok {
+		InteroperatorNamespace = interoperatorNamespace
+	}
+
+	ownClusterID, ok := os.LookupEnv(OwnClusterIDEnvKey)
+	if ok {
+		OwnClusterID = ownClusterID
+	}
+}

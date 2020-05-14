@@ -143,7 +143,7 @@ func TestReconcile(t *testing.T) {
 		}
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfcluster1)
 		if err != nil {
 			return err
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		}
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Name:      "3",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfcluster3)
 		if err != nil {
 			return err
@@ -187,7 +187,7 @@ func TestReconcile(t *testing.T) {
 		}
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Name:      "2",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfcluster2)
 		if err != nil {
 			return err
@@ -229,7 +229,7 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -246,7 +246,7 @@ func _getDummySFPlan(name string, clusterSelector string) *osbv1alpha1.SFPlan {
 	return &osbv1alpha1.SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFPlanSpec{
 			Name:      "plan-name",
@@ -260,7 +260,7 @@ func _getDummySFService(name string) *osbv1alpha1.SFService {
 	return &osbv1alpha1.SFService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "service-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id"},
 		},
 		Spec: osbv1alpha1.SFServiceSpec{
@@ -288,7 +288,7 @@ func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServi
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state": "in_queue",
 			},
@@ -313,7 +313,7 @@ func _getDummySFCLuster(name string, labels map[string]string) *resourcev1alpha1
 	return &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    labels,
 		},
 	}

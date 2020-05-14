@@ -23,6 +23,8 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 var kubeConfig *rest.Config
@@ -190,7 +192,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    "",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates = plan.Spec.Templates[:3]
@@ -206,7 +208,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    "",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates = plan.Spec.Templates[:4]
@@ -223,7 +225,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    "",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates[3].Type = "gotemplate"
@@ -241,7 +243,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    "",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates[3].ContentEncoded = ""
@@ -258,7 +260,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    "",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates[3].Content = "foo"
@@ -274,7 +276,7 @@ func Test_computeSources(t *testing.T) {
 				instance:  instance,
 				binding:   binding,
 				action:    osbv1alpha1.BindAction,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			setup: func() {
 				plan.Spec.Templates[3].Content = `secret:
@@ -315,7 +317,7 @@ func _getDummyService() *osbv1alpha1.SFService {
 	return &osbv1alpha1.SFService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "service-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id"},
 		},
 		Spec: osbv1alpha1.SFServiceSpec{
@@ -369,7 +371,7 @@ func _getDummyPlan() *osbv1alpha1.SFPlan {
 	return &osbv1alpha1.SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       "plan-id",
-			Namespace:  "default",
+			Namespace:  constants.InteroperatorNamespace,
 			Labels:     map[string]string{"serviceId": "service-id", "planId": "plan-id"},
 			Finalizers: []string{"abc"},
 		},
@@ -394,7 +396,7 @@ func _getDummyInstance() *osbv1alpha1.SFServiceInstance {
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{
 			ServiceID: "service-id",
@@ -407,7 +409,7 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 	return &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "binding-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceBindingSpec{
 			ServiceID:  "service-id",
@@ -461,4 +463,211 @@ func _deleteObject(c client.Client, object k8sObject) error {
 
 	log.Info("Deleted", "object", object.GetObjectKind().GroupVersionKind(), "name", object.GetName())
 	return nil
+}
+
+func TestNamespaceLabelFilter(t *testing.T) {
+	obj1 := &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{},
+	}
+	obj2 := &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}},
+	}
+	obj3 := &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
+			constants.NamespaceLabelKey: "biz",
+		}},
+	}
+	obj4 := &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
+			constants.NamespaceLabelKey: constants.InteroperatorNamespace,
+		}},
+	}
+	tests := []struct {
+		name   string
+		verify func(predicate.Predicate)
+	}{
+		{
+			name: "create a filter which filters based on namespace",
+			verify: func(p predicate.Predicate) {
+				evt := event.CreateEvent{
+					Object: obj1,
+					Meta:   obj1.GetObjectMeta(),
+				}
+				if got := p.Create(evt); !got {
+					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
+				}
+
+				evt = event.CreateEvent{
+					Object: obj2,
+					Meta:   obj2.GetObjectMeta(),
+				}
+				if got := p.Create(evt); !got {
+					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
+				}
+
+				evt = event.CreateEvent{
+					Object: obj3,
+					Meta:   obj3.GetObjectMeta(),
+				}
+				if got := p.Create(evt); got {
+					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, false)
+				}
+
+				evt = event.CreateEvent{
+					Object: obj4,
+					Meta:   obj4.GetObjectMeta(),
+				}
+				if got := p.Create(evt); !got {
+					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
+				}
+
+				evt2 := event.DeleteEvent{
+					Object: obj3,
+					Meta:   obj3.GetObjectMeta(),
+				}
+				if got := p.Delete(evt2); got {
+					t.Errorf("NamespaceLabelFilter() on delete = %v, want %v", got, false)
+				}
+
+				evt2 = event.DeleteEvent{
+					Object: obj4,
+					Meta:   obj4.GetObjectMeta(),
+				}
+				if got := p.Delete(evt2); !got {
+					t.Errorf("NamespaceLabelFilter() on delete = %v, want %v", got, true)
+				}
+
+				evt3 := event.UpdateEvent{
+					ObjectNew: obj3,
+					MetaNew:   obj3.GetObjectMeta(),
+				}
+				if got := p.Update(evt3); got {
+					t.Errorf("NamespaceLabelFilter() on update = %v, want %v", got, false)
+				}
+
+				evt3 = event.UpdateEvent{
+					ObjectNew: obj4,
+					MetaNew:   obj4.GetObjectMeta(),
+				}
+				if got := p.Update(evt3); !got {
+					t.Errorf("NamespaceLabelFilter() on update = %v, want %v", got, true)
+				}
+
+				evt4 := event.GenericEvent{
+					Object: obj3,
+					Meta:   obj3.GetObjectMeta(),
+				}
+				if got := p.Generic(evt4); got {
+					t.Errorf("NamespaceLabelFilter() on generic = %v, want %v", got, false)
+				}
+
+				evt4 = event.GenericEvent{
+					Object: obj4,
+					Meta:   obj4.GetObjectMeta(),
+				}
+				if got := p.Generic(evt4); !got {
+					t.Errorf("NamespaceLabelFilter() on generic = %v, want %v", got, true)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NamespaceLabelFilter()
+			if tt.verify != nil {
+				tt.verify(got)
+			}
+		})
+	}
+}
+
+func TestNamespaceFilter(t *testing.T) {
+	obj1 := &osbv1alpha1.SFPlan{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "biz", Name: "baz"},
+	}
+	obj2 := &osbv1alpha1.SFPlan{
+		ObjectMeta: metav1.ObjectMeta{Namespace: constants.InteroperatorNamespace, Name: "baz"},
+	}
+
+	tests := []struct {
+		name   string
+		verify func(predicate.Predicate)
+	}{
+		{
+			name: "create a filter which filters based on namespace",
+			verify: func(p predicate.Predicate) {
+				evt := event.CreateEvent{
+					Object: obj1,
+					Meta:   obj1.GetObjectMeta(),
+				}
+				if got := p.Create(evt); got {
+					t.Errorf("NamespaceFilter() on create = %v, want %v", got, false)
+				}
+
+				evt = event.CreateEvent{
+					Object: obj2,
+					Meta:   obj2.GetObjectMeta(),
+				}
+				if got := p.Create(evt); !got {
+					t.Errorf("NamespaceFilter() on create = %v, want %v", got, true)
+				}
+
+				evt2 := event.DeleteEvent{
+					Object: obj1,
+					Meta:   obj1.GetObjectMeta(),
+				}
+				if got := p.Delete(evt2); got {
+					t.Errorf("NamespaceFilter() on delete = %v, want %v", got, false)
+				}
+
+				evt2 = event.DeleteEvent{
+					Object: obj2,
+					Meta:   obj2.GetObjectMeta(),
+				}
+				if got := p.Delete(evt2); !got {
+					t.Errorf("NamespaceFilter() on delete = %v, want %v", got, true)
+				}
+
+				evt3 := event.UpdateEvent{
+					ObjectNew: obj1,
+					MetaNew:   obj1.GetObjectMeta(),
+				}
+				if got := p.Update(evt3); got {
+					t.Errorf("NamespaceFilter() on update = %v, want %v", got, false)
+				}
+
+				evt3 = event.UpdateEvent{
+					ObjectNew: obj2,
+					MetaNew:   obj2.GetObjectMeta(),
+				}
+				if got := p.Update(evt3); !got {
+					t.Errorf("NamespaceFilter() on update = %v, want %v", got, true)
+				}
+
+				evt4 := event.GenericEvent{
+					Object: obj1,
+					Meta:   obj1.GetObjectMeta(),
+				}
+				if got := p.Generic(evt4); got {
+					t.Errorf("NamespaceFilter() on generic = %v, want %v", got, false)
+				}
+
+				evt4 = event.GenericEvent{
+					Object: obj2,
+					Meta:   obj2.GetObjectMeta(),
+				}
+				if got := p.Generic(evt4); !got {
+					t.Errorf("NamespaceFilter() on generic = %v, want %v", got, true)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NamespaceFilter()
+			if tt.verify != nil {
+				tt.verify(got)
+			}
+		})
+	}
 }

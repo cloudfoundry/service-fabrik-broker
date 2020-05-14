@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +31,7 @@ import (
 func TestStorageSFServiceBinding(t *testing.T) {
 	key := types.NamespacedName{
 		Name:      "foo",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 	parameters := `{
 		"foo": "bar",
@@ -44,7 +45,7 @@ func TestStorageSFServiceBinding(t *testing.T) {
 	created := &SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: SFServiceBindingSpec{
 			ID:                "binding-id",
@@ -92,7 +93,7 @@ func TestStorageSFServiceBinding(t *testing.T) {
 	// Test listing
 	bindingList := &SFServiceBindingList{}
 	options := &kubernetes.ListOptions{
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 	labels := make(kubernetes.MatchingLabels)
 	labels["hello"] = "world"

@@ -19,7 +19,6 @@ package sflabelselectorscheduler
 import (
 	"context"
 	"math"
-	"os"
 	"strings"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
@@ -30,6 +29,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 
@@ -109,10 +109,7 @@ func getLabelSelectorString(sfServiceInstance *osbv1alpha1.SFServiceInstance, r 
 	log := r.Log.WithValues("instance", sfServiceInstance.GetName())
 	ctx := context.Background()
 
-	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if sfNamespace == "" {
-		sfNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	sfNamespace := constants.InteroperatorNamespace
 	plan := &osbv1alpha1.SFPlan{}
 	namespacedName := types.NamespacedName{
 		Name:      sfServiceInstance.Spec.PlanID,
@@ -242,5 +239,6 @@ func (r *SFLabelSelectorScheduler) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
+		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)
 }

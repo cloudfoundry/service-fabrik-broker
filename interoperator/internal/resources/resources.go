@@ -98,6 +98,8 @@ func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*uns
 			log.Error(err, "failed setting owner reference for resource", "owner", owner, "resource", obj)
 			return err
 		}
+		// Set Interoperator Namespace Label for Filtering watch requests
+		setInteroperatorNamespaceLabel(owner, obj)
 	}
 	return nil
 }

@@ -207,5 +207,6 @@ func (r *ReconcileSFPlan) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("plan").
 		For(&osbv1alpha1.SFPlan{}).
+		WithEventFilter(watches.NamespaceFilter()).
 		Complete(r)
 }

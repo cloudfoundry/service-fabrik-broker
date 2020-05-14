@@ -25,6 +25,7 @@ import (
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/provisioner/mock_provisioner"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
@@ -42,7 +43,7 @@ import (
 
 var c client.Client
 
-var expectedRequest = ctrlrun.Request{NamespacedName: types.NamespacedName{Name: "1", Namespace: "default"}}
+var expectedRequest = ctrlrun.Request{NamespacedName: types.NamespacedName{Name: "1", Namespace: constants.InteroperatorNamespace}}
 
 const timeout = time.Second * 5
 
@@ -51,7 +52,7 @@ const timeout = time.Second * 5
 var clusterInstance = &resourcev1alpha1.SFCluster{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "2",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	},
 	Spec: resourcev1alpha1.SFClusterSpec{
 		SecretRef: "my-secret",
@@ -61,14 +62,14 @@ var clusterInstance = &resourcev1alpha1.SFCluster{
 var clusterSecret = &corev1.Secret{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "my-secret",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	},
 }
 
 var deploymentInstance = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "provisioner",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	},
 	Spec: appsv1.DeploymentSpec{
 		Selector: &metav1.LabelSelector{},
@@ -390,7 +391,7 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 
 	// Delete sfcluster from target cluster
 	sfTargetCluster := &resourcev1alpha1.SFCluster{}
-	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: constants.InteroperatorNamespace}, sfTargetCluster)
 	if err == nil {
 		c2.Delete(context.TODO(), sfTargetCluster)
 	}
@@ -443,7 +444,7 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 		})
 		sfTargetCluster := &resourcev1alpha1.SFCluster{}
 		g.Eventually(func() error {
-			return c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: "default"}, sfTargetCluster)
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: constants.InteroperatorNamespace}, sfTargetCluster)
 		}, timeout).Should(gomega.Succeed())
 	}
 }
@@ -470,7 +471,7 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 
 	// Delete sfcluster from target cluster
 	clusterInstanceSecret := &corev1.Secret{}
-	err = c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: constants.InteroperatorNamespace}, clusterInstanceSecret)
 	if err == nil {
 		c2.Delete(context.TODO(), clusterInstanceSecret)
 	}
@@ -504,7 +505,7 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		{
 			name: "Create if Secret not found",
 			args: args{
-				namespace:    "default",
+				namespace:    constants.InteroperatorNamespace,
 				secretName:   "my-secret",
 				clusterID:    "2",
 				targetClient: c2,
@@ -514,7 +515,7 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		{
 			name: "Update if secret already exists",
 			args: args{
-				namespace:    "default",
+				namespace:    constants.InteroperatorNamespace,
 				secretName:   "my-secret",
 				clusterID:    "2",
 				targetClient: c2,
@@ -530,7 +531,7 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		})
 		clusterInstanceSecret := &corev1.Secret{}
 		g.Eventually(func() error {
-			return c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: "default"}, clusterInstanceSecret)
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: constants.InteroperatorNamespace}, clusterInstanceSecret)
 		}, timeout).Should(gomega.Succeed())
 	}
 }
@@ -558,7 +559,7 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 	// Delete provisioner deployment in target cluster if present
 
 	targetProvisionerInstance := &appsv1.Deployment{}
-	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: constants.InteroperatorNamespace}, targetProvisionerInstance)
 	if err == nil {
 		c2.Delete(context.TODO(), targetProvisionerInstance)
 	}
@@ -619,7 +620,7 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 		})
 		targetProvisionerInstance := &appsv1.Deployment{}
 		g.Eventually(func() error {
-			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: "default"}, targetProvisionerInstance)
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner", Namespace: constants.InteroperatorNamespace}, targetProvisionerInstance)
 		}, timeout).Should(gomega.Succeed())
 	}
 }
@@ -647,7 +648,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 	// Delete clusterrolebinding in target cluster if present
 
 	targetClusterRoleBinding := &v1.ClusterRoleBinding{}
-	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)
+	err = c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: constants.InteroperatorNamespace}, targetClusterRoleBinding)
 	if err == nil {
 		c2.Delete(context.TODO(), targetClusterRoleBinding)
 	}
@@ -676,7 +677,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		{
 			name: "Create if clusterrolebinding does not exists",
 			args: args{
-				namespace:    "default",
+				namespace:    constants.InteroperatorNamespace,
 				clusterID:    "2",
 				targetClient: c2,
 			},
@@ -685,7 +686,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		{
 			name: "Update if clusterrolebinding already exists",
 			args: args{
-				namespace:    "default",
+				namespace:    constants.InteroperatorNamespace,
 				clusterID:    "2",
 				targetClient: c2,
 			},
@@ -700,7 +701,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		})
 		targetClusterRoleBinding := &v1.ClusterRoleBinding{}
 		g.Eventually(func() error {
-			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: "default"}, targetClusterRoleBinding)
+			return c2.Get(context.TODO(), types.NamespacedName{Name: "provisioner-clusterrolebinding", Namespace: constants.InteroperatorNamespace}, targetClusterRoleBinding)
 		}, timeout).Should(gomega.Succeed())
 	}
 }
