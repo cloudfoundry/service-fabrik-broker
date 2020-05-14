@@ -144,35 +144,30 @@ class HttpClient {
         switch (res.statusCode) {
           case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
             logger.warn(message, {
-              request: options,
               response: result
             });
             err = new BadRequest(message);
             break;
           case CONST.HTTP_STATUS_CODE.NOT_FOUND:
             logger.info(message, {
-              request: options,
               response: result
             });
             err = new NotFound(message);
             break;
           case CONST.HTTP_STATUS_CODE.CONFLICT:
             logger.info(message, {
-              request: options,
               response: result
             });
             err = new Conflict(message);
             break;
           case CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY:
             logger.info(message, {
-              request: options,
               response: result
             });
             err = new UnprocessableEntity(message);
             break;
           default:
             logger.error(message, {
-              request: options,
               response: result
             });
             err = new InternalServerError(message);
