@@ -147,7 +147,25 @@ describe('#getQuotaValidStatus', () => {
     expect(res.send).to.have.been.calledWith({quotaValidStatus: 0});      
   });
 
-  it('Quota funtion throws error, should return error', () => {
-    
+  it('Quota funtion throws error, should return error', async () => {
+    const err = 'Error in calculating quota';
+    const req = {
+      params: {
+        accountId: organization_guid
+      },
+      query: {
+        planId: validQuotaPlanId,
+        previousPlanId: previous_plan_id,
+        reqMethod: 'PATCH',
+        isSubaccountFlag: false
+      }
+    };
+    checkCFQuotaStub.reset();
+    checkCFQuotaStub.returns(Promise.reject(err));
+    await quotaApiController.getQuotaValidStatus(req, res);
+    expect(checkCFQuotaStub).to.have.been.called;
+    expect(res.status).to.have.been.calledOnce;
+    expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR);
+    expect(res.send).to.have.been.calledWith({ error: err });    
   });
 });

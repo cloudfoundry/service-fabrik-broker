@@ -15,6 +15,7 @@ const {
   commonFunctions
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
+const { catalog } = require('@sf/models');
 const ServiceFabrikApiController = require('../../applications/extensions/src/api-controllers/ServiceFabrikApiController');
 const QuotaClient = require('../../applications/osb-broker/src/api-controllers/middleware/QuotaClient');
 const PROMISE_WAIT_SIMULATED_DELAY = 30;
@@ -303,6 +304,28 @@ describe('#checkQuota', () => {
         reqMethod: 'PATCH'
       }
     }, true);
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
+  });
+  it('Non instance based quota, Quota valid, should call next', () => {
+    req.body = validQuotaBody;
+    let getServiceStub = sinon.stub(catalog, 'getService');
+    getServiceStub.returns({quota_check_type: 'composite'});
+    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuota(req, res, next);
+    expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
+    expect(checkQuotaValidityStub).to.have.been.called;
+    expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
+      orgOrSubaccountId: organization_guid,
+      queryParams: {
+        planId: validQuotaPlanId,
+        previousPlanId: undefined,
+        isSubaccountFlag: false,
+        reqMethod: 'PATCH'
+      },
+      data: req.body
+    }, false);
+    getServiceStub.restore();
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
   });
