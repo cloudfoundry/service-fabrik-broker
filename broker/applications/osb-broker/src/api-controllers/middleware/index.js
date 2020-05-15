@@ -75,7 +75,7 @@ exports.checkQuota = function () {
             isSubaccountFlag: useSubaccountForQuotaCheck,
             reqMethod: req.method
           }
-        }
+        };
         const instanceBasedQuota = supportsInstanceBasedQuota(req.body.service_id);
         if(!instanceBasedQuota) {
           quotaClientOptions.data = _.cloneDeep(req.body);

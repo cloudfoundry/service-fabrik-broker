@@ -1,4 +1,3 @@
-/* jshint ignore:start */
 'use strict';
 
 const _ = require('lodash');
