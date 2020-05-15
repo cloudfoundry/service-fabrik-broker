@@ -109,7 +109,7 @@ function nockCreateResource(resourceGroup, resourceType, response, times, verifi
 
 function nockGetConfigMap(expectedStatusCode, enabled) {
   nock(apiServerHost)
-    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps`)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps`)
     .reply(expectedStatusCode || 200, enabled ? expectedGetConfigMapResponseEnabled : expectedGetConfigMapResponseDisabled);
 }
 

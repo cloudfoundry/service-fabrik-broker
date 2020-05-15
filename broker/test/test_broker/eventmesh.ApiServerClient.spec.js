@@ -121,19 +121,19 @@ function nockGetResource(resourceGroup, resourceType, id, namespaceId, response,
 
 function nockCreateConfigMap(response, expectedStatusCode, payload) {
   nock(apiServerHost)
-    .post(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps`, JSON.stringify(payload))
+    .post(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps`, JSON.stringify(payload))
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockGetConfigMap(response, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockUpdateConfigMap(response, expectedStatusCode, payload) {
   nock(apiServerHost)
-    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
+    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
     .reply(expectedStatusCode || 200, response);
 }
 
@@ -972,7 +972,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -1011,7 +1011,7 @@ describe('eventmesh', () => {
             });
             expect(res.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.metadata.resourceVersion).to.eql('370255');
-            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -1070,7 +1070,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -1100,7 +1100,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE)}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });

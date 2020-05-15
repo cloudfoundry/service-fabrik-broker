@@ -661,7 +661,7 @@ describe('service-broker-api', function () {
 
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, testPayload, 1);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
-          mocks.apiServerEventMesh.nockGetSecret(binding_id, CONST.APISERVER.DEFAULT_NAMESPACE, {
+          mocks.apiServerEventMesh.nockGetSecret(binding_id, _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE), {
             data: {
               response: encodeBase64({ credentials: secretData })
             }

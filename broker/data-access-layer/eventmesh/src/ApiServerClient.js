@@ -357,7 +357,13 @@ class ApiServerClient {
   }
 
   getNamespaceId(resourceId) {
-    return _.get(config, 'apiserver.enable_namespaced_separation') ? `sf-${resourceId}` : (_.get(config, 'apiserver.services_namespace') ? _.get(config, 'apiserver.services_namespace') : CONST.APISERVER.DEFAULT_NAMESPACE);
+    if (_.get(config, 'apiserver.enable_namespaced_separation')) {
+      return `sf-${resourceId}`;
+    } else if (_.get(config, 'apiserver.services_namespace')) {
+      return _.get(config, 'apiserver.services_namespace');
+    } else {
+      return _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+    }
   }
 
   /**
@@ -631,7 +637,8 @@ class ApiServerClient {
     if (opts.query) {
       query.qs = opts.query;
     }
-    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE; // Currently most callers are calling this function with allNamespaces: true, only metering jobs are calling without NS and defaults to. Should not be used in any other context.
+    // Currently most callers are calling this function with allNamespaces: true, only metering jobs are calling without NS and defaults to. Should not be used in any other context.
+    const namespaceId = opts.namespaceId ? opts.namespaceId : _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
     return Promise.try(() => {
       if (!_.get(opts, 'allNamespaces', false)) {
         return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
@@ -692,7 +699,7 @@ class ApiServerClient {
       data: data
     };
     return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
         body: resourceBody
       }))
       .catch(err => {
@@ -703,7 +710,7 @@ class ApiServerClient {
   getConfigMapResource(configName) {
     logger.debug('Get resource with opts: ', configName);
     return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get()) // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get()) // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
       .then(resource => {
         return resource.body;
       })
@@ -729,7 +736,7 @@ class ApiServerClient {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
         return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-          .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+          .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
             body: resourceBody
           });
       })
@@ -1034,7 +1041,7 @@ class ApiServerClient {
     const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
     return Promise.try(() => apiserver
       .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
+      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[resourceType].post({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
         body: crd
       }))
       .catch(err => {
@@ -1042,7 +1049,7 @@ class ApiServerClient {
       })
       .catch(Conflict, () => apiserver
         .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType](crd.metadata.name).patch({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
+        .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[resourceType](crd.metadata.name).patch({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
           body: crd,
           headers: {
             'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
