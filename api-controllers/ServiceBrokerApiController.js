@@ -76,10 +76,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       'organization_guid',
       'space_guid',
       'origin',
-      'zone_id',
-      'global_account_id',
-      'subaccount_id',
-      'subdomain'
+      'subaccount_id'
     ]); 
     function done(sfserviceinstance) {
       _.set(context, 'instance', sfserviceinstance);
