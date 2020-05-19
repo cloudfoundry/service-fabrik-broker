@@ -91,6 +91,7 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 
 func (r *ReconcileSFServiceBindingCleaner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("binding_cleaner").
 		For(&osbv1alpha1.SFServiceBinding{}).
 		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)

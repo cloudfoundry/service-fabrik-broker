@@ -42,7 +42,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -416,7 +415,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(binding *osbv1alpha1.SFServ
 			StringData: data,
 		}
 
-		if err := controllerutil.SetControllerReference(binding, secret, r.scheme); err != nil {
+		if err := utils.SetOwnerReference(binding, secret, r.scheme); err != nil {
 			log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 			return err
 		}

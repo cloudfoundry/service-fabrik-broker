@@ -1,14 +1,31 @@
-package resources
+package utils
 
 import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("utils")
+
+// SetOwnerReference is almost as same as controllerutil.SetControllerReference
+// This implementation does set Controller field and BlockOwnerDeletion as false
+// It also adds Interoperator Namespace Label for Filtering watch requests
+func SetOwnerReference(owner, object metav1.Object, scheme *runtime.Scheme) error {
+	if err := setOwnerReference(owner, object, scheme); err != nil {
+		log.Error(err, "failed setting owner reference for resource", "owner", owner, "resource", object)
+		return err
+	}
+	// Set Interoperator Namespace Label for Filtering watch requests
+	setInteroperatorNamespaceLabel(owner, object)
+	return nil
+}
 
 // setOwnerReference is almost as same as controllerutil.SetControllerReference
 // This implementation does set Controller field and BlockOwnerDeletion as false

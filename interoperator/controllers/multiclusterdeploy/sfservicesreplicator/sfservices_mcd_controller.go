@@ -22,6 +22,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
@@ -31,7 +32,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -157,7 +157,7 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
 				replicateSFPlanResourceData(&obj, plan)
-				err = controllerutil.SetControllerReference(service, plan, r.scheme)
+				err = utils.SetOwnerReference(service, plan, r.scheme)
 				if err != nil {
 					return err
 				}
@@ -170,7 +170,7 @@ func (r *ReconcileSFServices) handleServicePlans(service *osbv1alpha1.SFService,
 			}
 		} else {
 			replicateSFPlanResourceData(&obj, plan)
-			err = controllerutil.SetControllerReference(service, plan, r.scheme)
+			err = utils.SetOwnerReference(service, plan, r.scheme)
 			if err != nil {
 				return err
 			}

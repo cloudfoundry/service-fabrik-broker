@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -231,7 +231,7 @@ func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				for k, v := range replicaSecret.Data {
 					bindingSecret.Data[k] = v
 				}
-				if err = controllerutil.SetControllerReference(binding, bindingSecret, r.scheme); err != nil {
+				if err = utils.SetOwnerReference(binding, bindingSecret, r.scheme); err != nil {
 					log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 					return ctrl.Result{}, err
 				}
