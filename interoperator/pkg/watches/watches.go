@@ -2,7 +2,6 @@ package watches
 
 import (
 	"context"
-	"os"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -41,10 +42,7 @@ func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper met
 	if err != nil {
 		return false, err
 	}
-	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if sfNamespace == "" {
-		sfNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	sfNamespace := constants.InteroperatorNamespace
 	instanceWatches, bindingWatches, err := computeWatchList(c, sfNamespace)
 	if err != nil {
 		log.Error(err, "Failed to compute watch lists")
@@ -316,4 +314,58 @@ func computeSources(c client.Client, service *osbv1alpha1.SFService, plan *osbv1
 	}
 
 	return sources, nil
+}
+
+// NamespaceLabelFilter creates a predicates for filtering instance/binding objects
+func NamespaceLabelFilter() predicate.Predicate {
+	f := func(labels map[string]string) bool {
+		if labels == nil {
+			return true
+		}
+		ns, ok := labels[constants.NamespaceLabelKey]
+		if !ok {
+			return true
+		}
+		if ns == constants.InteroperatorNamespace {
+			return true
+		}
+		return false
+	}
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return f(e.Meta.GetLabels())
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return f(e.Meta.GetLabels())
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return f(e.MetaNew.GetLabels())
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return f(e.Meta.GetLabels())
+		},
+	}
+	return p
+}
+
+// NamespaceFilter creates a predicates for filtering objects in interoperator namespace
+func NamespaceFilter() predicate.Predicate {
+	f := func(namespace string) bool {
+		return namespace == constants.InteroperatorNamespace
+	}
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return f(e.Meta.GetNamespace())
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return f(e.Meta.GetNamespace())
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return f(e.MetaNew.GetNamespace())
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return f(e.Meta.GetNamespace())
+		},
+	}
+	return p
 }

@@ -14,11 +14,16 @@ const {
 } = require('@sf/common-utils');
 
 function getAllServices() {
-  return apiServerClient.getResources({
+  let namespaceOpts = {};
+  if (_.get(config, 'sf_namespace')) {
+    namespaceOpts.namespaceId = _.get(config, 'sf_namespace');
+  } else {
+    namespaceOpts.allNamespaces = true;
+  }
+  return apiServerClient.getResources(_.merge({
     resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
-    allNamespaces: true
-  })
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES
+  },namespaceOpts))
     .then(serviceList => {
       let services = [];
       _.forEach(serviceList, service => {
@@ -29,14 +34,19 @@ function getAllServices() {
 }
 
 function getAllPlansForService(serviceId) {
-  return apiServerClient.getResources({
+  let namespaceOpts = {};
+  if (_.get(config, 'sf_namespace')) {
+    namespaceOpts.namespaceId = _.get(config, 'sf_namespace');
+  } else {
+    namespaceOpts.allNamespaces = true;
+  }
+  return apiServerClient.getResources(_.merge({
     resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
     resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
     query: {
       labelSelector: `serviceId=${serviceId}`
-    },
-    allNamespaces: true
-  })
+    }
+  }, namespaceOpts))
     .then(planList => {
       let plans = [];
       _.forEach(planList, plan => {

@@ -24,6 +24,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -149,7 +149,7 @@ func (r *ReconcileSFPlan) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		existingRefs[i] = *ownerRefs[i].DeepCopy()
 	}
 
-	err = controllerutil.SetControllerReference(service, instance, r.scheme)
+	err = utils.SetOwnerReference(service, instance, r.scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -207,5 +207,6 @@ func (r *ReconcileSFPlan) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("plan").
 		For(&osbv1alpha1.SFPlan{}).
+		WithEventFilter(watches.NamespaceFilter()).
 		Complete(r)
 }

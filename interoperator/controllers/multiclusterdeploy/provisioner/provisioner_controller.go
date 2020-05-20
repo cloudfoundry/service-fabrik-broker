@@ -25,6 +25,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -493,7 +494,8 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: interoperatorCfg.ProvisionerWorkerCount,
 		}).
-		For(&resourcev1alpha1.SFCluster{})
+		For(&resourcev1alpha1.SFCluster{}).
+		WithEventFilter(watches.NamespaceFilter())
 
 	return builder.Complete(r)
 }

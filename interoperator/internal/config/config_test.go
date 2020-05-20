@@ -134,13 +134,13 @@ instanceContollerWatchList:
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
 	configMapKey := types.NamespacedName{
 		Name:      constants.ConfigMapName,
-		Namespace: constants.DefaultServiceFabrikNamespace,
+		Namespace: constants.InteroperatorNamespace,
 	}
 	interoperatorConfig := &InteroperatorConfig{
 		BindingWorkerCount:     constants.DefaultBindingWorkerCount,
@@ -239,7 +239,7 @@ func Test_config_UpdateConfig(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 	interoperatorConfig := &InteroperatorConfig{

@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
@@ -84,10 +83,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 	if err != nil {
 		return nil, err
 	}
-	configMapNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if configMapNamespace == "" {
-		configMapNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	configMapNamespace := constants.InteroperatorNamespace
 
 	return &config{
 		c:         c,

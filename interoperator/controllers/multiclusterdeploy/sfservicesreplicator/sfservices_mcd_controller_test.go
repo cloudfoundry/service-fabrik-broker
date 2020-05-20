@@ -40,7 +40,7 @@ import (
 
 var c, c2 client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 
 const timeout = time.Second * 5
 
@@ -62,7 +62,7 @@ func createAndTestSFServiceAndPlans(serviceName string, planName string, service
 	g.Eventually(func() error {
 		err := c2.Get(context.TODO(), types.NamespacedName{
 			Name:      serviceName,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, service)
 		if err != nil {
 			return err
@@ -71,13 +71,13 @@ func createAndTestSFServiceAndPlans(serviceName string, planName string, service
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(service.GetName()).To(gomega.Equal(serviceName))
 
-	err = c.Get(context.TODO(), types.NamespacedName{Name: planName, Namespace: "default"}, plan)
+	err = c.Get(context.TODO(), types.NamespacedName{Name: planName, Namespace: constants.InteroperatorNamespace}, plan)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	g.Eventually(func() error {
 		err := c2.Get(context.TODO(), types.NamespacedName{
 			Name:      planName,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, plan)
 		if err != nil {
 			return err
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 	service1 := &osbv1alpha1.SFService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceSpec{
 			ID: "foo",
@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 	plan1 := &osbv1alpha1.SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "bar",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFPlanSpec{
 			Name:          "plan-name",
@@ -197,14 +197,14 @@ func TestReconcile(t *testing.T) {
 	sfcluster1 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 
 	sfcluster2 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "2",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 

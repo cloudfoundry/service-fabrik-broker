@@ -20,6 +20,7 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -79,5 +80,6 @@ func (r *ReconcileSFService) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service").
 		For(&osbv1alpha1.SFService{}).
+		WithEventFilter(watches.NamespaceFilter()).
 		Complete(r)
 }

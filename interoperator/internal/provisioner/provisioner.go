@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"context"
-	"os"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
@@ -47,10 +46,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 	if err != nil {
 		return nil, err
 	}
-	provisionerNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if provisionerNamespace == "" {
-		provisionerNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	provisionerNamespace := constants.InteroperatorNamespace
 
 	return &provisioner{
 		c:         c,

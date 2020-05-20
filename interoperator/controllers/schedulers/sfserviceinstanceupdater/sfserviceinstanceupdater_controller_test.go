@@ -99,7 +99,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, plan2)
 		if err != nil {
 			return err
@@ -117,7 +117,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, plan3)
 		if err != nil {
 			return err
@@ -130,7 +130,7 @@ func TestReconcile(t *testing.T) {
 
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo1",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, instance1)
 		if err != nil {
 			return err
@@ -141,7 +141,7 @@ func TestReconcile(t *testing.T) {
 		}
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo2",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}, instance2)
 		if err != nil {
 			return err
@@ -166,7 +166,7 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -176,7 +176,7 @@ func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServi
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state": "in_queue",
 			},
@@ -227,7 +227,7 @@ func _getDummyPlan(provisionContent string) *osbv1alpha1.SFPlan {
 	return &osbv1alpha1.SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       "plan-id",
-			Namespace:  "default",
+			Namespace:  constants.InteroperatorNamespace,
 			Labels:     map[string]string{"serviceId": "service-id", "planId": "plan-id"},
 			Finalizers: []string{"abc"},
 		},

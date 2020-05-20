@@ -18,7 +18,6 @@ package sfserviceinstancecounter
 
 import (
 	"context"
-	"os"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
@@ -26,6 +25,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,10 +78,7 @@ func (r *SFServiceInstanceCounter) Reconcile(req ctrl.Request) (ctrl.Result, err
 					return ctrl.Result{}, err
 				}
 
-				sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-				if sfNamespace == "" {
-					sfNamespace = constants.DefaultServiceFabrikNamespace
-				}
+				sfNamespace := constants.InteroperatorNamespace
 				sfCluster := &resourcev1alpha1.SFCluster{}
 				namespacedName := types.NamespacedName{
 					Name:      instance.Spec.ClusterID,
@@ -117,10 +114,7 @@ func (r *SFServiceInstanceCounter) Reconcile(req ctrl.Request) (ctrl.Result, err
 					return ctrl.Result{}, err
 				}
 
-				sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-				if sfNamespace == "" {
-					sfNamespace = constants.DefaultServiceFabrikNamespace
-				}
+				sfNamespace := constants.InteroperatorNamespace
 				sfCluster := &resourcev1alpha1.SFCluster{}
 				namespacedName := types.NamespacedName{
 					Name:      instance.Spec.ClusterID,
@@ -168,5 +162,6 @@ func (r *SFServiceInstanceCounter) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
+		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)
 }

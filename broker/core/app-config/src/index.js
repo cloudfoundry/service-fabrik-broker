@@ -62,6 +62,10 @@ if (process.env.BROKER_USERNAME) {
 if (process.env.BROKER_PASSWORD) {
   config.password = process.env.BROKER_PASSWORD;
 }
+if (process.env.POD_NAMESPACE) {
+  // Not set when it is Broker Bosh Deployment
+  config.sf_namespace = process.env.POD_NAMESPACE;
+}
 
 function updateLogFileConfig(logPath) {
   const logSuffix = `-worker-${process.env.worker}.log`;

@@ -74,7 +74,7 @@ var templateSpec = []osbv1alpha1.TemplateSpec{
 var service = &osbv1alpha1.SFService{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "service-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels:    map[string]string{"serviceId": "service-id"},
 	},
 	Spec: osbv1alpha1.SFServiceSpec{
@@ -100,7 +100,7 @@ var service = &osbv1alpha1.SFService{
 var plan = &osbv1alpha1.SFPlan{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "plan-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"serviceId": "service-id",
 			"planId":    "plan-id",
@@ -125,7 +125,7 @@ var plan = &osbv1alpha1.SFPlan{
 var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
@@ -145,7 +145,7 @@ var instance = &osbv1alpha1.SFServiceInstance{
 	},
 }
 
-var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
 var expectedRequest = reconcile.Request{NamespacedName: instanceKey}
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
@@ -164,7 +164,7 @@ func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -206,12 +206,12 @@ func TestReconcile(t *testing.T) {
 		clusterRegistry: mockClusterRegistry,
 	}
 
-	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(expectedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, constants.InteroperatorNamespace).Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterRegistry.EXPECT().GetClient("1").Return(controller, nil).AnyTimes()
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(&properties.Status{
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, constants.InteroperatorNamespace).Return(&properties.Status{
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
 		},
@@ -307,7 +307,7 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 	instance := &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state":                 "in_queue",
 				constants.ErrorCountKey: "10",

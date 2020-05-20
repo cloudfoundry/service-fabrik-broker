@@ -41,7 +41,7 @@ import (
 
 var c, c2 client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 
 const timeout = time.Second * 5
@@ -133,13 +133,13 @@ func TestReconcile(t *testing.T) {
 	instance.SetNamespace("sf-instance-id")
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 
-	// Set clusterID as DefaultMasterClusterID
+	// Set clusterID as OwnClusterID
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		err = c.Get(context.TODO(), instanceKey, instance)
 		if err != nil {
 			return err
 		}
-		instance.Spec.ClusterID = constants.DefaultMasterClusterID
+		instance.Spec.ClusterID = constants.OwnClusterID
 		return c.Update(context.TODO(), instance)
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -314,7 +314,7 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 	var instance = &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{
 			ServiceID:        "service-id",
@@ -329,7 +329,7 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 			State: "in_queue",
 		},
 	}
-	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
 
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())

@@ -13,6 +13,7 @@ import (
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,10 +116,10 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 	instance := _getDummyInstance()
 	binding := _getDummyBinding()
 
-	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
-	var planKey = types.NamespacedName{Name: "plan-id", Namespace: "default"}
-	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
-	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
+	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
+	var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
+	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
 
 	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
@@ -141,7 +142,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 	output := &unstructured.Unstructured{}
 	output.SetAPIVersion("kubedb.com/v1alpha1")
 	output.SetKind("Postgres")
-	output.SetNamespace("default")
+	output.SetNamespace(constants.InteroperatorNamespace)
 
 	type args struct {
 		client     kubernetes.Client
@@ -169,7 +170,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     "provision",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    []*unstructured.Unstructured{output},
 			wantErr: false,
@@ -184,7 +185,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     "bind",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    []*unstructured.Unstructured{output},
 			wantErr: false,
@@ -199,7 +200,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     "provision",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			wantErr: true,
@@ -214,7 +215,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     "provisionInvalid",
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			wantErr: true,
@@ -245,13 +246,13 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("kubedb.com/v1alpha1")
 	resource.SetKind("Postgres")
-	resource.SetNamespace("default")
+	resource.SetNamespace(constants.InteroperatorNamespace)
 
 	spec := osbv1alpha1.SFServiceInstanceSpec{}
 	owner := &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: spec,
 		Status: osbv1alpha1.SFServiceInstanceStatus{
@@ -265,7 +266,7 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
 					Name:       "dddd",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 		},
@@ -302,7 +303,7 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 	resource.SetKind("Director")
-	resource.SetNamespace("default")
+	resource.SetNamespace(constants.InteroperatorNamespace)
 	resource.SetName("instance-id")
 	defer c.Delete(context.TODO(), resource)
 
@@ -374,7 +375,7 @@ status:
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(len(foundResources)).To(gomega.Equal(1))
 
-	var foundResourceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+	var foundResourceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
 
 	expectedResources, err2 := dynamic.StringToUnstructured(`apiVersion: deployment.servicefabrik.io/v1alpha1
 kind: Director
@@ -399,13 +400,13 @@ status:
 	lastResource1 := osbv1alpha1.Source{}
 	lastResource1.APIVersion = "deployment.servicefabrik.io/v1alpha1"
 	lastResource1.Kind = "Director"
-	lastResource1.Namespace = "default"
+	lastResource1.Namespace = constants.InteroperatorNamespace
 	lastResource1.Name = "instance-id"
 
 	lastResource2 := osbv1alpha1.Source{}
 	lastResource2.APIVersion = "deployment.servicefabrik.io/v1alpha1"
 	lastResource2.Kind = "Docker"
-	lastResource2.Namespace = "default"
+	lastResource2.Namespace = constants.InteroperatorNamespace
 	lastResource2.Name = "instance-id"
 
 	oldResource := &unstructured.Unstructured{}
@@ -713,7 +714,8 @@ deprovision:
 {{- $binding := "" }}
 {{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
 {{- with .binding.metadata.name }} {{ $binding = . }} {{ end }}
-{{- $namespace := "default" }}
+{{- $namespace := "" }}
+{{- with .instance.metadata.namespace }} {{ $namespace = . }} {{ end }}
 director:
   apiVersion: "deployment.servicefabrik.io/v1alpha1"
   kind: Director
@@ -732,10 +734,10 @@ directorbind:
 	instance := _getDummyInstance()
 	binding := _getDummyBinding()
 
-	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
-	var planKey = types.NamespacedName{Name: "plan-id", Namespace: "default"}
-	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
-	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
+	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
+	var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
+	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
 
 	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
@@ -787,7 +789,7 @@ directorbind:
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     osbv1alpha1.ProvisionAction,
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			wantErr: true,
@@ -802,7 +804,7 @@ directorbind:
 				serviceID:  "service-id",
 				planID:     "plan-id",
 				action:     osbv1alpha1.ProvisionAction,
-				namespace:  "default",
+				namespace:  constants.InteroperatorNamespace,
 			},
 			want:    &instanceStatus,
 			wantErr: false,
@@ -847,7 +849,7 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 						APIVersion: "deployment.servicefabrik.io/v1alpha1",
 						Kind:       "Director",
 						Name:       "instance-id",
-						Namespace:  "default",
+						Namespace:  constants.InteroperatorNamespace,
 					},
 				},
 			},
@@ -856,7 +858,7 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 				resource.SetKind("Director")
 				resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 				resource.SetName("instance-id")
-				resource.SetNamespace("default")
+				resource.SetNamespace(constants.InteroperatorNamespace)
 				err := c.Create(context.TODO(), resource)
 				if err != nil {
 					t.Errorf("Failed to create Director %v", err)
@@ -867,9 +869,9 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 				resource.SetKind("Director")
 				resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 				resource.SetName("instance-id")
-				resource.SetNamespace("default")
+				resource.SetNamespace(constants.InteroperatorNamespace)
 
-				err := c.Get(context.TODO(), types.NamespacedName{Name: "instance-id", Namespace: "default"}, resource)
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}, resource)
 				if err != nil {
 					t.Errorf("Failed to get Director %v", err)
 					return
@@ -903,7 +905,7 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 					APIVersion: "deployment.servicefabrik.io/v1alpha1",
 					Kind:       "Director",
 					Name:       "instance-id",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 			wantErr: false,
@@ -918,7 +920,7 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 						APIVersion: "deployment.servicefabrik.io/v1alpha1",
 						Kind:       "Director",
 						Name:       "instance-id",
-						Namespace:  "default",
+						Namespace:  constants.InteroperatorNamespace,
 					},
 				},
 			},
@@ -935,13 +937,13 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 						APIVersion: "deployment.servicefabrik.io/v1alpha1",
 						Kind:       "Director",
 						Name:       "instance-id",
-						Namespace:  "default",
+						Namespace:  constants.InteroperatorNamespace,
 					},
 					{
 						APIVersion: "deployment.servicefabrik.io/v1alpha1",
 						Kind:       "Director2",
 						Name:       "instance-id",
-						Namespace:  "default",
+						Namespace:  constants.InteroperatorNamespace,
 					},
 				},
 			},
@@ -950,7 +952,7 @@ func Test_resourceManager_DeleteSubResources(t *testing.T) {
 					APIVersion: "deployment.servicefabrik.io/v1alpha1",
 					Kind:       "Director2",
 					Name:       "instance-id",
-					Namespace:  "default",
+					Namespace:  constants.InteroperatorNamespace,
 				},
 			},
 			wantErr: true,

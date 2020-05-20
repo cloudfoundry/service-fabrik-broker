@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -249,7 +250,7 @@ func _getDummyCluster() *resourceV1alpha1.SFCluster {
 	return &resourceV1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: resourceV1alpha1.SFClusterSpec{},
 	}
@@ -260,7 +261,7 @@ func _getDummySecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}

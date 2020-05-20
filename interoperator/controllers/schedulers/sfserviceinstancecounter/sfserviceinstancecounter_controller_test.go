@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 	sfcluster1 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
@@ -99,7 +99,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfCluster)
 		if err != nil {
 			return err
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfCluster)
 		if err != nil {
 			return err
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, instance1)
 		if err == nil {
 			return errors.New("instance not deleted")
@@ -150,7 +150,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "foo2",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, instance2)
 		if err == nil {
 			return errors.New("instance not deleted")
@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		}, sfcluster2)
 		if err != nil {
 			return err
@@ -181,7 +181,7 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -191,7 +191,7 @@ func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServi
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state": "in_queue",
 			},

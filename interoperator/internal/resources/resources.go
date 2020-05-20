@@ -6,6 +6,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,7 +95,7 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 // SetOwnerReference updates the owner reference for all the resources
 func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
 	for _, obj := range resources {
-		if err := setOwnerReference(owner, obj, scheme); err != nil {
+		if err := utils.SetOwnerReference(owner, obj, scheme); err != nil {
 			log.Error(err, "failed setting owner reference for resource", "owner", owner, "resource", obj)
 			return err
 		}

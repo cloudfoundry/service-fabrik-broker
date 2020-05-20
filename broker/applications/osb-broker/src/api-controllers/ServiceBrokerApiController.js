@@ -106,6 +106,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
+    let namespaceLabel = {};
+    if (_.get(config, 'sf_namespace')) {
+      namespaceLabel[CONST.APISERVER.NAMESPACE_LABEL_KEY] = _.get(config, 'sf_namespace');
+    }
+
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise.try(() => eventmesh.apiServerClient.createNamespace(eventmesh.apiServerClient.getNamespaceId(req.params.instance_id)))
       .then(() => eventmesh.apiServerClient.createOSBResource({
@@ -118,7 +123,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         labels: _.merge({
           plan_id: planId,
           service_id: serviceId
-        }, contextLabels),
+        }, contextLabels, namespaceLabel),
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
@@ -375,6 +380,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
+    let namespaceLabel = {};
+    if (_.get(config, 'sf_namespace')) {
+      namespaceLabel[CONST.APISERVER.NAMESPACE_LABEL_KEY] = _.get(config, 'sf_namespace');
+    }
+
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createOSBResource({
@@ -384,9 +394,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
           metadata: {
             finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
           },
-          labels: {
+          labels: _.merge({
             instance_guid: req.params.instance_id
-          },
+          }, namespaceLabel),
           spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE

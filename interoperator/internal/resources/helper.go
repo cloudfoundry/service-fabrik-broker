@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"os"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/dynamic"
@@ -44,10 +43,7 @@ func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, 
 	}
 
 	if serviceID != "" && planID != "" {
-		serviceNamespace := os.Getenv(constants.NamespaceEnvKey)
-		if serviceNamespace == "" {
-			serviceNamespace = constants.DefaultServiceFabrikNamespace
-		}
+		serviceNamespace := constants.InteroperatorNamespace
 		service, plan, err = services.FindServiceInfo(client, serviceID, planID, serviceNamespace)
 		if err != nil {
 			log.Error(err, "failed finding service and plan info", "serviceID", serviceID, "planID", planID)

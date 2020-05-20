@@ -11,6 +11,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +90,7 @@ func TestFindServiceInfo(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id", "planId": "plan-id"},
 		},
 		Spec: osbv1alpha1.SFPlanSpec{
@@ -115,7 +116,7 @@ func TestFindServiceInfo(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "service-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 			Labels:    map[string]string{"serviceId": "service-id"},
 		},
 		Spec: osbv1alpha1.SFServiceSpec{
@@ -138,8 +139,8 @@ func TestFindServiceInfo(t *testing.T) {
 		},
 	}
 
-	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
-	var planKey = types.NamespacedName{Name: "plan-id", Namespace: "default"}
+	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
+	var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
 
 	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
@@ -171,7 +172,7 @@ func TestFindServiceInfo(t *testing.T) {
 				client:    c,
 				serviceID: service.ObjectMeta.Name,
 				planID:    plan.ObjectMeta.Name,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			want:    service,
 			want1:   plan,
@@ -183,7 +184,7 @@ func TestFindServiceInfo(t *testing.T) {
 				client:    c,
 				serviceID: "non-existent-service",
 				planID:    plan.ObjectMeta.Name,
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,
@@ -195,7 +196,7 @@ func TestFindServiceInfo(t *testing.T) {
 				client:    c,
 				serviceID: service.ObjectMeta.Name,
 				planID:    "non-existent-plan",
-				namespace: "default",
+				namespace: constants.InteroperatorNamespace,
 			},
 			want:    nil,
 			want1:   nil,

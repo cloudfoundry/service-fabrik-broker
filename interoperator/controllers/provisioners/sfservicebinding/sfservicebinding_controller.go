@@ -19,7 +19,6 @@ package sfservicebinding
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -42,12 +42,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
-
-var ownClusterID string
 
 // ReconcileSFServiceBinding reconciles a SFServiceBinding object
 type ReconcileSFServiceBinding struct {
@@ -105,14 +102,14 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 				}
 				log.Error(err, "failed to get clusterID. Proceding",
 					"instanceID", instanceID, "bindingID", bindingID, "state", state)
-				clusterID = ownClusterID
+				clusterID = constants.OwnClusterID
 
 			} else {
 				log.Error(err, "failed to get clusterID", "instance", instanceID, "bindingID", bindingID)
 				return r.handleError(binding, ctrl.Result{}, err, state, 0)
 			}
 		}
-		if clusterID != ownClusterID {
+		if clusterID != constants.OwnClusterID {
 			return ctrl.Result{}, nil
 		}
 	}
@@ -418,7 +415,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(binding *osbv1alpha1.SFServ
 			StringData: data,
 		}
 
-		if err := controllerutil.SetControllerReference(binding, secret, r.scheme); err != nil {
+		if err := utils.SetOwnerReference(binding, secret, r.scheme); err != nil {
 			log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 			return err
 		}
@@ -586,11 +583,6 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	interoperatorCfg := cfgManager.GetConfig()
 
-	ownClusterID = os.Getenv(constants.OwnClusterIDEnvKey)
-	if ownClusterID == "" {
-		ownClusterID = constants.DefaultMasterClusterID
-	}
-
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("binding").
 		WithOptions(controller.Options{
@@ -614,6 +606,7 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 				OwnerType:    &osbv1alpha1.SFServiceBinding{},
 			})
 	}
+	builder = builder.WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)
 }

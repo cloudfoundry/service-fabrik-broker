@@ -32,7 +32,7 @@ var c client.Client
 var binding = &osbv1alpha1.SFServiceBinding{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "binding-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 		Labels: map[string]string{
 			"state": "in_queue",
 		},
@@ -66,7 +66,7 @@ func setupInteroperatorConfig() {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Data: data,
 	}
@@ -103,7 +103,7 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			binding := &osbv1alpha1.SFServiceBinding{}
-			bindingKey := types.NamespacedName{Name: "binding-id", Namespace: "default"}
+			bindingKey := types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
 			err = c.Get(context.TODO(), bindingKey, binding)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(binding.Status.State).Should(Equal("in_queue"))

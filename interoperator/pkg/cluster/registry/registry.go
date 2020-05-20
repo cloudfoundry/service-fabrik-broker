@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"os"
 
 	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
@@ -54,10 +53,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 		return nil, err
 	}
 
-	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if sfNamespace == "" {
-		sfNamespace = constants.DefaultServiceFabrikNamespace
-	}
+	sfNamespace := constants.InteroperatorNamespace
 
 	r := &clusterRegistry{
 		scheme:     scheme,

@@ -37,13 +37,13 @@ import (
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	instance := &osbv1alpha1.SFServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	instance := &osbv1alpha1.SFServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -56,14 +56,14 @@ func TestReconcile(t *testing.T) {
 	sfcluster1 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "1",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 
 	sfcluster2 := &resourcev1alpha1.SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "2",
-			Namespace: constants.DefaultServiceFabrikNamespace,
+			Namespace: constants.InteroperatorNamespace,
 		},
 	}
 
@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Eventually(func() error {
-		err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, instance)
+		err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}, instance)
 		if err != nil {
 			return err
 		}

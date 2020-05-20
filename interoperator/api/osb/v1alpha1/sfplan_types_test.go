@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -57,7 +58,7 @@ func TestStorageSfPlan(t *testing.T) {
 	}
 	key := types.NamespacedName{
 		Name:      "plan-id",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 	parameters := `{
 		"$schema": "http://json-schema.org/draft-06/schema#",
@@ -90,7 +91,7 @@ func TestStorageSfPlan(t *testing.T) {
 	created := &SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "plan-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: SFPlanSpec{
 			Name:          "plan-name",
@@ -135,7 +136,7 @@ func TestStorageSfPlan(t *testing.T) {
 	// Test listing
 	planList := &SFPlanList{}
 	options := &kubernetes.ListOptions{
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 	labels := make(kubernetes.MatchingLabels)
 	labels["hello"] = "world"

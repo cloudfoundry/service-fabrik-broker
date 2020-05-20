@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 )
 
 // ReconcileSFServiceBindingCleaner reconciles a SfServiceBindingCleaner object
@@ -90,6 +91,8 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 
 func (r *ReconcileSFServiceBindingCleaner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("binding_cleaner").
 		For(&osbv1alpha1.SFServiceBinding{}).
+		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)
 }

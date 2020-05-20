@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
+installCRDS: true
 
 cluster:
   host: sf.ingress.sf21-intop.interop.shoot.canary.k8s-hana.ondemand.com

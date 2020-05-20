@@ -24,6 +24,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -97,7 +98,7 @@ func _getDummyInstance() *osbv1alpha1.SFServiceInstance {
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "instance-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{
 			ServiceID: "service-id",
@@ -110,7 +111,7 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 	return &osbv1alpha1.SFServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "binding-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: osbv1alpha1.SFServiceBindingSpec{
 			ServiceID:  "service-id",

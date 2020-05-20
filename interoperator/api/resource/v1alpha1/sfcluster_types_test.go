@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +33,12 @@ import (
 func TestStorageSFCluster(t *testing.T) {
 	key := types.NamespacedName{
 		Name:      "foo",
-		Namespace: "default",
+		Namespace: constants.InteroperatorNamespace,
 	}
 	created := &SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		}}
 	g := gomega.NewGomegaWithT(t)
 
@@ -147,7 +148,7 @@ func _getDummyCluster() *SFCluster {
 	return &SFCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-id",
-			Namespace: "default",
+			Namespace: constants.InteroperatorNamespace,
 		},
 		Spec: SFClusterSpec{
 			SecretRef: "cluster-id-secret",
