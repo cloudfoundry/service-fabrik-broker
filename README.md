@@ -66,10 +66,23 @@ Please create sfcluster CRs and add reference to kubeconfig. In the example belo
 
 For multi-cluster support, all corresponding sfcluster CRs need to be created and their kubeconfig needs to be supplied in the corresponding secret.
 
-Please note that sfservice and sfplans need to be deployed in the same namespace where SF is deployed (default is `interoperator`).
+Please note that `sfservice`, `sfplans` and `sfcluster` (along with the `secret` it refers to) need to be deployed in the same namespace where SF is deployed (default is `interoperator`).
 
 To understand the CRs and their structures, please check the Architecture. The different templates are described in [interoperator-templates](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/Interoperator-templates.md)
 
+### Deploying multiple interoperator in the same cluster
+
+Multiple instances of interoperator can be deployed on a single cluster. But each instance must be deployed in a separate namespace. Only one instance of interoperator can be deployed in one namespace. The the custom resources like `sfservice`, `sfplans` and `sfcluster` (along with the `secret` it refers to) related on deployment of interoperator must be created in the namespace where interoperator is deployed. 
+
+Deploy the first instance of interoperator on a cluster 
+```shell
+helm install --set cluster.host=sf.ingress.< clusterdomain > --set installCRDS=true --name interoperator --namespace interoperator [--version <helm chart version>] sf-charts/interoperator
+```
+
+All the subsequent installations must use `installCRDS=false` flag during the installation
+```shell
+helm install --set cluster.host=sf.ingress.< clusterdomain > --set installCRDS=false --name interoperator --namespace interoperator [--version <helm chart version>] sf-charts/interoperator
+```
 
 ### Register with the platform
 
