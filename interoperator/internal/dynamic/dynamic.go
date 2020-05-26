@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"sigs.k8s.io/yaml"
 )
 
 var log = logf.Log.WithName("dynamic")
