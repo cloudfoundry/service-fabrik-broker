@@ -47,10 +47,10 @@ defaults: &defaults
     enable_namespaced_separation: {{ .Values.broker.enable_namespaced_separation }}
     services_namespace: {{ .Values.broker.services_namespace }}
     crds:
-      "osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml": {{ (.Files.Get "conf/sfserviceinstance.yaml") | b64enc }}
-      "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": {{ (.Files.Get "conf/sfservicebinding.yaml") | b64enc }}
-      "osb.servicefabrik.io_v1alpha1_sfservices.yaml": {{ (.Files.Get "conf/sfservice.yaml") | b64enc }}
-      "osb.servicefabrik.io_v1alpha1_sfplans.yaml": {{ (.Files.Get "conf/sfplan.yaml") | b64enc }}
+      "osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml": {{ (.Files.Get "crds/sfserviceinstance.yaml") | b64enc }}
+      "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": {{ (.Files.Get "crds/sfservicebinding.yaml") | b64enc }}
+      "osb.servicefabrik.io_v1alpha1_sfservices.yaml": {{ (.Files.Get "crds/sfservice.yaml") | b64enc }}
+      "osb.servicefabrik.io_v1alpha1_sfplans.yaml": {{ (.Files.Get "crds/sfplan.yaml") | b64enc }}
   ######################
   # APISERVER LOCK TTL #
   ######################
