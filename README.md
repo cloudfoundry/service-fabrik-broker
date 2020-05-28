@@ -28,6 +28,7 @@ Interoperator Architecture is the heart of the OSB framework of Service Fabrik. 
 ## Deploy Interoperator
 
 ### Pre-requisites
+Interoperator uses helm charts for deployment. Interoperator requires **helm version >= 3.0.0**, and is **not supported by helm 2**.
 
 #### Deploy and run your operator
 
@@ -38,20 +39,20 @@ You have to deploy and run your own operator. Currently SF-Inter-Operator suppor
 #### Deploy using publicly published helm chart (Recommended)
 To add service fabrik interoperator helm chart repo
 ```shell
-helm repo add sf-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
+helm repo add interoperator-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
 helm repo update
 ```
 
 Deploy SF Interoperator using helm
 ```shell
-helm install --set cluster.host=sf.ingress.< clusterdomain > --name interoperator --namespace interoperator [--version <helm chart version>] sf-charts/interoperator
+helm install --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator [--version <helm chart version>] interoperator interoperator-charts/interoperator
 ```
 
 #### Deploy using helm chart repo
 To deploy using helm chart repo
 ```
 git clone https://github.com/cloudfoundry-incubator/service-fabrik-broker
-helm install --set cluster.host=sf.ingress.< clusterdomain > --name interoperator --namespace interoperator helm-charts/interoperator
+helm install --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator interoperator helm-charts/interoperator
 ```
 
 **NOTE:** `cluster.host` should be within the [63 character limit](http://man7.org/linux/man-pages/man7/hostname.7.html).
@@ -74,15 +75,11 @@ To understand the CRs and their structures, please check the Architecture. The d
 
 Multiple instances of interoperator can be deployed on a single cluster. But each instance must be deployed in a separate namespace. Only one instance of interoperator can be deployed in one namespace. The the custom resources like `sfservice`, `sfplans` and `sfcluster` (along with the `secret` it refers to) related on deployment of interoperator must be created in the namespace where interoperator is deployed. 
 
-Deploy the first instance of interoperator on a cluster 
+Deploy an instance of interoperator on a cluster using
 ```shell
-helm install --set cluster.host=sf.ingress.< clusterdomain > --set installCRDS=true --name interoperator --namespace interoperator [--version <helm chart version>] sf-charts/interoperator
+helm install --set cluster.host=sf.ingress.< clusterdomain >  --namespace < namespace > [--version <helm chart version>] interoperator interoperator-charts/interoperator
 ```
 
-All the subsequent installations must use `installCRDS=false` flag during the installation
-```shell
-helm install --set cluster.host=sf.ingress.< clusterdomain > --set installCRDS=false --name interoperator --namespace interoperator [--version <helm chart version>] sf-charts/interoperator
-```
 
 ### Register with the platform
 

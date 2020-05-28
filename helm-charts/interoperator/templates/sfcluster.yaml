@@ -1,4 +1,0 @@
----
-{{- if .Values.installCRDS }}
-{{- .Files.Get "conf/sfcluster.yaml" }}
-{{- end }}
