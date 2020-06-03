@@ -211,6 +211,7 @@ sudo mv kubebuilder_${version}_darwin_${arch} /usr/local/kubebuilder
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
 
+cd interoperator
 
 # install mockgen
 go get github.com/golang/mock/gomock
@@ -252,7 +253,18 @@ make install
 Run it locally
 
 ```
-make run
+export KUBECONFIG=<path to kubeconfig>
+export CLUSTER_ID="1"
+export POD_NAMESPACE="interoperator" # namespace should exist in the k8s cluster
+
+# To run the provisioner
+make run_provisioners
+
+# To run the scheduler
+make run_schedulers
+
+# To run the multiclusterdeploy
+make run_mcd
 ```
 
 In a new terminal, create an instance of the CRD and check if controller picks it up

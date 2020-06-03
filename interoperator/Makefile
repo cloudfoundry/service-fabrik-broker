@@ -27,19 +27,19 @@ run: generate fmt vet manifests
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run_provisioners: generate fmt vet manifests
-	go run -tags provisioners ./main.go
+	go run -tags provisioners ./main.go -metrics-addr=:9877
 
 # Run schedulers only in ~/.kube/config
 run_schedulers: generate fmt vet manifests
-	go run -tags schedulers ./main.go
+	go run -tags schedulers ./main.go -metrics-addr=:9878
 
 # Run multiclusterdeploy only in ~/.kube/config
 run_mcd: generate fmt vet manifests
-	go run -tags multiclusterdeploy ./main.go
+	go run -tags multiclusterdeploy ./main.go -metrics-addr=:9879
 
 # Run default only in ~/.kube/config
 run_default: generate fmt vet manifests
-	go run -tags default ./main.go
+	go run -tags default ./main.go -metrics-addr=:9880
 
 # Install CRDs into a cluster
 install: manifests
