@@ -43,7 +43,7 @@ quota_app:
     tag: 0.6.0
     pullPolicy: Always
   service:
-    type: LoadBalancer
+    type: ClusterIP
 
 interoperator:
   image:

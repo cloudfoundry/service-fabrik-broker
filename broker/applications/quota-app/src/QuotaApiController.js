@@ -31,7 +31,8 @@ class QuotaApiController extends FabrikBaseController {
       const planId = _.get(req, 'query.planId');
       const previousPlanId = _.get(req, 'query.previousPlanId');
       const reqMethod = _.get(req, 'query.reqMethod');
-      const isSubaccountFlag = _.get(req, 'query.isSubaccountFlag');
+      const isSubaccount = _.get(req, 'query.isSubaccountFlag');
+      const isSubaccountFlag = (isSubaccount === 'true');
       logger.info(`[Quota APP] accountID: ${orgOrSubaccountId}, planId: ${planId}, previousPlanId: ${previousPlanId}, reqMethod: ${reqMethod}, isSubaccountFlag: ${isSubaccountFlag}`);
       const validStatus = await quotaManager.checkQuota(orgOrSubaccountId, planId, previousPlanId, reqMethod, isSubaccountFlag);
       await res.status(CONST.HTTP_STATUS_CODE.OK).send({ quotaValidStatus: validStatus });

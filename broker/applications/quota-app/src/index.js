@@ -5,11 +5,16 @@ console.log('Starting Service Fabrik Quota Check Application...');
 
 const { ExpressApp, HttpServer } = require('@sf/express-commons');
 const logger = require('@sf/logger');
+const config = require('@sf/app-config');
 const { CONST } = require('@sf/common-utils');
+const { utils } = require('@sf/eventmesh');
 const routes = require('./routes');
 
 async function init() {
   try {
+    if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
+      await utils.loadCatalogFromAPIServer();
+    }
     const quotaApp = ExpressApp.create('quota_app', app => {
        // home
        app.get('/', (req, res) => {

@@ -60,7 +60,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9296
+            port: {{ .Values.quota_app.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
@@ -70,7 +70,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9296
+            port: {{ .Values.quota_app.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60

@@ -10,8 +10,10 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
     "@sf/common-controllers": "file:../../core/controllers",
     "@sf/common-utils": "file:../../core/utils",
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
     "@sf/express-commons": "file:../../core/express-commons",
     "@sf/logger": "file:../../core/logging",
     "@sf/quota": "file:../../data-access-layer/quota"
