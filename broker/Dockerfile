@@ -5,7 +5,7 @@ FROM node:12.14-alpine
 # defaults to production, compose overrides this to development on build and run
 ENV NODE_ENV production
 
-EXPOSE 9292 9293
+EXPOSE 9292 9293 9296
 
 # you'll likely want the latest npm, regardless of node version, for speed and fixes
 # but pin this version for the best stability
@@ -23,9 +23,3 @@ ENV SETTINGS_PATH=$CONF_DIR/settings.yml
 # the official node image provides an unprivileged user as a security best practice
 # https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md#non-root-user
 # USER node
-
-# if you want to use npm start instead, then use `docker run --init in production`
-# so that signals are passed properly. Note the code in index.js is needed to catch Docker signals
-# using node here is still more graceful stopping then npm with --init afaik
-# I still can't come up with a good production way to run with npm and graceful shutdown
-CMD [ "npm", "start" ]
