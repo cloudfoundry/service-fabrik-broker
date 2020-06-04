@@ -38,10 +38,6 @@ quota_app:
     serviceDomain: https://my-tenant-onboarding.com
     username: quota_user
     password: quota_password
-  image:
-    repository: servicefabrikjenkins/service-fabrik-broker
-    tag: 0.6.0
-    pullPolicy: Always
   service:
     type: ClusterIP
 

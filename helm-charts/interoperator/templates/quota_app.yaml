@@ -38,8 +38,8 @@ spec:
       {{- end }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.quota_app.image.repository }}:{{ .Values.quota_app.image.tag }}"
-        imagePullPolicy: {{ .Values.quota_app.image.pullPolicy }}
+        image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
+        imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
         ports:
         - name: quota-app-port
           containerPort: {{ .Values.quota_app.port }}

@@ -16,8 +16,8 @@ async function init() {
       await utils.loadCatalogFromAPIServer();
     }
     const quotaApp = ExpressApp.create('quota_app', app => {
-       // home
-       app.get('/', (req, res) => {
+      // home
+      app.get('/', (req, res) => {
         res.render('index', {
           title: app.get('title')
         });

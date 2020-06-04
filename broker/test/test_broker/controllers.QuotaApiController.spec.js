@@ -61,7 +61,7 @@ describe('#getQuotaValidStatus', () => {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: true
+        isSubaccountFlag: 'true'
       }
     };
     process.env.POD_NAMESPACE = 'default';
@@ -81,7 +81,7 @@ describe('#getQuotaValidStatus', () => {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: false
+        isSubaccountFlag: 'false'
       }
     };
     process.env.POD_NAMESPACE = 'default';
@@ -101,7 +101,7 @@ describe('#getQuotaValidStatus', () => {
         planId: notEntitledPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: false
+        isSubaccountFlag: 'false'
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
@@ -119,7 +119,7 @@ describe('#getQuotaValidStatus', () => {
         planId: invalidQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: false
+        isSubaccountFlag: 'false'
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
@@ -137,7 +137,7 @@ describe('#getQuotaValidStatus', () => {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: false
+        isSubaccountFlag: 'false'
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
@@ -157,7 +157,7 @@ describe('#getQuotaValidStatus', () => {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: false
+        isSubaccountFlag: 'false'
       }
     };
     checkCFQuotaStub.reset();
