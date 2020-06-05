@@ -39,6 +39,19 @@ defaults: &defaults
     host: 10.0.2.3:9293
 
   ##############################
+  # QUOTA APP SETTINGS #
+  ##############################
+  quota_app:
+    log_event: false
+    port: {{ .Values.quota_app.port }}
+    protocol: http
+    host: {{ .Release.Name }}-quota-service.{{ .Release.Namespace }}.svc.cluster.local
+    username: {{ .Values.quota_app.username }}
+    password: {{ .Values.quota_app.password }}
+    quota_app_url: http://{{ .Release.Name }}-quota-service.{{ .Release.Namespace }}.svc.cluster.local
+    quota_endpoint: /v1/account
+
+  ##############################
   # APISERVER SETTINGS #
   ##############################
   apiserver:

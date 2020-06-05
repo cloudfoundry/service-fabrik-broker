@@ -28,6 +28,13 @@ broker:
   service:
     type: LoadBalancer
 
+quota_app:
+  port: 9296
+  username: quota
+  password: secret
+  service:
+    type: ClusterIP
+
 interoperator:
   image:
     repository: servicefabrikjenkins/service-fabrik-interoperator

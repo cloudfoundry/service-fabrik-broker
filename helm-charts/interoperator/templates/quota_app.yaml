@@ -2,62 +2,33 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    service: {{ .Release.Name }}-broker
-  name: {{ .Release.Name }}-broker-service
+    service: {{ .Release.Name }}-quota
+  name: {{ .Release.Name }}-quota-service
   namespace: {{ .Release.Namespace }}
 spec:
-  type: {{ .Values.broker.service.type }}
+  type: {{ .Values.quota_app.service.type }}
   ports:
   - name: http
     port: 80
-    targetPort: broker-internal
-  - name: https
-    port: 443
-    targetPort: broker-internal
+    targetPort: quota-app-port
   selector:
-    app: {{ .Release.Name }}-broker
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  labels:
-    service: {{ .Release.Name }}-broker
-    {{- if .Values.cluster.ssl }}
-    garden.sapcloud.io/purpose: managed-cert
-    {{- end }}
-  name: {{ .Release.Name }}-broker-service-ingress
-  namespace: {{ .Release.Namespace }}
-spec:
-  rules:
-  - host: {{ .Values.cluster.host }}
-    http:
-      paths:
-      - backend:
-          serviceName: {{ .Release.Name }}-broker-service
-          servicePort: 80
-  {{- if .Values.cluster.ssl }} 
-  tls:
-  - hosts:
-    - {{ .Values.cluster.host }}
-    secretName: {{ .Values.cluster.sslsecret }}
-  {{- end }} 
-
+    app: {{ .Release.Name }}-quota-app
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-broker
+  name: {{ .Release.Name }}-quota-app
   labels:
-    app: {{ .Release.Name }}-broker
+    app: {{ .Release.Name }}-quota-app
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-broker
+      app: {{ .Release.Name }}-quota-app
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-broker
+        app: {{ .Release.Name }}-quota-app
       annotations:
         rollme: {{ randAlphaNum 5 | quote }}
     spec:
@@ -70,8 +41,8 @@ spec:
         image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
         imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
         ports:
-        - name: broker-internal
-          containerPort: {{ .Values.broker.port }}
+        - name: quota-app-port
+          containerPort: {{ .Values.quota_app.port }}
           protocol: TCP
         env:
         - name: NODE_ENV
@@ -89,7 +60,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9293
+            port: {{ .Values.quota_app.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
@@ -99,14 +70,14 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9293
+            port: {{ .Values.quota_app.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
           successThreshold: 1
           timeoutSeconds: 1
         args:
-        - applications/osb-broker/src/server.js
+        - applications/quota-app/src/index.js
         command:
         - node 
       volumes:
