@@ -32,12 +32,6 @@ quota_app:
   port: 9296
   username: quota
   password: secret
-  quota:
-    enabled: false
-    oauthDomain: https://myauth-domain.com
-    serviceDomain: https://my-tenant-onboarding.com
-    username: quota_user
-    password: quota_password
   service:
     type: ClusterIP
 
