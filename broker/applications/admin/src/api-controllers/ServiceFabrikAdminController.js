@@ -31,14 +31,14 @@ const {
 } = require('@sf/common-controllers');
 const bosh = require('@sf/bosh');
 const ScheduleManager = require('@sf/jobs');
-const { maintenanceManager } = require('../../scheduler/maintenance');
+const { maintenanceManager } = require('../../../scheduler/maintenance');
 const { serviceBrokerClient } = require('@sf/broker-client');
 const { apiServerClient } = require('@sf/eventmesh');
-const dbManager = require('../../../data-access-layer/db/DBManager');
-const OobBackupManager = require('../../../data-access-layer/oob-manager/OobBackupManager');
-const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const dbManager = require('../../../../data-access-layer/db/DBManager');
+const OobBackupManager = require('../../../../data-access-layer/oob-manager/OobBackupManager');
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 
-const BackupReportManager = require('../../reports/api-controllers/BackupReportManager');
+const BackupReportManager = require('../../../reports/api-controllers/BackupReportManager');
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {

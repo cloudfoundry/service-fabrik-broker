@@ -3,6 +3,7 @@
 const express = require('express');
 const config = require('@sf/app-config');
 const { middleware } = require('@sf/express-commons');
+middleware.enableAbsMatchingRouteLookup(express);
 const { CONST } = require('@sf/common-utils');
 const controller = require('./api-controllers').serviceFabrikAdmin;
 
