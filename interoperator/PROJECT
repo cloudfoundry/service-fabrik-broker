@@ -1,19 +1,20 @@
-version: "2"
 domain: servicefabrik.io
+multigroup: true
 repo: github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
 resources:
 - group: resource
-  version: v1alpha1
   kind: SFCluster
-- group: osb
   version: v1alpha1
+- group: osb
   kind: SFService
-- group: osb
   version: v1alpha1
+- group: osb
   kind: SFPlan
-- group: osb
   version: v1alpha1
+- group: osb
   kind: SFServiceInstance
-- group: osb
   version: v1alpha1
+- group: osb
   kind: SFServiceBinding
+  version: v1alpha1
+version: "2"

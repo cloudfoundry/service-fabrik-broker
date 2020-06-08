@@ -69,7 +69,7 @@ vet:
 
 # Generate code
 generate: controller-gen
-	go generate ./internal/... ./pkg/... ./api/... ./controllers/...
+	go generate ./api/... ./pkg/... ./controllers/... ./internal/...
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image

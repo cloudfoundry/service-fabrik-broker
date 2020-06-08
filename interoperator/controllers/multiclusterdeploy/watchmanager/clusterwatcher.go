@@ -17,6 +17,7 @@ type clusterWatcher struct {
 
 	instanceEvents chan event.GenericEvent
 	bindingEvents  chan event.GenericEvent
+	clusterEvents  chan event.GenericEvent
 
 	// close this channel to stop watch for this cluster
 	stop chan struct{}
@@ -38,6 +39,7 @@ func (cw *clusterWatcher) start() error {
 	}
 	instanceClient := clientset.OsbV1alpha1().SFServiceInstances("")
 	bindingClient := clientset.OsbV1alpha1().SFServiceBindings("")
+	clusterClient := clientset.ResourceV1alpha1().SFClusters(constants.InteroperatorNamespace)
 
 	instanceWatch, err := instanceClient.Watch(opts)
 	if err != nil {
@@ -50,6 +52,12 @@ func (cw *clusterWatcher) start() error {
 	if err != nil {
 		log.Error(err, "failed to establish watch for sfservicebinding",
 			"clusterID", cw.clusterID)
+		return err
+	}
+
+	clusterWatch, err := clusterClient.Watch(opts)
+	if err != nil {
+		log.Error(err, "failed to establish watch for sfcluster", "clusterID", cw.clusterID)
 		return err
 	}
 
@@ -103,12 +111,36 @@ func (cw *clusterWatcher) start() error {
 					Meta:   metaObject,
 					Object: bindingEvent.Object,
 				}
+			case clusterEvent, ok := <-clusterWatch.ResultChan():
+				if !ok {
+					clusterWatch, err = clusterClient.Watch(opts)
+					if err != nil {
+						log.Error(err, "failed to re-establish watch for sfcluster", "clusterID", cw.clusterID)
+						_ = RemoveCluster(cw.clusterID)
+						return
+					}
+					log.V(1).Info("watch refreshed for sfcluster", "clusterID", cw.clusterID)
+				}
+				if clusterEvent.Object == nil {
+					continue
+				}
+				metaObject, err := meta.Accessor(clusterEvent.Object)
+				if err != nil {
+					log.Error(err, "failed to process watch event for sfcluster", "clusterID",
+						cw.clusterID, "clusterEvent", clusterEvent)
+					continue
+				}
+				cw.clusterEvents <- event.GenericEvent{
+					Meta:   metaObject,
+					Object: clusterEvent.Object,
+				}
 			case _, ok := <-cw.stop:
 				if !ok {
 					log.V(1).Info("stop called for cluster watch. forcefully closing", "clusterID",
 						cw.clusterID)
 					instanceWatch.Stop()
 					bindingWatch.Stop()
+					clusterWatch.Stop()
 					return
 				}
 			}

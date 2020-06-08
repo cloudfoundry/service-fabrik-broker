@@ -19,6 +19,7 @@ type watchManager struct {
 
 	instanceEvents chan event.GenericEvent
 	bindingEvents  chan event.GenericEvent
+	clusterEvents  chan event.GenericEvent
 
 	// close this channel to stop watch manager
 	stop chan struct{}
@@ -36,6 +37,11 @@ func (wm *watchManager) getWatchChannel(resource string) (<-chan event.GenericEv
 			return nil, errors.NewPreconditionError("GetWatchChannel", "watch manager not setup", nil)
 		}
 		return wm.bindingEvents, nil
+	case "sfclusters":
+		if wm == nil || wm.clusterEvents == nil {
+			return nil, errors.NewPreconditionError("GetWatchChannel", "watch manager not setup", nil)
+		}
+		return wm.clusterEvents, nil
 	}
 	return nil, errors.NewInputError("GetWatchChannel", "resource", nil)
 }
@@ -65,6 +71,7 @@ func (wm *watchManager) addCluster(clusterID string) error {
 		cfg:            cfg,
 		instanceEvents: wm.instanceEvents,
 		bindingEvents:  wm.bindingEvents,
+		clusterEvents:  wm.clusterEvents,
 		stop:           stopCh,
 	}
 	err = cw.start()
