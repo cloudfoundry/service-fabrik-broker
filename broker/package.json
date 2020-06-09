@@ -81,6 +81,7 @@
     "test-coverall": "./test/init test-coverall"
   },
   "dependencies": {
+    "@sf/admin": "file:applications/admin",
     "@sf/app-config": "file:core/app-config",
     "@sf/bosh": "file:data-access-layer/bosh",
     "@sf/broker-client": "file:data-access-layer/broker-client",
