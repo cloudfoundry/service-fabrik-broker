@@ -3,7 +3,6 @@
 
 // eslint-disable-next-line no-console
 console.log('Starting Service Fabrik OSB Server...');
-const _ = require('lodash');
 const routes = require('./api-controllers/routes');
 const { ExpressApp, HttpServer } = require('@sf/express-commons');
 const config = require('@sf/app-config');
