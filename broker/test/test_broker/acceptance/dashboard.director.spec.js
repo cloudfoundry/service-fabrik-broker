@@ -70,7 +70,7 @@ describe('dashboard', function () {
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getAccessToken();
         mocks.uaa.getUserInfo();
@@ -119,7 +119,7 @@ describe('dashboard', function () {
       it('should redirect to authorization server(in case of no context)', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
@@ -175,7 +175,7 @@ describe('dashboard', function () {
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
@@ -222,7 +222,7 @@ describe('dashboard', function () {
       it('should use spec.options to fetch resource data when status.appliedOptions is not present', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
@@ -271,7 +271,7 @@ describe('dashboard', function () {
       it('should handle login_hint query param if present', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCodeLoginHint(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'uaa');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);

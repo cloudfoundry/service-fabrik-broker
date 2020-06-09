@@ -124,7 +124,7 @@ function getAuthorizationCode(service_id, times) {
     });
 }
 
-function getAuthorizationCodeLoginHint(service_id, times) {
+function getAuthorizationCodeLoginHint(service_id, times, loginHint) {
   const dashboard_client = catalog.getService(service_id).dashboard_client;
   return nock(authorizationEndpointUrl)
     .get('/oauth/authorize')
@@ -136,7 +136,7 @@ function getAuthorizationCodeLoginHint(service_id, times) {
         client_id: dashboard_client.id,
         redirect_uri: redirect_uri,
         scope: 'cloud_controller_service_permissions.read openid',
-        login_hint: '{"origin":"uaa"}'
+        login_hint: `{"origin":"${loginHint}"}`
       })
       .value()
     )

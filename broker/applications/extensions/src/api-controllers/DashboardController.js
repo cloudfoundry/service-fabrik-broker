@@ -286,7 +286,7 @@ function saveSession(session) {
 }
 
 function manageInstancePath(session) {
-  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
+  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}?login_hint=${session.login_hint}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}?login_hint=${session.login_hint}`;
 }
 
 function createService(plan_id, instance_id, context) {
