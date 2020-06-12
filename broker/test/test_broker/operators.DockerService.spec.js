@@ -3,11 +3,11 @@
 const _ = require('lodash');
 const DockerService = require('../../applications/operators/docker-operator/DockerService');
 const DockerImageLoaderService = require('../../applications/operators/docker-operator/DockerImageLoaderService');
-const portRegistry = require('../../data-access-layer/docker').portRegistry;
+const docker = require('@sf/docker');
 const { catalog } = require('@sf/models');
 const parseUrl = require('url').parse;
-const docker = require('../../data-access-layer/docker');
 const config = require('@sf/app-config');
+const portRegistry = docker.portRegistry;
 const {
   errors: {
     ServiceInstanceNotFound

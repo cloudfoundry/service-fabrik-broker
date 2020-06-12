@@ -1,0 +1,17 @@
+{
+  "name": "@sf/docker",
+  "version": "1.0.0",
+  "description": "Module to access docker",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../../core/app-config",
+    "@sf/common-utils": "file:../../core/utils",
+    "@sf/logger": "file:../../core/logging"
+  }
+}

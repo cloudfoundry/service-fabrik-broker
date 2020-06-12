@@ -2,7 +2,7 @@
 
 const DockerOperator = require('./docker-operator/DockerOperator');
 const DockerBindOperator = require('./docker-operator/DockerBindOperator');
-const docker = require('../../data-access-layer/docker');
+const docker = require('@sf/docker');
 const logger = require('@sf/logger');
 
 const dockerOperator = new DockerOperator();

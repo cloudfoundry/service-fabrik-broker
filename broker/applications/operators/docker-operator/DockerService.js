@@ -21,7 +21,7 @@ const {
 const { catalog } = require('@sf/models');
 const { getPlatformManager } = require('@sf/platforms');
 const config = require('@sf/app-config');
-const docker = require('../../../data-access-layer/docker');
+const docker = require('@sf/docker');
 const BaseService = require('../BaseService');
 const DockerImageLoaderService = require('./DockerImageLoaderService');
 const { apiServerClient } = require('@sf/eventmesh');

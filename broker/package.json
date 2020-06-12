@@ -87,6 +87,7 @@
     "@sf/cf": "file:data-access-layer/cf",
     "@sf/common-controllers": "file:core/controllers",
     "@sf/common-utils": "file:core/utils",
+    "@sf/docker": "file:data-access-layer/docker",
     "@sf/event-logger": "file:data-access-layer/event-logger",
     "@sf/eventmesh": "file:data-access-layer/eventmesh",
     "@sf/express-commons": "file:core/express-commons",
