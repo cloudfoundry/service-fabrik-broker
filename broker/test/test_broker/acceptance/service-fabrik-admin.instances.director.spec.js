@@ -98,7 +98,7 @@ describe('service-fabrik-admin', function () {
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/deployments/outdated`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -141,7 +141,7 @@ describe('service-fabrik-admin', function () {
             .value();
           mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED], apiServerResponse, 1, 200);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/deployments/summary`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -156,7 +156,7 @@ describe('service-fabrik-admin', function () {
       describe('#getDeploymentDirectorConfig', function () {
         it('it return the config of the director to which the deployment belongs', function () {
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/deployments/${deployment_name}/director`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -183,7 +183,7 @@ describe('service-fabrik-admin', function () {
             status: 202
           });
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/deployments/${deployment_name}/update`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -204,7 +204,7 @@ describe('service-fabrik-admin', function () {
           mocks.director.getDeploymentManifest();
           mocks.director.diffDeploymentManifest();
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/deployments/${deployment_name}/update`)
             .send({
               forbidden_changes: 'false'
@@ -221,7 +221,7 @@ describe('service-fabrik-admin', function () {
         it('should fail to initiate update at broker : NotFound Error', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/deployments/${deployment_name}/update`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -241,7 +241,7 @@ describe('service-fabrik-admin', function () {
             status: 202
           });
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/deployments/${deployment_name}/update`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -304,7 +304,7 @@ describe('service-fabrik-admin', function () {
         it('should flag service-fabrik in maintenance mode', function () {
           listStore = [];
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -317,7 +317,7 @@ describe('service-fabrik-admin', function () {
         it('should error attempt to flag service-fabrik in maintenance mode if it is already in maintenace', function () {
           listStore.push(maintenanceInfo);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .post(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -334,7 +334,7 @@ describe('service-fabrik-admin', function () {
         it('should update progress of on-going maintenance mode ', function () {
           listStore.push(maintenanceInfo);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .put(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -350,7 +350,7 @@ describe('service-fabrik-admin', function () {
         it('update progress of maintenance mode should fail if service-fabrik not in maintenance mode', function () {
           listStore = [];
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .put(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -363,7 +363,7 @@ describe('service-fabrik-admin', function () {
         it('should get status of an on-going maintenance mode ', function () {
           listStore.push(maintenanceInfo);
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -378,7 +378,7 @@ describe('service-fabrik-admin', function () {
         it('should return 404 if service-fabrik is not in maintenance mode ', function () {
           listStore = [];
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
@@ -390,7 +390,7 @@ describe('service-fabrik-admin', function () {
         });
         it('should list history of maintenance mode ', function () {
           return chai
-            .request(apps.internal)
+            .request(apps.admin)
             .get(`${base_url}/service-fabrik/maintenance/history`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)

@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 // const lib = require('../../../broker/lib');
-const adminRoute = require('../../../applications/admin');
 const brokerRoute = require('../../../applications/osb-broker/src/api-controllers/routes');
+const adminRoute = require('../../../applications/admin/src/admin');
 const apiRoute = require('../../../applications/extensions/src/api-controllers/routes');
 const reportRoute = require('../../../applications/reports/report');
 const { ExpressApp } = require('@sf/express-commons');
@@ -16,7 +16,6 @@ const internal = ExpressApp.create('internal', app => {
       title: app.get('title')
     });
   });
-  app.use('/admin', adminRoute.admin);
   // cloud foundry service broker api
   app.use('/:platform(cf|k8s|sm)', brokerRoute.broker);
 });
@@ -33,6 +32,18 @@ const external = ExpressApp.create('external', app => {
   app.use('/api', apiRoute.api);
   // manage
   app.use('/manage', apiRoute.manage);
+});
+
+// admin app
+const admin = ExpressApp.create('admin_app', app => {
+  // home
+  app.get('/', (req, res) => {
+    res.render('index', {
+      title: app.get('title')
+    });
+  });
+  // service fabrik admin api
+  app.use('/admin', adminRoute);
 });
 
 const report = ExpressApp.create('report', app => {
@@ -53,4 +64,5 @@ module.exports = _
   .set('internal', internal)
   .set('external', external)
   .set('report', report)
+  .set('admin', admin)
   .value();
