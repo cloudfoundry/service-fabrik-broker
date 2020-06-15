@@ -10,6 +10,7 @@ const {
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const serviceBrokerUrl = `${config.internal.protocol}://${config.internal.host}`;
+const serviceBrokerAdminUrl = `${config.admin_app.protocol}://${config.admin_app.host}`;
 const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 
 exports.getDeploymentRestoreStatus = getDeploymentRestoreStatus;
@@ -28,7 +29,7 @@ function startDeploymentBackup(name, response, payload) {
     agent_ip: mocks.agent.ip,
     operation: 'backup'
   });
-  return nock(serviceBrokerUrl)
+  return nock(serviceBrokerAdminUrl)
     .replyContentLength()
     .post(`/admin/deployments/${name}/backup`, payload)
     .reply(response.status || 202, {
@@ -52,7 +53,7 @@ function getDeploymentBackupStatus(name, token, state, boshDirector, responseSta
       bosh_director: boshDirector
     });
   }
-  return nock(serviceBrokerUrl)
+  return nock(serviceBrokerAdminUrl)
     .replyContentLength()
     .get(`/admin/deployments/${name}/backup/status`)
     .query(queryParams)
@@ -68,7 +69,7 @@ function getDeploymentRestoreStatus(name, token, state, responseStatus) {
   let queryParams = {
     token: token
   };
-  return nock(serviceBrokerUrl)
+  return nock(serviceBrokerAdminUrl)
     .replyContentLength()
     .get(`/admin/deployments/${name}/restore/status`)
     .query(queryParams)
@@ -95,7 +96,7 @@ function updateServiceInstance(instace_id, payload, response) {
 }
 
 function getConfigValue(responseStatus, key, disabled) {
-  return nock(serviceBrokerUrl)
+  return nock(serviceBrokerAdminUrl)
     .replyContentLength()
     .get(`/admin/config/${key}`)
     .reply(responseStatus || 200, {

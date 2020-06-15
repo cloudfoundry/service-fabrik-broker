@@ -32,6 +32,7 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'POST',
+        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${options.deployment_name}/backup`,
         auth: {
           user: config.username,
@@ -47,6 +48,7 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
+        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${name}/backup/status`,
         auth: {
           user: config.username,
@@ -67,6 +69,7 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
+        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${name}/restore/status`,
         auth: {
           user: config.username,
@@ -114,6 +117,7 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
+        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/config/${key}`,
         auth: {
           user: config.username,
