@@ -234,6 +234,7 @@ class DBManager {
       params.skip_addons = true;
       return Promise.try(() => {
         if (createIfNotPresent) {
+          this.bindInfo = undefined;
           return apiServerClient.deleteResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
