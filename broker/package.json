@@ -105,6 +105,7 @@
     "@sf/quota": "file:data-access-layer/quota",
     "@sf/quota-app": "file:applications/quota-app",
     "@sf/reports": "file:applications/reports",
-    "@sf/scheduler": "file:applications/scheduler"
+    "@sf/scheduler": "file:applications/scheduler",
+    "@sf/service-agent": "file:data-access-layer/service-agent"
   }
 }

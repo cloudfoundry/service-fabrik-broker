@@ -2,7 +2,7 @@
 
 const { catalog } = require('@sf/models');
 const ScheduleManager = require('@sf/jobs');
-const Agent = require('../../data-access-layer/service-agent');
+const Agent = require('@sf/service-agent');
 const {
   BackupStore,
   backupStore

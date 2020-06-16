@@ -48,7 +48,7 @@ const {
   director
 } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
-const Agent = require('../../../../data-access-layer/service-agent');
+const Agent = require('@sf/service-agent');
 const { backupStore } = require('@sf/iaas');
 const BaseDirectorService = require('../BaseDirectorService');
 const {

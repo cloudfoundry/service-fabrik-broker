@@ -14,7 +14,7 @@ const {
   commonFunctions
 } = require('@sf/common-utils');
 const { director } = require('@sf/bosh');
-const Agent = require('../service-agent');
+const Agent = require('@sf/service-agent');
 
 class OobBackupManager {
 
