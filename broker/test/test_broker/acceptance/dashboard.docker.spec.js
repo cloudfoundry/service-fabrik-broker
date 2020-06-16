@@ -4,7 +4,7 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').external;
 const { CONST } = require('@sf/common-utils');
-const docker = require('../../../data-access-layer/docker');
+const docker = require('@sf/docker');
 
 
 describe('dashboard', function () {
