@@ -1,0 +1,230 @@
+---
+defaults:
+  http_success_codes:
+  - 200
+  - 201
+  http_inprogress_codes:
+  - 202
+  log_inprogress_state: true # flag that is used to determine if async operations in-progress state is to be logged
+  cf_last_operation: false # flag to indicate if a particular HTTP operation is to be treated as cf-lastoperation semantics additionally
+  ignore_service_fabrik_operation: false # flag to indicate if service-fabrik operations are to be excluded. for ex. broker update (HTTP Patch)
+                                         #  gets invoked via backup/restore etc, which are to be ignored when coming via HTTP Patch.
+  include_response_body: false # wheter HTTP response body is to be logged after sanitization or not
+"/:platform(cf|k8s|sm)/v2/catalog":
+  GET:
+    enabled: true
+    event_name: broker_catalog
+    description: Get broker service catalog
+    tags:
+    - catalog
+"/:platform(cf|k8s|sm)/v2/service_instances/:instance_id":
+  PUT:
+    enabled: true
+    event_name: create_instance
+    description: Create a new service instance
+    tags:
+    - create
+  PATCH:
+    enabled: true
+    ignore_service_fabrik_operation: true
+    event_name: update_instance
+    description: Update existing service instance
+    tags:
+    - update
+  DELETE:
+    enabled: true
+    event_name: delete_instance
+    description: Delete service instance
+    tags:
+    - delete
+    http_success_codes:
+    - 200
+    - 410
+"/:platform(cf|k8s|sm)/v2/service_instances/:instance_id/service_bindings/:binding_id":
+  PUT:
+    enabled: true
+    event_name: create_binding
+    description: 'Bind service instance '
+    tags:
+    - binding
+    include_response_body: false
+  DELETE:
+    enabled: true
+    event_name: delete_binding
+    description: Unbind service instance
+    tags:
+    - binding
+    http_success_codes:
+    - 200
+    - 410
+"/:platform(cf|k8s|sm)/v2/service_instances/:instance_id/last_operation":
+  GET:
+    enabled: true
+    cf_last_operation: true
+    op_name_in_request:
+      path: query.operation
+      decode: true
+      lookup_params:
+      - subtype
+      - type
+    backup:
+      event_name: create_backup
+      description: Create service instance backup
+      log_inprogress_state: false
+      tags:
+      - backup
+    restore:
+      event_name: restore_instance
+      description: Restore service instance
+      log_inprogress_state: false
+      tags:
+      - restore
+    create:
+      event_name: create_instance
+      description: Create a new service instance
+      tags:
+      - create
+      log_inprogress_state: false
+    update:
+      event_name: update_instance
+      description: Update existing service instance
+      tags:
+      - update
+      log_inprogress_state: false
+    delete:
+      event_name: delete_instance
+      description: Delete service instance
+      tags:
+      - delete
+      log_inprogress_state: false
+      http_success_codes:
+      - 200
+      - 410
+"/admin/deployments":
+  GET:
+    enabled: true
+    event_name: get_all_deployments
+    description: Retrieve all deployments
+    tags:
+    - admin
+    - deployment
+"/admin/deployments/:name":
+  GET:
+    enabled: true
+    event_name: get_deployment_by_name
+    description: Retrieve deployment by name
+    tags:
+    - admin
+    - deployment
+"/admin/deployments/:name/update":
+  POST:
+    enabled: true
+    event_name: initiate_update_deployment
+    description: 'Update deployment initiation '
+    tags:
+    - admin
+    - deployment
+"/admin/deployments/outdated":
+  GET:
+    enabled: true
+    event_name: get_outdated_deployments
+    description: Retrieve all outdated deployments
+    tags:
+    - admin deployment
+"/admin/deployments/outdated/update":
+  POST:
+    enabled: true
+    event_name: update_all_outdated_deployments
+    description: Update all outdated deployment
+    tags:
+    - admin deployment
+"/admin/backups":
+  GET:
+    enabled: true
+    event_name: list_all_backup
+    description: Retrieve all backups prior to input date
+    tags:
+    - admin
+    - backup
+"/admin/backups/:backup_guid/delete":
+  POST:
+    enabled: true
+    event_name: delete_backup
+    description: Delete a particular backup
+    log_inprogress_state: true
+    tags:
+    - delete
+    - admin
+    - backup
+    http_success_codes:
+    - 200
+    - 410
+"/admin/service-fabrik/backup":
+  GET:
+    enabled: true
+    event_name: list_service_fabrik_mongodb_backup
+    description: Retrieve all service fabrik mongodb backups
+    tags:
+    - servicefabrikbackup
+  POST:
+    enabled: true
+    event_name: create_service_fabrik_mongodb_backup
+    description: create service fabrik mongodb backup
+    tags:
+    - servicefabrikbackup
+"/admin/service-fabrik/backup/status":
+  GET:
+    enabled: true
+    event_name: get_service_fabrik_backup_status
+    description: Retrieve status of the service fabrik mongodb backup operation
+    tags:
+    - servicefabrikbackup
+"/admin/service-fabrik/restore":
+  GET:
+    enabled: true
+    event_name: list_service_fabrik_mongodb_restore
+    description: Retrieve last restore operation info on service fabrik mongodb
+    tags:
+    - servicefabrikrestore
+  POST:
+    enabled: true
+    event_name: restore_service_fabrik_mongodb_backup
+    description: Restore service fabrik mongodb backup to the input backup guid
+    tags:
+    - servicefabrikrestore
+"/admin/service-fabrik/restore/status":
+  GET:
+    enabled: true
+    event_name: get_service_fabrik_restore_status
+    description: Retrieve status of the service fabrik mongodb restore operation
+    tags:
+    - servicefabrikrestore
+"/admin/service-fabrik/db":
+  GET:
+    enabled: true
+    event_name: get_service_fabrik_mongodb_status
+    description: Retrieve service fabrik mongodb status
+    tags:
+    - servicefabrikdbstatus
+  POST:
+    enabled: true
+    event_name: create_service_fabrik_mongodb
+    description: provision service fabrik mongodb
+    tags:
+    - servicefabrikdbcreate
+  PUT:
+    enabled: true
+    event_name: update_service_fabrik_mongodb
+    description: update service fabrik mongodb deployment
+    tags:
+    - servicefabrikdbupdate
+# API used as a place holder to generate event logs for maas
+"/usage/v2/usage/documents":
+  PUT:
+    enabled: true
+    event_name: send_metering_usage
+    description: Send usage data to Metering as a Service
+    tags:
+    - metering
+    http_success_codes:
+    - 200

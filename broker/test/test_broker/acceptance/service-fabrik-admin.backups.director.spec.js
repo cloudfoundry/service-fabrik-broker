@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const app = require('../support/apps').internal;
+const app = require('../support/apps').admin;
 const config = require('@sf/app-config');
 const {
   backupStore,

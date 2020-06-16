@@ -31,6 +31,11 @@ const quotaApp = {
   ip: ip,
   port: 9296
 };
+const adminApp = {
+  protocol: 'http',
+  ip: ip,
+  port: 9297
+}
 const report = {
   protocol: 'https',
   ip: ip,
@@ -174,6 +179,19 @@ defaults: &defaults
     password: secret
     quota_app_url: <%= `http://${quotaApp.ip}:${quotaApp.port}` %>
     quota_endpoint: /v1/account
+
+  ##############################
+  # ADMIN APP SETTINGS #
+  ##############################
+  admin_app: &admin_app
+    log_event: true
+    event_type: SF.BROKER_EVENT
+    domain_socket:
+      path: /tmp/var
+      fwd_events: true
+    port: <%= adminApp.port %>
+    protocol: <%= adminApp.protocol%>
+    host: <%= `${adminApp.ip}:${adminApp.port}` %>
 
   ##############################
   # APISERVER SETTINGS #

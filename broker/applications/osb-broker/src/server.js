@@ -3,7 +3,6 @@
 
 // eslint-disable-next-line no-console
 console.log('Starting Service Fabrik OSB Server...');
-const _ = require('lodash');
 const routes = require('./api-controllers/routes');
 const { ExpressApp, HttpServer } = require('@sf/express-commons');
 const config = require('@sf/app-config');
@@ -28,10 +27,6 @@ async function init() {
         });
       });
       app.use('/:platform(cf|k8s|sm)', routes.broker);
-      if (!_.includes(config.disabled_apis, 'admin')) {
-        const adminRoute = require('../../admin');
-        app.use('/admin', adminRoute.admin);
-      }
     });
     HttpServer.start(internal);
     HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054

@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const logger = require('@sf/logger');
-const app = require('../support/apps').internal;
+const app = require('../support/apps').admin;
 const config = require('@sf/app-config');
 const {
   backupStoreForOob,
