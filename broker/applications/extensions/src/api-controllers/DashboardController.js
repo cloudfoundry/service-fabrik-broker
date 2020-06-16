@@ -124,7 +124,7 @@ class DashboardController extends FabrikBaseController {
   validateSession(req, res) {
     /* jshint unused:false */
     logger.info(`Validating session '${req.session.id}'`);
-    if ((!req.session.service_id || req.session.service_id === req.params.service_id) || (!req.session.instance_type || req.session.instance_type === req.params.instance_type)) {
+    if ((!req.session.service_id || req.session.service_id === req.params.service_id) || (!req.session.instance_type || req.session.instance_type === req.params.instance_type) || (!req.session.login_hint || req.session.login_hint === req.query.login_hint || req.session.login_hint === 'sap.ids')) {
       throw new ContinueWithNext();
     }
     logger.info('Regenerating session...');
@@ -207,6 +207,8 @@ class DashboardController extends FabrikBaseController {
     req.session.instance_type = req.params.instance_type;
     if (req.query.login_hint) {
       req.session.login_hint = req.query.login_hint;
+    } else {
+      req.session.login_hint = 'sap.ids';
     }
     const oldestAllowableLastSeen = Date.now() - config.external.session_expiry * 1000;
     if (req.session.user_id && req.session.access_token && req.session.last_seen > oldestAllowableLastSeen) {
@@ -284,7 +286,7 @@ function saveSession(session) {
 }
 
 function manageInstancePath(session) {
-  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
+  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}?login_hint=${session.login_hint}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}?login_hint=${session.login_hint}`;
 }
 
 function createService(plan_id, instance_id, context) {

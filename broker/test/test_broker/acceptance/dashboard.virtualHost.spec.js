@@ -92,7 +92,7 @@ describe('dashboard', function () {
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
@@ -144,7 +144,7 @@ describe('dashboard', function () {
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
-        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id, 1, 'sap.ids');
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
