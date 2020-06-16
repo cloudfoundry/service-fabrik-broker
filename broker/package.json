@@ -100,6 +100,7 @@
     "@sf/metering": "file:data-access-layer/metering",
     "@sf/models": "file:core/models",
     "@sf/operators": "file:applications/operators",
+    "@sf/oob-manager": "file:data-access-layer/oob-manager",
     "@sf/osb-broker": "file:applications/osb-broker",
     "@sf/platforms": "file:core/platform-managers",
     "@sf/quota": "file:data-access-layer/quota",

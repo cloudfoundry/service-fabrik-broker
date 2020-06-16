@@ -14,7 +14,7 @@ const config = require('@sf/app-config');
 const Agent = require('@sf/service-agent');
 const { FabrikBaseController } = require('@sf/common-controllers');
 const { CONST } = require('@sf/common-utils');
-const OobBackupManager = require('../../data-access-layer/oob-manager/OobBackupManager');
+const OobBackupManager = require('@sf/oob-manager');
 
 
 describe('fabrik', function () {
