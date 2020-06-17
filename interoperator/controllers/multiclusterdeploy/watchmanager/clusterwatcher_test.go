@@ -19,9 +19,11 @@ func Test_clusterWatcher_start(t *testing.T) {
 
 	instance := _getDummyInstance()
 	binding := _getDummyBinding()
+	cluster := _getDummySFCLuster("cluster")
 
 	instanceEvents := make(chan event.GenericEvent, 1024)
 	bindingEvents := make(chan event.GenericEvent, 1024)
+	clusterEvents := make(chan event.GenericEvent, 1024)
 	var host string
 	type fields struct {
 		clusterID      string
@@ -29,6 +31,7 @@ func Test_clusterWatcher_start(t *testing.T) {
 		timeoutSeconds int64
 		instanceEvents chan event.GenericEvent
 		bindingEvents  chan event.GenericEvent
+		clusterEvents  chan event.GenericEvent
 		stop           chan struct{}
 	}
 
@@ -46,6 +49,7 @@ func Test_clusterWatcher_start(t *testing.T) {
 				cfg:            cfg2,
 				instanceEvents: instanceEvents,
 				bindingEvents:  bindingEvents,
+				clusterEvents:  clusterEvents,
 				stop:           make(chan struct{}),
 			},
 			setup: func(cw *clusterWatcher) {
@@ -65,22 +69,30 @@ func Test_clusterWatcher_start(t *testing.T) {
 				cfg:            cfg2,
 				instanceEvents: instanceEvents,
 				bindingEvents:  bindingEvents,
+				clusterEvents:  clusterEvents,
 				stop:           make(chan struct{}),
 			},
 			cleanup: func(cw *clusterWatcher) {
 				instance.SetResourceVersion("")
 				binding.SetResourceVersion("")
+				cluster.SetResourceVersion("")
 				g.Expect(c2.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(instanceEvents, timeout)).To(gomega.Equal(1))
 
 				g.Expect(c2.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(bindingEvents, timeout)).To(gomega.Equal(1))
 
+				g.Expect(c2.Create(context.TODO(), cluster)).NotTo(gomega.HaveOccurred())
+				g.Expect(drainAllEvents(clusterEvents, timeout)).To(gomega.Equal(1))
+
 				g.Expect(c2.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(instanceEvents, timeout)).To(gomega.Equal(1))
 
 				g.Expect(c2.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(bindingEvents, timeout)).To(gomega.Equal(1))
+
+				g.Expect(c2.Delete(context.TODO(), cluster)).NotTo(gomega.HaveOccurred())
+				g.Expect(drainAllEvents(clusterEvents, timeout)).To(gomega.Equal(1))
 				close(cw.stop)
 			},
 			wantErr: false,
@@ -93,22 +105,29 @@ func Test_clusterWatcher_start(t *testing.T) {
 				timeoutSeconds: 3,
 				instanceEvents: instanceEvents,
 				bindingEvents:  bindingEvents,
+				clusterEvents:  clusterEvents,
 				stop:           make(chan struct{}),
 			},
 			cleanup: func(cw *clusterWatcher) {
 				instance.SetResourceVersion("")
 				binding.SetResourceVersion("")
+				cluster.SetResourceVersion("")
 				g.Expect(c2.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 				g.Expect(c2.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
+				g.Expect(c2.Create(context.TODO(), cluster)).NotTo(gomega.HaveOccurred())
 
 				g.Expect(drainAllEvents(instanceEvents, timeout)).NotTo(gomega.BeZero())
 				g.Expect(drainAllEvents(bindingEvents, timeout)).NotTo(gomega.BeZero())
+				g.Expect(drainAllEvents(clusterEvents, timeout)).NotTo(gomega.BeZero())
 
 				g.Expect(c2.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(instanceEvents, timeout)).NotTo(gomega.BeZero())
 
 				g.Expect(c2.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 				g.Expect(drainAllEvents(bindingEvents, timeout)).NotTo(gomega.BeZero())
+
+				g.Expect(c2.Delete(context.TODO(), cluster)).NotTo(gomega.HaveOccurred())
+				g.Expect(drainAllEvents(clusterEvents, timeout)).NotTo(gomega.BeZero())
 				close(cw.stop)
 			},
 			wantErr: false,
@@ -120,12 +139,14 @@ func Test_clusterWatcher_start(t *testing.T) {
 				cfg:            cfg2,
 				instanceEvents: instanceEvents,
 				bindingEvents:  bindingEvents,
+				clusterEvents:  clusterEvents,
 				stop:           make(chan struct{}),
 			},
 			cleanup: func(cw *clusterWatcher) {
 				close(cw.stop)
 				g.Expect(drainAllEvents(instanceEvents, timeout)).To(gomega.BeZero())
 				g.Expect(drainAllEvents(bindingEvents, timeout)).To(gomega.BeZero())
+				g.Expect(drainAllEvents(clusterEvents, timeout)).To(gomega.BeZero())
 			},
 			wantErr: false,
 		},
@@ -138,6 +159,7 @@ func Test_clusterWatcher_start(t *testing.T) {
 				timeoutSeconds: tt.fields.timeoutSeconds,
 				instanceEvents: tt.fields.instanceEvents,
 				bindingEvents:  tt.fields.bindingEvents,
+				clusterEvents:  tt.fields.clusterEvents,
 				stop:           tt.fields.stop,
 			}
 			if tt.setup != nil {

@@ -121,3 +121,15 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 		},
 	}
 }
+
+func _getDummySFCLuster(name string) *resourcev1alpha1.SFCluster {
+	return &resourcev1alpha1.SFCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: constants.InteroperatorNamespace,
+		},
+		Spec: resourcev1alpha1.SFClusterSpec{
+			SecretRef: name,
+		},
+	}
+}

@@ -18,10 +18,12 @@ import (
 func Test_watchManager_getWatchChannel(t *testing.T) {
 	instanceEvents := make(chan event.GenericEvent, 1024)
 	bindingEvents := make(chan event.GenericEvent, 1024)
+	clusterEvents := make(chan event.GenericEvent, 1024)
 
 	type fields struct {
 		instanceEvents chan event.GenericEvent
 		bindingEvents  chan event.GenericEvent
+		clusterEvents  chan event.GenericEvent
 	}
 	type args struct {
 		resource string
@@ -61,6 +63,15 @@ func Test_watchManager_getWatchChannel(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:   "should fail if clusterEvents is nil",
+			fields: fields{},
+			args: args{
+				resource: "sfclusters",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name: "should return instanceEvents",
 			fields: fields{
 				instanceEvents: instanceEvents,
@@ -83,12 +94,24 @@ func Test_watchManager_getWatchChannel(t *testing.T) {
 			want:    bindingEvents,
 			wantErr: false,
 		},
+		{
+			name: "should return clusterEvents",
+			fields: fields{
+				clusterEvents: clusterEvents,
+			},
+			args: args{
+				resource: "sfclusters",
+			},
+			want:    clusterEvents,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wm := &watchManager{
 				instanceEvents: tt.fields.instanceEvents,
 				bindingEvents:  tt.fields.bindingEvents,
+				clusterEvents:  tt.fields.clusterEvents,
 			}
 			got, err := wm.getWatchChannel(tt.args.resource)
 			if (err != nil) != tt.wantErr {
