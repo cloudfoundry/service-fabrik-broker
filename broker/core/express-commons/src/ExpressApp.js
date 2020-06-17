@@ -28,6 +28,10 @@ class ExpressApp {
     app.set('type', type);
     app.set('title', cfg.title || `Service Fabrik Broker (${type})`);
     if (cfg.ssl) {
+      if(!_.isEmpty(_.get(cfg, 'ssl.ca'))) {
+        cfg.ssl.cert = cfg.ssl.cert.concat('',cfg.ssl.ca);
+        _.unset(cfg, 'ssl.ca');
+      }
       app.set('ssl', cfg.ssl);
       app.use(helmet());
     }
