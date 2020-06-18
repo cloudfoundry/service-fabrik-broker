@@ -108,7 +108,7 @@ const proxyLibs = {
     getConnectionStatus: () => dbConnectionState,
     shutDown: () => Promise.resolve({})
   },
-  '../../../applications/operators/src/bosh-operator/DirectorService': DirectorServiceStub,
+  '../../../core/provisioner-services/src/DirectorService': DirectorServiceStub,
   '@sf/models': {
     catalog: {
       getPlan: () => {}

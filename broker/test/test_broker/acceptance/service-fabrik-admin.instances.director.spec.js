@@ -7,7 +7,7 @@ const {
   CONST,
   Repository
 } = require('@sf/common-utils');
-const DirectorService = require('../../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 
 describe('service-fabrik-admin', function () {
   describe('instances', function () {

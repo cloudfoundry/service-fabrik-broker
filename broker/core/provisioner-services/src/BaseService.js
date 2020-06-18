@@ -6,7 +6,7 @@ const {
     getPlatformFromContext
   }
 } = require('@sf/common-utils');
-const Agent = require('@sf/service-agent');
+const Agent = require('../../../data-access-layer/service-agent');
 
 class BaseService {
   constructor(plan) {

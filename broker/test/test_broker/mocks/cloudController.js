@@ -5,7 +5,7 @@ const nock = require('nock');
 const config = require('@sf/app-config');
 const cloudControllerUrl = config.cf.url;
 const prefix = 'service-fabrik';
-const DirectorService = require('../../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 
 exports.url = cloudControllerUrl;
 exports.getInfo = getInfo;

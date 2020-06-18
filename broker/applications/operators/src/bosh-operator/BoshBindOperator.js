@@ -13,7 +13,7 @@ const {
   }
 } = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
-const DirectorService = require('./DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 
 class BoshBindOperator extends BaseOperator {
 

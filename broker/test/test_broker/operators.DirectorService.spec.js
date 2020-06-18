@@ -18,7 +18,7 @@ const {
   backupStore,
   CloudProviderClient
 } = require('@sf/iaas');
-const DirectorService = require('../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const cfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
 
 describe('#DirectorService', function () {

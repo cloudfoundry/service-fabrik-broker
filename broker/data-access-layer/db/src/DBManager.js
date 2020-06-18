@@ -23,7 +23,7 @@ const {
 } = commonFunctions;
 const { apiServerClient } = require('@sf/eventmesh');
 const { BasePlatformManager } = require('@sf/platforms');
-const DirectorService = require('../../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const dbConnectionManager = require('./DbConnectionManager');
 
 /**

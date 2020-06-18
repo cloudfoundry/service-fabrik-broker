@@ -4,7 +4,6 @@ const assert = require('assert');
 const Promise = require('bluebird');
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const selfSigned = require('selfsigned');
 
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
@@ -48,9 +47,9 @@ const {
   director
 } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
-const Agent = require('@sf/service-agent');
+const Agent = require('../../../data-access-layer/service-agent');
 const { backupStore } = require('@sf/iaas');
-const BaseDirectorService = require('../BaseDirectorService');
+const BaseDirectorService = require('./BaseDirectorService');
 const {
   cloudController,
   serviceFabrikClient,
@@ -560,7 +559,7 @@ class DirectorService extends BaseDirectorService {
     // Lazy create of deploymentHookClient
     // Only Processes that require service lifecycle operations will need deployment_hooks properties.
     // Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../../deployment_hooks/src/lib/utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../../applications/deployment_hooks/lib/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
@@ -955,8 +954,7 @@ class DirectorService extends BaseDirectorService {
           multi_az_enabled: isMultiAzEnabled,
           stemcell: this.stemcell,
           actions: preDeployResponse,
-          preUpdateAgentResponse: preUpdateAgentResponse,
-          selfSigned: selfSigned
+          preUpdateAgentResponse: preUpdateAgentResponse
         }, opts.context));
         logger.info('Predeploy response -', preDeployResponse);
         logger.info('Multi-az Enabled : ', context.spec.multi_az_enabled);
