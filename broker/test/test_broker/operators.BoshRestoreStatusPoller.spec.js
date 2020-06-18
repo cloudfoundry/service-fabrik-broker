@@ -16,7 +16,7 @@ class BaseStatusPoller {
 
 describe('operators', function() {
   describe('BoshRestoreStatusPoller', function() {
-    const BoshRestoreStatusPoller = proxyquire('../../applications/operators/bosh-restore-operator/BoshRestoreStatusPoller', {
+    const BoshRestoreStatusPoller = proxyquire('../../applications/operators/src/bosh-restore-operator/BoshRestoreStatusPoller', {
       '../BaseStatusPoller': BaseStatusPoller
     });        
     const deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';

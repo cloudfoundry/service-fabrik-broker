@@ -1,7 +1,7 @@
 'use strict';
 
 const { catalog } = require('@sf/models');
-const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
+const DirectorService = require('../../applications/operators/src/bosh-operator/DirectorService');
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 const proxyquire = require('proxyquire');

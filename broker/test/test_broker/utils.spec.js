@@ -1,6 +1,6 @@
 'use strict';
 
-const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
+const DirectorService = require('../../applications/operators/src/bosh-operator/DirectorService');
 const {
   CONST,
   commonFunctions

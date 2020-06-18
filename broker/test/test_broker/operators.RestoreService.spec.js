@@ -5,7 +5,7 @@ const {
   catalog,
   Service
 } = require('@sf/models');
-const RestoreService = require('../../applications/operators/restore-operator/RestoreService');
+const RestoreService = require('../../applications/operators/src/restore-operator/RestoreService');
 const moment = require('moment');
 const config = require('@sf/app-config');
 const { CONST } = require('@sf/common-utils');

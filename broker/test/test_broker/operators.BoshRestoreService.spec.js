@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const { catalog } = require('@sf/models');
-const BoshRestoreService = require('../../applications/operators/bosh-restore-operator/BoshRestoreService');
+const BoshRestoreService = require('../../applications/operators/src/bosh-restore-operator/BoshRestoreService');
 const { CONST } = require('@sf/common-utils');
 const {
   cloudProvider,

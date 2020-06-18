@@ -5,7 +5,7 @@ const { apiServerClient } = require('@sf/eventmesh');
 const { catalog } = require('@sf/models');
 const { CONST } = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
-const BoshRestoreService = require('./');
+const BoshRestoreService = require('.');
 
 class DefaultBoshRestoreOperator extends BaseOperator {
 

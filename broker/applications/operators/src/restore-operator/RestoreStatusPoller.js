@@ -14,7 +14,7 @@ const logger = require('@sf/logger');
 const { catalog } = require('@sf/models');
 const config = require('@sf/app-config');
 const { EventLogInterceptor } = require('@sf/event-logger');
-const RestoreService = require('./');
+const RestoreService = require('.');
 const BaseStatusPoller = require('../BaseStatusPoller');
 
 class RestoreStatusPoller extends BaseStatusPoller {

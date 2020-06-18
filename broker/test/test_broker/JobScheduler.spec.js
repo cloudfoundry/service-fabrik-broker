@@ -10,7 +10,7 @@ const {
   }
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
-const { maintenanceManager } = require('../../applications/scheduler/maintenance');
+const { maintenanceManager } = require('../../applications/scheduler/src/maintenance');
 const { serviceFabrikClient } = require('@sf/cf');
 const logger = require('@sf/logger');
 
@@ -54,7 +54,7 @@ describe('JobScheduler', function () {
       fork: () => {
         count++;
         logger.info('forking child..', count);
-        const js = proxyquire('../../applications/scheduler/JobScheduler', {
+        const js = proxyquire('../../applications/scheduler/src/JobScheduler', {
           'cluster': {
             isMaster: false,
             on: on,
@@ -142,7 +142,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 4;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -164,7 +164,7 @@ describe('JobScheduler', function () {
       it('Create workers based on max_worker config & on error recreate the worker', function () {
         count = 0;
         cpus = 8;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
         const js = JobScheduler
           .ready
@@ -192,7 +192,7 @@ describe('JobScheduler', function () {
         cpus = 1;
         throwUnhandledError = true;
         const EXPECTED_NUM_OF_WORKERS = cpus;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -219,7 +219,7 @@ describe('JobScheduler', function () {
         count = 0;
         cpus = 8;
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -270,7 +270,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -352,7 +352,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -378,7 +378,7 @@ describe('JobScheduler', function () {
         }));
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -410,7 +410,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -450,7 +450,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -490,7 +490,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -525,7 +525,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = false;
-        JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -588,7 +588,7 @@ describe('JobScheduler', function () {
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {
       count = 0;
       cpus = 1;
-      JobScheduler = proxyquire('../../applications/scheduler/JobScheduler', proxyLibs);
+      JobScheduler = proxyquire('../../applications/scheduler/src/JobScheduler', proxyLibs);
       const js = JobScheduler
         .ready
         .then(() => {

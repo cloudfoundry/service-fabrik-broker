@@ -12,7 +12,7 @@ const logger = require('@sf/logger');
 const { director } = require('@sf/bosh');
 const { catalog } = require('@sf/models');
 const BaseStatusPoller = require('../BaseStatusPoller');
-const BoshRestoreService = require('./');
+const BoshRestoreService = require('.');
 
 class BoshRestoreStatusPoller extends BaseStatusPoller {
   constructor() {

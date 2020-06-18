@@ -1,8 +1,8 @@
 'use strict';
 
 const Promise = require('bluebird');
-const DirectorService = require('../../applications/operators/bosh-operator/DirectorService');
-const DockerService = require('../../applications/operators/docker-operator/DockerService');
+const DirectorService = require('../../applications/operators/src/bosh-operator/DirectorService');
+const DockerService = require('../../applications/operators/src/docker-operator/DockerService');
 const { catalog } = require('@sf/models');
 const {
   commonFunctions: {

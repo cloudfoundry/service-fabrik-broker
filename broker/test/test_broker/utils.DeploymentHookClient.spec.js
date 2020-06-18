@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const deploymentHookClient = require('../../applications/deployment_hooks/lib/utils/DeploymentHookClient');
+const deploymentHookClient = require('../../applications/deployment_hooks/src/lib/utils/DeploymentHookClient');
 
 describe('Utils', function () {
   describe('DeploymentHookClient', function () {

@@ -5,7 +5,7 @@ const _ = require('lodash');
 const brokerRoute = require('../../../applications/osb-broker/src/api-controllers/routes');
 const adminRoute = require('../../../applications/admin/src/admin');
 const apiRoute = require('../../../applications/extensions/src/api-controllers/routes');
-const reportRoute = require('../../../applications/reports/report');
+const reportRoute = require('../../../applications/reports/src/report');
 const { ExpressApp } = require('@sf/express-commons');
 
 // internal app

@@ -29,7 +29,7 @@ const DockerOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DockerOperator = proxyquire('../../applications/operators/docker-operator/DockerOperator', {
+const DockerOperator = proxyquire('../../applications/operators/src/docker-operator/DockerOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
