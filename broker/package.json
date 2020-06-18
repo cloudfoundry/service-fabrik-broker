@@ -89,6 +89,7 @@
     "@sf/common-controllers": "file:core/controllers",
     "@sf/common-utils": "file:core/utils",
     "@sf/deployment-hooks": "file:applications/deployment_hooks",
+    "@sf/db": "file:data-access-layer/db",
     "@sf/docker": "file:data-access-layer/docker",
     "@sf/event-logger": "file:data-access-layer/event-logger",
     "@sf/eventmesh": "file:data-access-layer/eventmesh",

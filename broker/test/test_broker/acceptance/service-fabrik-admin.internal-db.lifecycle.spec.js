@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').admin;
-const dbManager = require('../../../data-access-layer/db/DBManager');
+const dbManager = require('@sf/db').dbManager;
 const config = require('@sf/app-config');
 const {
   backupStore,

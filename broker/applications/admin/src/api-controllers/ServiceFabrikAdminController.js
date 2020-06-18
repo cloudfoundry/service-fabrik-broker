@@ -33,7 +33,7 @@ const ScheduleManager = require('@sf/jobs');
 const { maintenanceManager } = require('../../../scheduler/src/maintenance');
 const { serviceBrokerClient } = require('@sf/broker-client');
 const { apiServerClient } = require('@sf/eventmesh');
-const dbManager = require('../../../../data-access-layer/db/DBManager');
+const dbManager = require('@sf/db').dbManager;
 const OobBackupManager = require('@sf/oob-manager');
 const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 

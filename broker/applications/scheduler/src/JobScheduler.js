@@ -17,7 +17,7 @@ const config = require('@sf/app-config');
 const { initializeEventListener } = require('@sf/event-logger');
 const { maintenanceManager } = require('./maintenance');
 const { serviceFabrikClient } = require('@sf/cf');
-require('../../../data-access-layer/db/DBManager');
+require('@sf/db');
 
 let cpuCount = cpus.length;
 let maxWorkers = 0;
