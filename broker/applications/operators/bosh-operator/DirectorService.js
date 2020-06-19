@@ -4,6 +4,7 @@ const assert = require('assert');
 const Promise = require('bluebird');
 const _ = require('lodash');
 const yaml = require('js-yaml');
+const selfSigned = require('selfsigned');
 
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
@@ -954,7 +955,8 @@ class DirectorService extends BaseDirectorService {
           multi_az_enabled: isMultiAzEnabled,
           stemcell: this.stemcell,
           actions: preDeployResponse,
-          preUpdateAgentResponse: preUpdateAgentResponse
+          preUpdateAgentResponse: preUpdateAgentResponse,
+          selfSigned: selfSigned
         }, opts.context));
         logger.info('Predeploy response -', preDeployResponse);
         logger.info('Multi-az Enabled : ', context.spec.multi_az_enabled);
