@@ -21,6 +21,8 @@ import (
 	clientset "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned/typed/osb/v1alpha1"
 	fakeosbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned/typed/osb/v1alpha1/fake"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned/typed/resource/v1alpha1"
+	fakeresourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned/typed/resource/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -78,4 +80,9 @@ var _ clientset.Interface = &Clientset{}
 // OsbV1alpha1 retrieves the OsbV1alpha1Client
 func (c *Clientset) OsbV1alpha1() osbv1alpha1.OsbV1alpha1Interface {
 	return &fakeosbv1alpha1.FakeOsbV1alpha1{Fake: &c.Fake}
+}
+
+// ResourceV1alpha1 retrieves the ResourceV1alpha1Client
+func (c *Clientset) ResourceV1alpha1() resourcev1alpha1.ResourceV1alpha1Interface {
+	return &fakeresourcev1alpha1.FakeResourceV1alpha1{Fake: &c.Fake}
 }

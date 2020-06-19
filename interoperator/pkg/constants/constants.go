@@ -17,7 +17,7 @@ const (
 	ConfigMapKey    = "config"
 	ProvisionerName = "provisioner"
 
-	namespaceEnvKey    = "POD_NAMESPACE"
+	NamespaceEnvKey    = "POD_NAMESPACE"
 	OwnClusterIDEnvKey = "CLUSTER_ID"
 
 	NamespaceLabelKey = "OWNER_INTEROPERATOR_NAMESPACE"
@@ -35,6 +35,8 @@ const (
 	GoTemplateType             = "gotemplate"
 
 	PlanWatchDrainTimeout = time.Second * 2
+
+	ListPaginationLimit = 50
 )
 
 // Configs initialized at startup
@@ -44,7 +46,7 @@ var (
 )
 
 func init() {
-	interoperatorNamespace, ok := os.LookupEnv(namespaceEnvKey)
+	interoperatorNamespace, ok := os.LookupEnv(NamespaceEnvKey)
 	if ok {
 		InteroperatorNamespace = interoperatorNamespace
 	}

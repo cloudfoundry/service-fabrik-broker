@@ -622,7 +622,9 @@ Label selector based scheduler chooses clusters for a service instance based on 
 ```
 
 In the above template, when evaluated, gives a label selector string which looks like `plan=<plan-id-1>`. If there are any cluster which are meant for scheduling instances from a specific plan, then that appropriate label can be applied on that `SFCluster` and this scheduler will ensure all such instances are scheduled in that cluster. Continuing this example, other plans can have a template evaluating to `plan!=<plan-id-1>`, which will ensure that other clusters are used for those plans. Similar to the example above, label selectors can be written using go template for specific scheduling criteria.
-        To enable this scheduler use `--set interoperator.config.schedulerType=label-selector` in the helm install/upgrade command. If a label selector chooses multiple clusters, least-utilized scheduling logic will be applied to select one among them. Least utilized first logic schedules a service instance to the cluster which has the lowest number of service instances assigned to it.
+To enable this scheduler use `--set interoperator.config.schedulerType=label-selector` in the helm install/upgrade command. If a label selector chooses multiple clusters, least-utilized scheduling logic will be applied to select one among them. Least utilized first logic schedules a service instance to the cluster which has the lowest number of service instances assigned to it.
+
+Label Selector based scheduler also supports scheduling based on resource used in the clusters. More info [here](interoperator-scheduler.md).
 
 ### Provisioner
 Provisioner was also already introduced earlier, please read about it in the earlier section [here](#service-fabrik-inter-operator-provisioner). In the multi-cluster setup, provisioners are deployed across multiple clusters by interoperator automatically. More details can be found in the [deployment flow](#deployment-flow) section.

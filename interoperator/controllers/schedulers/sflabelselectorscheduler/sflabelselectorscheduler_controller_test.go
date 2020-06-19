@@ -27,7 +27,9 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/golang/mock/gomock"
@@ -220,6 +222,82 @@ func TestReconcile(t *testing.T) {
 		return nil
 	}, timeout).ShouldNot(gomega.Succeed())
 	g.Expect(instance4.Spec.ClusterID).To(gomega.Equal(""))
+
+	// when resource Requests is present in plan context
+	plan5 := _getDummySFPlan("plan-id-5", "")
+	plan5.Spec.Templates = []osbv1alpha1.TemplateSpec{}
+	plan5.Spec.RawContext = &runtime.RawExtension{
+		Raw: []byte(`{ "requests": { "cpu": "1", "memory": "1024Mi" }}`),
+	}
+	g.Expect(c.Create(context.TODO(), plan5)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), plan5)
+
+	// When instance cannot be scheduled set state as failed
+	instance5 := _getDummySFServiceInstance("foo5", "plan-id-5")
+	g.Expect(c.Create(context.TODO(), instance5)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance5)
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance5), instance5)
+		if err != nil {
+			return err
+		}
+		_, err = instance5.GetClusterID()
+		if err == nil {
+			return errors.New("instance got scheduled")
+		}
+		state := instance5.GetState()
+		if state != "failed" {
+			return errors.New("service instance state is not failed")
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+	// Set state as succeed on delete
+	instance5.SetState("delete")
+	g.Expect(c.Update(context.TODO(), instance5)).NotTo(gomega.HaveOccurred())
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance5), instance5)
+		if err != nil {
+			return err
+		}
+		_, err = instance5.GetClusterID()
+		if err == nil {
+			return errors.New("instance got scheduled")
+		}
+		state := instance5.GetState()
+		if state != "succeeded" {
+			return errors.New("service instance state is not succeeded")
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+
+	// Schedule on cluster with resources
+	sfcluster3.Status.CurrentCapacity = make(corev1.ResourceList)
+	sfcluster3.Status.CurrentCapacity[corev1.ResourceCPU] = *resource.NewQuantity(6, resource.DecimalSI)
+	sfcluster3.Status.CurrentCapacity[corev1.ResourceMemory] = *resource.NewScaledQuantity(22, resource.Scale(9))
+	g.Expect(c.Status().Update(context.TODO(), sfcluster3)).NotTo(gomega.HaveOccurred())
+	instance6 := _getDummySFServiceInstance("foo6", "plan-id-5")
+	g.Expect(c.Create(context.TODO(), instance6)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance6)
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), _getKey(instance6), instance6)
+		if err != nil {
+			return err
+		}
+		_, err = instance6.GetClusterID()
+		if err != nil {
+			return err
+		}
+		err = c.Get(context.TODO(), _getKey(sfcluster3), sfcluster3)
+		if err != nil {
+			return err
+		}
+		serviceInstanceCount := sfcluster3.Status.ServiceInstanceCount
+		if serviceInstanceCount != 2 {
+			return errors.New("service intance count is not 2")
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+	g.Expect(instance6.Spec.ClusterID).To(gomega.Equal(sfcluster3.GetName()))
 }
 
 func _getDummyConfigMap() *corev1.ConfigMap {
@@ -237,7 +315,7 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 
 func _getDummySFPlan(name string, clusterSelector string) *osbv1alpha1.SFPlan {
 	templateSpec := []osbv1alpha1.TemplateSpec{
-		osbv1alpha1.TemplateSpec{
+		{
 			Action:  "clusterSelector",
 			Type:    "gotemplate",
 			Content: clusterSelector,

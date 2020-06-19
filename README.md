@@ -237,7 +237,7 @@ make generate manifests
 
 ```
 go mod vendor
-bash vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api osb:v1alpha1 --go-header-file hack/boilerplate.go.txt
+bash vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api "osb:v1alpha1 resource:v1alpha1" --go-header-file hack/boilerplate.go.txt
 ```
 
 ##### Installing

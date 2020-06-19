@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,15 +26,35 @@ type SFClusterSpec struct {
 	// Name of the secret containing the kubeconfig required to access the
 	// member cluster. The secret needs to exist in the same namespace
 	// as the SFCluster and should have a "kubeconfig" key.
-	SecretRef string `json:"secretRef"`
+	SecretRef string `yaml:"secretRef" json:"secretRef"`
+
+	// TotalCapacity represents the total resources of a cluster.
+	// This should include the future capacity introduced by node autoscaler.
+	TotalCapacity corev1.ResourceList `yaml:"totalCapacity,omitempty" json:"totalCapacity,omitempty"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	// Determines the how filled the cluster becomes, before interoperator filters out the cluster as full.
+	SchedulingLimitPercentage int `yaml:"schedulingLimitPercentage,omitempty" json:"schedulingLimitPercentage,omitempty"`
 }
 
 // SFClusterStatus defines the observed state of SFCluster
 type SFClusterStatus struct {
 	ServiceInstanceCount int `json:"serviceInstanceCount,omitempty"`
+
+	// CurrentCapacity represents the total resources of a cluster from all the current nodes
+	CurrentCapacity corev1.ResourceList `yaml:"currentCapacity,omitempty" json:"currentCapacity,omitempty"`
+
+	// TotalCapacity represents the total resources of a cluster.
+	// This should include the future capacity introduced by node autoscaler.
+	TotalCapacity corev1.ResourceList `yaml:"totalCapacity,omitempty" json:"totalCapacity,omitempty"`
+
+	// Requests represents the total resources requested by all the pods on the cluster
+	Requests corev1.ResourceList `yaml:"requests,omitempty" json:"requests,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +genclient
 
 // SFCluster is the Schema for the sfclusters API
 // +kubebuilder:subresource:status

@@ -351,7 +351,7 @@ func NamespaceLabelFilter() predicate.Predicate {
 // NamespaceFilter creates a predicates for filtering objects in interoperator namespace
 func NamespaceFilter() predicate.Predicate {
 	f := func(namespace string) bool {
-		return namespace == constants.InteroperatorNamespace
+		return namespace == "" || namespace == constants.InteroperatorNamespace
 	}
 	p := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {

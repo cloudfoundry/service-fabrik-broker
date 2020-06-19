@@ -21,6 +21,7 @@ package provisioners
 import (
 	"os"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfclusterusage"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfplan"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfservice"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/provisioners/sfservicebinding"
@@ -80,6 +81,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("provisioners").WithName("bindingcleaner"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create provisioner", "controller", "SfServiceBindingCleanerReconciler")
+		return err
+	}
+
+	if err = (&sfclusterusage.SFClusterUsageReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SFClusterUsageReconciler")
 		return err
 	}
 

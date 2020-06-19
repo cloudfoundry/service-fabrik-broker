@@ -64,6 +64,7 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 	}
 	instanceEvents := make(chan event.GenericEvent, 1024)
 	bindingEvents := make(chan event.GenericEvent, 1024)
+	clusterEvents := make(chan event.GenericEvent, 1024)
 	stopCh := make(chan struct{})
 
 	wm := &watchManager{
@@ -72,6 +73,7 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 		clusterWatchers: make([]*clusterWatcher, 0),
 		instanceEvents:  instanceEvents,
 		bindingEvents:   bindingEvents,
+		clusterEvents:   clusterEvents,
 		stop:            stopCh,
 	}
 

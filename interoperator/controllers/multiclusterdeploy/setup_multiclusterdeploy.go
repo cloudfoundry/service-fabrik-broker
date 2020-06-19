@@ -20,6 +20,7 @@ package multiclusterdeploy
 
 import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicesreplicator"
@@ -69,6 +70,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("service"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create service replicator", "controller", "ReconcileSFServices")
+		return err
+	}
+
+	if err = (&sfclusterreplicator.SFClusterReplicator{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("cluster"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create cluster replicator", "controller", "SFClusterReplicator")
 		return err
 	}
 
