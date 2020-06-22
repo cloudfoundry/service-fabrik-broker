@@ -37,7 +37,8 @@ const BoshOperator = proxyquire('../../applications/operators/src/bosh-operator/
       }
     }
   },
-  './DirectorService': {
+  '@sf/provisioner-services': { 
+    DirectorService: {
     'createInstance': function (instance_id, options) {
       BoshOperatorDummy.createDirectorServiceDummy(instance_id, options);
       return Promise.resolve({
@@ -55,6 +56,7 @@ const BoshOperator = proxyquire('../../applications/operators/src/bosh-operator/
         }
       });
     }
+  }
   }
 });
 
