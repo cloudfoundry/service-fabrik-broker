@@ -21,16 +21,6 @@ spec:
         {{- toYaml . | nindent 6 }}
       {{- end }}
       containers:
-      - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:9877/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
       - name: multiclusterdeployer
         image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
         imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
@@ -41,6 +31,9 @@ spec:
               fieldPath: metadata.namespace
         command:
         - /multiclusterdeploy
+        args:
+        - --metrics-addr=:8443
+        - --enable-leader-election
         resources:
           limits:
             cpu: {{ .Values.interoperator.resources.limits.cpu }}
@@ -52,7 +45,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /metrics
-            port: 9877
+            port: 8443
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
@@ -62,12 +55,15 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /metrics
-            port: 9877
+            port: 8443
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
           successThreshold: 1
           timeoutSeconds: 1
+        ports:
+        - containerPort: 8443
+          name: http
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -75,7 +71,7 @@ kind: Service
 metadata:
   annotations:
     prometheus.io/port: "8443"
-    prometheus.io/scheme: https
+    prometheus.io/scheme: http
     prometheus.io/scrape: "true"
   labels:
     control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
@@ -83,8 +79,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-  - name: https
+  - name: http
     port: 8443
-    targetPort: https
+    targetPort: http
   selector:
     control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
