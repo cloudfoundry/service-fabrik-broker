@@ -62,6 +62,7 @@
     "riemannjs": "1.0.1",
     "rxjs": "5.4.0",
     "session-file-store": "0.2.0",
+    "selfsigned": "1.10.7",
     "ssh2": "^0.8.2",
     "uuid": "2.0.2",
     "winston": "2.2.0",

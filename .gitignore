@@ -26,5 +26,5 @@ broker/coverage
 #ingoring files created during unit tests
 broker/lib/fabrik/actions/js/ReserveIps.js
 broker/lib/fabrik/actions/sh/
-broker/applications/deployment_hooks/lib/actions/js/ReserveIps.js
-broker/applications/deployment_hooks/lib/actions/sh/
+broker/applications/deployment_hooks/src/lib/actions/js/ReserveIps.js
+broker/applications/deployment_hooks/src/lib/actions/sh/

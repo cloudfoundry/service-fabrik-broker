@@ -3,7 +3,6 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
-var moment = require('moment-timezone'); // eslint-disable-line no-var
 const { catalog } = require('@sf/models');
 const {
   CONST,
