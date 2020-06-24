@@ -38,7 +38,7 @@ quota_app:
 interoperator:
   image:
     repository: servicefabrikjenkins/service-fabrik-interoperator
-    tag: 0.7.0
+    tag: 0.8.0
     pullPolicy: Always
   resources:
     limits:
