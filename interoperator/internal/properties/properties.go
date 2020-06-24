@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 var log = logf.Log.WithName("properties")
