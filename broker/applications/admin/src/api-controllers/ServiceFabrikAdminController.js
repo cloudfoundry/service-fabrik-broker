@@ -35,7 +35,7 @@ const { serviceBrokerClient } = require('@sf/broker-client');
 const { apiServerClient } = require('@sf/eventmesh');
 const dbManager = require('@sf/db').dbManager;
 const OobBackupManager = require('@sf/oob-manager');
-const DirectorService = require('../../../operators/bosh-operator/DirectorService');
+const DirectorService = require('../../../operators/src/bosh-operator/DirectorService');
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
