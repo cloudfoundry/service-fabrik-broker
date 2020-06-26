@@ -23,12 +23,18 @@ class ArchiveMeteredEventsJob extends BaseJob {
       logger.info(`-> Starting ArchiveMeteredEventsJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
       const events = await this.getMeteredEvents();
       logger.info(`Total number of metered events obtained from ApiServer: ${events.length}`);
-      if(events.length === 0) {
+      if(events.length != 0) {
+        const meteringFileTimeStamp = new Date();
+        const successfullyPatchedEvents = await this.patchToMeteringStore(events, meteringFileTimeStamp.toISOString(), job.attrs.data.sleepDuration, job.attrs.data.deleteAttempts);
+        logger.info(`No of processed metered events: ${successfullyPatchedEvents}`);
+      }
+      const excludedEvents = await this.getExcludedEvents();
+      logger.info(`Total number of excluded events obtained from ApiServer: ${excludedEvents.length}`);
+      if(excludedEvents.length === 0) {
         return this.runSucceeded({}, job, done);
       }
-      const meteringFileTimeStamp = new Date();
-      const successfullyPatchedEvents = await this.patchToMeteringStore(events, meteringFileTimeStamp.toISOString(), job.attrs.data.sleepDuration, job.attrs.data.deleteAttempts);
-      logger.info(`No of processed metered events: ${successfullyPatchedEvents}`);
+      const deletedExcludedEvents = await this.deleteExcludedEvents(excludedEvents, job.attrs.data.sleepDuration);
+      logger.info(`No of deleted excluded events: ${deletedExcludedEvents}`);
       return this.runSucceeded({}, job, done);
     } catch(err) {
       return this.runFailed(err, {}, job, done);
@@ -45,6 +51,37 @@ class ArchiveMeteredEventsJob extends BaseJob {
       }
     };
     return apiServerClient.getResources(options);
+  }
+
+  static async getExcludedEvents() {
+    let selector = `state in (${CONST.METER_STATE.EXCLUDED})`;
+    const options = {
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
+      query: {
+        labelSelector: selector
+      }
+    };
+    return apiServerClient.getResources(options); 
+  }
+
+  static async deleteExcludedEvents(events, sleepDuration) {
+    try {
+      const noEventsToDelete = Math.min(_.get(config, 'system_jobs.archive_metered_events.job_data.events_to_patch', CONST.ARCHIVE_METERED_EVENTS_RUN_THRESHOLD), events.length);
+      const eventsToDelete = _.slice(events, 0, noEventsToDelete);
+      for(let i = 0; i < eventsToDelete.length; i++) {
+        await apiServerClient.deleteResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
+          resourceId: `${eventsToDelete[i].metadata.name}`
+        });
+        await sleep(sleepDuration || 1000);
+      }
+      return noEventsToDelete;
+    } catch(err) {
+      logger.error('Error while deleting excluded events from ApiServer: ', err);
+      throw err;
+    }
   }
 
   static async patchToMeteringStore(events, timeStamp, sleepDuration, attempts) {

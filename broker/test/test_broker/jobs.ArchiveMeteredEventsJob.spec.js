@@ -82,7 +82,7 @@ describe('Jobs', () => {
         getResourcesStub.resolves([]);
         return ArchiveMeteredEventsJob.run(job, {})
           .then(() => {
-            expect(getResourcesStub.callCount).to.eql(1);
+            expect(getResourcesStub.callCount).to.eql(2);
             expect(runSucceededStub.callCount).to.eql(1);
           });
       });
@@ -94,11 +94,11 @@ describe('Jobs', () => {
         runSucceededStub.resolves();
         return ArchiveMeteredEventsJob.run(job, {})
           .then(() => {
-            expect(getResourcesStub.callCount).to.eql(1);
+            expect(getResourcesStub.callCount).to.eql(2);
             expect(runSucceededStub.callCount).to.eql(1);
             expect(putArchiveFileStub.callCount).to.eql(1);
             expect(patchEventToArchiveFileStub.callCount).to.eql(dummyMeteredEvents.length);
-            expect(deleteResourceStub.callCount).to.eql(dummyMeteredEvents.length);
+            expect(deleteResourceStub.callCount).to.eql(2*dummyMeteredEvents.length);
           });
       });
     });
