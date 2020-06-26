@@ -28,14 +28,13 @@ class ArchiveMeteredEventsJob extends BaseJob {
         const successfullyPatchedEvents = await this.patchToMeteringStore(events, meteringFileTimeStamp.toISOString(), job.attrs.data.sleepDuration, job.attrs.data.deleteAttempts);
         logger.info(`No of processed metered events: ${successfullyPatchedEvents}`);
       }
-      
       const excludedEvents = await this.getExcludedEvents();
       logger.info(`Total number of excluded events obtained from ApiServer: ${excludedEvents.length}`);
       if(excludedEvents.length === 0) {
         return this.runSucceeded({}, job, done);
       }
-      const deletedExcludedEvents = await this.deletedExcludedEvents(excludedEvents, job.attrs.data.sleepDuration);
-      logger.info(`No of deletes excluded events: ${deletedExcludedEvents}`);
+      const deletedExcludedEvents = await this.deleteExcludedEvents(excludedEvents, job.attrs.data.sleepDuration);
+      logger.info(`No of deleted excluded events: ${deletedExcludedEvents}`);
       return this.runSucceeded({}, job, done);
     } catch(err) {
       return this.runFailed(err, {}, job, done);
