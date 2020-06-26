@@ -106,7 +106,7 @@ class Repository {
 
 
 describe('BackupReportManager', function () {
-  const BackupReportManager = proxyquire('../../applications/reports/api-controllers/BackupReportManager', {
+  const BackupReportManager = proxyquire('../../applications/reports/src/api-controllers/BackupReportManager', {
     '@sf/common-utils': {
       Repository: Repository
     }

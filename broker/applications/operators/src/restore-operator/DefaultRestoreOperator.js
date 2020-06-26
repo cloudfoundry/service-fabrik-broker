@@ -11,7 +11,7 @@ const {
   }
 } = require('@sf/common-utils');
 const BaseOperator = require('../BaseOperator');
-const RestoreService = require('./');
+const RestoreService = require('.');
 
 class DefaultRestoreOperator extends BaseOperator {
 

@@ -38,7 +38,7 @@ const VirtualHostOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const VirtualHostOperator = proxyquire('../../applications/operators/virtualhost-operator/VirtualHostOperator', {
+const VirtualHostOperator = proxyquire('../../applications/operators/src/virtualhost-operator/VirtualHostOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {

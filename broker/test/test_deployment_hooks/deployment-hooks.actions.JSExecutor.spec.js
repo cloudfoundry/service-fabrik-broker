@@ -27,7 +27,7 @@ describe('action', function () {
       process.argv[2] = 'ReserveIps';
       process.argv[3] = 'PreCreate';
       process.argv[4] = '{}';
-      return proxyquire('../../applications/deployment_hooks/lib/actions/JSExecutor', proxyLibs)
+      return proxyquire('../../applications/deployment_hooks/src/lib/actions/JSExecutor', proxyLibs)
         .then(() => {
           expect(consoleErrorStub.callCount).to.equal(0);
           expect(processExitStub.callCount).to.equal(0);
@@ -44,7 +44,7 @@ describe('action', function () {
       process.argv[2] = 'ReserveIps';
       process.argv[3] = 'PreCreate';
       process.argv[4] = 'context';
-      return proxyquire('../../applications/deployment_hooks/lib/actions/JSExecutor', proxyLibs)
+      return proxyquire('../../applications/deployment_hooks/src/lib/actions/JSExecutor', proxyLibs)
         .then(() => {
           expect(consoleErrorStub.callCount).to.equal(2);
           expect(processExitStub.callCount).to.equal(1);
@@ -53,7 +53,7 @@ describe('action', function () {
     it('should exit if args are invalid', function () {
       proxyLibs = {};
       process.argv[2] = 'ReserveIps';
-      return proxyquire('../../applications/deployment_hooks/lib/actions/JSExecutor', proxyLibs)
+      return proxyquire('../../applications/deployment_hooks/src/lib/actions/JSExecutor', proxyLibs)
         .then(() => {
           expect(consoleErrorStub.callCount).to.equal(1);
           expect(processExitStub.callCount).to.equal(1);

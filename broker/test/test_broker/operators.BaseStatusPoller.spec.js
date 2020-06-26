@@ -32,7 +32,7 @@ const CONSTANTS = {
   }
 };
 
-const BaseStatusPoller = proxyquire('../../applications/operators/BaseStatusPoller', {
+const BaseStatusPoller = proxyquire('../../applications/operators/src/BaseStatusPoller', {
   '@sf/common-utils': {
     CONST: CONSTANTS
   }
@@ -95,7 +95,7 @@ describe('operators', function () {
           WATCHER_ERROR_DELAY: 10
         }
       };
-      const BaseStatusPollerNew = proxyquire('../../applications/operators/BaseStatusPoller', {
+      const BaseStatusPollerNew = proxyquire('../../applications/operators/src/BaseStatusPoller', {
         '@sf/common-utils': {
           CONST: NEWCONST
         }

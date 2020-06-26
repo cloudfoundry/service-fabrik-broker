@@ -30,7 +30,7 @@ describe('operators', function () {
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-    const BackupService = require('../../applications/operators/backup-operator/BackupService');
+    const BackupService = require('../../applications/operators/src/backup-operator/BackupService');
     const started_at = '2015-11-18T11-28-42Z';
     const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);

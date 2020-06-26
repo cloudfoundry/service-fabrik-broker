@@ -21,7 +21,7 @@ const {
   }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
-const Agent = require('../../data-access-layer/service-agent');
+const Agent = require('../../../data-access-layer/service-agent');
 const BaseService = require('./BaseService');
 
 class BaseDirectorService extends BaseService {

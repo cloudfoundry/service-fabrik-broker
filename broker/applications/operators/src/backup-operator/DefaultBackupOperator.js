@@ -15,7 +15,7 @@ const { initializeEventListener } = require('@sf/event-logger');
 const config = require('@sf/app-config');
 const BackupService = require('./');
 const BaseOperator = require('../BaseOperator');
-require('../../../data-access-layer/db/DBManager');
+require('../../../../data-access-layer/db/DBManager');
 
 class DefaultBackupOperator extends BaseOperator {
 

@@ -12,7 +12,7 @@ const {
 const { backupStore } = require('@sf/iaas');
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
-const Agent = require('../../../data-access-layer/service-agent');
+const Agent = require('../../../../data-access-layer/service-agent');
 const BaseDirectorService = require('../BaseDirectorService');
 
 class RestoreService extends BaseDirectorService {

@@ -24,7 +24,7 @@ const {
 
 const JobFabrik = require('./jobs/JobFabrik');
 const BaseJob = require('./jobs/BaseJob');
-const { maintenanceManager } = require('../../../applications/scheduler/maintenance');
+const { maintenanceManager } = require('../../../applications/scheduler/src/maintenance');
 
 const MONGO_TO_BE_INITIALIZED = 0;
 const MONGO_INIT_FAILED = 1;

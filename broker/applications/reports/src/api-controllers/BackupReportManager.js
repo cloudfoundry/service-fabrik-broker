@@ -9,7 +9,7 @@ const {
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const config = require('@sf/app-config');
-require('../../../data-access-layer/db/DBManager');
+require('../../../../data-access-layer/db/DBManager');
 
 class BackupReportManager {
   static getJobRunDetailCount(instanceId, startTime, endTime) {

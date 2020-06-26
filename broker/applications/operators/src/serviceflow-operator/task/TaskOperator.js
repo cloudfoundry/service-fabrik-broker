@@ -11,7 +11,7 @@ const {
   }
 } = require('@sf/common-utils');
 const { apiServerClient } = require('@sf/eventmesh');
-const BaseOperator = require('../../../operators/BaseOperator');
+const BaseOperator = require('../../../../operators/src/BaseOperator');
 const TaskFabrik = require('./TaskFabrik');
 
 class TaskOperator extends BaseOperator {

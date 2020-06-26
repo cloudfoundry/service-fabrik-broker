@@ -18,7 +18,7 @@ const {
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const { maintenanceManager } = require('../../applications/scheduler/maintenance');
+const { maintenanceManager } = require('../../applications/scheduler/src/maintenance');
 
 const MONGO_INIT_SUCCEEDED = 2;
 const MONGO_INIT_FAILED = 1;
