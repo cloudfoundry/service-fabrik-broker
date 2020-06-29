@@ -58,7 +58,7 @@
     "pug": "2.0.0-beta3",
     "request": "2.84.0",
     "riemannjs": "1.0.1",
-    "rxjs": "5.4.0",
+    "rxjs": "5.5.12",
     "session-file-store": "0.2.0",
     "ssh2": "^0.8.2",
     "uuid": "2.0.2",
