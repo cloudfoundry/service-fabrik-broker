@@ -1,0 +1,51 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.16.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - pkgcloud > liboneandone > mocha > debug:
+        patched: '2020-06-29T13:01:19.387Z'
+  SNYK-JS-LODASH-567746:
+    - lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - pkgcloud > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/compute > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/storage > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - pkgcloud > async > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - kubernetes-client > openid-client > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - mongoose > async > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - azure-arm-compute > ms-rest-azure > async > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - kubernetes-client > openid-client > node-jose > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/compute > @google-cloud/common > google-auto-auth > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/storage > @google-cloud/common > google-auto-auth > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/storage > gcs-resumable-upload > google-auto-auth > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/compute > @google-cloud/common > split-array-stream > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/storage > @google-cloud/common > split-array-stream > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - '@google-cloud/compute > gce-images > google-auto-auth > async > lodash':
+        patched: '2020-06-29T13:01:19.387Z'
+    - pug > pug-code-gen > constantinople > babel-types > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - pug > pug-filters > constantinople > babel-types > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+    - pug > pug-code-gen > pug-attrs > constantinople > babel-types > lodash:
+        patched: '2020-06-29T13:01:19.387Z'
+  'npm:minimatch:20160620':
+    - pkgcloud > liboneandone > mocha > glob > minimatch:
+        patched: '2020-06-29T13:01:19.387Z'
+  'npm:ms:20170412':
+    - pkgcloud > liboneandone > mocha > debug > ms:
+        patched: '2020-06-29T13:01:19.387Z'
