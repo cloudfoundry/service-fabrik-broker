@@ -50,8 +50,10 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
+        - go get -v honnef.co/go/tools/cmd/staticcheck
       install:
         - cd interoperator
+        - PKGS=$(go list ./... | grep -v /vendor/)
         - env GO111MODULE=on go mod download
         - cd ../webhooks
         - dep ensure -v
@@ -61,6 +63,7 @@ matrix:
         - env GO111MODULE=on go fmt ./api/... ./controllers/... ./internal/... ./pkg/... ./
         - env GO111MODULE=on go vet ./api/... ./controllers/... ./internal/... ./pkg/... ./
         - env GO111MODULE=on golint ./api/... ./controllers/... ./internal/... ./pkg/... ./
+        - staticcheck $PKGS
         - popd
         - pushd webhooks
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
