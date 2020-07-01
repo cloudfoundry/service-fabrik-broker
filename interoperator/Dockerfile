@@ -23,7 +23,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags multiclu
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot 
+# FROM gcr.io/distroless/static:nonroot 
+# Using alphine as xmake supports alphine seamlessly
+FROM alpine:3.11.6
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/scheduler .
