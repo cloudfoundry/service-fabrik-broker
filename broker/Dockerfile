@@ -5,7 +5,7 @@ FROM node:12.14-alpine
 # defaults to production, compose overrides this to development on build and run
 ENV NODE_ENV production
 
-EXPOSE 9293
+EXPOSE 9293 9296
 
 # you'll likely want the latest npm, regardless of node version, for speed and fixes
 # but pin this version for the best stability
