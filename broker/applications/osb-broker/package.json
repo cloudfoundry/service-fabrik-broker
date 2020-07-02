@@ -24,6 +24,7 @@
     "express-interceptor": "1.2.0",
     "helmet": "3.14.0",
     "hystrixjs": "0.2.0",
+    "rxjs": "5.4.0",
     "js-yaml": "3.6.1",
     "json-stream": "^1.0.0",
     "jsonwebtoken": "8.1.0",

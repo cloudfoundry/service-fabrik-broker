@@ -20,6 +20,7 @@ COPY ./applications/osb-broker applications/osb-broker
 COPY ./applications/quota-app applications/quota-app
 COPY ./core core
 COPY ./data-access-layer data-access-layer
+RUN mkdir logs
 
 RUN lerna link convert
 RUN npm install --production && npm cache clean --force
