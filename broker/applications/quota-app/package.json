@@ -26,6 +26,7 @@
     "decamelize-keys-deep": "0.1.1",
     "express": "4.13.4",
     "express-interceptor": "1.2.0",
+    "express-jwt": "5.3.1",
     "helmet": "3.14.0",
     "hystrixjs": "0.2.0",
     "js-yaml": "3.6.1",
