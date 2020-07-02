@@ -28,7 +28,6 @@
     "express-interceptor": "1.2.0",
     "helmet": "3.14.0",
     "hystrixjs": "0.2.0",
-    "rxjs": "5.4.0",
     "js-yaml": "3.6.1",
     "json-stream": "^1.0.0",
     "jsonwebtoken": "8.1.0",
@@ -41,6 +40,7 @@
     "pug": "2.0.0-beta3",
     "request": "2.84.0",
     "riemannjs": "1.0.1",
+    "rxjs": "5.4.0",
     "uuid": "2.0.2",
     "winston": "2.2.0",
     "winston-syslog": "1.2.5"
