@@ -31,7 +31,6 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/scheduler .
 COPY --from=builder /workspace/multiclusterdeploy .
-USER nonroot:nonroot
 
 # Default entrypoint is manager (provisioners)
 ENTRYPOINT ["/manager"]
