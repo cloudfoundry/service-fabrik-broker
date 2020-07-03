@@ -14,12 +14,13 @@ RUN npm i lerna -g --loglevel notice
 
 # install dependencies first, in a different location for easier app bind mounting for local development
 WORKDIR /opt/service-fabrik-broker/broker
-COPY package.json package.json
-COPY lerna.json lerna.json
-COPY ./applications/osb-broker applications/osb-broker
-COPY ./applications/quota-app applications/quota-app
-COPY ./core core
-COPY ./data-access-layer data-access-layer
+
+COPY broker/package.json package.json
+COPY broker/lerna.json lerna.json
+COPY broker/applications/osb-broker applications/osb-broker
+COPY broker/applications/quota-app applications/quota-app
+COPY broker/core core
+COPY broker/data-access-layer data-access-layer
 RUN mkdir logs
 
 RUN lerna link convert
