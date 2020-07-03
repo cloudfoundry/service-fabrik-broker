@@ -88,6 +88,7 @@
     "@sf/cf": "file:data-access-layer/cf",
     "@sf/common-controllers": "file:core/controllers",
     "@sf/common-utils": "file:core/utils",
+    "@sf/db": "file:data-access-layer/db",
     "@sf/deployment-hooks": "file:applications/deployment_hooks",
     "@sf/docker": "file:data-access-layer/docker",
     "@sf/event-logger": "file:data-access-layer/event-logger",
@@ -99,12 +100,14 @@
     "@sf/logger": "file:core/logging",
     "@sf/metering": "file:data-access-layer/metering",
     "@sf/models": "file:core/models",
+    "@sf/oob-manager": "file:data-access-layer/oob-manager",
     "@sf/operators": "file:applications/operators",
     "@sf/osb-broker": "file:applications/osb-broker",
     "@sf/platforms": "file:core/platform-managers",
     "@sf/quota": "file:data-access-layer/quota",
     "@sf/quota-app": "file:applications/quota-app",
     "@sf/reports": "file:applications/reports",
-    "@sf/scheduler": "file:applications/scheduler"
+    "@sf/scheduler": "file:applications/scheduler",
+    "@sf/service-agent": "file:data-access-layer/service-agent"
   }
 }

@@ -7,7 +7,7 @@ const pubsub = require('pubsub-js');
 const {
   CONST
 } = require('@sf/common-utils');
-const dbManager = require('../../data-access-layer/db/DBManager');
+const dbManager = require('@sf/db').dbManager;
 
 const handlers = {};
 const CONNECTION_WAIT_SIMULATED_DELAY = 0;
@@ -47,7 +47,7 @@ class Mongoose {
   }
 }
 
-const dbInitializer = proxyquire('../../data-access-layer/db/DbConnectionManager', {
+const dbInitializer = proxyquire('../../data-access-layer/db/src/DbConnectionManager', {
   'mongoose': new Mongoose()
 });
 

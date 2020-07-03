@@ -20,7 +20,7 @@ const config = require('@sf/app-config');
 const { initializeEventListener } = require('@sf/event-logger');
 const BaseOperator = require('../BaseOperator');
 const DirectorService = require('./DirectorService');
-require('../../../../data-access-layer/db/DBManager');
+require('@sf/db');
 
 class BoshOperator extends BaseOperator {
   init() {

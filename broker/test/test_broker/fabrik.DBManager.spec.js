@@ -16,7 +16,7 @@ const {
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
-const DBManagerNoProxy = require('../../data-access-layer/db/DBManager/DBManager');
+const DBManagerNoProxy = require('../../data-access-layer/db/src/DBManager');
 
 let bindPropertyFound = 0;
 let bindPropertyFoundOnApiServer = false;
@@ -98,7 +98,7 @@ const proxyLibs = {
       bosh_job_name: 'broker_mongodb'
     }
   },
-  '../DbConnectionManager': {
+  './DbConnectionManager': {
     startUp: () => Promise.try(() => {
       if (errorOnDbStart) {
         throw new ServiceUnavailable('DB Down...Simulated expected test error.');
@@ -117,24 +117,24 @@ const proxyLibs = {
   '@sf/eventmesh': eventMeshStub
 };
 
-const DBManager = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLibs);
+const DBManager = proxyquire('../../data-access-layer/db/src/DBManager', proxyLibs);
 const proxyLib0 = _.cloneDeep(proxyLibs);
 delete proxyLib0['@sf/app-config'].mongodb.deployment_name;
-const DBManagerWithUndefinedDeploymentName = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLib0);
+const DBManagerWithUndefinedDeploymentName = proxyquire('../../data-access-layer/db/src/DBManager', proxyLib0);
 const proxyLib1 = _.cloneDeep(proxyLibs);
 delete proxyLib1['@sf/app-config'].mongodb.provision.network_index;
-const DBManagerWithUndefinedNetworkSegmentIdx = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLib1);
+const DBManagerWithUndefinedNetworkSegmentIdx = proxyquire('../../data-access-layer/db/src/DBManager', proxyLib1);
 const proxyLib2 = _.cloneDeep(proxyLibs);
 proxyLib2['@sf/app-config'].mongodb.deployment_name = 'service-fabrik-mongodb';
-const DBManagerForUpdate = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLib2);
+const DBManagerForUpdate = proxyquire('../../data-access-layer/db/src/DBManager', proxyLib2);
 const proxyLib3 = _.cloneDeep(proxyLibs);
 delete proxyLib3['@sf/app-config'].mongodb.provision;
 delete proxyLib3['@sf/app-config'].mongodb.deployment_name;
 proxyLib3['@sf/app-config'].mongodb.url = 'mongodb://user:pass@localhost:27017/service-fabrik';
-const DBManagerByUrl = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLib3);
+const DBManagerByUrl = proxyquire('../../data-access-layer/db/src/DBManager', proxyLib3);
 const proxyLib4 = _.cloneDeep(proxyLibs);
 proxyLib4['@sf/app-config'].mongodb.retry_connect.min_delay = 120000;
-const DBManagerCreateWithDelayedReconnectRetry = proxyquire('../../data-access-layer/db/DBManager/DBManager', proxyLib4);
+const DBManagerCreateWithDelayedReconnectRetry = proxyquire('../../data-access-layer/db/src/DBManager', proxyLib4);
 
 describe('fabrik', function () {
   /* jshint unused:false */

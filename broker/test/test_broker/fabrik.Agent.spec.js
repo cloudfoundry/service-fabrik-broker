@@ -7,7 +7,7 @@ const {
     FeatureNotSupportedByAnyAgent
   }
 } = require('@sf/common-utils');
-const Agent = require('../../data-access-layer/service-agent');
+const Agent = require('@sf/service-agent');
 
 describe('fabrik', function () {
   describe('Agent', function () {
