@@ -98,7 +98,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { 
+          '@sf/provisioner-services': { 
             DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
@@ -146,7 +146,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { DirectorService : {
+          '@sf/provisioner-services': { DirectorService : {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -193,7 +193,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { DirectorService: {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -240,7 +240,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { DirectorService: {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -287,7 +287,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { DirectorService: {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -335,7 +335,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { DirectorService: {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -382,7 +382,7 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          '@sf/provisioning-services': { 
+          '@sf/provisioner-services': { 
             DirectorService: {}
           }
         });
