@@ -1,5 +1,6 @@
 'use strict';
 
+// eslint-disable-next-line no-console
 console.log('Starting Service Fabrik Deployment Hook App...');
 
 // set NODE_CMD process environment

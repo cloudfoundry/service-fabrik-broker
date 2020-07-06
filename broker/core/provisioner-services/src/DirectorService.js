@@ -742,7 +742,9 @@ class DirectorService extends BaseDirectorService {
     switch (task.state) {
       case 'done':
         // only start postprocessing if it is enabled by a feature flag and supported by the agent
+        // eslint-disable-next-line no-case-declarations
         const postProcessingFeatureName = `lifecycle.async.post${operation.type}`;
+        // eslint-disable-next-line no-case-declarations
         const shallWaitForPostProcessing = _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,

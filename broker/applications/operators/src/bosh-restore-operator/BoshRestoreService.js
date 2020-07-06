@@ -353,6 +353,7 @@ class BoshRestoreService extends BaseDirectorService {
         if (isNaN(instanceOption) || _.isEmpty(instanceOption)) {
           throw new BadRequest(`Invalid 'instances' option: ${instanceOption}`);
         }
+        // eslint-disable-next-line no-case-declarations
         let instanceIndex = parseInt(instanceOption);
         if (instanceIndex >= deploymentInstancesInfo.length || instanceIndex < 0) {
           throw new BadRequest(`${instanceIndex} out of bound, number of instances: ${deploymentInstancesInfo.length}`);
