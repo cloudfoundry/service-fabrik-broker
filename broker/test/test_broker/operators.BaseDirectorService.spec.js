@@ -1,7 +1,7 @@
 'use strict';
 
 // const _ = require('lodash');
-const BaseDirectorService = require('@sf/provisioner-services').BaseDirectorService;
+const BaseDirectorService = require('../../core/provisioner-services/src/BaseDirectorService');
 // const CONST = require('../../common/constants');
 
 describe('operators', function () {
