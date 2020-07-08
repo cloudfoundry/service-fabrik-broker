@@ -25,6 +25,9 @@ let failCreateUpdate = false;
 const mongoDBUrl = 'mongodb://username:password@10.11.0.2:27017,10.11.0.3:27017,10.11.0.4:27017/service-fabrik';
 let dbConnectionState = 1;
 class DirectorServiceStub {
+  assignPlatformManager() {
+    return Promise.resolve();
+  }
   createBinding() {
     return Promise.resolve({
       credentials: {
@@ -108,7 +111,9 @@ const proxyLibs = {
     getConnectionStatus: () => dbConnectionState,
     shutDown: () => Promise.resolve({})
   },
-  '../../../applications/operators/src/bosh-operator/DirectorService': DirectorServiceStub,
+  '@sf/provisioner-services': {
+    DirectorService: DirectorServiceStub
+  },
   '@sf/models': {
     catalog: {
       getPlan: () => {}

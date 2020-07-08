@@ -22,6 +22,7 @@ function loadActionScripts(actions) {
   }
 
   function writeActionFile(template, filePath) {
+    // eslint-disable-next-line no-console
     console.log(`Creating new file ${filePath}`);
     ensureDirectoryExist(filePath);
     fs.writeFileSync(filePath, Buffer.from(template, 'base64'), {

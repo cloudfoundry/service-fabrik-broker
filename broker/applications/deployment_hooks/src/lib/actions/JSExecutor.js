@@ -9,6 +9,7 @@ let context = process.argv[4];
 function validateArgs() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
+    // eslint-disable-next-line no-console
     console.error('Not enough arguments provided for script', args);
     process.exit(1);
     // Added return false for unit testing.
@@ -24,11 +25,14 @@ const actionResponse = Promise.try(() => {
   try {
     context = JSON.parse(context);
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('Error in parsing context ', context);
   }
   return Promise.try(() => actionProcessor[`execute${phase}`](context))
+    // eslint-disable-next-line no-console
     .then(response => console.log(JSON.stringify(response)))
     .catch(err => {
+      // eslint-disable-next-line no-console
       console.error(err);
       process.exit(1);
     });

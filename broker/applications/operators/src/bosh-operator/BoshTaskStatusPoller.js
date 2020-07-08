@@ -17,7 +17,7 @@ const {
 const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const { EventLogInterceptor } = require('@sf/event-logger');
-const DirectorService = require('./DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const BaseStatusPoller = require('../BaseStatusPoller');
 const AssertionError = assert.AssertionError;
 

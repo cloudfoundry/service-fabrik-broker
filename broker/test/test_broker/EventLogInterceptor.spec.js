@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const DirectorService = require('../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const DockerService = require('../../applications/operators/src/docker-operator/DockerService');
 const { catalog } = require('@sf/models');
 const {

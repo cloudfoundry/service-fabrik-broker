@@ -24,7 +24,7 @@ const { catalog } = require('@sf/models');
 const { apiServerClient } = require('@sf/eventmesh');
 const ScheduleManager = require('../ScheduleManager');
 const BaseJob = require('./BaseJob');
-const DirectorService = require('../../../../applications/operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 // NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {

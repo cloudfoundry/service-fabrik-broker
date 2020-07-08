@@ -15,7 +15,7 @@ const { catalog } = require('@sf/models');
 const { director } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
 const MultitenancyAgent = require('./MultitenancyAgent');
-const BaseService = require('../BaseService');
+const BaseService = require('../../../../core/provisioner-services/src/BaseService');
 
 
 class MultitenancyBindService extends BaseService {

@@ -82,12 +82,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
-            'createInstance': function (instance_id, options) {
-              /* jshint unused:false */
-              return Promise.resolve({
-                'create': createStub
-              });
+          '@sf/provisioner-services': {
+            DirectorService: {
+              'createInstance': function (instance_id, options) {
+                /* jshint unused:false */
+                return Promise.resolve({
+                  'create': createStub
+                });
+              }
             }
           }
         });
@@ -125,12 +127,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
-            'createInstance': function (instance_id, options) {
-              /* jshint unused:false */
-              return Promise.resolve({
-                'create': createStub
-              });
+          '@sf/provisioner-services': {
+              DirectorService: {
+              'createInstance': function (instance_id, options) {
+                /* jshint unused:false */
+                return Promise.resolve({
+                  'create': createStub
+                });
+              }
             }
           }
         });
@@ -162,7 +166,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns();
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': {
+            DirectorService: {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
               return Promise.resolve({
@@ -170,6 +175,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -196,7 +202,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': {
+            DirectorService: {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
               return Promise.resolve({
@@ -204,6 +211,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);
         resourceBodyCopy.status.response.deployment_name = undefined;
@@ -239,7 +247,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': {
+            DirectorService: {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
               return Promise.resolve({
@@ -247,6 +256,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);
         resourceBodyCopy.status.response.type = 'update';
@@ -283,7 +293,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': {
+            DirectorService: {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
               return Promise.resolve({
@@ -291,6 +302,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);
         resourceBodyCopy.status.response.type = 'delete';
@@ -325,7 +337,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': {
+            DirectorService: {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
               return Promise.resolve({
@@ -333,6 +346,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);
         resourceBodyCopy.status.response.deployment_name = undefined;

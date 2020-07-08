@@ -104,6 +104,7 @@
     "@sf/operators": "file:applications/operators",
     "@sf/osb-broker": "file:applications/osb-broker",
     "@sf/platforms": "file:core/platform-managers",
+    "@sf/provisioner-services": "file:core/provisioner-services",
     "@sf/quota": "file:data-access-layer/quota",
     "@sf/quota-app": "file:applications/quota-app",
     "@sf/reports": "file:applications/reports",

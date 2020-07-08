@@ -1,5 +1,6 @@
 'use strict';
 
+// eslint-disable-next-line no-console
 console.log('Starting Service Fabrik Report App...');
 const routesReport = require('./report');
 const { ExpressApp, HttpServer } = require('@sf/express-commons');

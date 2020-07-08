@@ -27,7 +27,7 @@ const {
   FabrikBaseController
 } = require('@sf/common-controllers');
 
-const DirectorService = require('../../../operators/src/bosh-operator/DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const DockerService = require('../../../operators/src/docker-operator/DockerService');
 const VirtualHostService = require('../../../operators/src/virtualhost-operator/VirtualHostService');
 

@@ -50,7 +50,7 @@ const {
 const { apiServerClient } = require('@sf/eventmesh');
 const Agent = require('@sf/service-agent');
 const { backupStore } = require('@sf/iaas');
-const BaseDirectorService = require('../BaseDirectorService');
+const BaseDirectorService = require('./BaseDirectorService');
 const {
   cloudController,
   serviceFabrikClient,
@@ -560,7 +560,7 @@ class DirectorService extends BaseDirectorService {
     // Lazy create of deploymentHookClient
     // Only Processes that require service lifecycle operations will need deployment_hooks properties.
     // Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../../deployment_hooks/src/lib/utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../../applications/deployment_hooks/src/lib/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
@@ -742,7 +742,9 @@ class DirectorService extends BaseDirectorService {
     switch (task.state) {
       case 'done':
         // only start postprocessing if it is enabled by a feature flag and supported by the agent
+        // eslint-disable-next-line no-case-declarations
         const postProcessingFeatureName = `lifecycle.async.post${operation.type}`;
+        // eslint-disable-next-line no-case-declarations
         const shallWaitForPostProcessing = _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,

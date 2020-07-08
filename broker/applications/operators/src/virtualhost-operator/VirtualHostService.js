@@ -21,7 +21,7 @@ const { catalog } = require('@sf/models');
 const { cloudController } = require('@sf/cf');
 const { director } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');
-const BaseService = require('../BaseService');
+const BaseService = require('../../../../core/provisioner-services/src/BaseService');
 const VirtualHostAgent = require('./VirtualHostAgent');
 const mapper = require('./VirtualHostRelationMapper');
 

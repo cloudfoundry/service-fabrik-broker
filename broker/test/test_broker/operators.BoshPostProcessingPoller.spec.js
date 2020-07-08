@@ -98,7 +98,8 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { 
+            DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
@@ -106,6 +107,7 @@ describe('operators', function () {
               });
             }
           }
+        }
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -144,14 +146,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { DirectorService : {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
                 'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
-          }
+          }}
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -191,14 +193,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
                 'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
-          }
+          }}
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -238,14 +240,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
                 'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
-          }
+          }}
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -285,14 +287,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
                 'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
-          }
+          }}
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -333,14 +335,14 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {
+          '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
                 'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
-          }
+          }}
         });
         const boshPostProcessingPoller = new BoshPostProcessingPoller();
         const resourceBodyCopy = _.cloneDeep(resourceBody);
@@ -380,7 +382,9 @@ describe('operators', function () {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
         const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
-          './DirectorService': {}
+          '@sf/provisioner-services': { 
+            DirectorService: {}
+          }
         });
         const resourceBodyCopy = _.cloneDeep(resourceBody);
         resourceBodyCopy.status.lastOperation.type = 'random';

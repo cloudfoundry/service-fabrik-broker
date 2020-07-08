@@ -18,7 +18,7 @@ const { director } = require('@sf/bosh');
 const { backupStore } = require('@sf/iaas');
 const { apiServerClient } = require('@sf/eventmesh');
 const Agent = require('@sf/service-agent');
-const BaseDirectorService = require('../BaseDirectorService');
+const BaseDirectorService = require('../../../../core/provisioner-services/src/BaseDirectorService');
 
 class BackupService extends BaseDirectorService {
   constructor(plan) {

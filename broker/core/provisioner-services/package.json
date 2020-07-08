@@ -1,0 +1,24 @@
+{
+  "name": "@sf/provisioner-services",
+  "version": "1.0.0",
+  "description": "It contains supporting services for provisioners like Bosh, Docker and so on",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "eslint": "./node_modules/eslint/bin/eslint.js ."
+  },
+  "repository": {},
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sf/app-config": "file:../app-config",
+    "@sf/bosh": "file:../../data-access-layer/bosh",
+    "@sf/cf": "file:../../data-access-layer/cf",
+    "@sf/common-utils": "file:../utils",
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
+    "@sf/iaas": "file:../../data-access-layer/iaas",
+    "@sf/jobs": "file:../scheduler-jobs",
+    "@sf/logger": "file:../logging",
+    "@sf/models": "file:../models",
+    "@sf/service-agent": "file:../../data-access-layer/service-agent"
+  }
+}

@@ -10,7 +10,7 @@ const {
   }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
-const DirectorService = require('./DirectorService');
+const DirectorService = require('@sf/provisioner-services').DirectorService;
 const BaseStatusPoller = require('../BaseStatusPoller');
 
 class BoshStaggeredDeploymentPoller extends BaseStatusPoller {

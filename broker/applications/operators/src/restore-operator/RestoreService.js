@@ -13,7 +13,7 @@ const { backupStore } = require('@sf/iaas');
 const config = require('@sf/app-config');
 const logger = require('@sf/logger');
 const Agent = require('@sf/service-agent');
-const BaseDirectorService = require('../BaseDirectorService');
+const BaseDirectorService = require('../../../../core/provisioner-services/src/BaseDirectorService');
 
 class RestoreService extends BaseDirectorService {
   constructor(plan) {
