@@ -259,6 +259,7 @@ class DirectorService extends BaseDirectorService {
       .catch(err => _.assign(operation, {
         state: CONST.APISERVER.RESOURCE_STATE.FAILED,
         resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED,
+        deployment: this.deploymentName,
         description: `${action} deployment '${this.deploymentName}' not yet completely succeeded because "${err.message}"`
       }));
   }
@@ -724,7 +725,12 @@ class DirectorService extends BaseDirectorService {
     const instanceId = this.guid;
 
     if (operation.task_id) {
-      return this.getBoshTaskStatus(instanceId, operation, operation.task_id);
+      return this.getBoshTaskStatus(instanceId, operation, operation.task_id)
+        .then(() => {
+          if (_.get(operation, 'type') == CONST.OPERATION_TYPE.CREATE && _.get(operation, 'state') == 'failed') {
+            return this.director.deleteDeployment(operation.deployment);
+          }
+        }).return(operation);
     } else {
       return Promise.try(() => {
         return _.assign(operation, {
@@ -755,6 +761,7 @@ class DirectorService extends BaseDirectorService {
       case 'cancelled':
       case 'timeout':
         return _.assign(operation, {
+          deployment: task.deployment,
           description: `${action} deployment ${task.deployment} failed at ${timestamp} with Error "${task.result}"`,
           state: 'failed',
           resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED

@@ -970,6 +970,7 @@ describe('#DirectorService', function () {
 
         it('create: returns 200 OK (state = failed) if security group creation fails', function () {
           mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.director.deleteDeployment(task_id);
           mocks.cloudController.createSecurityGroup(instance_id, 500);
           const options = {
             service_id: service_id,
