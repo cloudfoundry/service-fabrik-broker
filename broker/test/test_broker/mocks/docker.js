@@ -197,6 +197,7 @@ function getContainerLogs() {
     .query({
       stdout: 1,
       stderr: 1,
+      follow: true,
       timestamps: 1
     })
     .reply(200, '');
