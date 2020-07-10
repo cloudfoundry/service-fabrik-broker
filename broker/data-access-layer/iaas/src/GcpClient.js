@@ -2,7 +2,7 @@
 const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const GcpStorage = require('@google-cloud/storage');
+const {Storage} = require('@google-cloud/storage');
 const GcpCompute = require('@google-cloud/compute');
 
 const logger = require('@sf/logger');
@@ -284,7 +284,7 @@ class GcpClient extends BaseCloudClient {
   }
 
   static createStorageClient(options) {
-    return GcpStorage({
+    return new Storage({
       projectId: options.projectId,
       credentials: options.credentials
     });
