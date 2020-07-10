@@ -796,7 +796,6 @@ class DockerService extends BaseService {
       .logsAsync({
         stdout: 1,
         stderr: 1,
-        follow: true,
         timestamps: 1
       })
       .then(stream => demux(stream, {
