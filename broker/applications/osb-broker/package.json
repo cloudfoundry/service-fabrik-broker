@@ -40,7 +40,7 @@
     "rxjs": "6.6.0",
     "uuid": "2.0.2",
     "winston": "2.2.0",
-    "winston-syslog": "1.2.5"
+    "winston-syslog": "1.2.6"
   },
   "scripts": {
     "eslint": "./node_modules/eslint/bin/eslint.js .",
