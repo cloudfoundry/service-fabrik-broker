@@ -10,6 +10,7 @@ const config = require('@sf/app-config');
 const logger = require('@sf/logger');
 const {
   CONST,
+  DeploymentHookClient,
   errors: {
     NotFound,
     ServiceInstanceNotFound,
@@ -558,10 +559,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   executeActions(phase, context) {
-    // Lazy create of deploymentHookClient
-    // Only Processes that require service lifecycle operations will need deployment_hooks properties.
-    // Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../../applications/deployment_hooks/src/lib/utils/DeploymentHookClient');
+    const deploymentHookClient = new DeploymentHookClient();
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
