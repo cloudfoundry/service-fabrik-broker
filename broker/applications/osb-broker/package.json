@@ -39,7 +39,7 @@
     "riemannjs": "1.0.1",
     "rxjs": "6.6.0",
     "uuid": "2.0.2",
-    "winston": "2.2.0",
+    "winston": "2.4.5",
     "winston-syslog": "1.2.5"
   },
   "scripts": {
