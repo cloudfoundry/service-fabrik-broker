@@ -6,24 +6,27 @@ const config = require('@sf/app-config');
 /* jshint expr:true */
 require('winston-syslog').Syslog; // eslint-disable-line no-unused-expressions
 
-winston.emitErrs = true;
-
 const transports = [
   new winston.transports.File({
-    prettyPrint: true,
     level: config.log_level || 'info',
     silent: false,
-    colorize: (config.colorize_log !== undefined && config.colorize_log === false) ? false : true,
-    timestamp: true,
     filename: config.log_path,
-    json: false
+    format: winston.format.combine(
+      winston.format.prettyPrint(),
+      config.colorize_log !== undefined && config.colorize_log === false ? winston.format.uncolorize() : winston.format.colorize(),
+      winston.format.timestamp(),
+      winston.format.printf(i => `${i.timestamp} - ${i.level}: ${i.message}`)
+    )
   }),
   new winston.transports.Console({
     level: process.env.LOG_LEVEL || 'debug',
     silent: _.includes(['production', 'test'], process.env.NODE_ENV),
-    prettyPrint: true,
-    colorize: true,
-    timestamp: true
+    format: winston.format.combine(
+      winston.format.prettyPrint(),
+      winston.format.colorize({all:true}),
+      winston.format.timestamp(),
+      winston.format.printf(i => `${i.timestamp} - ${i.level}: ${i.message}`)
+    ),
   }),
   new winston.transports.Syslog({
     level: config.sys_log_level || 'info',
@@ -45,7 +48,7 @@ class Stream {
   }
 }
 
-const logger = new winston.Logger({
+const logger = winston.createLogger({
   transports: transports,
   exitOnError: true
 });

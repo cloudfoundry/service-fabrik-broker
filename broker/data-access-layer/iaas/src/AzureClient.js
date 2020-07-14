@@ -159,7 +159,9 @@ class AzureClient extends BaseCloudClient {
     logger.debug(`Deleting file ${file} in container ${container} `);
     return this.storage
       .deleteBlobAsync(container, file)
-      .then(response => logger.info(`Response of blob deletion from cloud storage for ${file} in container ${container}:`, response))
+      .then(response => {
+        logger.info(`Response of blob deletion from cloud storage for ${file} in container ${container}:`, response);
+      })
       .catch(BaseCloudClient.providerErrorTypes.Unauthorized, err => {
         logger.error(err.message);
         throw new Unauthorized(`Authorization at cloud storage provider failed while deleting blob ${file} in container ${container}`);
@@ -238,7 +240,9 @@ class AzureClient extends BaseCloudClient {
         return this.computeClient
           .snapshots
           .deleteMethodAsync(this.settings.resource_group, snapshotName)
-          .then(retval => logger.info(`Deleted snapshot ${snapshotName}`, retval))
+          .then(retval => {
+            logger.info(`Deleted snapshot ${snapshotName}`, retval);
+          })
           .catch(err => {
             logger.error(`Error occured while deleting snapshot ${snapshotName}`, err);
             throw err;

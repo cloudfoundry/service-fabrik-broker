@@ -154,7 +154,9 @@ class GcpClient extends BaseCloudClient {
         .bucket(container)
         .file(file)
         .delete()
-        .then(() => logger.info(`Deleted file ${file} in container ${container}`))
+        .then(() => {
+          logger.info(`Deleted file ${file} in container ${container}`);
+        })
     )
       .catchThrow(BaseCloudClient.providerErrorTypes.Unauthorized,
         new Unauthorized(`Authorization at google cloud storage provider failed while deleting blob ${file} in container ${container}`))

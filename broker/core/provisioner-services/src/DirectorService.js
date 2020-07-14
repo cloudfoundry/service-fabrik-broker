@@ -609,8 +609,9 @@ class DirectorService extends BaseDirectorService {
           return this.deleteDeployment(this.deploymentName, params);
         }
       })
-      .catch(DirectorServiceUnavailable, err =>
-        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err))
+      .catch(DirectorServiceUnavailable, err => {
+        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err);
+      })
       .then(taskId => _
         .chain(operation)
         .set('task_id', taskId)
