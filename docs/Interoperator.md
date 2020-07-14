@@ -290,20 +290,232 @@ For example,
 apiVersion: osb.servicefabrik.io/v1alpha1
 kind: SFPlan
 metadata:
-  # Name maps to the name of the OSB Service Plan.
-  name: &id 29d7d4c8-6fe2-4c2a-a5ca-a826937d5a88
+  # Name maps to the id of the OSB Service Plan.
+  name: &id 39d7d4c8-6fe2-4c2a-a5ca-b826937d5a88
+  labels:
+    # service_id of the OSB service to which this plan belongs.
+    serviceId: &serviceID 24731fb8-7b84-5f57-914f-c3d55d793dd4
+    planId: *id
 spec:
   # Name of the OSB Service Plan.
-  name: &name 'v9.4-dev-large'
+  name: &name 'v9.6-xxsmall'
 
   # Id of the OSB Service Plan.
   id: *id
 
   # Description of the OSB Service Plan.
-  description: 'Postgresql service running inside a k8s container (for non-productive usage)'
+  description: 'Postgresql service of size 1 CPU / 2GB RAM / 20GB Disk Storage running inside a k8s container '
 
   # service_id of the OSB service to which this plan belongs.
-  serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  serviceId: *serviceID
+
+  # The following details map one-to-one with the data in the OSB service plan objects in the OSB /v2/catalog response.
+  metadata:
+    service-inventory-key: SERVICE-TBD
+    costs:
+    - amount:
+        usd: 0.0
+      unit: 'MONTHLY'
+    bullets:
+    - 1 CPU
+    - 2 GB Memory
+    - 20 GB Disk
+  free: true
+  bindable: true
+  planUpdatable: true
+
+  # This section is configuration for to the operator and Service Fabrik.
+  manager:
+    async: true
+  context:
+    namePrefix: sapcp
+    cpuCount: 1
+    memoryGB: 2
+    diskGB : 20
+    maxConnections: 100
+    version: 9.6
+    enableLoadBalancers: false
+    allowedSourceRanges:
+    - 0.0.0.0/0
+    requests:
+      cpu: 1
+      memory: 512Mi
+  
+  # templates map the OSB actions to the templates of the custom resources of the operator.
+  templates:
+  - action: sources
+    type: gotemplate
+    content: |
+      {{- $instanceID := "" }}
+      {{- with .instance.metadata.name }} {{ $instanceID = . }} {{ end }}
+      {{- $bindingID := "" }}
+      {{- with .binding.metadata.name }} {{ $bindingID = . }} {{ end }}
+      {{- $namespace := "" }}
+      {{- with .instance.metadata.namespace }} {{ $namespace = . }} {{ end }}
+      {{- $namePrefix := "" }}
+      {{- with .plan.spec.context.namePrefix }} {{ $namePrefix = . }} {{ end }}
+      postgresql:
+        apiVersion: acid.zalan.do/v1
+        kind: postgresql
+        name: {{ $namePrefix }}-{{ $instanceID }}
+        namespace: {{ $namespace }}
+      {{- with .binding.metadata.name }}
+      secret:
+        apiVersion: v1
+        kind: Secret
+        name: {{ . }}.{{ $namePrefix }}-{{ $instanceID }}.credentials.postgresql.acid.zalan.do
+        namespace: {{ $namespace }}
+      svc:
+        apiVersion: v1
+        kind: Service
+        name: {{ $namePrefix }}-{{ $instanceID }}
+        namespace: {{ $namespace }}
+      {{- end }}
+  - action: status
+    type: gotemplate
+    content: |
+      # Status template for provision call
+      {{ $stateString := "in progress" }}
+      {{- with .postgresql.status.PostgresClusterStatus }}
+        {{- if or (eq . "CreateFailed") (eq . "UpdateFailed") }}
+          {{- $stateString = "failed" }}
+        {{- else }}
+          {{- if eq . "Running"}}
+            {{- $stateString = "succeeded" }}
+          {{- else }}
+            {{- $stateString = "in progress" }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      provision:
+        state: {{ $stateString }}
+        description: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
+      
+      # Status template for bind call
+      {{- $dbname := "main" }}
+      {{- $host := "" }}
+      {{- $enableLoadBalancers := false }}
+      {{- with .plan.spec.context.enableLoadBalancers }} {{ $enableLoadBalancers = . }} {{ end }}
+      {{- if $enableLoadBalancers }}
+        {{- with .svc.status.loadBalancer.ingress }}
+          {{- $host = default (index . 0).ip (index . 0).hostname }}
+        {{- end }}
+      {{- else }}
+        {{- with .svc.spec.clusterIP }} {{ $host = . }} {{ end }}
+      {{- end }}
+      {{- $port := 0 }}
+      {{- with .svc.spec.ports }}
+        {{- $port = (index . 0).port }}
+      {{- end }}
+      {{- $pass := "" }}
+      {{- with .secret.data.password }} {{ $pass = (b64dec .) }} {{ end }}
+      {{- $user := "" }}
+      {{- with .secret.data.username }} {{ $user = (b64dec .) }} {{ end }}
+      {{- $stateString = "in progress" }}
+      {{- if and (not (eq $host "")) (not (eq $pass "")) }}
+        {{- $stateString = "succeeded" }}
+      {{- end }}
+      {{- $responseString := "" }}
+      {{- if eq $stateString "succeeded"}}
+        {{- $credsMap := dict "dbname" $dbname "hostname" $host  "port" (printf "%d" $port) "username" $user "password" $pass }}
+        {{- $_ := set $credsMap "uri"  (printf "postgres://%s:%s@%s:%d/%s?sslmode=require" $user $pass $host $port $dbname) }}
+        {{- $responseMap := dict "credentials" $credsMap }}
+        {{- $responseString = mustToJson $responseMap | squote }}
+      {{ end }}
+      bind:
+        state: {{ $stateString }}
+        error: ""
+        response: {{ $responseString }}
+      
+      # Status template for unbind call
+      {{- $stateString = "succeeded" }}
+      unbind:
+        state: {{ $stateString }}
+        error: ""
+      
+      # Status template for deprovision call
+      {{- $stateString = "in progress" }}
+      {{- with .postgresql }} {{ with .metadata.deletionTimestamp }} {{ $stateString = "in progress" }} {{ end }} {{ else }} {{ $stateString = "succeeded" }}  {{ end }}
+      deprovision:
+        state: {{ printf "%s" $stateString }}
+        error: ""
+  - action: provision
+    type: gotemplate
+    content: |
+      {{- $version := 9.6 }}
+      {{- $cpu_count := 0 }}
+      {{- $memory_gb := 1 }}
+      {{- $disk_gb := 5 }}
+      {{- $max_connections := 100 }}
+      {{- $namePrefix := "" }}
+      {{- $enableLoadBalancers := false }}
+      {{- with .plan.spec.context }}
+        {{- with .namePrefix }} {{ $namePrefix = . }} {{ end }}
+        {{- with .version }} {{ $version = . }} {{ end }}
+        {{- with .cpuCount }} {{ $cpu_count = . }} {{ end }}
+        {{- with .memoryGB }} {{ $memory_gb = . }} {{ end }}
+        {{- with .diskGB }} {{ $disk_gb = . }} {{ end }}
+        {{- with .maxConnections }} {{ $max_connections = . }} {{ end }}
+        {{- with .enableLoadBalancers }} {{ $enableLoadBalancers = . }} {{ end }}
+      {{- end }}
+      {{- $instanceID := "" }}
+      {{- with .instance.metadata.name }} {{ $instanceID = . }} {{ end }}
+      {{- $users := (dict "main" (list "superuser" "createdb")) }}
+      apiVersion: acid.zalan.do/v1
+      kind: postgresql
+      metadata:
+        name: {{ $namePrefix }}-{{ $instanceID }}
+        annotations:
+          operator-broker/service-id: {{ .plan.spec.serviceId }}
+          operator-broker/plan-id: {{ .plan.spec.id }}
+      spec:
+        teamId: {{ $namePrefix }}
+        postgresql:
+          version: "{{ $version }}"
+          parameters:
+            max_connections: "{{ $max_connections }}"
+        numberOfInstances: 2
+        databases:
+          main: main
+        users:
+          {{- toYaml $users | nindent 4 }}
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: "{{ $cpu_count }}"
+            memory: {{ $memory_gb }}Gi
+        volume:
+          size: {{ $disk_gb }}Gi
+        {{- if $enableLoadBalancers }}
+        enableMasterLoadBalancer: {{ $enableLoadBalancers }}
+        enableReplicaLoadBalancer: {{ $enableLoadBalancers }}
+          {{- with .plan.spec.context.allowedSourceRanges }}
+        allowedSourceRanges:
+            {{ toYaml . | nindent 4 }}
+          {{- end }}
+        {{- end }}
+  - action: bind
+    type: gotemplate
+    content: |
+      {{- $bindingID := "" }}
+      {{- with .binding.metadata.name }} {{ $bindingID = . }} {{ end }}
+      {{- $postgresql := .postgresql }}
+      {{- $spec := get $postgresql "spec" }}
+      {{- $users := get $spec "users" }}
+      {{- $_ := set $users $bindingID (list "superuser") }}
+      {{ toYaml $postgresql }}
+  - action: unbind
+    type: gotemplate
+    content: |
+      {{- $bindingID := "" }}
+      {{- with .binding.metadata.name }} {{ $bindingID = . }} {{ end }}
+      {{- $postgresql := .postgresql }}
+      {{- $spec := get $postgresql "spec" }}
+      {{- $users := get $spec "users" }}
+      {{- $_ := unset $users $bindingID }}
+      {{ toYaml $postgresql }}
 
   # schemas describe the schema for the supported parameter for the provision and bind OSB actions.
   schemas:
@@ -320,61 +532,6 @@ spec:
               description: some description for foo field
           required:
           - "foo"
-
-  # The following details map one-to-one with the data in the OSB service plan objects in the OSB /v2/catalog response.
-  metadata:
-    service-inventory-key: SERVICE-161
-    costs:
-    - amount:
-        usd: 0.0
-      unit: 'MONTHLY'
-    bullets:
-    - 'Container Deployment'
-    - '128 MB Memory'
-    - '100 MB Disk'
-  free: true
-  bindable: true
-  planUpdatable: false
-
-  # This section is configuration for to the operator and Service Fabrik.
-  manager:
-    async: true
-  context:
-    operator:
-      image: "servicefabrikjenkins/blueprint"
-      tag: "latest"
-      port: 8080
-      memory: '128m'
-      persistent_volumes:
-      - name: 'data'
-        path: '/data'
-        size: '100m'
-    serviceFabrik:
-      backupEnabled: false
-
-  # templates map the OSB actions to the templates of the custom resources of the operator.
-  templates:
-  - action: provision
-    type: gotemplate
-    content: |-
-      {{- $name := "" }}
-      {{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
-      apiVersion: kubedb.com/v1alpha1
-      kind: Postgres
-      metadata:
-      name: kdb-{{ $name }}-pg
-      spec:
-        version: 10.2-v1
-        storageType: Durable
-        storage:
-          storageClassName: default
-          accessModes:
-          - ReadWriteOnce
-          resources:
-            requests:
-              storage: 50Mi
-        terminationPolicy: WipeOut
-
 ```
 
 The Service Fabrik Broker, as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers),
