@@ -28,7 +28,7 @@
     "@sf/models": "file:../../core/models",
     "@sf/platforms": "file:../../core/platform-managers",
     "agenda": "0.10.0",
-    "ajv": "5.0.0",
+    "ajv": "6.12.3",
     "ali-oss": "6.9.1",
     "aws-sdk": "2.710.0",
     "azure-arm-compute": "4.0.0",
