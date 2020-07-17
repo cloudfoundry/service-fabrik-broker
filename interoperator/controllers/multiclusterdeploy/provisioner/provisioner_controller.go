@@ -31,7 +31,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -162,7 +162,7 @@ func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient cli
 	}
 	for _, sfcrdname := range SFCrdNames {
 		// Get crd registered in master cluster
-		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+		sfCRDInstance := &apiextensionsv1.CustomResourceDefinition{}
 
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			err := r.Get(ctx, types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
@@ -171,7 +171,7 @@ func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient cli
 				return err
 			}
 			// Create/Update CRD in target cluster
-			targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+			targetCRDInstance := &apiextensionsv1.CustomResourceDefinition{}
 			err = targetClient.Get(ctx, types.NamespacedName{
 				Name: sfCRDInstance.GetName(),
 			}, targetCRDInstance)
@@ -454,7 +454,7 @@ func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clu
 func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	r.scheme = mgr.GetScheme()
 
-	err := apiextensionsv1beta1.SchemeBuilder.AddToScheme(r.scheme)
+	err := apiextensionsv1.SchemeBuilder.AddToScheme(r.scheme)
 	if err != nil {
 		return err
 	}
