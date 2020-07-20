@@ -37,7 +37,7 @@
     "request": "2.88.2",
     "riemannjs": "1.0.1",
     "rxjs": "5.0.0",
-    "uuid": "2.0.2",
+    "uuid": "8.2.0",
     "winston": "2.2.0",
     "winston-syslog": "1.2.5"
   },
