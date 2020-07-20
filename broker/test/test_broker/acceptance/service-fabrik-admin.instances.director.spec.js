@@ -139,7 +139,12 @@ describe('service-fabrik-admin', function () {
               }
             }))
             .value();
-          mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED], apiServerResponse, 1, 200);
+          mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [
+            CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, 
+            CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, 
+            CONST.APISERVER.RESOURCE_STATE.FAILED
+          ], apiServerResponse, 1, 200);
           return chai
             .request(apps.admin)
             .get(`${base_url}/deployments/summary`)

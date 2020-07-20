@@ -2,7 +2,7 @@
 const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const {Storage} = require('@google-cloud/storage');
+const { Storage } = require('@google-cloud/storage');
 const GcpCompute = require('@google-cloud/compute');
 
 const logger = require('@sf/logger');
