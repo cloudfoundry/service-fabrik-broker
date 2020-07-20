@@ -25,7 +25,7 @@
     "@sf/jobs": "file:../../core/scheduler-jobs",
     "@sf/logger": "file:../../core/logging",
     "@sf/models": "file:../../core/models",
-    "agenda": "0.10.0",
+    "agenda": "0.10.2",
     "ajv": "5.0.0",
     "ali-oss": "6.9.1",
     "aws-sdk": "2.710.0",
