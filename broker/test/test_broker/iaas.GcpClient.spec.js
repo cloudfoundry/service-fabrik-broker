@@ -1,6 +1,6 @@
 'use strict';
 const _ = require('lodash');
-const GcpStorage = require('@google-cloud/storage');
+const {Storage} = require('@google-cloud/storage');
 const GcpCompute = require('@google-cloud/compute');
 const Promise = require('bluebird');
 const logger = require('@sf/logger');
@@ -354,23 +354,23 @@ describe('iaas', function () {
     describe('#GcpStorage', function () {
       it('should form an object with credentials and projectId with storage base url', function () {
         const responseGcpStorageObject = GcpClient.createStorageClient(settings);
-        const baseUrl = 'https://www.googleapis.com/storage/v1';
+        const baseUrl = 'https://storage.googleapis.com/storage/v1';
 
         expect(responseGcpStorageObject.baseUrl).to.equal(baseUrl);
         expect(responseGcpStorageObject.projectId).to.equal(settings.projectId);
-        expect(responseGcpStorageObject.authClient.config.projectId).to.equal(settings.projectId);
-        expect(responseGcpStorageObject.authClient.config.credentials).to.eql(settings.credentials);
+        expect(responseGcpStorageObject.authClient.jsonContent.project_id).to.equal(settings.projectId);
+        expect(responseGcpStorageObject.authClient.jsonContent).to.eql(settings.credentials);
       });
     });
 
     describe('#GcpCompute', function () {
       it('should form an object with credentials and projectId with compute base url', function () {
         const responseGcpComputeObject = GcpClient.createComputeClient(settings);
-        const baseUrl = 'https://www.googleapis.com/compute/v1';
+        const baseUrl = 'https://compute.googleapis.com/compute/v1';
 
         expect(responseGcpComputeObject.baseUrl).to.equal(baseUrl);
         expect(responseGcpComputeObject.projectId).to.equal(settings.projectId);
-        expect(responseGcpComputeObject.authClient.config.credentials).to.eql(settings.credentials);
+        expect(responseGcpComputeObject.authClient.jsonContent).to.eql(settings.credentials);
       });
     });
 
@@ -379,7 +379,7 @@ describe('iaas', function () {
       before(function () {
         sandbox = sinon.createSandbox();
         client = new GcpClient(settings);
-        sandbox.stub(GcpStorage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
+        sandbox.stub(Storage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
         sandbox.stub(commonFunctions, 'streamToPromise').callsFake(utilsStreamToPromiseStub);
       });
       after(function () {

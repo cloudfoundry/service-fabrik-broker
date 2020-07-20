@@ -82,7 +82,7 @@ describe('iaas', function () {
 
       it('should fetch volume snapshot successfully', function () {
         mocks.azureClient.auth();
-        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`, {
           status: 200,
           body: {
             id: 'testId',
@@ -107,7 +107,7 @@ describe('iaas', function () {
 
       it('should bubble up error if get disk fails', function () {
         mocks.azureClient.auth();
-        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, null, 'diskfailed');
+        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2018-09-30`, null, 'diskfailed');
         return client.getDiskMetadata(diskName).catch(err => {
           expect(err.message).to.equal('diskfailed');
           mocks.verify();
@@ -116,7 +116,7 @@ describe('iaas', function () {
 
       it('should fetch disk metadata successfully', function () {
         mocks.azureClient.auth();
-        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2018-09-30`, {
           body: {
             name: diskName,
             zones: [zone],
@@ -149,7 +149,7 @@ describe('iaas', function () {
 
       it('should bubble up error if get snapshot fails in create disk', function () {
         mocks.azureClient.auth();
-        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`, null, 'failure');
         return client.createDiskFromSnapshot(snapshotName, zone, {
           sku: sku,
           tags: {
@@ -165,7 +165,7 @@ describe('iaas', function () {
       it('should bubble up error if create disk from snapshot fails', function () {
         let boshdisk = `bosh-disk-data-${diskName}`;
         mocks.azureClient.auth(2);
-        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`, {
           status: 200,
           body: {
             id: 'testId',
@@ -177,7 +177,7 @@ describe('iaas', function () {
             date: new Date().toISOString()
           }
         });
-        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2017-03-30`, {
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2018-09-30`, {
           zones: [zone],
           location: loc,
           tags: {
@@ -211,7 +211,7 @@ describe('iaas', function () {
       it('should create disk from snapshot successfully', function () {
         let boshdisk = `bosh-disk-data-${diskName}`;
         mocks.azureClient.auth(2);
-        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`, {
           status: 200,
           body: {
             id: 'testId',
@@ -230,7 +230,7 @@ describe('iaas', function () {
           resource_group_name: settings.resource_group
         };
 
-        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2017-03-30`, {
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2018-09-30`, {
           zones: [zone],
           location: loc,
           tags: tags,
@@ -567,7 +567,7 @@ describe('iaas', function () {
         const snapshotName = 'snapshot1';
         mocks.azureClient.auth();
         mocks.azureClient.deleteSnapshot(
-          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`, {
             status: 204,
             headers: {
               'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
@@ -587,7 +587,7 @@ describe('iaas', function () {
         const errorMessageExpected = 'fake-snap not found';
         mocks.azureClient.auth();
         mocks.azureClient.deleteSnapshot(
-          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`,
+          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2018-09-30`,
           undefined, errorMessageExpected);
         return client.deleteSnapshot(snapshotName)
           .catch(err => expect(err.message).to.equal(errorMessageExpected));
