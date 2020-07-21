@@ -67,7 +67,6 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.BACKUP);
       expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound handleResource');
       expect(registerWatcherStub.firstCall.args[3]).to.eql('state in (in_queue,abort,delete)');
       registerWatcherStub.restore();
     });
@@ -134,8 +133,7 @@ describe('operators', function () {
           .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.firstCall.args[0]).to.eql(catalog.getPlan(plan_id));
@@ -172,8 +170,7 @@ describe('operators', function () {
         .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(1);
@@ -211,8 +208,7 @@ describe('operators', function () {
         .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(1);
@@ -247,8 +243,7 @@ describe('operators', function () {
       };
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(0);
@@ -284,8 +279,7 @@ describe('operators', function () {
         .value(), 1, undefined, 409);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(0);
@@ -321,8 +315,7 @@ describe('operators', function () {
         .value(), 1, undefined, 404);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(0);
@@ -355,8 +348,7 @@ describe('operators', function () {
       };
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.callCount).to.equal(0);
@@ -398,8 +390,7 @@ describe('operators', function () {
         .value(), 1, undefined, 404);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       const crdJsonBackup = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonBackup.metadata.name, {}, crdJsonBackup);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 2);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createServiceSpy.firstCall.args[0]).to.eql(catalog.getPlan(plan_id));

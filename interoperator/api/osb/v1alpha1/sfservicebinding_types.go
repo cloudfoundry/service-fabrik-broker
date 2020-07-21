@@ -31,13 +31,19 @@ import (
 
 // SFServiceBindingSpec defines the desired state of SFServiceBinding
 type SFServiceBindingSpec struct {
-	ID                string                `json:"id,omitempty"`
-	InstanceID        string                `json:"instanceId"`
-	PlanID            string                `json:"planId"`
-	ServiceID         string                `json:"serviceId"`
-	AppGUID           string                `json:"appGuid,omitempty"`
-	BindResource      *runtime.RawExtension `json:"bindResource,omitempty"`
-	RawContext        *runtime.RawExtension `json:"context,omitempty"`
+	ID         string `json:"id,omitempty"`
+	InstanceID string `json:"instanceId"`
+	PlanID     string `json:"planId"`
+	ServiceID  string `json:"serviceId"`
+	AppGUID    string `json:"appGuid,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	BindResource *runtime.RawExtension `json:"bindResource,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	RawContext *runtime.RawExtension `json:"context,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
 	RawParameters     *runtime.RawExtension `json:"parameters,omitempty"`
 	AcceptsIncomplete bool                  `json:"acceptsIncomplete,omitempty"`
 }

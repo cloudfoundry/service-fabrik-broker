@@ -47,6 +47,7 @@ type TemplateSpec struct {
 
 // Schema definition for the input parameters.
 type Schema struct {
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Parameters *runtime.RawExtension `json:"parameters"`
 }
 
@@ -72,9 +73,11 @@ type ServiceSchemas struct {
 
 // SFPlanSpec defines the desired state of SFPlan
 type SFPlanSpec struct {
-	Name                string                `json:"name"`
-	ID                  string                `json:"id"`
-	Description         string                `json:"description"`
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
 	Free                bool                  `json:"free"`
 	Bindable            bool                  `json:"bindable"`
@@ -83,8 +86,12 @@ type SFPlanSpec struct {
 	Schemas             *ServiceSchemas       `json:"schemas,omitempty"`
 	Templates           []TemplateSpec        `json:"templates"`
 	ServiceID           string                `json:"serviceId"`
-	RawContext          *runtime.RawExtension `json:"context,omitempty"`
-	Manager             *runtime.RawExtension `json:"manager,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	RawContext *runtime.RawExtension `json:"context,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Manager *runtime.RawExtension `json:"manager,omitempty"`
 	// Add supported_platform field
 }
 

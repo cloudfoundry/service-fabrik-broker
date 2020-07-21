@@ -29,6 +29,7 @@ spec:
             type: object
           operatorMetadata:
             type: object
+            x-kubernetes-preserve-unknown-fields: true
           spec:
             description: PostgresqlMTSpec defines the desired state of PostgresqlMT
             properties:

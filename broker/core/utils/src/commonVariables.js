@@ -369,6 +369,15 @@ module.exports = Object.freeze({
       SFEVENT: 'sfevents',
       TASK: 'tasks'
     },
+    RESOURCE_CLIENT: {
+      '': { // Core has empty resource group
+        'v1': 'CoreV1Api'
+      },
+      'apiextensions.k8s.io': {
+        'v1': 'ApiextensionsV1Api'
+      },
+      DEFAULT: 'CustomObjectsApi'
+    },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
       IN_PROGRESS: 'in_progress',

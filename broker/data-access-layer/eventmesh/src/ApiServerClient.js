@@ -25,7 +25,7 @@ const {
 
 
 function convertToHttpErrorAndThrow(err) {
-  let message;
+  let message = '';
   let newErr;
   let code;
 
@@ -35,14 +35,8 @@ function convertToHttpErrorAndThrow(err) {
     message = err.message;
   }
 
-  if (err.error && err.error.description) {
-    message = `${message}. ${err.error.description}`;
-  }
-
-  if (err.statusCode) {
+  if (err.statusCode && err.statusCode < 600) {
     code = err.statusCode;
-  } else if (err.code) {
-    code = err.code;
   } else if (err.status) {
     code = err.status;
   }
@@ -74,6 +68,30 @@ function convertToHttpErrorAndThrow(err) {
   throw newErr;
 }
 
+function omitUndefinedFields(body) {
+  const res = {};
+  if (!_.isUndefined(body)) {
+    for (const [key, value] of Object.entries(body)) {
+      if (_.isUndefined(value) || _.isEmpty(value)) {
+        continue;
+      }
+      if (_.isArray(value) && _.isEmpty(_.compact(value))) {
+        continue;
+      }
+      res[key] = value;
+    }
+  }
+  return res;
+}
+
+function transformResponse(res) {
+  if (!res.statusCode) {
+    res.statusCode = _.get(res, 'response.statusCode');
+  }  
+  res.body = omitUndefinedFields(res.body);
+  return _.omit(res, 'response');
+}
+
 class ApiServerClient {
   constructor() {
     this.ready = false;
@@ -94,26 +112,8 @@ class ApiServerClient {
   }
 
   _getApiClient(resourceGroup, version) {
-    let apiClientType;
-    let apiType;
-    version = _.join(_.split(_.startCase(version), ' '), '');
-
-    // Use CustomObjectsApi for all apis except core api
-    switch (resourceGroup) {
-      case '':
-        apiType = 'Core' + version + 'Api';
-        break;
-      case CONST.APISERVER.CRD_RESOURCE_GROUP:
-        apiType = 'Apiextensions' + version + 'Api';
-        break;
-      default:
-        apiType = 'CustomObjectsApi';
-    }
-    apiClientType = k8s[apiType];
-    if (apiClientType === null) {
-      apiType = 'CustomObjectsApi';
-      apiClientType = k8s.CustomObjectsApi;
-    }
+    let apiType = _.get(CONST, ['APISERVER', 'RESOURCE_CLIENT', resourceGroup, version], CONST.APISERVER.RESOURCE_CLIENT.DEFAULT);
+    let apiClientType = k8s[apiType];
     if (!(apiType in this.apiClients)) {
       this.apiClients[apiType] = this.apiserverConfig.makeApiClient(apiClientType);
     }
@@ -330,11 +330,16 @@ class ApiServerClient {
       .catch(Conflict, () => {
         logger.info(`CRD ${name} already registered, patching it now..`);
         return client.patchCustomResourceDefinition(name, crdJson, undefined, undefined, undefined,
-          undefined, { headers: { 'content-type': 'application/merge-patch+json' } });
+          undefined, {
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          })
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          });
       })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
+      .then(res => transformResponse(res));
   }
 
   getCrdJson(resourceGroup, resourceType) {
@@ -368,6 +373,7 @@ class ApiServerClient {
     const client = this._getApiClient('', CONST.APISERVER.NAMESPACE_API_VERSION);
     return Promise.try(() => client.createNamespace(resourceBody))
       .tap(() => logger.debug(`Successfully created namespace ${name}`))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -377,6 +383,7 @@ class ApiServerClient {
     const client = this._getApiClient('', CONST.APISERVER.NAMESPACE_API_VERSION);
     return Promise.try(() => client.deleteNamespace(name))
       .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -402,6 +409,7 @@ class ApiServerClient {
     assert.ok(namespaceId, 'Property \'namespaceId\' is required to get Secret');
     const client = this._getApiClient('', CONST.APISERVER.SECRET_API_VERSION);
     return Promise.try(() => client.readNamespacedSecret(secretId, namespaceId))
+      .then(res => transformResponse(res))
       .then(secret => secret.body)
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -460,6 +468,7 @@ class ApiServerClient {
     const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
     return Promise.try(() => client.createNamespacedCustomObject(group, version, namespaceId, plural, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -517,9 +526,14 @@ class ApiServerClient {
       const namespaceId = this.getNamespaceId(opts.resourceId);
       const client = this._getApiClient(group, version);
       // Create Namespace if not default
-      return Promise.try(() => client.patchNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId, 
-        patchBody, undefined, undefined, undefined, { headers: { 'content-type': 'application/merge-patch+json' } }));
+      return Promise.try(() => client.patchNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId,
+        patchBody, undefined, undefined, undefined, {
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        }));
     })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -585,6 +599,7 @@ class ApiServerClient {
         }
         return res;
       })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -661,27 +676,6 @@ class ApiServerClient {
   }
 
   /**
-   * @description Get a Resource which is cluster scoped in Apiserver with the opts
-   * @param {string} opts.resourceGroup - Group of resource the resource. eg: osb.servicefabrik.io
-   * @param {string} opts.resourceVersion - optional; api version of resource eg: v1alpha1
-   * @param {string} opts.resourceType - Kind of the resource. eg: sfserviceinstances (plural)
-   * @param {string} opts.resourceId - Id of resource
-   */
-  getClusterResource(opts) {
-    logger.debug('Get resource with opts: ', opts);
-    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get resource');
-    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
-    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get resource');
-    const resourceVersion = opts.resourceVersion ? opts.resourceVersion : CONST.APISERVER.API_VERSION;
-    const client = this._getApiClient(opts.resourceGroup, resourceVersion);
-    return Promise.try(() => client.getClusterCustomObject(opts.resourceGroup, resourceVersion, opts.resourceType, opts.resourceId))
-      .then(response => response.body)
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
-  }
-
-  /**
    * @description Get Resources in Apiserver with the opts and query param
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
@@ -721,7 +715,7 @@ class ApiServerClient {
         return client.listNamespacedCustomObject(group, version, namespaceId, plural, pretty, _continue,
           fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
       } else {
-        return client.listNamespacedCustomObject(group, version, plural, pretty, _continue,
+        return client.listClusterCustomObject(group, version, plural, pretty, _continue,
           fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
       }
     })
@@ -781,6 +775,7 @@ class ApiServerClient {
 
     const client = this._getApiClient('', CONST.APISERVER.CONFIG_MAP.API_VERSION);
     return Promise.try(() => client.createNamespacedConfigMap(namespaceId, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -821,15 +816,23 @@ class ApiServerClient {
       .then(oldResourceBody => {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
-        return client.patchNamespacedConfigMap(configName, namespaceId, resourceBody, undefined, undefined, 
-          undefined, undefined, { headers: { 'content-type': 'application/merge-patch+json' } })
+        return client.patchNamespacedConfigMap(configName, namespaceId, resourceBody, undefined, undefined,
+          undefined, undefined, {
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          })
           .catch(err => {
             return convertToHttpErrorAndThrow(err);
           });
       })
       .catch(NotFound, () => {
-        return this.createConfigMapResource(configName, configParam);
-      });
+        return this.createConfigMapResource(configName, configParam)
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          });
+      })
+      .then(res => transformResponse(res));
   }
 
   getConfigMap(configName, key) {
@@ -1012,6 +1015,7 @@ class ApiServerClient {
     );
     // Create Namespace if not default
     return Promise.try(() => client.createNamespacedCustomObject(group, version, namespaceId, plural, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -1066,8 +1070,13 @@ class ApiServerClient {
         _.get(opts, 'spec.instance_id') : opts.resourceId
       );
       return Promise.try(() => client.patchNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId, patchBody,
-        undefined, undefined, undefined, { headers: { 'content-type': 'application/merge-patch+json' } }));
+        undefined, undefined, undefined, {
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        }));
     })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -1148,10 +1157,16 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       })
       .catch(Conflict, () => client.patchNamespacedCustomObject(group, version, namespaceId, plural, name, crd, undefined, undefined,
-        undefined, { headers: { 'content-type': 'application/merge-patch+json' } }))
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
+        undefined, {
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        })
+        .catch(err => {
+          return convertToHttpErrorAndThrow(err);
+        })
+      )
+      .then(res => transformResponse(res));
   }
 }
 

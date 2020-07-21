@@ -49,14 +49,17 @@ spec:
                 type: string
               bindResource:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               context:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               id:
                 type: string
               instanceId:
                 type: string
               parameters:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               planId:
                 type: string
               serviceId:
@@ -78,14 +81,17 @@ spec:
                     type: string
                   bindResource:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   context:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   id:
                     type: string
                   instanceId:
                     type: string
                   parameters:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   planId:
                     type: string
                   serviceId:

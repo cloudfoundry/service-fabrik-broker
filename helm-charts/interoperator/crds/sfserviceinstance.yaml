@@ -50,14 +50,17 @@ spec:
                 type: string
               context:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               organizationGuid:
                 type: string
               parameters:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               planId:
                 type: string
               previousValues:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               serviceId:
                 type: string
               spaceGuid:
@@ -76,14 +79,17 @@ spec:
                     type: string
                   context:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   organizationGuid:
                     type: string
                   parameters:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   planId:
                     type: string
                   previousValues:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   serviceId:
                     type: string
                   spaceGuid:

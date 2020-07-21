@@ -68,7 +68,6 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT);
       expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound handleResource');
       expect(registerWatcherStub.firstCall.args[3]).to.eql('state in (in_queue,update,delete)');
       registerWatcherStub.restore();
     });
@@ -140,7 +139,7 @@ describe('docker-operator', function () {
         })
         .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
@@ -184,7 +183,7 @@ describe('docker-operator', function () {
         })
         .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(1);
@@ -229,7 +228,7 @@ describe('docker-operator', function () {
         })
         .value(), 2);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(1);
@@ -271,7 +270,7 @@ describe('docker-operator', function () {
         }
       };
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
@@ -313,7 +312,7 @@ describe('docker-operator', function () {
         })
         .value(), 1, undefined, 409);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
@@ -355,7 +354,7 @@ describe('docker-operator', function () {
         })
         .value(), 1, undefined, 404);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
@@ -394,7 +393,7 @@ describe('docker-operator', function () {
         }
       };
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
@@ -442,7 +441,7 @@ describe('docker-operator', function () {
         })
         .value(), 1, undefined, 404);
       const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);

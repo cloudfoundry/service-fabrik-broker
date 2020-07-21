@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # This file will be  fetched as: curl -L https://git.io/getLatestKubebuilder | sh -
@@ -46,7 +46,9 @@ command_exists curl
 command_exists tar
 
 if [ "x${KUBEBUILDER_VERSION}" = "x" ] ; then
-  KUBEBUILDER_VERSION=v2.1.0
+  #KUBEBUILDER_VERSION=$(curl -L -s https://api.github.com/repos/kubernetes-sigs/kubebuilder/releases/latest | \
+  #                grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/")
+  KUBEBUILDER_VERSION=v2.3.1
   if [ -z "$KUBEBUILDER_VERSION" ]; then
     echo "\nUnable to fetch the latest version tag. This may be due to network access problem"
     exit 0
@@ -75,6 +77,12 @@ curl -L "$URL"| tar xz -C $TMP_DIR
 
 echo "Downloaded executable files"
 ls "${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
+
+if [[ -z "${PROW}" ]]; then 
+  MOVE="sudo mv"
+else
+  MOVE="mv"
+fi
 
 echo "Moving files to $KUBEBUILDER_DIR folder\n"
 mv ${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} kubebuilder && sudo mv -f kubebuilder /usr/local/

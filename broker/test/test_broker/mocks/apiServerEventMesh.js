@@ -3,7 +3,9 @@
 const _ = require('lodash');
 const nock = require('nock');
 const config = require('@sf/app-config');
-const {CONST} = require('@sf/common-utils');
+const {
+  CONST
+} = require('@sf/common-utils');
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 
@@ -57,7 +59,7 @@ const expectedGetConfigMapResponseDisabled = {
   }
 };
 
-function nockRegisterWatcher(resourceGroup, resourceType, query, times, response){
+function nockRegisterWatcher(resourceGroup, resourceType, query, times, response) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/watch/${resourceType}`)
     .query(query)
@@ -65,11 +67,11 @@ function nockRegisterWatcher(resourceGroup, resourceType, query, times, response
     .reply(200, response);
 }
 
-function nockCreateCrd(resourceGroup, resourceType, response, times) {
+function nockCreateCrd(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .post(`/apis/${resourceGroup}/v1/customresourcedefinitions`)
     .times(times || 1)
-    .reply(201, response);
+    .reply(expectedStatusCode || 201, response || {});
 }
 
 function nockCreateNamespace(name, response, times, verifier, expectedStatusCode) {
@@ -155,8 +157,15 @@ function nockGetResource(resourceGroup, resourceType, id, response, times, expec
 }
 
 function nockGetSecret(secretName, namespaceId, response, times, expectedStatusCode, payload) {
+  let ordered;
+  if (!_.isUndefined(payload)) {
+    ordered = {};
+    Object.keys(payload).sort().forEach(function (key) {
+      ordered[key] = payload[key];
+    });
+  }
   nock(apiServerHost)
-    .get(`/api/v1/namespaces/${namespaceId}/secrets/${secretName}`, payload)
+    .get(`/api/v1/namespaces/${namespaceId}/secrets/${secretName}`, ordered)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
@@ -171,7 +180,7 @@ function nockGetResources(resourceGroup, resourceType, response, query, times, e
 
 function nockGetResourcesAcrossAllNamespaces(resourceGroup, resourceType, response, query, times, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/apis/${resourceGroup}/v1alpha1/namespaces//${resourceType}`)
+    .get(`/apis/${resourceGroup}/v1alpha1/${resourceType}`)
     .query(query)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);

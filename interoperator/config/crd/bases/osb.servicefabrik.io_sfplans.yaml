@@ -49,6 +49,7 @@ spec:
                 type: boolean
               context:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               description:
                 type: string
               free:
@@ -57,8 +58,10 @@ spec:
                 type: string
               manager:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               metadata:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               name:
                 type: string
               planUpdatable:
@@ -77,6 +80,7 @@ spec:
                         properties:
                           parameters:
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                         required:
                         - parameters
                         type: object
@@ -90,6 +94,7 @@ spec:
                         properties:
                           parameters:
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                         required:
                         - parameters
                         type: object
@@ -98,6 +103,7 @@ spec:
                         properties:
                           parameters:
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                         required:
                         - parameters
                         type: object

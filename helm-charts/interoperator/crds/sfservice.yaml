@@ -49,6 +49,7 @@ spec:
                 type: boolean
               context:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               dashboardClient:
                 description: DashboardClient contains the data necessary to activate
                   the Dashboard SSO feature for this service
@@ -68,6 +69,7 @@ spec:
                 type: boolean
               metadata:
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               name:
                 type: string
               planUpdatable:

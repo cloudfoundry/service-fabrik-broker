@@ -207,7 +207,7 @@ defaults: &defaults
     certificate: <%= certificate('apiserver.crt') %>
     private_key: <%= certificate('apiserver.key') %>
     getConfigInCluster: false
-    pathToKubeConfig: '~/.kube/config'
+    pathToKubeConfig: 'config/kubeconfig'
     crds:
       "deployment.servicefabrik.io_v1alpha1_directors.yaml": <%=base64_template('crds/deployment.servicefabrik.io_v1alpha1_directors.yaml') %>
       "lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml": <%= base64_template('crds/lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml') %>
