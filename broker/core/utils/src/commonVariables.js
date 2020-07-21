@@ -331,6 +331,7 @@ module.exports = Object.freeze({
     SECRET_API_VERSION: 'v1',
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
+    CRD_RESOURCE_GROUP_VERSION: 'v1',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
     CONFIG_MAP: {
       API_VERSION: 'v1',

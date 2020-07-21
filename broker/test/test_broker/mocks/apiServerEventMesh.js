@@ -67,7 +67,7 @@ function nockRegisterWatcher(resourceGroup, resourceType, query, times, response
 
 function nockCreateCrd(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions`)
+    .post(`/apis/${resourceGroup}/v1/customresourcedefinitions`)
     .times(times || 1)
     .reply(201, response);
 }
@@ -88,14 +88,14 @@ function nockDeleteNamespace(name, response, times, verifier, expectedStatusCode
 
 function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions/${resourceType}`)
+    .patch(`/apis/${resourceGroup}/v1/customresourcedefinitions/${resourceType}`)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockGetCrd(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions/${resourceType}`)
+    .get(`/apis/${resourceGroup}/v1/customresourcedefinitions/${resourceType}`)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
