@@ -15,13 +15,6 @@ steps:
         #To scan Broker Docker image
         #dockerRegistryUrl: 'https://docker.wdf.sap.corp:50000'
         #dockerImage: 'com.sap.interoperator.test/sf-broker:0.0.1'
-    artifactPrepareVersion:
-        gitHttpsCredentialsId: GitToolsJenkinsSFServiceuserTokenId
-        customVersionSection: xmake
-        #filePath: cfg/xmake.cfg
-        filePath: .xmake.cfg
-    executeBuild:
-        xMakeJobName: ght-servicefabrik-service-fabrik-broker-SP-MS-common
     executeWhitesourceScan:
         whitesourceProductName: 'SHC - INTEROPERATOR'
         whitesourceProductToken: '0064e05d715341bf8409ecc34193d8b6f81bf6c0780c4959b21380bfb3749a9c'
