@@ -40,4 +40,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+  - package-ecosystem: "docker"
+    directory: "/broker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "docker"
+    directory: "/interoperator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
    
