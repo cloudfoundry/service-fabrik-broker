@@ -6,7 +6,7 @@ general:
     gitHttpsCredentialsId: GithubOsCredentialsId
     verbose: true
     
- steps:
+steps:
     #executeProtecodeScan:
         #Scans Interoperator Docker Image
         #protecodeCredentialsId: protecodeCredentialsId
