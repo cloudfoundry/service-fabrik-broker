@@ -7,24 +7,7 @@ general:
     verbose: true
     
 steps:
-    #executeProtecodeScan:
-        #Scans Interoperator Docker Image
-        #protecodeCredentialsId: protecodeCredentialsId
-        #protecodeGroup: 1168
-        #protecodeFailOnSevereVulnerabilities: false
-        #To scan Broker Docker image
-        #dockerRegistryUrl: 'https://docker.wdf.sap.corp:50000'
-        #dockerImage: 'com.sap.interoperator.test/sf-broker:0.0.1'
-    executeWhitesourceScan:
-        whitesourceProductName: 'SHC - INTEROPERATOR'
-        whitesourceProductToken: '0064e05d715341bf8409ecc34193d8b6f81bf6c0780c4959b21380bfb3749a9c'
-        #--- To run whitesource scan on Interoperator
-        whitesourceProjectNames: 'Interoperator'
-        whitesourceUserTokenCredentialsId: interoperator_whitesource_test_id
-        scanType: 'unifiedAgent'
-        buildDescriptorFile: scanType=golang:./interoperator/go.mod 
-        #--- To Whitesource scan on Broker
-        #whitesourceProjectNames: 'Broker'
-        #scanType: 'npm'    
-        #buildDescriptorFile: './broker/applications/osb-broker/package.json'
-        #securityVulnerabilities: 'true'
+    kanikoExecute:
+        dockerConfigJsonCredentialsId: DockerHubCredentialsId
+        containerImage: docker.io/servicefabrikjenkins/service-fabrik-broker:kaniko
+        dockerfilePath: 'broker/Dockerfile'
