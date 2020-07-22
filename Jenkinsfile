@@ -52,6 +52,7 @@ node {
                               scanType: 'golang',
                               productName: 'SHC - INTEROPERATOR',
                               userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                              orgAdminUserTokenCredentialsId: 'orgAdminToken', orgToken: '6971b2eec2d3420bad0caf173ec629f6a3c7d3ba63f3445ab99ffdbf1acfb1d0')
+                              //orgAdminUserTokenCredentialsId: 'orgAdminToken',
+                              orgToken: '6971b2eec2d3420bad0caf173ec629f6a3c7d3ba63f3445ab99ffdbf1acfb1d0')
    }
 }
