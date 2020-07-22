@@ -11,6 +11,13 @@ node {
         //kanikoExecute(script: this, dockerConfigJsonCredentialsId: 'DockerHubCredentialsId', containerImage: 'docker.io/servicefabrikjenkins/service-fabrik-interoperator:kaniko', dockerfilePath: 'interoperator/Dockerfile')
 
    }
+   stage('WhitesourceScan') {
+       whitesourceExecuteScan(script: this,
+                              scanType: 'golang',
+                              productName: 'SHC - INTEROPERATOR',
+                              userTokenCredentialsId: 'interoperator_whitesource_test_id',
+                              orgAdminUserTokenCredentialsId: 'orgAdminToken', orgToken: 'myWhitesourceOrganizationToken')
+   }
    stage('ProtecodeScan') {
        protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
