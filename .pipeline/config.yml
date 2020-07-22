@@ -1,10 +1,10 @@
 general:
-    buildTool: docker
-    productiveBranch: 'master'
-    githubApiUrl: 'https://api.github.com'
-    githubServerUrl: 'https://github.com'
+    #buildTool: docker
+    #productiveBranch: 'master'
+    #githubApiUrl: 'https://api.github.com'
+    #githubServerUrl: 'https://github.com'
     gitHttpsCredentialsId: GithubOsCredentialsId
-    verbose: true
+    #verbose: true
     
 steps:
     kanikoExecute:
