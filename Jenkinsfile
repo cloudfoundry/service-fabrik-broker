@@ -2,6 +2,8 @@
 
 node {
     def imageTag = 'kaniko'
+    
+    echo "[INFO] : imageTag: $imageTag"
     stage('DockerBuild') {
         deleteDir()
         git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
@@ -49,7 +51,7 @@ node {
                                  reportFileName: 'protecode_report_interoperator.pdf')
         }                   
     }
-    stage('WhitesourceScan') {
+    /*stage('WhitesourceScan') {
         environment {
             WHITESOURCE_ORG_TOKEN = credentials('whitesource_org_token')
         }
@@ -59,5 +61,5 @@ node {
                                userTokenCredentialsId: 'interoperator_whitesource_test_id',
                                //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                                orgToken: "$WHITESOURCE_ORG_TOKEN")
-   }
+   }*/
 }
