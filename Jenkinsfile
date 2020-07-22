@@ -9,7 +9,6 @@ node {
         git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
         setupPipelineEnvironment script: this
         stage('Build Using Kaniko') {
-            parallel {
                 kanikoExecute(script: this,
                               dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                               containerImage: "k8s-backing-services.docker.repositories.sap.ondemand.com/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
@@ -29,7 +28,6 @@ node {
                               containerImage: "docker.io/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}",
                               dockerfilePath: 'interoperator/Dockerfile')
             }
-        }
     }
     stage('ProtecodeScan') {
         parallel {
