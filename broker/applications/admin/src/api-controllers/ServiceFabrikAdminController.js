@@ -16,33 +16,39 @@ const {
     unifyDiffResult,
     encodeBase64,
     decodeBase64,
-    getCronAfterXMinuteFromNow
+    getCronAfterXMinuteFromNow,
+    isBrokerBoshDeployment
   },
   Repository
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const config = require('@sf/app-config');
-const { NetworkSegmentIndex } = require('@sf/bosh');
-const { backupStore } = require('@sf/iaas');
-const { cloudController } = require('@sf/cf');
 const {
   FabrikBaseController
 } = require('@sf/common-controllers');
-const bosh = require('@sf/bosh');
-const ScheduleManager = require('@sf/jobs');
-const { maintenanceManager } = require('../../../scheduler/src/maintenance');
+
+let NetworkSegmentIndex, backupStore, cloudController, bosh, ScheduleManager, maintenanceManager, 
+  dbManager, OobBackupManager, DirectorService;
+if(isBrokerBoshDeployment()) {
+  NetworkSegmentIndex = require('@sf/bosh').NetworkSegmentIndex;
+  backupStore = require('@sf/iaas').backupStore;
+  cloudController = require('@sf/cf').cloudController;
+  bosh = require('@sf/bosh');
+  ScheduleManager = require('@sf/jobs');
+  maintenanceManager = require('../../../scheduler/src/maintenance').maintenanceManager;  
+  dbManager = require('@sf/db').dbManager;
+  OobBackupManager = require('@sf/oob-manager');
+  DirectorService = require('@sf/provisioner-services').DirectorService;
+}
 const { serviceBrokerClient } = require('@sf/broker-client');
 const { apiServerClient } = require('@sf/eventmesh');
-const dbManager = require('@sf/db').dbManager;
-const OobBackupManager = require('@sf/oob-manager');
-const DirectorService = require('@sf/provisioner-services').DirectorService;
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
     super();
     this.cloudController = cloudController;
     this.backupStore = backupStore;
-    this.director = bosh.director;
+    this.director = bosh ? bosh.director : undefined;
   }
 
   getInstanceId(deploymentName) {
