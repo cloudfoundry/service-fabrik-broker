@@ -15,8 +15,8 @@ node {
        protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
                             protecodeGroup: '1168',
-                            dockerRegistryUrl: 'https://docker.io'
-                            dockerImage: 'servicefabrikjenkins/service-fabrik-broker:kaniko'
+                            dockerRegistryUrl: 'https://docker.io',
+                            dockerImage: 'servicefabrikjenkins/service-fabrik-broker:kaniko',
                             dockerCredentialsId: 'dockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_os_broker.pdf')
                             
