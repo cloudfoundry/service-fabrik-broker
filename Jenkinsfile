@@ -6,7 +6,7 @@ node {
         deleteDir()
         git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
         setupPipelineEnvironment script: this
-        steps {
+        stage('Build Using Kaniko') {
             parallel {
                 kanikoExecute(script: this,
                               dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
