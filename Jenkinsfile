@@ -15,6 +15,7 @@ node {
        protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
                             protecodeGroup: '1168',
+                            protecodeServerUrl: 'https://protecode.c.eu-de-2.cloud.sap',
                             dockerRegistryUrl: 'https://k8s-backing-services.docker.repositories.sap.ondemand.com',
                             dockerImage: 'servicefabrikjenkins/service-fabrik-broker:kaniko',
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
