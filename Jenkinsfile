@@ -6,25 +6,27 @@ node {
         deleteDir()
         git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
         setupPipelineEnvironment script: this
-        parallel {
-            kanikoExecute(script: this,
-                          dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
-                          containerImage: 'k8s-backing-services.docker.repositories.sap.ondemand.com/servicefabrikjenkins/service-fabrik-broker:${imageTag}',
-                          dockerfilePath: 'broker/Dockerfile',
-                          customTlsCertificateLinks: ["http://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt", "http://aia.pki.co.sap.com/aia/SAP%20Global%20Root%20CA.crt"])
-            kanikoExecute(script: this,
-                          dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
-                          containerImage: 'k8s-backing-services.docker.repositories.sap.ondemand.com/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}',
-                          dockerfilePath: 'interoperator/Dockerfile',
-                          customTlsCertificateLinks: ["http://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt", "http://aia.pki.co.sap.com/aia/SAP%20Global%20Root%20CA.crt"])
-            kanikoExecute(script: this,
-                          dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
-                          containerImage: 'docker.io/servicefabrikjenkins/service-fabrik-broker:${imageTag}',
-                          dockerfilePath: 'broker/Dockerfile')
-            kanikoExecute(script: this,
-                          dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
-                          containerImage: 'docker.io/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}',
-                          dockerfilePath: 'interoperator/Dockerfile')
+        steps {
+            parallel {
+                kanikoExecute(script: this,
+                              dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                              containerImage: 'k8s-backing-services.docker.repositories.sap.ondemand.com/servicefabrikjenkins/service-fabrik-broker:${imageTag}',
+                              dockerfilePath: 'broker/Dockerfile',
+                              customTlsCertificateLinks: ["http://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt", "http://aia.pki.co.sap.com/aia/SAP%20Global%20Root%20CA.crt"])
+                kanikoExecute(script: this,
+                              dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                              containerImage: 'k8s-backing-services.docker.repositories.sap.ondemand.com/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}',
+                              dockerfilePath: 'interoperator/Dockerfile',
+                              customTlsCertificateLinks: ["http://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt", "http://aia.pki.co.sap.com/aia/SAP%20Global%20Root%20CA.crt"])
+                kanikoExecute(script: this,
+                              dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
+                              containerImage: 'docker.io/servicefabrikjenkins/service-fabrik-broker:${imageTag}',
+                              dockerfilePath: 'broker/Dockerfile')
+                kanikoExecute(script: this,
+                              dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
+                              containerImage: 'docker.io/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}',
+                              dockerfilePath: 'interoperator/Dockerfile')
+            }
         }
     }
     stage('ProtecodeScan') {
