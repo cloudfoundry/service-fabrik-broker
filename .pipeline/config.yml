@@ -6,8 +6,8 @@ general:
     gitHttpsCredentialsId: GithubOsCredentialsId
     #verbose: true
     
-steps:
-    kanikoExecute:
-        dockerConfigJsonCredentialsId: DockerHubCredentialsId
-        containerImage: docker.io/servicefabrikjenkins/service-fabrik-broker:kaniko
-        dockerfilePath: 'broker/Dockerfile'
+#steps:
+#    kanikoExecute:
+#        dockerConfigJsonCredentialsId: DockerHubCredentialsId
+#        containerImage: docker.io/servicefabrikjenkins/service-fabrik-broker:kaniko
+#        dockerfilePath: 'broker/Dockerfile'
