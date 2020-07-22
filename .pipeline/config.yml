@@ -1,5 +1,5 @@
 general:
-    buildTool: docker
+    #buildTool: docker
     productiveBranch: 'master'
     githubApiUrl: 'https://api.github.com'
     githubServerUrl: 'https://github.com'
