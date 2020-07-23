@@ -95,9 +95,16 @@ pipeline {
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
                     }
                 }
-                /*stage('WhitesourceScan - Interoperator') {
+                stage('WhitesourceScan - Interoperator') {
                     steps {
-                        whitesourceExecuteScan(script: this,
+                       executeWhitesourceScan(script: this,
+                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
+                                               whitesourceProductToken: "${WSS_PROD_TOKEN}",
+                                               whitesourceProjectNames: 'Interoperator',
+                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
+                                               scanType: 'unifiedAgent',
+                                               buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')
+                        /*whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Interoperator',
@@ -108,8 +115,8 @@ pipeline {
                             securityVulnerabilities: false,
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
-                    }
-                }*/
+                    }*/
+                }
             }
         }
     }
