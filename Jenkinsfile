@@ -107,25 +107,25 @@ pipeline {
                 }
                 stage('WhitesourceScan - Interoperator') {
                     steps {
-                       executeWhitesourceScan(script: this,
+                       /*executeWhitesourceScan(script: this,
                                                whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
                                                whitesourceProductToken: "${WSS_PROD_TOKEN}",
                                                whitesourceProjectNames: 'Interoperator',
                                                whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
                                                scanType: 'unifiedAgent',
                                                configFilePath: 'scanType=golang:./interoperator/wss-unified-agent.config',
-                                               buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')
-                        /*whitesourceExecuteScan(script: this,
+                                               buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')*/
+                        whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Interoperator',
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './interoperator/wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
-                            //buildDescriptorFile: './interoperator/go.mod' ,
+                            buildDescriptorFile: 'scanType=golang:./interoperator/go.mod',
                             securityVulnerabilities: false,
                             verbose: true,
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
             }
