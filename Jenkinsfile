@@ -120,7 +120,7 @@ pipeline {
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Interoperator',
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            configFilePath: './interoperator/wss-unified-agent.config',
+                            configFilePath: './wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: 'scanType=golang:./interoperator/go.mod',
                             securityVulnerabilities: false,
