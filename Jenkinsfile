@@ -76,23 +76,14 @@ pipeline {
 
                 stage('WhitesourceScan - Broker') {
                     steps {
-                        /*executeWhitesourceScan(script: this,
-                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
-                                               whitesourceProductToken: "${WSS_PROD_TOKEN}",
-                                               whitesourceProjectNames: 'Broker',
-                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
-                                               scanType: 'npm',
-                                               buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                                               securityVulnerabilities: 'true')*/
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            //projectNames: 'Broker',
-                            verbose: true,
+                            //whitesource/productToken: "${WHITESOURCE_PRODUCT_TOKEN}",
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
-                            //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
+                            securityVulnerabilities: false,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
@@ -101,13 +92,11 @@ pipeline {
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            //projectNames: 'Interoperator',
+                            //whitesource/productToken: "${WHITESOURCE_PRODUCT_TOKEN}",
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
-                            //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './interoperator/go.mod',
                             securityVulnerabilities: false,
-                            verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
