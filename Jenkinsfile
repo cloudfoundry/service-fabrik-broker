@@ -74,16 +74,16 @@ pipeline {
                     }
                 }*/
 
-                stage('WhitesourceScan - Broker') {
+                /*stage('WhitesourceScan - Broker') {
                     steps {
-                        /*executeWhitesourceScan(script: this,
+                        executeWhitesourceScan(script: this,
                                                whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
                                                whitesourceProductToken: "${WSS_PROD_TOKEN}",
                                                whitesourceProjectNames: 'Broker',
                                                whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
                                                scanType: 'npm',
                                                buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                                               securityVulnerabilities: 'true')*/
+                                               securityVulnerabilities: 'true')
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
@@ -94,17 +94,8 @@ pipeline {
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
-                        /*whitesourceExecuteScan(script: this,
-                            scanType: 'npm',
-                            productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            projectNames: 'Broker',
-                            verbose: true,
-                            userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            //orgAdminUserTokenCredentialsId: 'orgAdminToken',
-                            buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
                     }
-                }
+                }*/
                 stage('WhitesourceScan - Interoperator') {
                     steps {
                        /*executeWhitesourceScan(script: this,
