@@ -76,7 +76,14 @@ pipeline {
 
                 stage('WhitesourceScan - Broker') {
                     steps {
-                        whitesourceExecuteScan(script: this,
+                        executeWhitesourceScan(script: this,
+                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
+                                               whitesourceProjectNames: 'Broker',
+                                               whitesourceUserTokenCredentialsId: interoperator_whitesource_test_id,
+                                               scanType: 'npm',
+                                               buildDescriptorFile: './broker/applications/osb-broker/package.json',
+                                               securityVulnerabilities: 'true')
+                        /*whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Broker',
@@ -84,7 +91,7 @@ pipeline {
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
                     }
                 }
                 /*stage('WhitesourceScan - Interoperator') {
