@@ -113,7 +113,7 @@ pipeline {
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
-                            buildDescriptorFile: 'scanType=golang:./interoperator/go.mod',
+                            buildDescriptorFile: './interoperator/go.mod',
                             securityVulnerabilities: false,
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
