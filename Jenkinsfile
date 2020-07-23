@@ -78,6 +78,7 @@ pipeline {
                     steps {
                         executeWhitesourceScan(script: this,
                                                whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
+                                               whitesourceProductToken: '${WSS_PROD_TOKEN},
                                                whitesourceProjectNames: 'Broker',
                                                whitesourceUserTokenCredentialsId: interoperator_whitesource_test_id,
                                                scanType: 'npm',
