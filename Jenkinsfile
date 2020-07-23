@@ -74,16 +74,16 @@ pipeline {
                     }
                 }*/
 
-                /*stage('WhitesourceScan - Broker') {
+                stage('WhitesourceScan - Broker') {
                     steps {
-                        executeWhitesourceScan(script: this,
+                        /*executeWhitesourceScan(script: this,
                                                whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
                                                whitesourceProductToken: "${WSS_PROD_TOKEN}",
                                                whitesourceProjectNames: 'Broker',
                                                whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
                                                scanType: 'npm',
                                                buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                                               securityVulnerabilities: 'true')
+                                               securityVulnerabilities: 'true')*/
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
@@ -95,17 +95,9 @@ pipeline {
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
-                }*/
-                stage('WhitesourceScan - Interoperator') {
+                }
+                /*stage('WhitesourceScan - Interoperator') {
                     steps {
-                       /*executeWhitesourceScan(script: this,
-                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
-                                               whitesourceProductToken: "${WSS_PROD_TOKEN}",
-                                               whitesourceProjectNames: 'Interoperator',
-                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
-                                               scanType: 'unifiedAgent',
-                                               configFilePath: 'scanType=golang:./interoperator/wss-unified-agent.config',
-                                               buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')*/
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
@@ -118,7 +110,7 @@ pipeline {
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
-                }
+                }*/
             }
         }
     }
