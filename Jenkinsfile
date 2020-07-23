@@ -24,7 +24,7 @@ pipeline {
                             dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
                             dockerfilePath: 'broker/Dockerfile',
-                            customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "http://${CUSTOM_TLS_CERT_2}"])
+                            customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
                             containerImage: "docker.io/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
