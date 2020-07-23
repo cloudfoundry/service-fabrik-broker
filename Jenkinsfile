@@ -80,7 +80,7 @@ pipeline {
                                                whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
                                                whitesourceProductToken: "${WSS_PROD_TOKEN}",
                                                whitesourceProjectNames: 'Broker',
-                                               whitesourceUserTokenCredentialsId: interoperator_whitesource_test_id,
+                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
                                                scanType: 'npm',
                                                buildDescriptorFile: './broker/applications/osb-broker/package.json',
                                                securityVulnerabilities: 'true')
