@@ -16,7 +16,7 @@ pipeline {
                 setupPipelineEnvironment script: this
             }
         }
-        stage('DockerBuild') {
+        /*stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -24,7 +24,7 @@ pipeline {
                             dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
                             dockerfilePath: 'broker/Dockerfile',
-                            customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "http://${CUSTOM_TLS_CERT_2}"])
+                            customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
                             containerImage: "docker.io/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
@@ -45,11 +45,11 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Security scans') {
             parallel {
-                stage('ProtecodeScan - Broker') {
+                /*stage('ProtecodeScan - Broker') {
                     steps {
                         protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
@@ -72,11 +72,19 @@ pipeline {
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
-                }
+                }*/
 
                 stage('WhitesourceScan - Broker') {
                     steps {
-                        whitesourceExecuteScan(script: this,
+                        executeWhitesourceScan(script: this,
+                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
+                                               whitesourceProductToken: "${WSS_PROD_TOKEN}",
+                                               whitesourceProjectNames: 'Broker',
+                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
+                                               scanType: 'npm',
+                                               buildDescriptorFile: './broker/applications/osb-broker/package.json',
+                                               securityVulnerabilities: 'true')
+                        /*whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Broker',
@@ -84,12 +92,19 @@ pipeline {
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
                     }
                 }
                 stage('WhitesourceScan - Interoperator') {
                     steps {
-                        whitesourceExecuteScan(script: this,
+                       executeWhitesourceScan(script: this,
+                                               whitesourceProductName: 'SHC - SF-INTEROPERATOR-TEST',
+                                               whitesourceProductToken: "${WSS_PROD_TOKEN}",
+                                               whitesourceProjectNames: 'Interoperator',
+                                               whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
+                                               scanType: 'unifiedAgent',
+                                               buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')
+                        /*whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Interoperator',
@@ -99,7 +114,7 @@ pipeline {
                             //buildDescriptorFile: './interoperator/go.mod' ,
                             securityVulnerabilities: false,
                             verbose: true,
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
                     }
                 }
             }
