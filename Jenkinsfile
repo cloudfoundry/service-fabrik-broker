@@ -90,7 +90,7 @@ pipeline {
                             projectNames: 'Broker',
                             verbose: true,
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            configFilePath: './broker/applications/osb-broker/broker/wss-unified-agent.config',
+                            configFilePath: './wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
