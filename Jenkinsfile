@@ -87,7 +87,7 @@ pipeline {
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            projectNames: 'Broker',
+                            //projectNames: 'Broker',
                             verbose: true,
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
