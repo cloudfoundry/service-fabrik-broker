@@ -96,12 +96,12 @@ pipeline {
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
-                /*stage('WhitesourceScan - Interoperator') {
+                stage('WhitesourceScan - Interoperator') {
                     steps {
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            projectNames: 'Interoperator',
+                            //projectNames: 'Interoperator',
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
@@ -110,7 +110,7 @@ pipeline {
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
-                }*/
+                }
             }
         }
     }
