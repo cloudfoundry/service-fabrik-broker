@@ -14,6 +14,13 @@ pipeline {
                 deleteDir()
                 git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
+                sh 'rm -rf broker/applications/admin'
+                sh 'rm -rf broker/applications/deployment_hooks'
+                sh 'rm -rf broker/applications/extensions'
+                sh 'rm -rf broker/applications/operators'
+                sh 'rm -rf broker/applications/reports'
+                sh 'rm -rf broker/applications/scheduler'
+                sh 'rm -rf webhooks'
             }
         }
         /*stage('DockerBuild') {
