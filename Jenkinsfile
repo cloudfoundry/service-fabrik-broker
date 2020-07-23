@@ -16,7 +16,7 @@ pipeline {
                 setupPipelineEnvironment script: this
             }
         }
-        stage('DockerBuild') {
+        /*stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -45,11 +45,11 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Security scans') {
             parallel {
-                stage('ProtecodeScan - Broker') {
+                /*stage('ProtecodeScan - Broker') {
                     steps {
                         protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
@@ -72,7 +72,7 @@ pipeline {
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
-                }
+                }*/
 
                 stage('WhitesourceScan - Broker') {
                     steps {
@@ -87,7 +87,7 @@ pipeline {
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
-                stage('WhitesourceScan - Interoperator') {
+                /*stage('WhitesourceScan - Interoperator') {
                     steps {
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
@@ -100,7 +100,7 @@ pipeline {
                             securityVulnerabilities: false,
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
-                    }
+                    }*/
                 }
             }
         }
