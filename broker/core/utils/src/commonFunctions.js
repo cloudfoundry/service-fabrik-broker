@@ -52,9 +52,20 @@ exports.demux = demux;
 exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
 exports.getCronAfterXMinuteFromNow = getCronAfterXMinuteFromNow;
 exports.isBrokerBoshDeployment = isBrokerBoshDeployment;
+exports.isConfigPresent = isConfigPresent;
 
 function isBrokerBoshDeployment() {
   return !process.env.POD_NAMESPACE;
+}
+
+function isConfigPresent(keys) {
+  for(let i = 0;i < keys.length; i++) {
+    let configKey = keys[i];
+    if(!_.get(config, configKey)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function parseToken(token) {

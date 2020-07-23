@@ -17,7 +17,7 @@ const {
     encodeBase64,
     decodeBase64,
     getCronAfterXMinuteFromNow,
-    isBrokerBoshDeployment
+    isConfigPresent
   },
   Repository
 } = require('@sf/common-utils');
@@ -27,19 +27,15 @@ const {
   FabrikBaseController
 } = require('@sf/common-controllers');
 
-let NetworkSegmentIndex, backupStore, cloudController, bosh, ScheduleManager, maintenanceManager, 
-  dbManager, OobBackupManager, DirectorService;
-if(isBrokerBoshDeployment()) {
-  NetworkSegmentIndex = require('@sf/bosh').NetworkSegmentIndex;
-  backupStore = require('@sf/iaas').backupStore;
-  cloudController = require('@sf/cf').cloudController;
-  bosh = require('@sf/bosh');
-  ScheduleManager = require('@sf/jobs');
-  maintenanceManager = require('../../../scheduler/src/maintenance').maintenanceManager;  
-  dbManager = require('@sf/db').dbManager;
-  OobBackupManager = require('@sf/oob-manager');
-  DirectorService = require('@sf/provisioner-services').DirectorService;
-}
+const NetworkSegmentIndex = isConfigPresent(['directors']) ? require('@sf/bosh').NetworkSegmentIndex : undefined;
+const backupStore = isConfigPresent(['backup']) ? require('@sf/iaas').backupStore : undefined;
+const cloudController = isConfigPresent(['cf']) ? require('@sf/cf').cloudController : undefined;
+const bosh = isConfigPresent(['directors']) ? require('@sf/bosh') : undefined;
+const ScheduleManager = isConfigPresent(['scheduler']) ? require('@sf/jobs') : undefined;
+const maintenanceManager = isConfigPresent(['mongodb']) ? require('../../../scheduler/src/maintenance').maintenanceManager : undefined;  
+const dbManager = isConfigPresent(['mongodb']) ? require('@sf/db').dbManager : undefined;
+const OobBackupManager = isConfigPresent(['directors', 'backup']) ? require('@sf/oob-manager') : undefined;
+const DirectorService = isConfigPresent(['scheduler', 'directors', 'cf']) ? require('@sf/provisioner-services').DirectorService : undefined;
 const { serviceBrokerClient } = require('@sf/broker-client');
 const { apiServerClient } = require('@sf/eventmesh');
 
