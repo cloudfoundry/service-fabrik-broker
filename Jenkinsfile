@@ -114,8 +114,8 @@ pipeline {
                             //buildDescriptorFile: './interoperator/go.mod' ,
                             securityVulnerabilities: false,
                             verbose: true,
-                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
-                    }*/
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")*/
+                    }
                 }
             }
         }
