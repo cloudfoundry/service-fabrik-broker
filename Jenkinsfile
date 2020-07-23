@@ -90,7 +90,7 @@ pipeline {
                             projectNames: 'Broker',
                             verbose: true,
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            configFilePath: './wss-unified-agent.config',
+                            configFilePath: './broker/applications/osb-broker/wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
@@ -120,7 +120,7 @@ pipeline {
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             projectNames: 'Interoperator',
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            configFilePath: './wss-unified-agent.config',
+                            configFilePath: './interoperator/wss-unified-agent.config',
                             //orgAdminUserTokenCredentialsId: 'orgAdminToken',
                             buildDescriptorFile: 'scanType=golang:./interoperator/go.mod',
                             securityVulnerabilities: false,
