@@ -103,6 +103,7 @@ pipeline {
                                                whitesourceProjectNames: 'Interoperator',
                                                whitesourceUserTokenCredentialsId: 'interoperator_whitesource_test_id',
                                                scanType: 'unifiedAgent',
+                                               configFilePath: 'scanType=golang:./interoperator/wss-unified-agent.config',
                                                buildDescriptorFile: 'scanType=golang:./interoperator/go.mod')
                         /*whitesourceExecuteScan(script: this,
                             scanType: 'golang',
