@@ -100,8 +100,8 @@ pipeline {
                             securityVulnerabilities: false,
                             verbose: true,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
-                    }*/
-                }
+                    }
+                }*/
             }
         }
     }
