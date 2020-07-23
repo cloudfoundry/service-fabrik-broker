@@ -16,7 +16,7 @@ pipeline {
                 setupPipelineEnvironment script: this
             }
         }
-        stage('DockerBuild') {
+        /*stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -45,7 +45,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Security scans') {
             parallel {
