@@ -22,7 +22,7 @@
     "@sf/logger": "file:../../core/logging",
     "agenda": "0.10.0",
     "ajv": "5.0.0",
-    "ali-oss": "6.9.1",
+    "ali-oss": "6.10.0",
     "aws-sdk": "2.710.0",
     "azure-arm-compute": "10.0.0",
     "azure-storage": "2.10.3",
