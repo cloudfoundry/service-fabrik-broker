@@ -1,4 +1,4 @@
-@Library(['piper-lib', 'piper-lib-os']) _
+@Library(['piper-lib-os']) _
 
 pipeline {
     environment {
@@ -14,18 +14,17 @@ pipeline {
                 deleteDir()
                 git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
-                sh 'rm -rfv broker/package.json'
-                sh 'rm -rfv broker/applications/admin'
-                sh 'rm -rfv broker/applications/deployment_hooks'
-                sh 'rm -rfv broker/applications/extensions'
-                sh 'rm -rfv broker/applications/operators'
-                sh 'rm -rfv broker/applications/reports'
-                sh 'rm -rfv broker/applications/scheduler'
-                sh 'rm -rfv broker/test'
-                sh 'rm -rfv webhooks'
+                sh 'rm -rf broker/applications/admin'
+                sh 'rm -rf broker/applications/deployment_hooks'
+                sh 'rm -rf broker/applications/extensions'
+                sh 'rm -rf broker/applications/operators'
+                sh 'rm -rf broker/applications/reports'
+                sh 'rm -rf broker/applications/scheduler'
+                sh 'rm -rf broker/test'
+                sh 'rm -rf webhooks'
             }
         }
-        /*stage('DockerBuild') {
+        stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -54,11 +53,11 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
 
         stage('Security scans') {
             parallel {
-                /*stage('ProtecodeScan - Broker') {
+                stage('ProtecodeScan - Broker') {
                     steps {
                         protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
@@ -81,10 +80,11 @@ pipeline {
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
-                }*/
+                }
 
                 stage('WhitesourceScan - Broker') {
                     steps {
+                        sh 'rm -rfv broker/package.json'
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
@@ -96,7 +96,7 @@ pipeline {
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
                 }
-                /*stage('WhitesourceScan - Interoperator') {
+                stage('WhitesourceScan - Interoperator') {
                     steps {
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
@@ -108,7 +108,7 @@ pipeline {
                             securityVulnerabilities: false,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
-                }*/
+                }
             }
         }
     }
