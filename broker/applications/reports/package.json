@@ -19,7 +19,7 @@
     "@sf/express-commons": "file:../../core/express-commons",
     "@sf/logger": "file:../../core/logging",
     "@sf/quota": "file:../../data-access-layer/quota",
-    "agenda": "0.10.0",
+    "agenda": "3.1.0",
     "ajv": "5.0.0",
     "ali-oss": "6.9.1",
     "aws-sdk": "2.710.0",
