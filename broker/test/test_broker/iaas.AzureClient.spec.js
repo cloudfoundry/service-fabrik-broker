@@ -17,7 +17,7 @@ const {
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const moment = require('moment');
-const uuid = require('uuid');
+const proxyquire = require('proxyquire');
 
 describe('iaas', function () {
   describe('AzureClient', function () {
@@ -51,7 +51,6 @@ describe('iaas', function () {
     });
 
     describe('#DiskOperations', function () {
-      const client = new AzureClient(settings);
       const diskName = 'sample-disk';
       const snapshotName = 'sample-snapshot';
       const zone = '2';
@@ -64,15 +63,17 @@ describe('iaas', function () {
         createOption: 'Copy',
         sourceUri: 'test/test'
       };
-      let sandbox;
 
+      let AzureClient, client;
       before(() => {
-        sandbox = sinon.createSandbox();
-        sandbox.stub(uuid, 'v4').returns(diskName);
+        AzureClient = proxyquire('../../data-access-layer/iaas/src/AzureClient', {
+          'uuid': {
+            v4: () => diskName
+          }
+        });
+        client = new AzureClient(settings);
       });
-
       after(() => {
-        sandbox.restore();
         mocks.reset();
       });
 
@@ -196,6 +197,7 @@ describe('iaas', function () {
             }
           }
         }, null, 'diskfailed');
+        //const proxyClient = new proxyAzureClient(settings);
         return client.createDiskFromSnapshot(snapshotName, zone, {
           sku: sku,
           tags: {
