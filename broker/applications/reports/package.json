@@ -12,7 +12,7 @@
   "dependencies": {
     "@alicloud/pop-core": "1.7.9",
     "@google-cloud/compute": "2.0.1",
-    "@google-cloud/storage": "5.1.1",
+    "@google-cloud/storage": "5.1.2",
     "@sf/app-config": "file:../../core/app-config",
     "@sf/common-controllers": "file:../../core/controllers",
     "@sf/common-utils": "file:../../core/utils",
