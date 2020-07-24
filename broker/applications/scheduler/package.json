@@ -53,7 +53,7 @@
     "pug": "3.0.0",
     "request": "2.88.2",
     "riemannjs": "1.0.1",
-    "rxjs": "5.0.0",
+    "rxjs": "5.5.12",
     "session-file-store": "1.4.0",
     "ssh2": "0.8.9",
     "uuid": "8.2.0",
