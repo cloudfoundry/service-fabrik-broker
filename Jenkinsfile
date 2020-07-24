@@ -25,7 +25,7 @@ pipeline {
                 sh 'rm -rf webhooks'
             }
         }
-        stage('DockerBuild') {
+        /*stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -54,7 +54,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Security scans') {
             parallel {
