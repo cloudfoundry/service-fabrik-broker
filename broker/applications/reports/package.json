@@ -47,7 +47,7 @@
     "moment": "2.27.0",
     "mongoose": "5.9.24",
     "morgan": "1.10.0",
-    "pkgcloud": "1.7.0",
+    "pkgcloud": "2.2.0",
     "pubsub-js": "1.8.0",
     "pug": "3.0.0",
     "request": "2.88.2",
