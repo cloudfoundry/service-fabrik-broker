@@ -13,7 +13,8 @@ pipeline {
                 echo "[INFO] : WHITESOURCE_ORG_TOKEN: ${WHITESOURCE_ORG_TOKEN}"
                 deleteDir()
                 git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
-                setupPipelineEnvironment script: this
+                //setupPipelineEnvironment script: this
+                setupCommonPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
                 sh 'rm -rf broker/applications/extensions'
