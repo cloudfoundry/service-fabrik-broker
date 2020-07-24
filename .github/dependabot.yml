@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/admin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/deployment_hooks"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/extensions"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/operators"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/osb-broker"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/quota-app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/reports"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "npm"
+    directory: "/broker/applications/scheduler"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "docker"
+    directory: "/broker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "docker"
+    directory: "/interoperator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+   
