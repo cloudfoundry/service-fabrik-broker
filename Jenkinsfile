@@ -14,12 +14,14 @@ pipeline {
                 deleteDir()
                 git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
+                sh 'rm -rfv broker/package.json'
                 sh 'rm -rfv broker/applications/admin'
                 sh 'rm -rfv broker/applications/deployment_hooks'
                 sh 'rm -rfv broker/applications/extensions'
                 sh 'rm -rfv broker/applications/operators'
                 sh 'rm -rfv broker/applications/reports'
                 sh 'rm -rfv broker/applications/scheduler'
+                sh 'rm -rfv broker/test'
                 sh 'rm -rfv webhooks'
             }
         }
@@ -88,10 +90,8 @@ pipeline {
                             productName: 'SHC - SF-INTEROPERATOR-TEST',
                             //whitesource/productToken: "${WHITESOURCE_PRODUCT_TOKEN}",
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
-                            //configFilePath: './wss-unified-agent.config',
-                            //buildDescriptorFile: './broker/applications/osb-broker/package.json',
-                            configFilePath: './applications/osb-broker/wss-unified-agent.config',
-                            buildDescriptorFile: './broker/package.json',
+                            configFilePath: './wss-unified-agent.config',
+                            buildDescriptorFile: './broker/applications/osb-broker/package.json',
                             securityVulnerabilities: false,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
