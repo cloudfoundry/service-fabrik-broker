@@ -65,7 +65,7 @@ pipeline {
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
                             dockerImage: "servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
-                            dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                            dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             reportFileName: 'protecode_report_broker.pdf')
                     }
                 }
@@ -77,7 +77,7 @@ pipeline {
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
                             dockerImage: "servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
-                            dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                            dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
                 }
