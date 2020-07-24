@@ -35,7 +35,7 @@
     "kubernetes-client": "7.0.1",
     "lodash": "4.17.19",
     "moment": "2.27.0",
-    "mongoose": "5.9.24",
+    "mongoose": "5.9.25",
     "morgan": "1.10.0",
     "pubsub-js": "1.8.0",
     "pug": "3.0.0",
