@@ -2,19 +2,18 @@
 
 pipeline {
     environment {
-        imageTag = "kaniko"
         WHITESOURCE_ORG_TOKEN = credentials('whitesource_org_token')
     }
     agent any
+    parameters {
+        string(defaultValue: 'test', description: 'Enter Docker image tag version', name: 'IMAGE_TAG')
+    }
     stages {
         stage('Setup') {
             steps {
-                echo "[INFO] : imageTag: ${imageTag}"
-                echo "[INFO] : WHITESOURCE_ORG_TOKEN: ${WHITESOURCE_ORG_TOKEN}"
                 deleteDir()
                 git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
-                //setupCommonPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
                 sh 'rm -rf broker/applications/extensions'
@@ -31,12 +30,12 @@ pipeline {
                     steps {
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
-                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
+                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerfilePath: 'broker/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
-                            containerImage: "docker.io/servicefabrikjenkins/service-fabrik-broker:${imageTag}",
+                            containerImage: "docker.io/servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerfilePath: 'broker/Dockerfile')
                     }
                 }
@@ -44,12 +43,12 @@ pipeline {
                     steps {
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
-                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}",
+                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerfilePath: 'interoperator/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
-                            containerImage: "docker.io/servicefabrikjenkins/service-fabrik-interoperator:${imageTag}",
+                            containerImage: "docker.io/servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerfilePath: 'interoperator/Dockerfile')
                     }
                 }
@@ -65,7 +64,7 @@ pipeline {
                             protecodeGroup: '1168',
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
-                            dockerImage: "servicefabrikjenkins/service-fabrik-broker:${imageTag}",
+                            dockerImage: "servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_broker.pdf')
                     }
@@ -77,7 +76,7 @@ pipeline {
                             protecodeGroup: '1168',
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
-                            dockerImage: "servicefabrikjenkins/service-fabrik-interoperator:${imageTag}",
+                            dockerImage: "servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
@@ -88,8 +87,7 @@ pipeline {
                         sh 'rm -rfv broker/package.json'
                         whitesourceExecuteScan(script: this,
                             scanType: 'npm',
-                            productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            //whitesource/productToken: "${WHITESOURCE_PRODUCT_TOKEN}",
+                            productName: "${WSS_PROD_NAME}",
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
                             buildDescriptorFile: './broker/applications/osb-broker/package.json',
@@ -101,8 +99,7 @@ pipeline {
                     steps {
                         whitesourceExecuteScan(script: this,
                             scanType: 'golang',
-                            productName: 'SHC - SF-INTEROPERATOR-TEST',
-                            //whitesource/productToken: "${WHITESOURCE_PRODUCT_TOKEN}",
+                            productName: "${WSS_PROD_NAME}",
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
                             buildDescriptorFile: './interoperator/go.mod',
