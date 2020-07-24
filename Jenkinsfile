@@ -29,7 +29,7 @@ pipeline {
                 stage('Build Broker Image') {
                     steps {
                         kanikoExecute(script: this,
-                            dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                            dockerConfigJsonCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerfilePath: 'broker/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
@@ -42,7 +42,7 @@ pipeline {
                 stage('Build Interoperator Image') {
                     steps {
                         kanikoExecute(script: this,
-                            dockerConfigJsonCredentialsId: 'K8sbksrvdockerConfigJsonCredentialsId',
+                            dockerConfigJsonCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerfilePath: 'interoperator/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
