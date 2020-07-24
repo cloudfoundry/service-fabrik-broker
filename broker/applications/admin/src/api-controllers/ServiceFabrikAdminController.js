@@ -446,7 +446,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return apiServerClient.getResourceListByState({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-      stateList: [CONST.APISERVER.RESOURCE_STATE.SUCCEEDED]
+      stateList: [
+        CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, 
+        CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, 
+        CONST.APISERVER.RESOURCE_STATE.FAILED
+      ]
     })
       .then(directors => {
         directors = _
