@@ -61,7 +61,7 @@ pipeline {
                     steps {
                         protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
-                            protecodeGroup: "${INTOPERATOR_PROTECODE_GROUP_ID}",
+                            protecodeGroup: '1168',
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
                             dockerImage: "images/service-fabrik-broker:${env.IMAGE_TAG}",
