@@ -12,7 +12,7 @@ pipeline {
         stage('Setup') {
             steps {
                 deleteDir()
-                git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
+                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
@@ -66,7 +66,6 @@ pipeline {
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
                             dockerImage: "images/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
-                            //artifactVersion: "${env.IMAGE_TAG}",
                             reportFileName: 'protecode_report_broker.pdf')
                     }
                 }
@@ -79,7 +78,6 @@ pipeline {
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
                             dockerImage: "images/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
-                            //artifactVersion: "${env.IMAGE_TAG}",
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
                 }
