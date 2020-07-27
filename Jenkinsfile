@@ -12,7 +12,7 @@ pipeline {
         stage('Setup') {
             steps {
                 deleteDir()
-                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
+                git url: 'https://github.com/vinaybheri/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
@@ -30,7 +30,7 @@ pipeline {
                     steps {
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'InteroperatorDockerAuthConfigJson',
-                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/images/service-fabrik-broker:${env.IMAGE_TAG}",
+                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerfilePath: 'broker/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
@@ -43,7 +43,7 @@ pipeline {
                     steps {
                         kanikoExecute(script: this,
                             dockerConfigJsonCredentialsId: 'InteroperatorDockerAuthConfigJson',
-                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/images/service-fabrik-interoperator:${env.IMAGE_TAG}",
+                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerfilePath: 'interoperator/Dockerfile',
                             customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
                         kanikoExecute(script: this,
@@ -64,7 +64,7 @@ pipeline {
                             protecodeGroup: '1168',
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
-                            dockerImage: "images/service-fabrik-broker:${env.IMAGE_TAG}",
+                            dockerImage: "servicefabrikjenkins/service-fabrik-broker:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             reportFileName: 'protecode_report_broker.pdf')
                     }
@@ -73,10 +73,10 @@ pipeline {
                     steps {
                         protecodeExecuteScan(script: this,
                             protecodeCredentialsId: 'protecodeCredentialsId',
-                            protecodeGroup: "${INTOPERATOR_PROTECODE_GROUP_ID}",
+                            protecodeGroup: '1168',
                             protecodeServerUrl: "${PROTECODE_SERVER_URL}",
                             dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
-                            dockerImage: "images/service-fabrik-interoperator:${env.IMAGE_TAG}",
+                            dockerImage: "servicefabrikjenkins/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             reportFileName: 'protecode_report_interoperator.pdf')
                     }
