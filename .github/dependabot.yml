@@ -11,15 +11,9 @@ updates:
       - dependency-name: ajv
       - dependency-name: rxjs
       - dependency-name: pkgcloud
-  - package-ecosystem: "npm"
-    directory: "/broker/applications/osb-broker"
-    schedule:
-      interval: "weekly"
-    ignore:
-      - dependency-name: bluebird
-      - dependency-name: ajv
-      - dependency-name: rxjs
-      - dependency-name: pkgcloud  
+      - dependency-name: dockerode
+      - dependency-name: kubernetes-client
+      - dependency-name: agenda
   - package-ecosystem: "docker"
     directory: "/broker"
     schedule:
