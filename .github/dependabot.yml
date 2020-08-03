@@ -12,7 +12,6 @@ updates:
       - dependency-name: rxjs
       - dependency-name: pkgcloud
       - dependency-name: dockerode
-      - dependency-name: kubernetes-client
       - dependency-name: agenda
   - package-ecosystem: "docker"
     directory: "/broker"
