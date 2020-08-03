@@ -24,7 +24,6 @@ import (
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
@@ -246,18 +245,5 @@ func _getDummyPlan(provisionContent string) *osbv1alpha1.SFPlan {
 			RawContext:          nil,
 			Manager:             nil,
 		},
-	}
-}
-
-func _getSFClusterList(clusters ...resourcev1alpha1.SFCluster) *resourcev1alpha1.SFClusterList {
-	return &resourcev1alpha1.SFClusterList{
-		Items: clusters,
-	}
-}
-
-func _getKey(obj metav1.Object) types.NamespacedName {
-	return types.NamespacedName{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
 	}
 }

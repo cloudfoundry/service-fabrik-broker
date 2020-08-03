@@ -102,6 +102,7 @@ func TestReconcile(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
@@ -221,15 +222,17 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
-
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
@@ -244,6 +247,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 	for _, sfcrdname := range sfcrdnames {
 		sfCRDInstance := &apiextensionsv1.CustomResourceDefinition{}
 		err = c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 		c2.Delete(context.TODO(), sfCRDInstance)
 	}
 
@@ -318,10 +322,12 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
@@ -384,11 +390,12 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
-
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	// Delete sfcluster from target cluster
 	sfTargetCluster := &resourcev1alpha1.SFCluster{}
 	err = c2.Get(context.TODO(), types.NamespacedName{Name: "2", Namespace: constants.InteroperatorNamespace}, sfTargetCluster)
@@ -464,11 +471,12 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
-
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	// Delete sfcluster from target cluster
 	clusterInstanceSecret := &corev1.Secret{}
 	err = c2.Get(context.TODO(), types.NamespacedName{Name: "my-secret", Namespace: constants.InteroperatorNamespace}, clusterInstanceSecret)
@@ -551,11 +559,12 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
-
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	// Delete provisioner deployment in target cluster if present
 
 	targetProvisionerInstance := &appsv1.Deployment{}
@@ -640,10 +649,12 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c2, err := client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	// Delete clusterrolebinding in target cluster if present
 

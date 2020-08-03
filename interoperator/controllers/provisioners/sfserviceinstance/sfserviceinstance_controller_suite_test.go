@@ -25,7 +25,6 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
-
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -46,7 +45,7 @@ var testLog logr.Logger
 
 func TestMain(m *testing.M) {
 	var err error
-	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(ginkgo.GinkgoWriter)))
 	testLog = ctrl.Log.WithName("test").WithName("sfserviceinstance")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},

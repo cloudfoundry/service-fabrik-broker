@@ -12,9 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var log = logf.Log.WithName("cluster.registry")
@@ -45,7 +44,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 		return nil, errors.NewInputError("New ClusterRegistry", "scheme", nil)
 	}
 
-	c, err := client.New(kubeConfig, client.Options{
+	c, err := kubernetes.New(kubeConfig, kubernetes.Options{
 		Scheme: scheme,
 		Mapper: mapper,
 	})
@@ -66,7 +65,7 @@ func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper
 }
 
 func (r *clusterRegistry) createClient(cfg *rest.Config) (kubernetes.Client, error) {
-	c, err := client.New(cfg, client.Options{
+	c, err := kubernetes.New(cfg, kubernetes.Options{
 		Scheme: r.scheme,
 		Mapper: r.mapper,
 	})

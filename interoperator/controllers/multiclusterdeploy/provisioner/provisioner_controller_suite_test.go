@@ -46,7 +46,7 @@ var testLog logr.Logger
 
 func TestMain(m *testing.M) {
 	var err error
-	logf.SetLogger(zap.LoggerTo(ginkgo.GinkgoWriter, true))
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(ginkgo.GinkgoWriter)))
 	testLog = ctrl.Log.WithName("test").WithName("mcd_provisioner")
 
 	testEnv = &envtest.Environment{

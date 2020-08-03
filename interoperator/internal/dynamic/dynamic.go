@@ -8,7 +8,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 

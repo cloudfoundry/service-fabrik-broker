@@ -10,7 +10,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,29 +47,6 @@ var binding = &osbv1alpha1.SFServiceBinding{
 	Status: osbv1alpha1.SFServiceBindingStatus{
 		State: "in_queue",
 	},
-}
-
-func setupInteroperatorConfig() {
-	data := make(map[string]string)
-	data["instanceWorkerCount"] = "1"
-	data["bindingWorkerCount"] = "1"
-	watchList := `
-- apiVersion: kubedb.com/v1alpha1
-  kind: Postgres
-- apiVersion: kubernetes.sapcloud.io/v1alpha1
-  kind: Postgresql
-- apiVersion: deployment.servicefabrik.io/v1alpha1
-  kind: Director`
-	data["instanceContollerWatchList"] = watchList
-	data["bindingContollerWatchList"] = watchList
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      constants.ConfigMapName,
-			Namespace: constants.InteroperatorNamespace,
-		},
-		Data: data,
-	}
-	Expect(c.Create(context.TODO(), configMap)).NotTo(HaveOccurred())
 }
 
 var _ = Describe("SFServiceBindingCleaner controller", func() {
@@ -121,7 +97,7 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 				}
 				return nil
 			})
-
+			Expect(err).NotTo(HaveOccurred())
 			// Service binding should disappear from the apiserver.
 			Eventually(func() error {
 				err := c.Get(context.TODO(), bindingKey, binding)

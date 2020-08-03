@@ -92,7 +92,7 @@ func init() {
 
 // GetState fetches the state of the SFServiceBinding
 func (r *SFServiceBinding) GetState() string {
-	log := ctrl.Log.WithName("SFServiceBinding").WithName(r.GetName())
+	log := ctrl.Log.WithName("SFServiceBinding")
 	if r == nil || r.Status.State == "" {
 		log.V(2).Info("failed to read state")
 		return ""

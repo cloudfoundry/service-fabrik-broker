@@ -56,7 +56,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 		return ctrl.Result{}, err
 	}
 
-	if plan.Spec.AutoUpdateInstances == true {
+	if plan.Spec.AutoUpdateInstances {
 		currentSpecHash := calculateHash(plan.Spec)
 		if plan.Status.SpecHash == "" {
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
