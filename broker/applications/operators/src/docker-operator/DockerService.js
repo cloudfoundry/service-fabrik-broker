@@ -632,7 +632,9 @@ class DockerService extends BaseService {
       .getVolume(volumeName)
       .removeAsync()
       .tap(() => logger.info(`+-> Docker volume has been removed with volume name - '${volumeName}' `))
-      .catch(DockerError.NotFound, () => logger.warn(`+-> Docker volume not found with volume name '${volumeName}' `))
+      .catch(DockerError.NotFound, () => {
+        logger.warn(`+-> Docker volume not found with volume name '${volumeName}' `);
+      })
       .catch(err => {
         logger.error(`+-> Failed to remove Docker volume with name '${volumeName}' `);
         logger.error(err);

@@ -240,7 +240,9 @@ class DBManager {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
             resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
           })
-            .catch(NotFound, () => logger.info('Resource not present in ApiServer. Proceeding with create.'));
+            .catch(NotFound, () => {
+              logger.info('Resource not present in ApiServer. Proceeding with create.');
+            });
         }
       })
         .then(() => this.directorService.createOrUpdateDeployment(config.mongodb.deployment_name, params))

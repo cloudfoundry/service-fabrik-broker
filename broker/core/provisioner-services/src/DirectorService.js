@@ -1074,7 +1074,9 @@ class DirectorService extends BaseDirectorService {
       maxAttempts: 3,
       minDelay: 1000
     })
-      .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
+      .catch(err => {
+        logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err);
+      });
   }
 
   /* Dashboard rendering functions */

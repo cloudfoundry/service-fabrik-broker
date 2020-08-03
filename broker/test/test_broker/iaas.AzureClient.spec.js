@@ -477,7 +477,6 @@ describe('iaas', function () {
         });
         return client.remove(`${blobName}`)
           .then(result => {
-            console.log(result);
             expect(result).to.eql(undefined);
             mocks.verify();
           });
