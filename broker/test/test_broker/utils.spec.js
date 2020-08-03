@@ -464,6 +464,7 @@ describe('utils', function () {
   describe('#registerSFEventsCrd', () => {
     it('Patch already registered SFEvents CRD successfully', () => {
       const meteringCrdJson = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson, 409);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson);
      return utils.registerSFEventsCrd()
         .then(() => {

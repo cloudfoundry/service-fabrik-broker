@@ -32,7 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -242,7 +242,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		"sfclusters.resource.servicefabrik.io",
 	}
 	for _, sfcrdname := range sfcrdnames {
-		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+		sfCRDInstance := &apiextensionsv1.CustomResourceDefinition{}
 		err = c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 		c2.Delete(context.TODO(), sfCRDInstance)
 	}
@@ -295,7 +295,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 			"sfclusters.resource.servicefabrik.io",
 		}
 		for _, sfcrdname := range sfcrdnames {
-			sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
+			sfCRDInstance := &apiextensionsv1.CustomResourceDefinition{}
 			g.Eventually(func() error {
 				return c2.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 			}, timeout).Should(gomega.Succeed())

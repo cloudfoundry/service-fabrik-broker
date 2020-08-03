@@ -26,14 +26,20 @@ import (
 
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
 type SFServiceInstanceSpec struct {
-	ServiceID        string                `json:"serviceId"`
-	PlanID           string                `json:"planId"`
+	ServiceID string `json:"serviceId"`
+	PlanID    string `json:"planId"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
 	RawContext       *runtime.RawExtension `json:"context,omitempty"`
 	OrganizationGUID string                `json:"organizationGuid,omitempty"`
 	SpaceGUID        string                `json:"spaceGuid,omitempty"`
-	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
-	PreviousValues   *runtime.RawExtension `json:"previousValues,omitempty"`
-	ClusterID        string                `json:"clusterId,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	RawParameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	PreviousValues *runtime.RawExtension `json:"previousValues,omitempty"`
+	ClusterID      string                `json:"clusterId,omitempty"`
 }
 
 // SFServiceInstanceStatus defines the observed state of SFServiceInstance

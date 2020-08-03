@@ -1,6 +1,6 @@
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -8,16 +8,6 @@ metadata:
   creationTimestamp: null
   name: sfserviceinstances.osb.servicefabrik.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.state
-    name: state
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: age
-    type: date
-  - JSONPath: .spec.clusterId
-    name: clusterid
-    type: string
   group: osb.servicefabrik.io
   names:
     kind: SFServiceInstance
@@ -25,109 +15,124 @@ spec:
     plural: sfserviceinstances
     singular: sfserviceinstance
   scope: Namespaced
-  subresources: {}
-  validation:
-    openAPIV3Schema:
-      description: SFServiceInstance is the Schema for the sfserviceinstances API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: SFServiceInstanceSpec defines the desired state of SFServiceInstance
-          properties:
-            clusterId:
-              type: string
-            context:
-              type: object
-            organizationGuid:
-              type: string
-            parameters:
-              type: object
-            planId:
-              type: string
-            previousValues:
-              type: object
-            serviceId:
-              type: string
-            spaceGuid:
-              type: string
-          required:
-          - planId
-          - serviceId
-          type: object
-        status:
-          description: SFServiceInstanceStatus defines the observed state of SFServiceInstance
-          properties:
-            appliedSpec:
-              description: SFServiceInstanceSpec defines the desired state of SFServiceInstance
-              properties:
-                clusterId:
-                  type: string
-                context:
-                  type: object
-                organizationGuid:
-                  type: string
-                parameters:
-                  type: object
-                planId:
-                  type: string
-                previousValues:
-                  type: object
-                serviceId:
-                  type: string
-                spaceGuid:
-                  type: string
-              required:
-              - planId
-              - serviceId
-              type: object
-            dashboardUrl:
-              type: string
-            description:
-              type: string
-            error:
-              type: string
-            resources:
-              items:
-                description: Source is the details for identifying each resource sources.yaml
-                  file is unmarshalled to a map[string]Source
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.state
+      name: state
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    - jsonPath: .spec.clusterId
+      name: clusterid
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SFServiceInstance is the Schema for the sfserviceinstances API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SFServiceInstanceSpec defines the desired state of SFServiceInstance
+            properties:
+              clusterId:
+                type: string
+              context:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              organizationGuid:
+                type: string
+              parameters:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              planId:
+                type: string
+              previousValues:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              serviceId:
+                type: string
+              spaceGuid:
+                type: string
+            required:
+            - planId
+            - serviceId
+            type: object
+          status:
+            description: SFServiceInstanceStatus defines the observed state of SFServiceInstance
+            properties:
+              appliedSpec:
+                description: SFServiceInstanceSpec defines the desired state of SFServiceInstance
                 properties:
-                  apiVersion:
+                  clusterId:
                     type: string
-                  kind:
+                  context:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  organizationGuid:
                     type: string
-                  name:
+                  parameters:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  planId:
                     type: string
-                  namespace:
+                  previousValues:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  serviceId:
+                    type: string
+                  spaceGuid:
                     type: string
                 required:
-                - apiVersion
-                - kind
-                - name
-                - namespace
+                - planId
+                - serviceId
                 type: object
-              type: array
-            state:
-              type: string
-          required:
-          - state
-          type: object
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
+              dashboardUrl:
+                type: string
+              description:
+                type: string
+              error:
+                type: string
+              resources:
+                items:
+                  description: Source is the details for identifying each resource
+                    sources.yaml file is unmarshalled to a map[string]Source
+                  properties:
+                    apiVersion:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  - name
+                  - namespace
+                  type: object
+                type: array
+              state:
+                type: string
+            required:
+            - state
+            type: object
+        type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

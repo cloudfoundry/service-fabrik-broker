@@ -30,18 +30,22 @@ type DashboardClient struct {
 
 // SFServiceSpec defines the desired state of SFService
 type SFServiceSpec struct {
-	Name                string                `json:"name"`
-	ID                  string                `json:"id"`
-	Description         string                `json:"description"`
-	Tags                []string              `json:"tags,omitempty"`
-	Requires            []string              `json:"requires,omitempty"`
-	Bindable            bool                  `json:"bindable"`
-	InstanceRetrievable bool                  `json:"instanceRetrievable,omitempty"`
-	BindingRetrievable  bool                  `json:"bindingRetrievable,omitempty"`
-	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
-	DashboardClient     *DashboardClient      `json:"dashboardClient,omitempty"`
-	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
-	RawContext          *runtime.RawExtension `json:"context,omitempty"`
+	Name                string   `json:"name"`
+	ID                  string   `json:"id"`
+	Description         string   `json:"description"`
+	Tags                []string `json:"tags,omitempty"`
+	Requires            []string `json:"requires,omitempty"`
+	Bindable            bool     `json:"bindable"`
+	InstanceRetrievable bool     `json:"instanceRetrievable,omitempty"`
+	BindingRetrievable  bool     `json:"bindingRetrievable,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Metadata        *runtime.RawExtension `json:"metadata,omitempty"`
+	DashboardClient *DashboardClient      `json:"dashboardClient,omitempty"`
+	PlanUpdatable   bool                  `json:"planUpdatable,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	RawContext *runtime.RawExtension `json:"context,omitempty"`
 }
 
 // SFServiceStatus defines the observed state of SFService

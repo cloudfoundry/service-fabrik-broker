@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
 const yaml = require('js-yaml');
-const kc = require('kubernetes-client');
+const k8s = require('@kubernetes/client-node');
 const JSONStream = require('json-stream');
 const camelcaseKeys = require('camelcase-keys');
 const config = require('@sf/app-config');
@@ -23,32 +23,24 @@ const {
   }
 } = require('@sf/common-utils');
 
-// TODO: For K8S get kubeconfig from with the container
-const apiserverConfig = config.apiserver.getConfigInCluster ? kc.config.getInCluster() :
-  (config.apiserver.pathToKubeConfig ?
-    kc.config.fromKubeconfig(config.apiserver.pathToKubeConfig) : {
-      url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
-      cert: config.apiserver.certificate,
-      key: config.apiserver.private_key,
-      insecureSkipTlsVerify: true
-    });
-const apiserver = new kc.Client({
-  config: apiserverConfig,
-  version: CONST.APISERVER.VERSION
-});
 
 function convertToHttpErrorAndThrow(err) {
-  let message = err.message;
-  if (err.error && err.error.description) {
-    message = `${message}. ${err.error.description}`;
-  }
+  let message = '';
   let newErr;
   let code;
-  if (err.code) {
-    code = err.code;
+
+  if (err.body && err.body.message) {
+    message = err.body.message;
+  } else if (err.message) {
+    message = err.message;
+  }
+
+  if (err.statusCode && err.statusCode < 600) {
+    code = err.statusCode;
   } else if (err.status) {
     code = err.status;
   }
+
   switch (code) {
     case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
       newErr = new BadRequest(message);
@@ -76,25 +68,56 @@ function convertToHttpErrorAndThrow(err) {
   throw newErr;
 }
 
+function omitUndefinedFields(body) {
+  const res = {};
+  if (!_.isUndefined(body)) {
+    for (const [key, value] of Object.entries(body)) {
+      if (_.isUndefined(value) || _.isEmpty(value)) {
+        continue;
+      }
+      if (_.isArray(value) && _.isEmpty(_.compact(value))) {
+        continue;
+      }
+      res[key] = value;
+    }
+  }
+  return res;
+}
+
+function transformResponse(res) {
+  if (!res.statusCode) {
+    res.statusCode = _.get(res, 'response.statusCode');
+  }  
+  res.body = omitUndefinedFields(res.body);
+  return _.omit(res, 'response');
+}
+
 class ApiServerClient {
-  constructor() {	
+  constructor() {
     this.ready = false;
+    this.apiClients = {};
     this.init();
   }
 
   init() {
-    return Promise.try(() => {
-      return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
-        apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
-      })
-        .tap(() => {
-          logger.debug('Successfully added enpoints to apiserver client');
-        })
-        .catch(err => {
-          logger.error('Error occured while adding enpoints to apiserver client', err);
-          return convertToHttpErrorAndThrow(err);
-        });
-    });
+    this.apiserverConfig = new k8s.KubeConfig();
+    if (config.apiserver.getConfigInCluster) {
+      this.apiserverConfig.loadFromCluster();
+    } else if (config.apiserver.pathToKubeConfig) {
+      this.apiserverConfig.loadFromFile(config.apiserver.pathToKubeConfig);
+    } else {
+      assert.fail('Config \'apiserver.pathToKubeConfig\' must be provided if \'apiserver.getConfigInCluster\' is false');
+    }
+    this.watch = new k8s.Watch(this.apiserverConfig);
+  }
+
+  _getApiClient(resourceGroup, version) {
+    let apiType = _.get(CONST, ['APISERVER', 'RESOURCE_CLIENT', resourceGroup, version], CONST.APISERVER.RESOURCE_CLIENT.DEFAULT);
+    let apiClientType = k8s[apiType];
+    if (!(apiType in this.apiClients)) {
+      this.apiClients[apiType] = this.apiserverConfig.makeApiClient(apiClientType);
+    }
+    return this.apiClients[apiType];
   }
 
   /**
@@ -217,10 +240,10 @@ class ApiServerClient {
       .then(() => {
         const duration = (new Date() - startTime) / 1000;
         logger.debug(`Checking instance schedule status for instance ${resourceId} for duration: ${duration}`);
-        if(duration > timeOutinSec) {
+        if (duration > timeOutinSec) {
           logger.error(`clusterId is not set for ${resourceId} after ${duration}s`);
           throw new Timeout(`clusterId is not set for ${resourceId} after ${duration}s`);
-        } else{
+        } else {
           return this.getResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
@@ -236,13 +259,13 @@ class ApiServerClient {
       });
   }
   /**
-     * @description Waits till clusterId is set for sfserviceinstance
-     * @param {string} resourceId - id of resource
-     */
+   * @description Waits till clusterId is set for sfserviceinstance
+   * @param {string} resourceId - id of resource
+   */
   waitTillInstanceIsScheduled(resourceId, timeOutinSec) {
     assert.ok(resourceId, 'Argument \'resourceId\' is required to get scheduled cluster for instance');
     logger.debug(`Waiting for scheduler to set clusterId on ${resourceId}`);
-    if(timeOutinSec == undefined) {
+    if (timeOutinSec == undefined) {
       timeOutinSec = CONST.CLUSTER_SCHEDULE_TIMEOUT_IN_SEC;
     }
     return this.checkInstanceScheduleStatus(resourceId, new Date(), timeOutinSec);
@@ -252,25 +275,28 @@ class ApiServerClient {
    * @description Register watcher for (resourceGroup , resourceType)
    * @param {string} resourceGroup - Name of the resource
    * @param {string} resourceType - Type of the resource
-   * @param {string} callback - Fucntion to call when event is received
+   * @param {string} callback - Function to call when event is received
    */
   registerWatcher(resourceGroup, resourceType, callback, queryString) {
     assert.ok(resourceGroup, 'Argument \'resourceGroup\' is required to register watcher');
     assert.ok(resourceType, 'Argument \'resourceType\' is required to register watcher');
-    return Promise.try(() => {
-      const stream = apiserver
-        .apis[resourceGroup][CONST.APISERVER.API_VERSION]
-        .watch[resourceType].getStream({
-          qs: {
-            labelSelector: queryString ? queryString : '',
-            timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
-          }
-        });
-      const jsonStream = new JSONStream();
-      stream.pipe(jsonStream);
-      jsonStream.on('data', callback);
-      return stream;
-    })
+
+    const resourceVersion = CONST.APISERVER.API_VERSION;
+    const path = _.join(['', 'apis', resourceGroup, resourceVersion, _.lowerCase(resourceType)], '/');
+    const queryParams = {
+      labelSelector: queryString ? queryString : '',
+      timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
+    };
+
+    return Promise.try(() => this.watch.watch(path, queryParams, () => {}, err => {
+      logger.error(`Watch ended for path ${path} with queryString ${queryString}`, err);
+    }))
+      .then(req => {
+        const jsonStream = new JSONStream();
+        req.pipe(jsonStream);
+        jsonStream.on('data', callback);
+        return req;
+      })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -295,24 +321,25 @@ class ApiServerClient {
     if (!crdJson) {
       return Promise.resolve();
     }
-    return Promise.try(() => apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-      body: crdJson,
-      headers: {
-        'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-      }
-    }))
+    const name = _.lowerCase(resourceType) + '.' + resourceGroup;
+    const client = this._getApiClient(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.CRD_RESOURCE_GROUP_VERSION);
+    return Promise.try(() => client.createCustomResourceDefinition(crdJson))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       })
-      .catch(NotFound, () => {
-        logger.info(`CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..`);
-        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
-          body: crdJson
-        });
+      .catch(Conflict, () => {
+        logger.info(`CRD ${name} already registered, patching it now..`);
+        return client.patchCustomResourceDefinition(name, crdJson, undefined, undefined, undefined,
+          undefined, {
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          })
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          });
       })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
+      .then(res => transformResponse(res));
   }
 
   getCrdJson(resourceGroup, resourceType) {
@@ -321,6 +348,10 @@ class ApiServerClient {
       logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
       return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
     }
+  }
+
+  getCrdVersion(crdJson) {
+    return _.get(crdJson, 'spec.version', _.get(crdJson, 'spec.versions[0].name', CONST.APISERVER.API_VERSION));
   }
 
   /**
@@ -339,18 +370,20 @@ class ApiServerClient {
         name: name
       }
     };
-    return Promise.try(() => apiserver.api[CONST.APISERVER.NAMESPACE_API_VERSION].ns.post({
-      body: resourceBody
-    }))
+    const client = this._getApiClient('', CONST.APISERVER.NAMESPACE_API_VERSION);
+    return Promise.try(() => client.createNamespace(resourceBody))
       .tap(() => logger.debug(`Successfully created namespace ${name}`))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
   }
 
   deleteNamespace(name) {
-    return Promise.try(() => apiserver.api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
+    const client = this._getApiClient('', CONST.APISERVER.NAMESPACE_API_VERSION);
+    return Promise.try(() => client.deleteNamespace(name))
       .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -374,10 +407,9 @@ class ApiServerClient {
   getSecret(secretId, namespaceId) {
     assert.ok(secretId, 'Property \'secretId\' is required to get Secret');
     assert.ok(namespaceId, 'Property \'namespaceId\' is required to get Secret');
-    return Promise.try(() => apiserver
-      .api[CONST.APISERVER.SECRET_API_VERSION]
-      .namespaces(namespaceId)
-      .secrets(secretId).get())
+    const client = this._getApiClient('', CONST.APISERVER.SECRET_API_VERSION);
+    return Promise.try(() => client.readNamespacedSecret(secretId, namespaceId))
+      .then(res => transformResponse(res))
       .then(secret => secret.body)
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -407,8 +439,12 @@ class ApiServerClient {
       metadata.labels = opts.labels;
     }
     const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
     const resourceBody = {
-      apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+      apiVersion: `${group}/${version}`,
       kind: crdJson.spec.names.kind,
       metadata: metadata,
       spec: {
@@ -428,13 +464,11 @@ class ApiServerClient {
       });
       resourceBody.status = statusJson;
     }
+    const client = this._getApiClient(group, version);
     const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
-    return Promise.try(() => apiserver
-      .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-      .namespaces(namespaceId)[opts.resourceType].post({
-        body: resourceBody
-      }))
+    return Promise.try(() => client.createNamespacedCustomObject(group, version, namespaceId, plural, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -455,6 +489,12 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to update resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to update resource');
     assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, 'Property \'metadata\' or \'options\' or \'status\' or \'operatorMetadata\'  is required to update resource');
+
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
     return Promise.try(() => {
       const patchBody = {};
       if (opts.metadata) {
@@ -484,16 +524,16 @@ class ApiServerClient {
       }
       logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
       const namespaceId = this.getNamespaceId(opts.resourceId);
+      const client = this._getApiClient(group, version);
       // Create Namespace if not default
-      return Promise.try(() => apiserver
-        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-          body: patchBody,
+      return Promise.try(() => client.patchNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId,
+        patchBody, undefined, undefined, undefined, {
           headers: {
             'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
           }
         }));
     })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -543,15 +583,23 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to delete resource');
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to delete resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to delete resource');
+
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
     const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
-    return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-      .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
+    const client = this._getApiClient(group, version);
+
+    return Promise.try(() => client.deleteCollectionNamespacedCustomObject_2(group, version, namespaceId, plural, opts.resourceId))
       .then(res => {
         if (_.get(config, 'apiserver.enable_namespaced_separation') && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);
         }
         return res;
       })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -585,10 +633,10 @@ class ApiServerClient {
   }
 
   /**
-   * @description Get Resource in Apiserver with the opts
-   * @param {string} opts.resourceGroup - Unique id of resource
-   * @param {string} opts.resourceType - Name of operation
-   * @param {string} opts.resourceId - Type of operation
+   * @description Get a namespaced Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Group of resource the resource. eg: osb.servicefabrik.io
+   * @param {string} opts.resourceType - Kind of the resource. eg: sfserviceinstances (plural)
+   * @param {string} opts.resourceId - Id of resource
    * @param {string} opts.namespaceId - optional; namespace of resource
    */
   getResource(opts) {
@@ -597,24 +645,30 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
-    return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-      .namespaces(namespaceId)[opts.resourceType](opts.resourceId).get())
-      .then(resource => {
-        _.forEach(resource.body.spec, (val, key) => {
+
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
+    const client = this._getApiClient(group, version);
+    return Promise.try(() => client.getNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId))
+      .then(response => {
+        _.forEach(response.body.spec, (val, key) => {
           try {
-            resource.body.spec[key] = JSON.parse(val);
+            response.body.spec[key] = JSON.parse(val);
           } catch (err) {
-            resource.body.spec[key] = val;
+            response.body.spec[key] = val;
           }
         });
-        _.forEach(resource.body.status, (val, key) => {
+        _.forEach(response.body.status, (val, key) => {
           try {
-            resource.body.status[key] = JSON.parse(val);
+            response.body.status[key] = JSON.parse(val);
           } catch (err) {
-            resource.body.status[key] = val;
+            response.body.status[key] = val;
           }
         });
-        return resource.body;
+        return response.body;
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -639,12 +693,30 @@ class ApiServerClient {
     }
     // Currently most callers are calling this function with allNamespaces: true, only metering jobs are calling without NS and defaults to. Should not be used in any other context.
     const namespaceId = opts.namespaceId ? opts.namespaceId : _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
+    const pretty = _.get(opts, 'query.pretty');
+    const _continue = _.get(opts, 'query.continue');
+    const fieldSelector = _.get(opts, 'query.fieldSelector');
+    const labelSelector = _.get(opts, 'query.labelSelector');
+    const limit = _.get(opts, 'query.limit');
+    const resourceVersion = _.get(opts, 'query.resourceVersion');
+    const timeoutSeconds = _.get(opts, 'query.timeoutSeconds');
+    const watch = _.get(opts, 'query.watch');
+
+    const client = this._getApiClient(group, version);
+
     return Promise.try(() => {
       if (!_.get(opts, 'allNamespaces', false)) {
-        return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-          .namespaces(namespaceId)[opts.resourceType].get(query);
+        return client.listNamespacedCustomObject(group, version, namespaceId, plural, pretty, _continue,
+          fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
       } else {
-        return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION].namespaces()[opts.resourceType].get(query);
+        return client.listClusterCustomObject(group, version, plural, pretty, _continue,
+          fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
       }
     })
       .then(response => _.get(response, 'body.items', []))
@@ -698,10 +770,12 @@ class ApiServerClient {
       metadata: metadata,
       data: data
     };
-    return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
-        body: resourceBody
-      }))
+    // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+    const namespaceId = _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+
+    const client = this._getApiClient('', CONST.APISERVER.CONFIG_MAP.API_VERSION);
+    return Promise.try(() => client.createNamespacedConfigMap(namespaceId, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -709,8 +783,11 @@ class ApiServerClient {
 
   getConfigMapResource(configName) {
     logger.debug('Get resource with opts: ', configName);
-    return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get()) // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+    // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+    const namespaceId = _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+
+    const client = this._getApiClient('', CONST.APISERVER.CONFIG_MAP.API_VERSION);
+    return Promise.try(() => client.readNamespacedConfigMap(configName, namespaceId))
       .then(resource => {
         return resource.body;
       })
@@ -731,18 +808,31 @@ class ApiServerClient {
       metadata: metadata,
       data: data
     };
+    // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
+    const namespaceId = _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+
+    const client = this._getApiClient('', CONST.APISERVER.CONFIG_MAP.API_VERSION);
     return Promise.try(() => this.getConfigMapResource(configName))
       .then(oldResourceBody => {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
-        return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-          .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({ // Currently only admin controller calls this to create configs in default NS. Should not be used in any other context.
-            body: resourceBody
+        return client.patchNamespacedConfigMap(configName, namespaceId, resourceBody, undefined, undefined,
+          undefined, undefined, {
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          })
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
           });
       })
       .catch(NotFound, () => {
-        return this.createConfigMapResource(configName, configParam);
-      });
+        return this.createConfigMapResource(configName, configParam)
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          });
+      })
+      .then(res => transformResponse(res));
   }
 
   getConfigMap(configName, key) {
@@ -753,9 +843,9 @@ class ApiServerClient {
   }
 
   getCustomResourceDefinition(customResourceName) {
-    return Promise.try(() => {
-      return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(customResourceName).get();
-    })
+    const client = this._getApiClient(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.CRD_RESOURCE_GROUP_VERSION);
+    return Promise.try(() => client.readCustomResourceDefinition(customResourceName))
+      .then(response => response.body)
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -897,8 +987,12 @@ class ApiServerClient {
       metadata.labels = opts.labels;
     }
     const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
     const resourceBody = {
-      apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+      apiVersion: `${crdJson.spec.group}/${version}`,
       kind: crdJson.spec.names.kind,
       metadata: metadata,
       spec: camelcaseKeys(opts.spec)
@@ -914,16 +1008,14 @@ class ApiServerClient {
       });
       resourceBody.status = opts.status;
     }
+    const client = this._getApiClient(group, version);
     // Create Namespace if not default
     const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
       _.get(opts, 'spec.instance_id') : opts.resourceId
     );
     // Create Namespace if not default
-    return Promise.try(() => apiserver
-      .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-      .namespaces(namespaceId)[opts.resourceType].post({
-        body: resourceBody
-      }))
+    return Promise.try(() => client.createNamespacedCustomObject(group, version, namespaceId, plural, resourceBody))
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -944,6 +1036,12 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to update resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to update resource');
     assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\'  is required to update resource');
+
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const group = crdJson ? crdJson.spec.group : opts.resourceGroup;
+    const version = this.getCrdVersion(crdJson);
+    const plural = crdJson ? crdJson.spec.names.plural : _.lowerCase(opts.resourceType);
+
     return Promise.try(() => {
       const patchBody = {};
       if (opts.metadata) {
@@ -965,19 +1063,20 @@ class ApiServerClient {
         patchBody.status = opts.status;
       }
       logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+
+      const client = this._getApiClient(group, version);
       // Create Namespace if not default
       const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
         _.get(opts, 'spec.instance_id') : opts.resourceId
       );
-      return Promise.try(() => apiserver
-        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-          body: patchBody,
+      return Promise.try(() => client.patchNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId, patchBody,
+        undefined, undefined, undefined, {
           headers: {
             'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
           }
         }));
     })
+      .then(res => transformResponse(res))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -999,10 +1098,14 @@ class ApiServerClient {
     assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\' is required to patch resource');
 
     return Promise.try(() => {
-      if(_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+      if (_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
         // set parameters field to null
         const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId']);
-        return this.updateOSBResource(_.extend(clearParamsReqOpts, { 'spec': { 'parameters': null } }));
+        return this.updateOSBResource(_.extend(clearParamsReqOpts, {
+          'spec': {
+            'parameters': null
+          }
+        }));
       }
     })
       .then(() => this.updateOSBResource(opts));
@@ -1039,25 +1142,31 @@ class ApiServerClient {
     logger.debug('Creating service/plan resource with CRD: ', crd);
     assert.ok(crd, 'Property \'crd\' is required to create Service/Plan Resource');
     const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
-    return Promise.try(() => apiserver
-      .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-      .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[resourceType].post({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
-        body: crd
-      }))
+
+    // Default NS is used in this context since it is only done for the BOSH use case, shouldn't be used in any other context.
+    const namespaceId = _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE);
+    const apiVersion = _.split(_.get(crd, 'apiVersion'), '/');
+    const group = apiVersion[0];
+    const version = apiVersion[1];
+    const plural = _.lowerCase(resourceType);
+    const name = _.get(crd, 'metadata.name');
+
+    const client = this._getApiClient(group, version);
+    return Promise.try(() => client.createNamespacedCustomObject(group, version, namespaceId, plural, crd))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       })
-      .catch(Conflict, () => apiserver
-        .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(_.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE))[resourceType](crd.metadata.name).patch({ // Default NS is used in this context since it is only done for the BOSH usecase, shouldn;t be used in any other context.
-          body: crd,
+      .catch(Conflict, () => client.patchNamespacedCustomObject(group, version, namespaceId, plural, name, crd, undefined, undefined,
+        undefined, {
           headers: {
             'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
           }
-        }))
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
+        })
+        .catch(err => {
+          return convertToHttpErrorAndThrow(err);
+        })
+      )
+      .then(res => transformResponse(res));
   }
 }
 

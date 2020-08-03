@@ -1,45 +1,61 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: defaultboshrestores.backup.servicefabrik.io
 spec:
   group: backup.servicefabrik.io
   names:
     kind: DefaultBoshRestore
+    listKind: DefaultBoshRestoreList
     plural: defaultboshrestores
+    singular: defaultboshrestore
   scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      properties:
-        apiVersion:
-          type: string
-        kind:
-          type: string
-        metadata:
-          type: object
-        spec:
-          properties:
-            options:
-              type: string
-          type: object
-        status:
-          properties:
-            error:
-              type: string
-            lastOperation:
-              type: string
-            response:
-              type: string
-            state:
-              type: string
-          type: object
-      type: object
-  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DefaultBoshRestore is the Schema for the defaultboshrestores API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DefaultBoshRestoreSpec defines the desired state of DefaultBoshRestore
+            properties:
+              options:
+                description: Options contains the stringified json options
+                type: string
+            type: object
+          status:
+            description: DefaultBoshRestoreStatus defines the observed state of DefaultBoshRestore
+            properties:
+              error:
+                description: Error contains error description
+                type: string
+              lastOperation:
+                description: LastOperation contains the stringified json status of last operation
+                type: string
+              response:
+                description: Response contains the stringified json response
+                type: string
+              state:
+                description: State contains the state of the object
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: null
+  conditions: []
+  storedVersions: []
