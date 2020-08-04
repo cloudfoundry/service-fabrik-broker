@@ -18,11 +18,7 @@ const customFormatter = winston.format((info, opts) => {
   if(splat && splat.length) {    
     for(let i = 0; i < splat.length; i++) {
       if(typeof splat[i] === 'object') {
-        if((info.level === 'error' || info.level === 'warn') && splat[i].stack) {
-          info.message = `${info.message}\n${splat[i].stack}\n${JSON.stringify(_.omit(splat[i], ['stack']), null, 2)}`;
-        } else {
-          info.message = `${info.message}\n${JSON.stringify(splat[i], null, 2)}`;
-        }
+        info.message = `${info.message}\n${JSON.stringify(splat[i], null, 2)}`;
       } else {
         info.message = `${info.message} ${splat[i]}`;
       }
@@ -40,7 +36,9 @@ const transports = [
       config.colorize_log !== undefined && config.colorize_log === false ? winston.format.uncolorize() : winston.format.colorize(),
       winston.format.timestamp(),
       customFormatter(),
-      winston.format.printf(i => `${i.timestamp} - ${i.level}: ${i.message}`)
+      winston.format.printf(i => {
+        return `${i.timestamp} - ${i.level}: ${i.message}`;
+      })
     )
   }),
   new winston.transports.Console({
