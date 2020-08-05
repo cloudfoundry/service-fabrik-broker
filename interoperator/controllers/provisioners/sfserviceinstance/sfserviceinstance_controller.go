@@ -105,11 +105,6 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		return r.handleError(instance, ctrl.Result{}, err, state, 0)
 	}
 	state = instance.GetState()
-	labels := instance.GetLabels()
-	lastOperation, ok := labels[constants.LastOperationKey]
-	if !ok {
-		lastOperation = "in_queue"
-	}
 
 	clusterID, err := instance.GetClusterID()
 	if err != nil {
@@ -140,7 +135,6 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		if err != nil {
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
-		lastOperation = state
 	} else if state == "in_queue" || state == "update" {
 		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 		if err != nil {
@@ -161,7 +155,6 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		if err != nil {
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
-		lastOperation = state
 	}
 
 	err = r.Get(ctx, req.NamespacedName, instance)
@@ -169,8 +162,8 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		return r.handleError(instance, ctrl.Result{}, err, "", 0)
 	}
 	state = instance.GetState()
-	labels = instance.GetLabels()
-	lastOperation, ok = labels[constants.LastOperationKey]
+	labels := instance.GetLabels()
+	lastOperation, ok := labels[constants.LastOperationKey]
 	if !ok {
 		lastOperation = "in_queue"
 	}
