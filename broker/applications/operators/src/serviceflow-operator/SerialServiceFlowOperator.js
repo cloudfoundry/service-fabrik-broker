@@ -160,7 +160,9 @@ class SerialServiceFlowOperator extends BaseOperator {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[taskDetails.task_order - 1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
             }))
-          .catch(Conflict, err => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
+          .catch(Conflict, err => {
+            logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err);
+          })
           .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
     });

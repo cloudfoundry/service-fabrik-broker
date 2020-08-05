@@ -158,7 +158,9 @@ class BackupReaperJob extends BaseJob {
               logger.info(`Successfully deleted backup guid : ${fileNameObject.backup_guid}`);
               return fileNameObject.backup_guid;
             })
-            .catch(err => logger.error(`Error occurred while deleting backup guid: ${fileNameObject.backup_guid}. More info: `, err));
+            .catch(err => {
+              logger.error(`Error occurred while deleting backup guid: ${fileNameObject.backup_guid}. More info: `, err);
+            });
         });
     }
 

@@ -47,7 +47,9 @@ class DockerClient extends Docker {
           return reject(new Error(`FollowProgressError: ${err}`));
         }
         resolve(output);
-      }, event => logger.silly('Follow progress event:', event));
+      }, event => {
+        logger.silly('Follow progress event:', event);
+      });
     });
   }
 

@@ -38,8 +38,8 @@
     "riemannjs": "1.0.1",
     "rxjs": "5.0.0",
     "uuid": "8.2.0",
-    "winston": "2.2.0",
-    "winston-syslog": "1.2.5"
+    "winston": "3.3.3",
+    "winston-syslog": "2.4.4"
   },
   "scripts": {
     "eslint": "./node_modules/eslint/bin/eslint.js .",

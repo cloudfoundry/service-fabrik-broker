@@ -44,7 +44,9 @@ class TokenIssuer {
       this.timeoutObject = setTimeout(() => {
         return this.refreshToken()
           .then(result => this.updateTokenInfo(result))
-          .catch(err => logger.error(err.message));
+          .catch(err => {
+            logger.error(err.message);
+          });
       }, delay * 1000);
     }
     return this.tokenInfo;

@@ -139,9 +139,13 @@ class BaseOperator {
   _postProcessRequest(objectBody) {
     const options = JSON.parse(objectBody.spec.options);
     return this._releaseProcessingLock(objectBody)
-      .catch((NotFound), () => logger.debug(`Resource resourceType: ${objectBody.kind},\
-        resourceId: ${objectBody.metadata.name} is not found, No need to panic as it is already deleted.`))
-      .catch(err => logger.error(`Caught error while releasing processing lock for request ${JSON.stringify(options)}:`, err));
+      .catch((NotFound), () => {
+        logger.debug(`Resource resourceType: ${objectBody.kind},\
+        resourceId: ${objectBody.metadata.name} is not found, No need to panic as it is already deleted.`);
+      })
+      .catch(err => {
+        logger.error(`Caught error while releasing processing lock for request ${JSON.stringify(options)}:`, err);
+      });
   }
 
   processRequest() {

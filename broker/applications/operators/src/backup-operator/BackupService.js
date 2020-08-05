@@ -160,7 +160,9 @@ class BackupService extends BaseDirectorService {
                       .deleteBackupFile(options);
                   }
                 })
-                .catch(err => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+                .catch(err => {
+                  logger.error('Error occurred while performing clean up of backup failure operation : ', err);
+                });
             }
           }).then(() => {
             throw err;

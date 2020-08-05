@@ -609,8 +609,9 @@ class DirectorService extends BaseDirectorService {
           return this.deleteDeployment(this.deploymentName, params);
         }
       })
-      .catch(DirectorServiceUnavailable, err =>
-        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err))
+      .catch(DirectorServiceUnavailable, err => {
+        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err);
+      })
       .then(taskId => _
         .chain(operation)
         .set('task_id', taskId)
@@ -1073,7 +1074,9 @@ class DirectorService extends BaseDirectorService {
       maxAttempts: 3,
       minDelay: 1000
     })
-      .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
+      .catch(err => {
+        logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err);
+      });
   }
 
   /* Dashboard rendering functions */

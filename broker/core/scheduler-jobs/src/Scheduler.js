@@ -122,7 +122,9 @@ class Scheduler {
         this.initialized = MONGO_INIT_SUCCEEDED;
         pubsub.publish(CONST.TOPIC.SCHEDULER_READY);
       })
-      .catch(err => logger.error(err));
+      .catch(err => {
+        logger.error(err);
+      });
   }
 
   registerJobDefinitions() {
@@ -167,7 +169,9 @@ class Scheduler {
           .then(() => this.reScheduleJob(jobType, job))
           .then(() => process.exit(CONST.ERR_CODES.SF_IN_MAINTENANCE));
       })
-      .catch(err => logger.error('Error occurred while running Job :', err));
+      .catch(err => {
+        logger.error('Error occurred while running Job :', err);
+      });
   }
 
   /**

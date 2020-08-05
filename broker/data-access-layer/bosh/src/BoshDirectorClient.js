@@ -165,7 +165,9 @@ class BoshDirectorClient extends HttpClient {
         directorConfig =>
           this.getDeploymentByConfig(deploymentName, directorConfig)
             .then(() => this.updateConfigCacheEntry(deploymentName, directorConfig))
-            .catch(NotFound, () => logger.info(`${deploymentName} not found in -`, directorConfig.name)))
+            .catch(NotFound, () => {
+              logger.info(`${deploymentName} not found in -`, directorConfig.name);
+            }))
       .finally(() => {
         this.cacheLoadInProgressForDeployment[deploymentName] = false;
         delete this.cacheLoadInProgressForDeployment[deploymentName];

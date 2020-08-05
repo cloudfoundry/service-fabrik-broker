@@ -200,7 +200,9 @@ class JobScheduler {
                   .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out / 1000 / 60} (mins). JobScheduler aborting it.`,
                     CONST.OPERATION.ABORTED,
                     CONST.SYSTEM_USER)
-                  .then(() => logger.info('JobScheduler Aborted current maintenance window'))
+                  .then(() => {
+                    logger.info('JobScheduler Aborted current maintenance window');
+                  })
                   .catch(err => {
                     logger.error('error occurred while aborting maintenance - ', err);
                     clearInterval(this.intervalTimer);

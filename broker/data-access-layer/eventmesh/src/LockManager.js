@@ -209,7 +209,9 @@ class LockManager {
       }
       return apiServerClient.updateResource(opts)
         .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
-        .catch(Conflict, NotFound, () => logger.info(`Lock on resource ${resourceId} has been updated by some other operation because it expired, no need to unlock now`))
+        .catch(Conflict, NotFound, () => {
+          logger.info(`Lock on resource ${resourceId} has been updated by some other operation because it expired, no need to unlock now`);
+        })
         .catch(err => {
           logger.error(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`, err);
           throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
