@@ -238,9 +238,12 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 		return "", errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, "Parsing failed for labelSelector: "+labelSelector, err)
 	}
 	log.Info("Parsed Label is: ", "label", label)
-	clusters := &resourcev1alpha1.SFClusterList{}
+	var clusters *resourcev1alpha1.SFClusterList
 	if labelSelector == "" {
 		clusters, err = r.clusterRegistry.ListClusters(&client.ListOptions{})
+		if err != nil {
+			return "", err
+		}
 	} else {
 		clusters, err = r.clusterRegistry.ListClusters(&client.ListOptions{
 			LabelSelector: label,

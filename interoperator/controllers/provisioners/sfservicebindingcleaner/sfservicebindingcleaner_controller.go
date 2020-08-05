@@ -72,7 +72,7 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 			}
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				binding.SetFinalizers([]string{})
-				err = r.Patch(context.TODO(), binding, client.ConstantPatch(types.MergePatchType, mergePatch))
+				err = r.Patch(context.TODO(), binding, client.RawPatch(types.MergePatchType, mergePatch))
 				if err != nil {
 					// The binding is possibly outdated, fetch it again and
 					// retry the patch operation.

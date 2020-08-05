@@ -18,13 +18,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 var cfg *rest.Config
-var c client.Client
+var c kubernetes.Client
 
 const timeout = time.Second * 5
 
@@ -49,7 +48,7 @@ func TestMain(m *testing.M) {
 		stdlog.Fatal(err)
 	}
 
-	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
+	if c, err = kubernetes.New(cfg, kubernetes.Options{Scheme: scheme.Scheme}); err != nil {
 		stdlog.Fatal(err)
 	}
 

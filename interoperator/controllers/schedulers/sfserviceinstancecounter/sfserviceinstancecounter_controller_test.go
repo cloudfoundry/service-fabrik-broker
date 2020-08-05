@@ -211,16 +211,3 @@ func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServi
 		},
 	}
 }
-
-func _getSFClusterList(clusters ...resourcev1alpha1.SFCluster) *resourcev1alpha1.SFClusterList {
-	return &resourcev1alpha1.SFClusterList{
-		Items: clusters,
-	}
-}
-
-func _getKey(obj metav1.Object) types.NamespacedName {
-	return types.NamespacedName{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-	}
-}

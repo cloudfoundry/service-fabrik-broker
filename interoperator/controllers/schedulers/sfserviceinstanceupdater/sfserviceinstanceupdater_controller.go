@@ -56,7 +56,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 		return ctrl.Result{}, err
 	}
 
-	if plan.Spec.AutoUpdateInstances == true {
+	if plan.Spec.AutoUpdateInstances {
 		currentSpecHash := calculateHash(plan.Spec)
 		if plan.Status.SpecHash == "" {
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -74,7 +74,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 			}
 		} else if plan.Status.SpecHash != currentSpecHash {
 			var instances osbv1alpha1.SFServiceInstanceList
-			err = r.List(context.Background(), &instances, client.MatchingField("spec.planId", plan.ObjectMeta.Name))
+			err = r.List(context.Background(), &instances, client.MatchingFields{"spec.planId": plan.ObjectMeta.Name})
 			if err != nil {
 				return ctrl.Result{}, err
 			}

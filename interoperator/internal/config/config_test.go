@@ -260,11 +260,6 @@ func Test_config_UpdateConfig(t *testing.T) {
 			},
 		},
 	}
-	type fields struct {
-		c         client.Client
-		configMap *corev1.ConfigMap
-		namespace string
-	}
 	type args struct {
 		interoperatorConfig *InteroperatorConfig
 	}

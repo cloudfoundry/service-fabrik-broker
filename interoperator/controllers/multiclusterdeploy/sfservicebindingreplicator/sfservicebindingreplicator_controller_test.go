@@ -42,7 +42,6 @@ import (
 var c, c2 client.Client
 var secretID = "sf-binding-id"
 var bindingID = "binding-id"
-var namespace = constants.InteroperatorNamespace
 var bindingKey = types.NamespacedName{Name: bindingID, Namespace: constants.InteroperatorNamespace}
 var secretKey = types.NamespacedName{Name: secretID, Namespace: constants.InteroperatorNamespace}
 var serviceInstance *osbv1alpha1.SFServiceInstance
@@ -203,7 +202,7 @@ func TestReconcileMultiClusterBind(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	c2, err := client.New(cfg2, client.Options{
+	c2, err = client.New(cfg2, client.Options{
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})

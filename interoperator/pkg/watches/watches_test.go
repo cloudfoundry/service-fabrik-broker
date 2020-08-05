@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
@@ -30,8 +29,6 @@ import (
 var kubeConfig *rest.Config
 var sch *runtime.Scheme
 var c client.Client
-
-const timeout = time.Second * 5
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{

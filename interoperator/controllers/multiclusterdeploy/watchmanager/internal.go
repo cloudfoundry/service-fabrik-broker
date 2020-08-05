@@ -103,7 +103,6 @@ func (wm *watchManager) removeCluster(clusterID string) {
 	// Not found
 	log.Info("Cluster not watched by watch manager. Ignoring remove",
 		"clusterID", clusterID)
-	return
 }
 
 func (wm *watchManager) isWatchingOnCluster(clusterID string) bool {
