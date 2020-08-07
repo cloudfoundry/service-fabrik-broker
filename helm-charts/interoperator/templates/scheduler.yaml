@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-scheduler-controller-manager
   labels:
-    app: {{ .Release.Name }}-scheduler-controller-manager
+    control-plane: {{ .Release.Name }}-scheduler-controller-manager
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-controller-manager
+      control-plane: {{ .Release.Name }}-scheduler-controller-manager
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-controller-manager
+        control-plane: {{ .Release.Name }}-scheduler-controller-manager
       annotations:
         rollme: {{ randAlphaNum 5 | quote }}
     spec:

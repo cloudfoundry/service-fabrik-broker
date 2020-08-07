@@ -26,6 +26,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +35,23 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+var (
+	instancesMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name:      "state",
+			Namespace: "interoperator",
+			Subsystem: "service_instances",
+			Help:      "State of service instance. 0 - succeeded, 1 - failed, 2 - in progress, 3 - in_queue/update/delete, 4 - gone",
+		},
+		[]string{
+			// What was the state of the instance
+			"instance_id",
+		},
+	)
 )
 
 // To the function mock
@@ -61,6 +78,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.
+			instancesMetric.WithLabelValues(req.NamespacedName.Name).Set(4)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -69,6 +87,19 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	instanceID := instance.GetName()
 	state := instance.GetState()
+	switch state {
+	case "succeeded":
+		instancesMetric.WithLabelValues(instanceID).Set(0)
+	case "failed":
+		instancesMetric.WithLabelValues(instanceID).Set(1)
+	case "in progress":
+		instancesMetric.WithLabelValues(instanceID).Set(2)
+	case "in_queue":
+	case "update":
+	case "delete":
+		instancesMetric.WithLabelValues(instanceID).Set(3)
+	}
+
 	clusterID, err := instance.GetClusterID()
 	if err != nil {
 		log.Info("clusterID not set. Ignoring", "instance", instanceID)
@@ -299,6 +330,8 @@ func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+
+	metrics.Registry.MustRegister(instancesMetric)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_instance").
