@@ -59,20 +59,20 @@ exports.checkQuota = function () {
       logger.debug('[Quota]: Check skipped as it is ServiceFabrikOperation: calling next handler..');
       next();
     } else {
-      const platform = _.get(req, 'body.context.platform');
       const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
       const subaccountId = _.get(req, 'body.context.subaccount_id');
       if (orgId === undefined && subaccountId === undefined) {
         next(new BadRequest('organization_id and subaccountId are undefined'));
       } else {  
         const quotaClient = new QuotaClient({});
-        const useSubaccountForQuotaCheck = !commonFunctions.isBrokerBoshDeployment() && platform !== CONST.PLATFORM.CF;
+        const useAPIServerForConsumedQuotaCheck = !commonFunctions.isBrokerBoshDeployment();
         const quotaClientOptions = {
-          orgOrSubaccountId: useSubaccountForQuotaCheck ? subaccountId : orgId,
+          subaccountId: subaccountId,
           queryParams: {
             planId: req.body.plan_id,
             previousPlanId: _.get(req, 'body.previous_values.plan_id'),
-            isSubaccountFlag: useSubaccountForQuotaCheck,
+            useAPIServerForConsumedQuotaCheck: useAPIServerForConsumedQuotaCheck,
+            orgId: orgId,
             reqMethod: req.method
           }
         };

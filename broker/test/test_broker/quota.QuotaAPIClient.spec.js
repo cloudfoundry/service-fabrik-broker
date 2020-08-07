@@ -61,7 +61,7 @@ describe('quota', function () {
 
     describe('#getQuota', function () {
       it('should return integer with Status 200 for org quota', () => {
-        const [options, statusCode] = buildExpectedRequestArgs('GET', `/api/v2.0/orgs/${org}/services/${service}/plan/${plan}`);
+        const [options, statusCode] = buildExpectedRequestArgs('GET', `/api/v2.0/subaccounts/${org}/services/${service}/plan/${plan}`);
         return quotaAPIClient.getQuota(org, service, plan, false)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;

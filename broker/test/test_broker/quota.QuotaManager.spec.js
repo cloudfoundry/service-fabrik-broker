@@ -141,6 +141,7 @@ describe('quota', () => {
       const quotaManager = new QuotaManager(quotaAPIClientStub);
 
       let sandbox, getOrganizationStub, getServicePlansStub, getQuotaStub, getServiceInstancesStub, isOrgWhitelistedStub;
+      const subaccountId = '73125bbc-81fe-46c3-9437-e5a8a6594774';
       const orgId = '63125bbc-81fe-46c3-9437-e5a8a6594774';
       const planName = 'v1.0-small';
       const serviceName = 'blueprint';
@@ -336,47 +337,47 @@ describe('quota', () => {
       });
 
       it('returns quota does not exist when quota value is 3 and service instances created in the org is 3', () => {
-        getQuotaStub.withArgs(orgId, serviceName, planName).returns(Promise.resolve(3));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(3));
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(1);
           });
       });
 
       it('returns quota exists when for a plan skip_quota_check is enabled', () => {
-        return quotaManager.checkQuota(orgId, rabbitmqVirtualHostPlanGuid)
+        return quotaManager.checkQuota(subaccountId, orgId, rabbitmqVirtualHostPlanGuid)
           .then(value => {
             expect(value).to.eql(0);
           });
       });
 
       it('returns quota does not exist when quota value is 2 and service instances created in the org is 3', () => {
-        getQuotaStub.withArgs(orgId, serviceName, planName).returns(Promise.resolve(2));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(2));
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(1);
           });
       });
 
       it('returns quota exists when quota value is 4 and service instances created in the org is 3', () => {
-        getQuotaStub.withArgs(orgId, serviceName, planName).returns(Promise.resolve(4));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(4));
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(0);
           });
       });
 
       it('returns quota valid when quota value returned is -1 (i.e. org is whitelisted) and service instances created in the org is 3', () => {
-        getQuotaStub.withArgs(orgId, serviceName, planName).returns(Promise.resolve(-1));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(-1));
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(0);
           });
       });
 
       it('returns quota invalid when quota value returned is 0 (i.e. not entitled) for the given org, service, plan', () => {
-        getQuotaStub.withArgs(orgId, serviceName, planName).returns(Promise.resolve(0));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(0));
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(2);
           });
@@ -384,14 +385,14 @@ describe('quota', () => {
 
       it('returns quota valid when org is whitelisted', () => {
         isOrgWhitelistedStub.withArgs(orgId).returns(Promise.resolve(true));
-        return quotaManager.checkQuota(orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(0);
           });
       });
 
       it('returns quota valid when it is PATCH call and it is same plan or same sku update', () => {
-        return quotaManager.checkQuota(orgId, smallPlanId, smallPlanId, 'PATCH')
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, smallPlanId, 'PATCH')
           .then(value => {
             expect(value).to.eql(0);
           });

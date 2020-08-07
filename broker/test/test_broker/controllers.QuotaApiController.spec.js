@@ -41,11 +41,11 @@ describe('#getQuotaValidStatus', () => {
   beforeEach(function () {
     checkCFQuotaStub = sinon.stub(cfQuotaManager, 'checkQuota');
     checkK8SQuotaStub = sinon.stub(k8squotaManager, 'checkQuota');
-    checkCFQuotaStub.withArgs(organization_guid, notEntitledPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));
-    checkCFQuotaStub.withArgs(organization_guid, invalidQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA));
-    checkCFQuotaStub.withArgs(organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
-    checkK8SQuotaStub.withArgs(organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
-    checkK8SQuotaStub.withArgs(subaccount_id, validQuotaPlanId, previous_plan_id, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkCFQuotaStub.withArgs(subaccount_id, organization_guid, notEntitledPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));
+    checkCFQuotaStub.withArgs(subaccount_id, organization_guid, invalidQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA));
+    checkCFQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
   });
   afterEach(function () {
     res.reset();
@@ -61,7 +61,8 @@ describe('#getQuotaValidStatus', () => {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: 'true'
+        useAPIServerForConsumedQuotaCheck: 'true',
+        orgId: organization_guid
       }
     };
     process.env.POD_NAMESPACE = 'default';
@@ -75,13 +76,14 @@ describe('#getQuotaValidStatus', () => {
   it('K8S deployment, org based check, should return valid', async () => {
     const req = {
       params: {
-        accountId: organization_guid
+        accountId: subaccount_id
       },
       query: {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: 'false'
+        useAPIServerForConsumedQuotaCheck: 'false',
+        orgId: organization_guid
       }
     };
     process.env.POD_NAMESPACE = 'default';
@@ -95,13 +97,14 @@ describe('#getQuotaValidStatus', () => {
   it('Quota not entitled, return not entitled status', async () => {
     const req = {
       params: {
-        accountId: organization_guid
+        accountId: subaccount_id
       },
       query: {
         planId: notEntitledPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: 'false'
+        useAPIServerForConsumedQuotaCheck: 'false',
+        orgId: organization_guid
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
@@ -113,13 +116,14 @@ describe('#getQuotaValidStatus', () => {
   it('Quota invalid, return invalid status', async () => {
     const req = {
       params: {
-        accountId: organization_guid
+        accountId: subaccount_id
       },
       query: {
         planId: invalidQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: 'false'
+        useAPIServerForConsumedQuotaCheck: 'false',
+        orgId: organization_guid
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
@@ -131,13 +135,14 @@ describe('#getQuotaValidStatus', () => {
   it('Quota valid, should return valid status', async () => {
     const req = {
       params: {
-        accountId: organization_guid
+        accountId: subaccount_id
       },
       query: {
         planId: validQuotaPlanId,
         previousPlanId: previous_plan_id,
         reqMethod: 'PATCH',
-        isSubaccountFlag: 'false'
+        useAPIServerForConsumedQuotaCheck: 'false',
+        orgId: organization_guid
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
