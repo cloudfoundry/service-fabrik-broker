@@ -2,29 +2,44 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/constants"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/constants"
-
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var log = ctrl.Log.WithName("handler")
 
+// AdminHandler represents a set of handlers to handle admin APIs
+type AdminHandler struct {
+	kubeconfig *rest.Config
+}
+
+// NewAdminHandler returns AdminHandler using given kubeconfig
+func NewAdminHandler(cfg *rest.Config) (*AdminHandler, error) {
+	if cfg == nil {
+		return nil, errors.New("kubeconfig was not provided")
+	}
+	return &AdminHandler{
+		kubeconfig: cfg,
+	}, nil
+}
+
 /* API Handler Functions */
 
 // GetDeploymentsSummary returns summary of the existing deployments
-func GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("labelSelector formed using query params: ", "labelSelector", labelSelector)
-	clientset, err := initClientset()
+	clientset, err := initInteroperatorClientset(h.kubeconfig)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,18 +78,18 @@ func GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetDeployment returns summary of the given deployment
-func GetDeployment(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deploymentID := vars["deploymentID"]
-	isntanceNamespace := "sf-" + deploymentID
-	log.Info("Trying to get summary for : ", "deployment", deploymentID, "namespace", isntanceNamespace)
-	clientset, err := initClientset()
+	instanceNamespace := "sf-" + deploymentID
+	log.Info("Trying to get summary for : ", "deployment", deploymentID, "namespace", instanceNamespace)
+	clientset, err := initInteroperatorClientset(h.kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clientset")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(isntanceNamespace)
+	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
 	instance, err := sfserviceinstanceClient.Get(deploymentID, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Error while getting service instance from apiserver")
@@ -98,18 +113,18 @@ func GetDeployment(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateDeployment triggers update of a single deployment
-func UpdateDeployment(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deploymentID := vars["deploymentID"]
 	log.Info("Trying to trigger update for: ", "deployment", deploymentID)
-	clientset, err := initClientset()
+	clientset, err := initInteroperatorClientset(h.kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clients")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	isntanceNamespace := "sf-" + deploymentID
-	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(isntanceNamespace)
+	instanceNamespace := "sf-" + deploymentID
+	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
 	instance, err := sfserviceinstanceClient.Get(deploymentID, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Error while getting service instance from apiserver")
@@ -128,10 +143,10 @@ func UpdateDeployment(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateDeploymentsInBatch triggers update of all deployments in given batch
-func UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("Using following labelSelector for triggering update: ", "labelSelector", labelSelector)
-	clientset, err := initClientset()
+	clientset, err := initInteroperatorClientset(h.kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clients")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -154,53 +169,12 @@ func UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Triggering update for %d instances", len(instances.Items))
 }
 
-/* Utility Functions */
-func initClientset() (*versioned.Clientset, error) {
-	config, err := ctrl.GetConfig()
-	if err != nil {
-		log.Error(err, "Error while reading kubeconfig")
-		return nil, err
-	}
-
-	clientset, err := versioned.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "Error while creating clientset")
-		return nil, err
-	}
-	return clientset, nil
-}
-
-func populateDeploymentInfo(instance *osbv1alpha1.SFServiceInstance, deployment *deploymentInfo) {
-	deployment.DeploymentID = instance.GetName()
-	deployment.ServiceID = instance.Spec.ServiceID
-	deployment.PlanID = instance.Spec.PlanID
-	deployment.ClusterID = instance.Spec.ClusterID
-	deployment.DeploymentStatus.State = instance.GetState()
-	deployment.DeploymentStatus.Description = instance.Status.Description
-	if instanceRawContext, err := instance.Spec.RawContext.MarshalJSON(); err == nil {
-		deployment.Context = json.RawMessage(instanceRawContext)
-	} else {
-		log.Error(err, "Error in marshalling instance context for instance ", "ID", instance.GetName())
-	}
-}
-
-func createLabelSelectorFromQueryParams(r *http.Request) string {
-	var labelSelectors []string
-	for queryKey, label := range constants.SupportedQueryKeysToLabels {
-		queryParam := r.URL.Query().Get(queryKey)
-		if queryParam != "" {
-			labelSelectors = append(labelSelectors, label+"="+queryParam)
-		}
-	}
-	return strings.Join(labelSelectors, ",")
-}
-
 func triggerBatchUpdates(instances *osbv1alpha1.SFServiceInstanceList, clientset *versioned.Clientset) int {
 	successCount := 0
 	log.Info(fmt.Sprintf("Attempting to trigger the update for %d deployments", len(instances.Items)))
 	for _, obj := range instances.Items {
-		isntanceNamespace := "sf-" + obj.GetName()
-		sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(isntanceNamespace)
+		instanceNamespace := "sf-" + obj.GetName()
+		sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
 		obj.SetState("update")
 		_, err := sfserviceinstanceClient.Update(&obj)
 		if err != nil {

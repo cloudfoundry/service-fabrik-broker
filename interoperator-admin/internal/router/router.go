@@ -1,18 +1,28 @@
 package router
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/handlers"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/middlewares"
+	"github.com/gorilla/mux"
+	"k8s.io/client-go/rest"
 )
 
 // GetAdminRouter sets up and returns router for Admin Application
-func GetAdminRouter() *mux.Router {
+func GetAdminRouter(kubeconfig *rest.Config, cfgManager *config.ConfigManager) *mux.Router {
+	h, err := handlers.NewAdminHandler(kubeconfig)
+	if err != nil {
+		panic("Could not initialize admin handler")
+	}
+	m, err := middlewares.NewMiddlewares(cfgManager)
+	if err != nil {
+		panic("Could not initialize admin handler")
+	}
 	r := mux.NewRouter()
-	r.Use(middlewares.BasicAuthHandler)
-	r.HandleFunc("/admin/deployments", handlers.GetDeploymentsSummary).Methods("GET")
-	r.HandleFunc("/admin/deployments/{deploymentID}", handlers.GetDeployment).Methods("GET")
-	r.HandleFunc("/admin/deployments/{deploymentID}", handlers.UpdateDeployment).Methods("PATCH")
-	r.HandleFunc("/admin/deployments", handlers.UpdateDeploymentsInBatch).Methods("PATCH")
+	r.Use(m.BasicAuthHandler)
+	r.HandleFunc("/admin/deployments", h.GetDeploymentsSummary).Methods("GET")
+	r.HandleFunc("/admin/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
+	r.HandleFunc("/admin/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
+	r.HandleFunc("/admin/deployments", h.UpdateDeploymentsInBatch).Methods("PATCH")
 	return r
 }

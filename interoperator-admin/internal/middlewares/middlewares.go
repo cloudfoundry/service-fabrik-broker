@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"crypto/subtle"
+	"errors"
 	"net/http"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
@@ -10,26 +11,28 @@ import (
 
 var log = ctrl.Log.WithName("handler")
 
-func getAdminConfig() *config.InteroperatorAdminConfig {
-	kubeConfig, err := ctrl.GetConfig()
-	if err != nil {
-		log.Error(err, "Error getting kubeconfig in middleware")
+// Middlewares represents a set of handlers to handle admin APIs
+type Middlewares struct {
+	configManager *config.ConfigManager
+}
+
+// NewMiddlewares returns Middlewares struct using given configManager
+func NewMiddlewares(cfgManager *config.ConfigManager) (*Middlewares, error) {
+	if cfgManager == nil {
+		return nil, errors.New("kubeconfig was not provided")
 	}
-	cfgManager, err := config.New(kubeConfig)
-	if err != nil {
-		log.Error(err, "Error getting adminConfig in middleware")
-	}
-	adminConfig := cfgManager.GetConfig()
-	return adminConfig
+	return &Middlewares{
+		configManager: cfgManager,
+	}, nil
 }
 
 // BasicAuthHandler is the middleware to perform Basic Auth
-func BasicAuthHandler(next http.Handler) http.Handler {
-	adminConfig := getAdminConfig()
+func (m *Middlewares) BasicAuthHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
-		username := adminConfig.Username
-		password := adminConfig.Password
+		interoperatorAdminConfig := m.configManager.GetConfig(false)
+		username := interoperatorAdminConfig.Username
+		password := interoperatorAdminConfig.Password
 		if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 		} else {

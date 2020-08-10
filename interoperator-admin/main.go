@@ -19,19 +19,21 @@ func main() {
 	kubeConfig, err := ctrl.GetConfig()
 	if err != nil {
 		setupLog.Error(err, "Error while reading kubeconfig")
+		os.Exit(1)
 	}
-	cfgManager, err := config.New(kubeConfig)
+	cfgManager, err := config.NewConfigManager(kubeConfig)
 	if err != nil {
 		setupLog.Error(err, "Error while creating cfgManager")
+		os.Exit(1)
 	}
-	adminConfig := cfgManager.GetConfig()
+	adminConfig := cfgManager.GetConfig(true)
 
 	serverParams := &server.Params{
 		Port: adminConfig.ServerPort,
 	}
 
 	server := new(server.Server)
-	server.Init(serverParams, router.GetAdminRouter())
+	server.Init(serverParams, router.GetAdminRouter(kubeConfig, cfgManager))
 
 	setupLog.Info("Server starting to listen on port: ", "Port", serverParams.Port)
 
