@@ -81,6 +81,11 @@ var deploymentInstance = &appsv1.Deployment{
 						Image: "foo",
 					},
 				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{
+						Name: "my-secret",
+					},
+				},
 			},
 		},
 	},
@@ -456,7 +461,7 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 	}
 }
 
-func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
+func TestReconcileProvisioner_reconcileSecret(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -533,7 +538,7 @@ func TestReconcileProvisioner_reconcileSfClusterSecret(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := r.reconcileSfClusterSecret(tt.args.namespace, tt.args.secretName, tt.args.clusterID, tt.args.targetClient); (err != nil) != tt.wantErr {
+			if err := r.reconcileSecret(tt.args.namespace, tt.args.secretName, tt.args.clusterID, tt.args.targetClient); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileProvisioner.reconcileSfClusterSecret() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

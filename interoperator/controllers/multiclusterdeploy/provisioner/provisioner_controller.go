@@ -64,7 +64,8 @@ type ReconcileProvisioner struct {
 6. SFCluster deploy in target cluster
 7. Kubeconfig secret in target cluster
 8. Create clusterrolebinding in target cluster
-9. Deploy provisioner in target cluster
+9. Image pull secrets in target cluster
+10. Deploy provisioner in target cluster
 */
 func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -129,7 +130,7 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
-	err = r.reconcileSfClusterSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
+	err = r.reconcileSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -140,7 +141,15 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// 9. Create Deployment in target cluster for provisioner
+	// 9. Creating/Updating imagepull secrets for provisioner deployment in target cluster
+	for _, secretRef := range deplomentInstance.Spec.Template.Spec.ImagePullSecrets {
+		err = r.reconcileSecret(namespace, secretRef.Name, clusterID, targetClient)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// 10. Create Deployment in target cluster for provisioner
 	err = r.reconcileDeployment(deplomentInstance, clusterID, targetClient)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -299,46 +308,48 @@ func (r *ReconcileProvisioner) reconcileSfClusterCrd(clusterInstance *resourcev1
 	return nil
 }
 
-func (r *ReconcileProvisioner) reconcileSfClusterSecret(namespace string, secretName string, clusterID string, targetClient client.Client) error {
+func (r *ReconcileProvisioner) reconcileSecret(namespace string, secretName string, clusterID string, targetClient client.Client) error {
 	ctx := context.Background()
-	log := r.Log.WithValues("clusterID", clusterID)
+	log := r.Log.WithValues("clusterID", clusterID, "secretName", secretName)
 
 	clusterInstanceSecret := &corev1.Secret{}
 	err := r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, clusterInstanceSecret)
 	if err != nil {
-		log.Error(err, "Failed to get the kubeconfig secret for sfcluster in master...", "clusterId", clusterID, "kubeconfig-secret", secretName)
+		log.Error(err, "Failed to get the secret from master")
 		return err
 	}
 	targetSFClusterSecret := &corev1.Secret{}
 	targetSFClusterSecret.SetName(clusterInstanceSecret.GetName())
 	targetSFClusterSecret.SetNamespace(clusterInstanceSecret.GetNamespace())
 	targetSFClusterSecret.SetLabels(clusterInstanceSecret.GetLabels())
+	targetSFClusterSecret.Type = clusterInstanceSecret.Type
 	// copy Data
 	targetSFClusterSecret.Data = make(map[string][]byte)
 	for key, val := range clusterInstanceSecret.Data {
 		targetSFClusterSecret.Data[key] = val
 	}
-	log.Info("Updating kubeconfig secret for sfcluster in target cluster", "Cluster", clusterID)
+
+	log.Info("Updating secret in target cluster", "targetType", targetSFClusterSecret.Type, "sourceType", clusterInstanceSecret.Type)
 	err = targetClient.Get(ctx, types.NamespacedName{
 		Name:      targetSFClusterSecret.GetName(),
 		Namespace: targetSFClusterSecret.GetNamespace(),
 	}, targetSFClusterSecret)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
-			log.Info("kubeconfig secret for sfcluster in target cluster not found, Creating...", "clusterId", clusterID)
+			log.Info("secret not found in target cluster, Creating")
 			err = targetClient.Create(ctx, targetSFClusterSecret)
 			if err != nil {
-				log.Error(err, "Error occurred while creating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+				log.Error(err, "Error occurred while creating secret in target cluster")
 				return err
 			}
 		} else {
-			log.Error(err, "Error occurred while creating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+			log.Error(err, "Error occurred while creating secret in target cluster")
 			return err
 		}
 	} else {
 		err = targetClient.Update(ctx, targetSFClusterSecret)
 		if err != nil {
-			log.Error(err, "Error occurred while updating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+			log.Error(err, "Error occurred while updating secret in target cluster")
 			return err
 		}
 	}
