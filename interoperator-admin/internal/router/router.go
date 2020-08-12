@@ -9,12 +9,12 @@ import (
 )
 
 // GetAdminRouter sets up and returns router for Admin Application
-func GetAdminRouter(kubeconfig *rest.Config, cfgManager *config.ConfigManager) *mux.Router {
+func GetAdminRouter(kubeconfig *rest.Config, adminConfig *config.InteroperatorAdminConfig) *mux.Router {
 	h, err := handlers.NewAdminHandler(kubeconfig)
 	if err != nil {
 		panic("Could not initialize admin handler")
 	}
-	m, err := middlewares.NewMiddlewares(cfgManager)
+	m, err := middlewares.NewMiddlewares(adminConfig)
 	if err != nil {
 		panic("Could not initialize admin handler")
 	}

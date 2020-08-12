@@ -24,6 +24,11 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/go-logr/logr"
+	"github.com/onsi/ginkgo"
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,9 +43,12 @@ var kubeConfig *rest.Config
 var c client.Client
 var sch *runtime.Scheme
 var mapper meta.RESTMapper
+var testLog logr.Logger
 
 func TestMain(m *testing.M) {
 	var err error
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(ginkgo.GinkgoWriter)))
+	testLog = ctrl.Log.WithName("test").WithName("adminapi")
 	t := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "interoperator", "config", "crd", "bases")},
 	}

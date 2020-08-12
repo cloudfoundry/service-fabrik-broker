@@ -13,16 +13,16 @@ var log = ctrl.Log.WithName("handler")
 
 // Middlewares represents a set of handlers to handle admin APIs
 type Middlewares struct {
-	configManager *config.ConfigManager
+	adminConfig *config.InteroperatorAdminConfig
 }
 
 // NewMiddlewares returns Middlewares struct using given configManager
-func NewMiddlewares(cfgManager *config.ConfigManager) (*Middlewares, error) {
-	if cfgManager == nil {
-		return nil, errors.New("kubeconfig was not provided")
+func NewMiddlewares(adminConfig *config.InteroperatorAdminConfig) (*Middlewares, error) {
+	if adminConfig == nil {
+		return nil, errors.New("config manager was not provided")
 	}
 	return &Middlewares{
-		configManager: cfgManager,
+		adminConfig: adminConfig,
 	}, nil
 }
 
@@ -30,11 +30,10 @@ func NewMiddlewares(cfgManager *config.ConfigManager) (*Middlewares, error) {
 func (m *Middlewares) BasicAuthHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
-		interoperatorAdminConfig := m.configManager.GetConfig(false)
-		username := interoperatorAdminConfig.Username
-		password := interoperatorAdminConfig.Password
+		username := m.adminConfig.Username
+		password := m.adminConfig.Password
 		if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+			http.Error(w, "Unauthorized: Basic Auth credentials invalid", http.StatusUnauthorized)
 		} else {
 			next.ServeHTTP(w, r)
 		}

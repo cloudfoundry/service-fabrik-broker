@@ -14,13 +14,13 @@ type Server struct {
 
 // Params is used to specify various params for http server
 type Params struct {
-	Port int
+	Port string
 }
 
 // Init initializes the Server
 func (s *Server) Init(params *Params, handler http.Handler) {
 	s.server = &http.Server{
-		Addr: fmt.Sprintf(":%v", params.Port),
+		Addr: fmt.Sprintf(":%s", params.Port),
 	}
 	if handler != nil {
 		s.server.Handler = handler
