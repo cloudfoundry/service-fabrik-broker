@@ -289,7 +289,7 @@ helm repo update\\n
 Helm upgrade should take care of upgrading to the latest release.\\n
 \\`\\`\\`shell\\n
 # Assuming current helm release name is interoperator\\n
-helm --namespace interoperator upgrade -i --force --wait --set cluster.host=sf.ingress.< clusterdomain > --version ${ENV_IMAGE_TAG} interoperator interoperator-charts/interoperator\\n
+helm --namespace interoperator upgrade -i --wait --set cluster.host=sf.ingress.< clusterdomain > --version ${ENV_IMAGE_TAG} interoperator interoperator-charts/interoperator\\n
 \\`\\`\\`\\n
 Refer detailed [upgrade docs](docs/interoperator-upgrades.md) for more info.\\n
 \\n
