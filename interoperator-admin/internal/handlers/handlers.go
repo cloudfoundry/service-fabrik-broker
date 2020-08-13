@@ -35,6 +35,12 @@ func NewAdminHandler(cfg *rest.Config) (*AdminHandler, error) {
 
 /* API Handler Functions */
 
+// GetInfo can return info about app
+func (h *AdminHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
+	log.Info("Returning from Info")
+	fmt.Fprintf(w, "Interoperator Admin App")
+}
+
 // GetDeploymentsSummary returns summary of the existing deployments
 func (h *AdminHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
 	labelSelector := createLabelSelectorFromQueryParams(r)

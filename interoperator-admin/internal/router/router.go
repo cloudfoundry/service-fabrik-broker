@@ -19,10 +19,12 @@ func GetAdminRouter(kubeconfig *rest.Config, adminConfig *config.InteroperatorAd
 		panic("Could not initialize admin handler")
 	}
 	r := mux.NewRouter()
-	r.Use(m.BasicAuthHandler)
-	r.HandleFunc("/admin/deployments", h.GetDeploymentsSummary).Methods("GET")
-	r.HandleFunc("/admin/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
-	r.HandleFunc("/admin/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
-	r.HandleFunc("/admin/deployments", h.UpdateDeploymentsInBatch).Methods("PATCH")
+	r.HandleFunc("/", h.GetInfo).Methods("GET")
+	adminRouter := r.PathPrefix("/admin").Subrouter()
+	adminRouter.Use(m.BasicAuthHandler)
+	adminRouter.HandleFunc("/deployments", h.GetDeploymentsSummary).Methods("GET")
+	adminRouter.HandleFunc("/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
+	adminRouter.HandleFunc("/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
+	adminRouter.HandleFunc("/deployments", h.UpdateDeploymentsInBatch).Methods("PATCH")
 	return r
 }
