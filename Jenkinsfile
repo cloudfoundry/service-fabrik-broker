@@ -4,10 +4,10 @@ pipeline {
     environment {
         WHITESOURCE_ORG_TOKEN = credentials('whitesource_org_token')
         GITHUB_OS_TOKEN = credentials('GithubOsToken')
-        GITHUB_WDF_TOKEN = credentials('GithubWdfTokenId')
+        GITHUB_SF_CREDENTIALS_TOKEN = credentials('GithubSfCredentialsTokenId')
         ENV_IMAGE_TAG = "${env.IMAGE_TAG}"
         GITHUB_OS_ORG = "cloudfoundry-incubator"
-        GIT_URL_SF_CREDENTIALS = "https://${GITHUB_WDF_TOKEN}@${GITHUB_WDF_HOST}/servicefabrik/credentials.git"
+        GIT_URL_SF_CREDENTIALS = "https://${GITHUB_SF_CREDENTIALS_TOKEN}@${GITHUB_SF_CREDENTIALS_HOST}/servicefabrik/credentials.git"
         GIT_URL_SF_BROKER = "https://${GITHUB_OS_TOKEN}@github.com/${GITHUB_OS_ORG}/service-fabrik-broker.git"
         DEV_BRANCH_DOCKER = "dev_pr_${BUILD_NUMBER}"
         DEV_BRANCH_GH_PAGES = "dev_pr_ghpages_${BUILD_NUMBER}"
