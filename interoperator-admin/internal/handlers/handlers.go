@@ -76,6 +76,7 @@ func (h *AdminHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if _, err = w.Write(respJSON); err != nil {
 		log.Error(err, "could not write response.")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -111,6 +112,7 @@ func (h *AdminHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if _, err = w.Write(respJSON); err != nil {
 		log.Error(err, "could not write response.")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

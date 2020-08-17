@@ -24,6 +24,21 @@ matrix:
       os:
         - linux
       go:
+        - "1.13"
+      git:
+        depth: 3
+      install:
+        - cd interoperator-admin
+        - env GO111MODULE=on go mod download
+        - cd ..
+      script:
+        - pushd interoperator-admin
+        - env GO111MODULE=on go test -v -coverprofile=coverage.txt ./...
+        - popd
+    - language: go
+      os:
+        - linux
+      go:
         - "1.15"
       git:
         depth: 3

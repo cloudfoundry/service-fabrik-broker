@@ -59,11 +59,11 @@ func TestNewAdminHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewAdminHandler(tt.args.kubeConfig)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewAdminHandler() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewAdminHandler() error got= %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.want == true && got.kubeconfig != tt.args.kubeConfig {
-				t.Errorf("NewAdminHandler() = %v, want %v", got, tt.want)
+				t.Errorf("NewAdminHandler() got %v, want %v", got, tt.want)
 			}
 		})
 	}
