@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/router"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/pkg/server"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -22,20 +24,16 @@ func main() {
 		os.Exit(1)
 	}
 	adminConfig := config.NewAdminConfig()
-
 	adminConfig.InitConfig()
 
-	serverParams := &server.Params{
-		Port: adminConfig.ServerPort,
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%s", adminConfig.ServerPort),
+		Handler: router.GetAdminRouter(kubeConfig, adminConfig),
 	}
 
-	server := new(server.Server)
-	server.Init(serverParams, router.GetAdminRouter(kubeConfig, adminConfig))
-
-	setupLog.Info("Server starting to listen on port: ", "Port", serverParams.Port)
-
+	setupLog.Info("Server starting to listen on port: ", "Port", adminConfig.ServerPort)
 	go func() {
-		err := server.Start()
+		err := server.ListenAndServe()
 		if err != nil {
 			setupLog.Error(err, "Could not start server")
 		}
@@ -47,6 +45,6 @@ func main() {
 	<-signalChan
 
 	setupLog.Info("Got OS shutdown signal, shutting down server gracefully...")
-	server.Stop()
+	server.Shutdown(context.Background())
 
 }
