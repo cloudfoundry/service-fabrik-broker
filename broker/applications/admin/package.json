@@ -12,7 +12,7 @@
   "dependencies": {
     "@alicloud/pop-core": "1.7.9",
     "@google-cloud/compute": "2.0.1",
-    "@google-cloud/storage": "5.1.1",
+    "@google-cloud/storage": "5.2.0",
     "@sf/app-config": "file:../../core/app-config",
     "@sf/bosh": "file:../../data-access-layer/bosh",
     "@sf/broker-client": "file:../../data-access-layer/broker-client",
