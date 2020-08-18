@@ -20,7 +20,6 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
@@ -69,15 +68,6 @@ func (r *SFDefaultScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 // SetupWithManager registers the default scheduler with manager
 // add setups the watches.
 func (r *SFDefaultScheduler) SetupWithManager(mgr ctrl.Manager) error {
-	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
-	if err != nil {
-		return err
-	}
-	interoperatorCfg := cfgManager.GetConfig()
-
-	if interoperatorCfg.SchedulerType != constants.DefaultSchedulerType {
-		return nil
-	}
 
 	r.scheme = mgr.GetScheme()
 
