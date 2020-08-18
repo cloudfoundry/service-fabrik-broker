@@ -26,6 +26,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,7 +34,38 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+var (
+	allocatableMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name:      "allocatable",
+			Namespace: "interoperator",
+			Subsystem: "cluster",
+			Help:      "Allocatable resources partitioned by cluster and resource type",
+		},
+		[]string{
+			// Which cluster?
+			"cluster",
+
+			// Type of the resource
+			"type",
+		},
+	)
+	instancesMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name:      "service_instances",
+			Namespace: "interoperator",
+			Subsystem: "cluster",
+			Help:      "Number of service instances partitioned by cluster",
+		},
+		[]string{
+			// Which cluster?
+			"cluster",
+		},
+	)
 )
 
 // To the function mock
@@ -66,6 +98,17 @@ func (r *SFClusterReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	clusterID := cluster.GetName()
+
+	allocatable := cluster.Status.TotalCapacity.DeepCopy()
+	if allocatable == nil || len(allocatable) == 0 {
+		allocatable = cluster.Status.CurrentCapacity.DeepCopy()
+	}
+	resourcev1alpha1.ResourceListSub(allocatable, cluster.Status.Requests)
+	for key, quantity := range allocatable {
+		allocatableMetric.WithLabelValues(clusterID, key.String()).Set(float64(quantity.Value()))
+	}
+	instancesMetric.WithLabelValues(clusterID).Set(float64(cluster.Status.ServiceInstanceCount))
+
 	if clusterID == constants.OwnClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
@@ -205,6 +248,8 @@ func (r *SFClusterReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+
+	metrics.Registry.MustRegister(allocatableMetric, instancesMetric)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_cluster").

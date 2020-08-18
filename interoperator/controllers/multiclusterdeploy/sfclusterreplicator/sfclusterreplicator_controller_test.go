@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const timeout = time.Second * 5
@@ -161,6 +162,8 @@ var _ = Describe("SFClusterReplicator", func() {
 			getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
 				return watchChannel, nil
 			}
+			metrics.Registry.Unregister(allocatableMetric)
+			metrics.Registry.Unregister(instancesMetric)
 		})
 		AfterEach(func() {
 			getWatchChannel = _getWatchChannel
