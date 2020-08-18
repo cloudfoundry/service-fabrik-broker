@@ -26,9 +26,14 @@ func main() {
 	adminConfig := config.NewAdminConfig()
 	adminConfig.InitConfig()
 
+	router, err := router.GetAdminRouter(kubeConfig, adminConfig)
+	if err != nil {
+		setupLog.Error(err, "Error while creating admin router")
+		os.Exit(1)
+	}
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", adminConfig.ServerPort),
-		Handler: router.GetAdminRouter(kubeConfig, adminConfig),
+		Handler: router,
 	}
 
 	setupLog.Info("Server starting to listen on port: ", "Port", adminConfig.ServerPort)
