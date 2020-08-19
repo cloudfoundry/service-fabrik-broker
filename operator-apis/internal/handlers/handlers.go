@@ -24,7 +24,7 @@ type OperatorApisHandler struct {
 	appConfig *config.OperatorApisConfig
 }
 
-// NewOperatorApisHandler returns OperatorApisHandler using given kubeconfig
+// NewOperatorApisHandler returns OperatorApisHandler using given configuration
 func NewOperatorApisHandler(appConfig *config.OperatorApisConfig) (*OperatorApisHandler, error) {
 	if appConfig == nil {
 		return nil, errors.New("Configuration was not passed while initializing handler")

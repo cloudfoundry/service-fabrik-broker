@@ -15,7 +15,7 @@ type OperatorApisConfig struct {
 	Kubeconfig *rest.Config
 }
 
-// NewOperatorApisConfig returns ConfigManager
+// NewOperatorApisConfig returns OperatorApisConfig instance
 func NewOperatorApisConfig(kubeconfig *rest.Config) *OperatorApisConfig {
 	operatorApisConfig := &OperatorApisConfig{}
 	setConfigDefaults(operatorApisConfig)
@@ -36,8 +36,7 @@ func setConfigDefaults(OperatorApisConfig *OperatorApisConfig) {
 	}
 }
 
-// InitConfig returns configuration value for the key from the environment
-// If the key is not present in environment it throws error.
+// InitConfig returns configuration values from the environment
 func (config *OperatorApisConfig) InitConfig() {
 	if val, ok := os.LookupEnv(constants.PortConfigKey); ok {
 		config.ServerPort = val

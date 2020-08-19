@@ -16,7 +16,7 @@ type Middlewares struct {
 	appConfig *config.OperatorApisConfig
 }
 
-// NewMiddlewares returns Middlewares struct using given configManager
+// NewMiddlewares returns Middlewares struct using given OperatorApisConfig instance
 func NewMiddlewares(operatorApisConfig *config.OperatorApisConfig) (*Middlewares, error) {
 	if operatorApisConfig == nil {
 		return nil, errors.New("config manager was not provided")
