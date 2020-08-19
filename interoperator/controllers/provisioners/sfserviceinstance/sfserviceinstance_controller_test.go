@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 
 	var expectedResources = []*unstructured.Unstructured{nil}
 	var appliedResources = []osbv1alpha1.Source{
-		osbv1alpha1.Source{},
+		{},
 	}
 	err1 := fmt.Errorf("Some error")
 
