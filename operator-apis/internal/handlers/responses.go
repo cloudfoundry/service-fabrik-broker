@@ -4,6 +4,9 @@ import "encoding/json"
 
 type deploymentsSummaryResponse struct {
 	TotalDeployments int              `json:"totalDeployments"`
+	Page             int              `json:"page"`
+	PageSize         int              `json:"pageSize"`
+	NextPage         string           `json:"nextPage"`
 	Deployments      []deploymentInfo `json:"deployments"`
 }
 

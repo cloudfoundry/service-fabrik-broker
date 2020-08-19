@@ -48,7 +48,7 @@ var testLog logr.Logger
 func TestMain(m *testing.M) {
 	var err error
 	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(ginkgo.GinkgoWriter)))
-	testLog = ctrl.Log.WithName("test").WithName("adminapi")
+	testLog = ctrl.Log.WithName("test").WithName("operatorapis")
 	t := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "interoperator", "config", "crd", "bases")},
 	}

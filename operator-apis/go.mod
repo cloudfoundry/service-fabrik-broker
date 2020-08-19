@@ -1,4 +1,4 @@
-module github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin
+module github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis
 
 go 1.13
 

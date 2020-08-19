@@ -1,14 +1,14 @@
 package constants
 
-// Constants used in the Interoperator admin app
+// Constants used in the Operator APIs app
 const (
 	DelayBetweenBatchUpdates = 2
 	DefaultPort              = "9297"
 	DefaultUsername          = "admin"
 	DefaultPassword          = "secret"
-	PortConfigKey            = "INTEROPERATOR_ADMIN_PORT"
-	UsernameConfigKey        = "INTEROPERATOR_ADMIN_USERNAME"
-	PasswordConfigKey        = "INTEROPERATOR_ADMIN_PASSWORD"
+	PortConfigKey            = "OPERATOR_APIS_APP_PORT"
+	UsernameConfigKey        = "OPERATOR_APIS_APP_USERNAME"
+	PasswordConfigKey        = "OPERATOR_APIS_APP_PASSWORD"
 )
 
 // SupportedQueryKeysToLabels holds supported query keys for get and patch APIs and it's mapping

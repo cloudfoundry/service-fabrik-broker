@@ -8,15 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
+
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/onsi/gomega"
-	"k8s.io/client-go/rest"
 )
 
 type queryArgs struct {
@@ -25,7 +26,7 @@ type queryArgs struct {
 	exepectedDeployments int
 }
 type testArgs struct {
-	kubeConfig       *rest.Config
+	appConfig        *config.OperatorApisConfig
 	totalDeployments int
 	deploymentIDs    []string
 	serviceIDs       []string
@@ -33,7 +34,7 @@ type testArgs struct {
 	queryArgs        *queryArgs
 }
 
-func TestNewAdminHandler(t *testing.T) {
+func TestNewOperatorApisHandler(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    testArgs
@@ -41,15 +42,17 @@ func TestNewAdminHandler(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "fail if kubeConfig is not passed",
+			name:    "fail if config is not passed",
 			args:    testArgs{},
 			want:    false,
 			wantErr: true,
 		},
 		{
-			name: "return AdminHandler",
+			name: "return OperatorApisHandler",
 			args: testArgs{
-				kubeConfig: kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 			},
 			want:    true,
 			wantErr: false,
@@ -57,13 +60,13 @@ func TestNewAdminHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAdminHandler(tt.args.kubeConfig)
+			got, err := NewOperatorApisHandler(tt.args.appConfig)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewAdminHandler() error got= %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewOperatorApisHandler() error got= %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.want == true && got.kubeconfig != tt.args.kubeConfig {
-				t.Errorf("NewAdminHandler() got %v, want %v", got, tt.want)
+			if tt.want == true && got.appConfig != tt.args.appConfig {
+				t.Errorf("NewOperatorApisHandler() got %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -82,7 +85,9 @@ func Test_handler_GetDeployment(t *testing.T) {
 		{
 			name: "return deployment if exists on Cluster",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 1,
 				deploymentIDs:    []string{"instance-id"},
 				serviceIDs:       []string{"service-id"},
@@ -100,7 +105,9 @@ func Test_handler_GetDeployment(t *testing.T) {
 		{
 			name: "return error if deployment does not exist on Cluster",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 1,
 				deploymentIDs:    []string{"instance-id"},
 				serviceIDs:       []string{"service-id"},
@@ -118,10 +125,10 @@ func Test_handler_GetDeployment(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
-			req, err := http.NewRequest("GET", "/admin/deployments/"+tt.args.deploymentIDs[0], nil)
+			router.HandleFunc("/operator/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
+			req, err := http.NewRequest("GET", "/operator/deployments/"+tt.args.deploymentIDs[0], nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -168,7 +175,9 @@ func Test_handler_GetDeploymentsSummaryNoQuery(t *testing.T) {
 		{
 			name: "return deployment summary for instances on Cluster",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -186,7 +195,9 @@ func Test_handler_GetDeploymentsSummaryNoQuery(t *testing.T) {
 		{
 			name: "return deployment summary for instances on Cluster",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -210,10 +221,10 @@ func Test_handler_GetDeploymentsSummaryNoQuery(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/", h.GetDeploymentsSummary).Methods("GET")
-			req, err := http.NewRequest("GET", "/admin/deployments/", nil)
+			router.HandleFunc("/operator/deployments/", h.GetDeploymentsSummary).Methods("GET")
+			req, err := http.NewRequest("GET", "/operator/deployments/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -265,7 +276,9 @@ func Test_handler_GetDeploymentsSummaryQuery(t *testing.T) {
 		{
 			name: "return deployment summary based on query params",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -287,7 +300,9 @@ func Test_handler_GetDeploymentsSummaryQuery(t *testing.T) {
 		{
 			name: "returns empty response when no match deployment exists",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -315,10 +330,10 @@ func Test_handler_GetDeploymentsSummaryQuery(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/", h.GetDeploymentsSummary).Methods("GET")
-			req, err := http.NewRequest("GET", "/admin/deployments/", nil)
+			router.HandleFunc("/operator/deployments/", h.GetDeploymentsSummary).Methods("GET")
+			req, err := http.NewRequest("GET", "/operator/deployments/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -366,7 +381,9 @@ func Test_handler_UpdateDeployment(t *testing.T) {
 		{
 			name: "update deployment if exists on Cluster",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 1,
 				deploymentIDs:    []string{"instance-id"},
 				serviceIDs:       []string{"service-id"},
@@ -390,10 +407,10 @@ func Test_handler_UpdateDeployment(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
-			req, err := http.NewRequest("PATCH", "/admin/deployments/"+tt.args.deploymentIDs[0], nil)
+			router.HandleFunc("/operator/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
+			req, err := http.NewRequest("PATCH", "/operator/deployments/"+tt.args.deploymentIDs[0], nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -436,7 +453,9 @@ func Test_handler_UpdateDeploymentsInBatch(t *testing.T) {
 		{
 			name: "trigger updates of all deployments in cluster when filter is not specified",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -460,10 +479,10 @@ func Test_handler_UpdateDeploymentsInBatch(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/", h.UpdateDeploymentsInBatch).Methods("PATCH")
-			req, err := http.NewRequest("PATCH", "/admin/deployments/", nil)
+			router.HandleFunc("/operator/deployments/", h.UpdateDeploymentsInBatch).Methods("PATCH")
+			req, err := http.NewRequest("PATCH", "/operator/deployments/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -509,7 +528,9 @@ func Test_handler_UpdateDeploymentsInBatchQuery(t *testing.T) {
 		{
 			name: "trigger updates of deployments in cluster based on the query",
 			args: testArgs{
-				kubeConfig:       kubeConfig,
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
 				totalDeployments: 2,
 				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
 				serviceIDs:       []string{"service-id-1", "service-id-2"},
@@ -537,10 +558,10 @@ func Test_handler_UpdateDeploymentsInBatchQuery(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			h, _ := NewAdminHandler(tt.args.kubeConfig)
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
 			router := mux.NewRouter()
-			router.HandleFunc("/admin/deployments/", h.UpdateDeploymentsInBatch).Methods("PATCH")
-			req, err := http.NewRequest("PATCH", "/admin/deployments/", nil)
+			router.HandleFunc("/operator/deployments/", h.UpdateDeploymentsInBatch).Methods("PATCH")
+			req, err := http.NewRequest("PATCH", "/operator/deployments/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

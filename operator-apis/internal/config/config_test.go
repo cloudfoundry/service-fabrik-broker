@@ -5,13 +5,15 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"k8s.io/client-go/rest"
 )
 
 type testArgs struct {
-	expected *InteroperatorAdminConfig
+	expected *OperatorApisConfig
 }
 
-func TestNewAdminConfig(t *testing.T) {
+func TestNewOperatorApisConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    testArgs
@@ -21,15 +23,16 @@ func TestNewAdminConfig(t *testing.T) {
 		cleanup func(*testArgs)
 	}{
 		{
-			name:    "returns new AdminConfig instance with default values",
+			name:    "returns new OperatorApisConfig instance with default values",
 			args:    testArgs{},
 			want:    true,
 			wantErr: false,
 			setup: func(args *testArgs) {
-				args.expected = &InteroperatorAdminConfig{
+				args.expected = &OperatorApisConfig{
 					ServerPort: "9297",
 					Username:   "admin",
 					Password:   "secret",
+					Kubeconfig: &rest.Config{},
 				}
 			},
 		},
@@ -42,7 +45,7 @@ func TestNewAdminConfig(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			got := NewAdminConfig()
+			got := NewOperatorApisConfig(&rest.Config{})
 			if tt.want == true && !reflect.DeepEqual(got, tt.args.expected) {
 				t.Errorf("Config Validation failed got %v, want %v", got, tt.args.expected)
 			}
@@ -65,17 +68,18 @@ func Test_config_InitConfig(t *testing.T) {
 			want:    true,
 			wantErr: false,
 			setup: func(args *testArgs) {
-				args.expected = &InteroperatorAdminConfig{
+				args.expected = &OperatorApisConfig{
 					ServerPort: "9296",
 					Username:   "admin",
 					Password:   "admin",
+					Kubeconfig: &rest.Config{},
 				}
-				os.Setenv("INTEROPERATOR_ADMIN_PORT", "9296")
-				os.Setenv("INTEROPERATOR_ADMIN_PASSWORD", "admin")
+				os.Setenv("OPERATOR_APIS_APP_PORT", "9296")
+				os.Setenv("OPERATOR_APIS_APP_PASSWORD", "admin")
 			},
 			cleanup: func(args *testArgs) {
-				os.Unsetenv("INTEROPERATOR_ADMIN_PORT")
-				os.Unsetenv("INTEROPERATOR_ADMIN_PASSWORD")
+				os.Unsetenv("OPERATOR_APIS_APP_PORT")
+				os.Unsetenv("OPERATOR_APIS_APP_PASSWORD")
 			},
 		},
 	}
@@ -87,7 +91,7 @@ func Test_config_InitConfig(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup(&tt.args)
 			}
-			got := NewAdminConfig()
+			got := NewOperatorApisConfig(&rest.Config{})
 			got.InitConfig()
 			fmt.Println(os.Getenv("ServerPort"))
 			if tt.want == true && !reflect.DeepEqual(got, tt.args.expected) {

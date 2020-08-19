@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/router"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/router"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -23,20 +23,20 @@ func main() {
 		setupLog.Error(err, "Error while reading kubeconfig")
 		os.Exit(1)
 	}
-	adminConfig := config.NewAdminConfig()
-	adminConfig.InitConfig()
+	operatorApisConfig := config.NewOperatorApisConfig(kubeConfig)
+	operatorApisConfig.InitConfig()
 
-	router, err := router.GetAdminRouter(kubeConfig, adminConfig)
+	router, err := router.GetOperatorApisRouter(operatorApisConfig)
 	if err != nil {
-		setupLog.Error(err, "Error while creating admin router")
+		setupLog.Error(err, "Error while creating operator router")
 		os.Exit(1)
 	}
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", adminConfig.ServerPort),
+		Addr:    fmt.Sprintf(":%s", operatorApisConfig.ServerPort),
 		Handler: router,
 	}
 
-	setupLog.Info("Server starting to listen on port: ", "Port", adminConfig.ServerPort)
+	setupLog.Info("Server starting to listen on port: ", "Port", operatorApisConfig.ServerPort)
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {

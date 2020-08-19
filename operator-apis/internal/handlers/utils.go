@@ -5,13 +5,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/constants"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"k8s.io/client-go/rest"
 )
 
-// InitInteroperatorClientset returns a versioned clientset for interoperator
 func initInteroperatorClientset(kubeconfig *rest.Config) (*versioned.Clientset, error) {
 	clientset, err := versioned.NewForConfig(kubeconfig)
 	if err != nil {
@@ -21,8 +20,6 @@ func initInteroperatorClientset(kubeconfig *rest.Config) (*versioned.Clientset, 
 	return clientset, nil
 }
 
-// CreateLabelSelectorFromQueryParams returns a labelsector string based on the req params
-// and SupportedQueryKeysToLabels map
 func createLabelSelectorFromQueryParams(r *http.Request) string {
 	var labelSelectors []string
 	for queryKey, label := range constants.SupportedQueryKeysToLabels {
@@ -49,3 +46,39 @@ func populateDeploymentInfo(instance *osbv1alpha1.SFServiceInstance, deployment 
 		}
 	}
 }
+
+/*
+func getPageBoundaries(totalItems int, pageNumber int, pageSize int) (int, int) {
+	startIndex := (pageNumber - 1) * pageSize
+	endIndex := startIndex + pageSize - 1
+	if endIndex >= totalItems {
+		endIndex = totalItems - 1
+	}
+	return startIndex, endIndex
+}
+
+func extractPaginationInfo(r *http.Request, config *config.Opera) (int, int) {
+	var pageNumber, pageSize int
+	pageNumberParam := r.URL.Query().Get("page")
+	if pageNumberParam == "" {
+		pageNumber = 0
+	} else {
+		pageNumber, err := strconv.Atoi(pageNumberParam)
+		if err != nil {
+			log.Error(err, "Invalid page query parameter")
+			pageNumber = 0
+		}
+	}
+	pageSizeParam := r.URL.Query().Get("pageSize")
+	if pageSizeParam == "" {
+		pageSize =
+	} else {
+		pageNumber, err := strconv.Atoi(pageNumberParam)
+		if err != nil {
+			log.Error(err, "Invalid page query parameter")
+			pageNumber = 0
+		}
+	}
+}
+
+*/

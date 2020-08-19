@@ -7,45 +7,46 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
+
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var log = ctrl.Log.WithName("handler")
 
-// AdminHandler represents a set of handlers to handle admin APIs
-type AdminHandler struct {
-	kubeconfig *rest.Config
+// OperatorApisHandler represents a set of functions to handle Operator APIs
+type OperatorApisHandler struct {
+	appConfig *config.OperatorApisConfig
 }
 
-// NewAdminHandler returns AdminHandler using given kubeconfig
-func NewAdminHandler(cfg *rest.Config) (*AdminHandler, error) {
-	if cfg == nil {
-		return nil, errors.New("kubeconfig was not provided")
+// NewOperatorApisHandler returns OperatorApisHandler using given kubeconfig
+func NewOperatorApisHandler(appConfig *config.OperatorApisConfig) (*OperatorApisHandler, error) {
+	if appConfig == nil {
+		return nil, errors.New("Configuration was not passed while initializing handler")
 	}
-	return &AdminHandler{
-		kubeconfig: cfg,
+	return &OperatorApisHandler{
+		appConfig: appConfig,
 	}, nil
 }
 
 /* API Handler Functions */
 
 // GetInfo can return info about app
-func (h *AdminHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
-	log.Info("Returning from Info")
+func (h *OperatorApisHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
+	log.V(2).Info("Returning from Info")
 	fmt.Fprintf(w, "Interoperator Admin App")
 }
 
 // GetDeploymentsSummary returns summary of the existing deployments
-func (h *AdminHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
+func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("labelSelector formed using query params: ", "labelSelector", labelSelector)
-	clientset, err := initInteroperatorClientset(h.kubeconfig)
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -85,12 +86,12 @@ func (h *AdminHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Requ
 }
 
 // GetDeployment returns summary of the given deployment
-func (h *AdminHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
+func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deploymentID := vars["deploymentID"]
 	instanceNamespace := "sf-" + deploymentID
 	log.Info("Trying to get summary for : ", "deployment", deploymentID, "namespace", instanceNamespace)
-	clientset, err := initInteroperatorClientset(h.kubeconfig)
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clientset")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -121,11 +122,11 @@ func (h *AdminHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateDeployment triggers update of a single deployment
-func (h *AdminHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) {
+func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deploymentID := vars["deploymentID"]
 	log.Info("Trying to trigger update for: ", "deployment", deploymentID)
-	clientset, err := initInteroperatorClientset(h.kubeconfig)
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clients")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,10 +152,10 @@ func (h *AdminHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) 
 }
 
 // UpdateDeploymentsInBatch triggers update of all deployments in given batch
-func (h *AdminHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
+func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("Using following labelSelector for triggering update: ", "labelSelector", labelSelector)
-	clientset, err := initInteroperatorClientset(h.kubeconfig)
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clients")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

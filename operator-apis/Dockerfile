@@ -14,7 +14,7 @@ COPY main.go main.go
 COPY internal/ internal/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o interoperator-admin main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o operator-apis main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o interope
 FROM alpine:3.11.6
 
 WORKDIR /
-COPY --from=builder /workspace/interoperator-admin .
+COPY --from=builder /workspace/operator-apis .
 
 # Default entrypoint is manager (provisioners)
-ENTRYPOINT ["/interoperator-admin"]
+ENTRYPOINT ["/operator-apis"]

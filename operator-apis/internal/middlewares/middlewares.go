@@ -5,24 +5,24 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var log = ctrl.Log.WithName("handler")
 
-// Middlewares represents a set of handlers to handle admin APIs
+// Middlewares represents a set of functions to provide supporting middlewares for operator apis
 type Middlewares struct {
-	adminConfig *config.InteroperatorAdminConfig
+	appConfig *config.OperatorApisConfig
 }
 
 // NewMiddlewares returns Middlewares struct using given configManager
-func NewMiddlewares(adminConfig *config.InteroperatorAdminConfig) (*Middlewares, error) {
-	if adminConfig == nil {
+func NewMiddlewares(operatorApisConfig *config.OperatorApisConfig) (*Middlewares, error) {
+	if operatorApisConfig == nil {
 		return nil, errors.New("config manager was not provided")
 	}
 	return &Middlewares{
-		adminConfig: adminConfig,
+		appConfig: operatorApisConfig,
 	}, nil
 }
 
@@ -30,8 +30,8 @@ func NewMiddlewares(adminConfig *config.InteroperatorAdminConfig) (*Middlewares,
 func (m *Middlewares) BasicAuthHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
-		username := m.adminConfig.Username
-		password := m.adminConfig.Password
+		username := m.appConfig.Username
+		password := m.appConfig.Password
 		if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
 			http.Error(w, "Unauthorized: Basic Auth credentials invalid", http.StatusUnauthorized)
 		} else {

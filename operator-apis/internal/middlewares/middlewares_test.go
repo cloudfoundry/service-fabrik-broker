@@ -7,12 +7,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator-admin/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
 	"github.com/gorilla/mux"
+	"k8s.io/client-go/rest"
 )
 
 type testArgs struct {
-	configParam *config.InteroperatorAdminConfig
+	configParam *config.OperatorApisConfig
 	reqUsername string
 	reqPassword string
 }
@@ -32,7 +33,7 @@ func TestNewMiddlewares(t *testing.T) {
 			want:    true,
 			wantErr: false,
 			setup: func(args *testArgs) {
-				args.configParam = config.NewAdminConfig()
+				args.configParam = config.NewOperatorApisConfig(&rest.Config{})
 			},
 		},
 		{
@@ -55,7 +56,7 @@ func TestNewMiddlewares(t *testing.T) {
 				t.Errorf("NewAdminHandler() error got= %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.want == true && err != nil && !reflect.DeepEqual(got.adminConfig, tt.args.configParam) {
+			if tt.want == true && err != nil && !reflect.DeepEqual(got.appConfig, tt.args.configParam) {
 				t.Errorf("NewMiddlewares() got %v, ", got)
 			}
 		})
@@ -77,7 +78,7 @@ func Test_middleware_BasicAuthHandler(t *testing.T) {
 			want:    true,
 			wantErr: false,
 			setup: func(args *testArgs) {
-				args.configParam = config.NewAdminConfig()
+				args.configParam = config.NewOperatorApisConfig(&rest.Config{})
 				args.reqUsername = args.configParam.Username
 				args.reqPassword = args.configParam.Password
 			},
@@ -88,7 +89,7 @@ func Test_middleware_BasicAuthHandler(t *testing.T) {
 			want:    false,
 			wantErr: true,
 			setup: func(args *testArgs) {
-				args.configParam = config.NewAdminConfig()
+				args.configParam = config.NewOperatorApisConfig(&rest.Config{})
 				args.reqUsername = "dummy"
 				args.reqPassword = "dummy"
 			},
