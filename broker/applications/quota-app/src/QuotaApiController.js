@@ -27,14 +27,15 @@ class QuotaApiController extends FabrikBaseController {
       const quotaManager = commonFunctions.isBrokerBoshDeployment() ?
         quota.getQuotaManagerInstance(CONST.PLATFORM.CF) : 
         quota.getQuotaManagerInstance(CONST.PLATFORM.K8S);
-      const orgOrSubaccountId = req.params.accountId;
+      const subaccountId = req.params.accountId;
       const planId = _.get(req, 'query.planId');
       const previousPlanId = _.get(req, 'query.previousPlanId');
+      const orgId = _.get(req, 'query.orgId');
       const reqMethod = _.get(req, 'query.reqMethod');
-      const isSubaccount = _.get(req, 'query.isSubaccountFlag');
-      const isSubaccountFlag = (isSubaccount === 'true');
-      logger.info(`[Quota APP] accountID: ${orgOrSubaccountId}, planId: ${planId}, previousPlanId: ${previousPlanId}, reqMethod: ${reqMethod}, isSubaccountFlag: ${isSubaccountFlag}`);
-      const validStatus = await quotaManager.checkQuota(orgOrSubaccountId, planId, previousPlanId, reqMethod, isSubaccountFlag);
+      const useAPIServerForConsumedQuotaCheck = _.get(req, 'query.useAPIServerForConsumedQuotaCheck');
+      const useAPIServerForConsumedQuotaCheckFlag = (useAPIServerForConsumedQuotaCheck === 'true');
+      logger.info(`[Quota APP] subaccountId: ${subaccountId}, orgId: ${orgId}, planId: ${planId}, previousPlanId: ${previousPlanId}, reqMethod: ${reqMethod}, useAPIServerForConsumedQuotaCheckFlag: ${useAPIServerForConsumedQuotaCheckFlag}`);
+      const validStatus = await quotaManager.checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheckFlag);
       await res.status(CONST.HTTP_STATUS_CODE.OK).send({ quotaValidStatus: validStatus });
     } catch (err) {
       logger.error(`[Quota APP] Quota check could not be completed due to following error: ${err}`);

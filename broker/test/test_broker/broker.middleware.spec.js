@@ -115,9 +115,11 @@ describe('#checkQuota', () => {
     plan_id: validQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'kubernetes',
+      platform: 'sapcp',
+      origin: 'kubernetes',
       subaccount_id: subaccount_id
-    }
+    },
+    organization_guid: organization_guid
   };
   const SMCFContextBody = {
     service_id: service_id,
@@ -145,15 +147,18 @@ describe('#checkQuota', () => {
     },
     previous_values: {
       service_id: service_id
-    }
+    },
+    organization_guid: organization_guid
   };
 
   const notEntitledBody = {
     service_id: service_id,
     plan_id: notEntitledPlanId,
     parameters: parameters,
-    context: {
-      platform: 'cloudfoundry'
+    context: {      
+      platform: 'sapcp',
+      origin: 'cloudfoundry',
+      subaccount_id: subaccount_id
     },
     previous_values: {
       service_id: service_id,
@@ -165,7 +170,9 @@ describe('#checkQuota', () => {
     plan_id: invalidQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'cloudfoundry'
+      platform: 'sapcp',
+      origin: 'cloudfoundry',
+      subaccount_id: subaccount_id
     },
     previous_values: {
       service_id: service_id,
@@ -177,7 +184,9 @@ describe('#checkQuota', () => {
     plan_id: validQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'cloudfoundry'
+      platform: 'sapcp',
+      origin: 'cloudfoundry',
+      subaccount_id: subaccount_id
     },
     previous_values: {
       service_id: service_id,
@@ -189,7 +198,9 @@ describe('#checkQuota', () => {
     plan_id: errQuotaPlanId,
     parameters: parameters,
     context: {
-      platform: 'cloudfoundry'
+      platform: 'sapcp',
+      origin: 'cloudfoundry',
+      subaccount_id: subaccount_id
     },
     previous_values: {
       service_id: service_id,
@@ -233,12 +244,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: subaccount_id,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: true,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: true,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -254,12 +266,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: notEntitledPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -275,12 +288,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: invalidQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -296,12 +310,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -316,12 +331,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       },
       data: req.body
     }, false);
@@ -336,12 +352,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -356,12 +373,13 @@ describe('#checkQuota', () => {
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: subaccount_id,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: true,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: true,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
@@ -377,12 +395,13 @@ describe('#checkQuota', () => {
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
-      orgOrSubaccountId: organization_guid,
+      subaccountId: subaccount_id,
       queryParams: {
         planId: errQuotaPlanId,
         previousPlanId: undefined,
-        isSubaccountFlag: false,
-        reqMethod: 'PATCH'
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
       }
     }, true);
     expect(checkQuotaValidityStub).to.have.been.called;

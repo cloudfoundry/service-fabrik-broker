@@ -28,9 +28,9 @@ class QuotaClient extends HttpClient {
     }
   }
   async getQuotaValidStatus(options) {
-    const orgOrSubaccountId = _.get(options, 'orgOrSubaccountId');
+    const subaccountId = _.get(options, 'subaccountId');
     const res = await this.request({
-      url: `${config.quota_app.quota_endpoint}/${orgOrSubaccountId}/quota`,
+      url: `${config.quota_app.quota_endpoint}/${subaccountId}/quota`,
       method: CONST.HTTP_METHOD.GET,
       auth: {
         user: this.username,
@@ -43,9 +43,9 @@ class QuotaClient extends HttpClient {
     return res.body.quotaValidStatus;
   }
   async putCompositeQuotaInfo(options) {
-    const orgOrSubaccountId = _.get(options, 'orgOrSubaccountId');
+    const subaccountId = _.get(options, 'subaccountId');
     const res = await this.request({
-      url: `${config.quota_app.quota_endpoint}/${orgOrSubaccountId}/quota`,
+      url: `${config.quota_app.quota_endpoint}/${subaccountId}/quota`,
       method: CONST.HTTP_METHOD.PUT,
       auth: {
         user: this.username,
