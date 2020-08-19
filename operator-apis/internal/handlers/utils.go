@@ -46,39 +46,3 @@ func populateDeploymentInfo(instance *osbv1alpha1.SFServiceInstance, deployment 
 		}
 	}
 }
-
-/*
-func getPageBoundaries(totalItems int, pageNumber int, pageSize int) (int, int) {
-	startIndex := (pageNumber - 1) * pageSize
-	endIndex := startIndex + pageSize - 1
-	if endIndex >= totalItems {
-		endIndex = totalItems - 1
-	}
-	return startIndex, endIndex
-}
-
-func extractPaginationInfo(r *http.Request, config *config.Opera) (int, int) {
-	var pageNumber, pageSize int
-	pageNumberParam := r.URL.Query().Get("page")
-	if pageNumberParam == "" {
-		pageNumber = 0
-	} else {
-		pageNumber, err := strconv.Atoi(pageNumberParam)
-		if err != nil {
-			log.Error(err, "Invalid page query parameter")
-			pageNumber = 0
-		}
-	}
-	pageSizeParam := r.URL.Query().Get("pageSize")
-	if pageSizeParam == "" {
-		pageSize =
-	} else {
-		pageNumber, err := strconv.Atoi(pageNumberParam)
-		if err != nil {
-			log.Error(err, "Invalid page query parameter")
-			pageNumber = 0
-		}
-	}
-}
-
-*/
