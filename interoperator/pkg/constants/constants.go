@@ -29,10 +29,7 @@ const (
 	DefaultSchedulerWorkerCount   = 10
 	DefaultProvisionerWorkerCount = 10
 
-	DefaultSchedulerType = "default"
-
-	LabelSelectorSchedulerType = "label-selector"
-	GoTemplateType             = "gotemplate"
+	GoTemplateType = "gotemplate"
 
 	PlanWatchDrainTimeout = time.Second * 2
 

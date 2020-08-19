@@ -235,7 +235,7 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 	log := r.Log.WithValues("instance", sfServiceInstance.GetName(), "labelSelector", labelSelector, "requests", requests)
 	label, err := labels.Parse(labelSelector)
 	if err != nil {
-		return "", errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, "Parsing failed for labelSelector: "+labelSelector, err)
+		return "", errors.NewSchedulerFailed("Label Based Scheduler", "Parsing failed for labelSelector: "+labelSelector, err)
 	}
 	log.Info("Parsed Label is: ", "label", label)
 	var clusters *resourcev1alpha1.SFClusterList
@@ -256,7 +256,7 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 	log.Info("Cluster size is", "length", len(clusters.Items))
 	if len(clusters.Items) == 0 {
 		log.Info("No cluster matching the criteria, returning failure")
-		return "", errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, "No clusters found with matching criteria: "+labelSelector, nil)
+		return "", errors.NewSchedulerFailed("Label Based Scheduler", "No clusters found with matching criteria: "+labelSelector, nil)
 	}
 
 	// Requested resources for the plan not provided.
@@ -307,7 +307,7 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 	}
 	if clusterID == "" {
 		msg := fmt.Sprintf("No clusters found with required resources. cpu : %s, memory %s.", requests.Cpu().String(), requests.Memory().String())
-		err = errors.NewSchedulerFailed(constants.LabelSelectorSchedulerType, msg, nil)
+		err = errors.NewSchedulerFailed("Label Based Scheduler", msg, nil)
 		return "", err
 	}
 	return clusterID, nil
@@ -327,9 +327,6 @@ func (r *SFLabelSelectorScheduler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
-	if interoperatorCfg.SchedulerType != constants.LabelSelectorSchedulerType {
-		return nil
-	}
 
 	r.scheme = mgr.GetScheme()
 

@@ -20,7 +20,6 @@ package schedulers
 
 import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstanceupdater"
@@ -51,14 +50,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfserviceinstance-updater"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create sfserviceinstance-updater", "scheduler-helper", "SFServiceInstanceUpdater")
-		return err
-	}
-
-	if err = (&sfdefaultscheduler.SFDefaultScheduler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("schedulers").WithName("default"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create scheduler", "scheduler", "SFDefaultScheduler")
 		return err
 	}
 
