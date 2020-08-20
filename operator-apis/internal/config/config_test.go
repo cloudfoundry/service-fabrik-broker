@@ -29,10 +29,11 @@ func TestNewOperatorApisConfig(t *testing.T) {
 			wantErr: false,
 			setup: func(args *testArgs) {
 				args.expected = &OperatorApisConfig{
-					ServerPort: "9297",
-					Username:   "admin",
-					Password:   "secret",
-					Kubeconfig: &rest.Config{},
+					ServerPort:      "9297",
+					Username:        "admin",
+					Password:        "secret",
+					Kubeconfig:      &rest.Config{},
+					DefaultPageSize: 5,
 				}
 			},
 		},
@@ -69,10 +70,11 @@ func Test_config_InitConfig(t *testing.T) {
 			wantErr: false,
 			setup: func(args *testArgs) {
 				args.expected = &OperatorApisConfig{
-					ServerPort: "9296",
-					Username:   "admin",
-					Password:   "admin",
-					Kubeconfig: &rest.Config{},
+					ServerPort:      "9296",
+					Username:        "admin",
+					Password:        "admin",
+					Kubeconfig:      &rest.Config{},
+					DefaultPageSize: 5,
 				}
 				os.Setenv("OPERATOR_APIS_APP_PORT", "9296")
 				os.Setenv("OPERATOR_APIS_APP_PASSWORD", "admin")

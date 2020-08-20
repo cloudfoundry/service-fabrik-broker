@@ -237,9 +237,9 @@ func Test_handler_GetDeploymentsSummaryNoQuery(t *testing.T) {
 				}
 				deploymentsSummaryResp := deploymentsSummaryResponse{}
 				json.Unmarshal(rr.Body.Bytes(), &deploymentsSummaryResp)
-				if deploymentsSummaryResp.TotalDeployments != tt.args.totalDeployments {
+				if deploymentsSummaryResp.TotalDeploymentsOnPage != tt.args.totalDeployments {
 					t.Errorf("handler returned wrong deployment summary response. Total Deployments: got %v want %v",
-						deploymentsSummaryResp.TotalDeployments, tt.args.totalDeployments)
+						deploymentsSummaryResp.TotalDeploymentsOnPage, tt.args.totalDeployments)
 				}
 				for i := 0; i < tt.args.totalDeployments; i++ {
 					instance := &osbv1alpha1.SFServiceInstance{}
@@ -354,9 +354,9 @@ func Test_handler_GetDeploymentsSummaryQuery(t *testing.T) {
 				}
 				deploymentsSummaryResp := deploymentsSummaryResponse{}
 				json.Unmarshal(rr.Body.Bytes(), &deploymentsSummaryResp)
-				if deploymentsSummaryResp.TotalDeployments != tt.args.queryArgs.exepectedDeployments {
+				if deploymentsSummaryResp.TotalDeploymentsOnPage != tt.args.queryArgs.exepectedDeployments {
 					t.Errorf("handler returned wrong deployment summary response. Total Deployments: got %v want %v",
-						deploymentsSummaryResp.TotalDeployments, tt.args.queryArgs.exepectedDeployments)
+						deploymentsSummaryResp.TotalDeploymentsOnPage, tt.args.queryArgs.exepectedDeployments)
 				}
 			}
 			if tt.wantErr {

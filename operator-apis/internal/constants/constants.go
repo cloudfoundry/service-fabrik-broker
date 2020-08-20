@@ -9,6 +9,8 @@ const (
 	PortConfigKey            = "OPERATOR_APIS_APP_PORT"
 	UsernameConfigKey        = "OPERATOR_APIS_APP_USERNAME"
 	PasswordConfigKey        = "OPERATOR_APIS_APP_PASSWORD"
+	PageSizeKey              = "OPERATOR_APIS_APP_PAGE_SIZE"
+	DefaultPageSize          = 5
 )
 
 // SupportedQueryKeysToLabels holds supported query keys for get and patch APIs and it's mapping

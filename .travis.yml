@@ -28,11 +28,11 @@ matrix:
       git:
         depth: 3
       install:
-        - cd interoperator-admin
+        - cd operator-apis
         - env GO111MODULE=on go mod download
         - cd ..
       script:
-        - pushd interoperator-admin
+        - pushd operator-apis
         - env GO111MODULE=on go test -v -coverprofile=coverage.txt ./...
         - popd
     - language: go

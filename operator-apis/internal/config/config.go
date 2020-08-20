@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"k8s.io/client-go/rest"
@@ -9,10 +10,11 @@ import (
 
 // OperatorApisConfig contains configs used by interoperator operator apis app
 type OperatorApisConfig struct {
-	ServerPort string
-	Username   string
-	Password   string
-	Kubeconfig *rest.Config
+	ServerPort      string
+	Username        string
+	Password        string
+	DefaultPageSize int
+	Kubeconfig      *rest.Config
 }
 
 // NewOperatorApisConfig returns OperatorApisConfig instance
@@ -34,6 +36,9 @@ func setConfigDefaults(OperatorApisConfig *OperatorApisConfig) {
 	if OperatorApisConfig.Password == "" {
 		OperatorApisConfig.Password = constants.DefaultPassword
 	}
+	if OperatorApisConfig.DefaultPageSize == 0 {
+		OperatorApisConfig.DefaultPageSize = constants.DefaultPageSize
+	}
 }
 
 // InitConfig returns configuration values from the environment
@@ -46,5 +51,12 @@ func (config *OperatorApisConfig) InitConfig() {
 	}
 	if val, ok := os.LookupEnv(constants.PasswordConfigKey); ok {
 		config.Password = val
+	}
+	if val, ok := os.LookupEnv(constants.PageSizeKey); ok {
+		if numVal, err := strconv.Atoi(val); err != nil {
+			config.DefaultPageSize = constants.DefaultPageSize
+		} else {
+			config.DefaultPageSize = numVal
+		}
 	}
 }

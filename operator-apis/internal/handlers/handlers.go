@@ -52,9 +52,18 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 		return
 	}
 	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances("")
-	instances, err := sfserviceinstanceClient.List(metav1.ListOptions{
+	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
-	})
+	}
+	continueToken, limit := extractPaginationInfo(r, h.appConfig)
+	log.Info("extracted following information for pagination ", "pageSize", limit)
+	if limit != 0 {
+		listOptions.Limit = limit
+	}
+	if continueToken != "" {
+		listOptions.Continue = continueToken
+	}
+	instances, err := sfserviceinstanceClient.List(listOptions)
 	if err != nil {
 		log.Error(err, "Error while reading sfserviceinstances from apiserver: ")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -62,7 +71,7 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 	}
 	log.Info("Number of instances obtained from the cluster: ", "instances", len(instances.Items))
 	resp := deploymentsSummaryResponse{}
-	resp.TotalDeployments = len(instances.Items)
+	resp.TotalDeploymentsOnPage = len(instances.Items)
 	for _, obj := range instances.Items {
 		log.Info("Service with ID was found", "ID", obj.GetName())
 		deployment := deploymentInfo{}
@@ -70,7 +79,13 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 		populateDeploymentInfo(&obj, &deployment)
 		resp.Deployments = append(resp.Deployments, deployment)
 	}
-
+	if instances.Continue != "" {
+		nextURL, err := getNextPageURL(r, limit, instances.Continue)
+		if err == nil {
+			resp.NextPageURL = nextURL
+		}
+	}
+	resp.PageSize = limit
 	respJSON, err := json.Marshal(resp)
 	if err != nil {
 		log.Error(err, "Error in json marshalling")

@@ -3,11 +3,10 @@ package handlers
 import "encoding/json"
 
 type deploymentsSummaryResponse struct {
-	TotalDeployments int              `json:"totalDeployments"`
-	Page             int              `json:"page"`
-	PageSize         int              `json:"pageSize"`
-	NextPage         string           `json:"nextPage"`
-	Deployments      []deploymentInfo `json:"deployments"`
+	TotalDeploymentsOnPage int              `json:"totalDeploymentsOnPage"`
+	PageSize               int64            `json:"pageSize"`
+	NextPageURL            string           `json:"nextPageURL"`
+	Deployments            []deploymentInfo `json:"deployments"`
 }
 
 type deploymentInfo struct {
