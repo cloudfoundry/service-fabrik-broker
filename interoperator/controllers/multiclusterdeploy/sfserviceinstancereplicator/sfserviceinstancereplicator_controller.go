@@ -112,6 +112,17 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+
+	log = log.WithValues("instance", instanceID, "clusterID", clusterID)
+
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -130,15 +141,13 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		err := targetClient.Delete(ctx, replica)
 		if err != nil {
 			if !apiErrors.IsNotFound(err) {
-				log.Error(err, "Failed to delete SFServiceInstance from target cluster", "instance", instanceID,
-					"clusterID", clusterID, "state", state)
+				log.Error(err, "Failed to delete SFServiceInstance from target cluster", "state", state, "lastOperation", lastOperation)
 				return ctrl.Result{}, err
 			}
 		}
+		log.Info("Triggered delete of sfserviceinstance from target cluster", "state", state, "lastOperation", lastOperation)
 	}
 
-	log.Info("SFServiceInstance from target cluster", "instance", instanceID,
-		"clusterID", clusterID, "state", state)
 	if state == "in_queue" || state == "update" || state == "delete" {
 		err = targetClient.Get(ctx, req.NamespacedName, replica)
 		if err != nil {
@@ -147,12 +156,12 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				err = targetClient.Create(ctx, replica)
 				if err != nil {
 					log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
-						"clusterID", clusterID, "instanceID", instanceID, "state", state)
+						"state", state, "lastOperation", lastOperation)
 					return ctrl.Result{}, err
 				}
+				log.Info("sfserviceinstance not found in target cluster. created as copy from master", "state", state, "lastOperation", lastOperation)
 			} else {
-				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
-					"clusterID", clusterID, "state", state)
+				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "state", state, "lastOperation", lastOperation)
 				// Error reading the object - requeue the request.
 				return ctrl.Result{}, err
 			}
@@ -161,9 +170,10 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			err = targetClient.Update(ctx, replica)
 			if err != nil {
 				log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
-					"clusterID", clusterID, "instanceID", instanceID, "state", state)
+					"state", state, "lastOperation", lastOperation)
 				return ctrl.Result{}, err
 			}
+			log.Info("updated sfserviceinstance in target cluster", "state", state, "lastOperation", lastOperation)
 		}
 
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -175,42 +185,62 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	state = instance.GetState()
-	labels := instance.GetLabels()
-	lastOperation, ok := labels[constants.LastOperationKey]
+	labels = instance.GetLabels()
+	lastOperation, ok = labels[constants.LastOperationKey]
 	if !ok {
 		lastOperation = "in_queue"
 	}
 
 	if state == "in progress" {
+		var (
+			replicaState         string
+			replicaLabels        map[string]string
+			replicaLastOperation string
+		)
+
 		err = targetClient.Get(ctx, req.NamespacedName, replica)
 		if err != nil {
-			log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
-				"clusterID", clusterID, "state", state)
 			if apiErrors.IsNotFound(err) && lastOperation == "delete" {
+				log.Info("Failed to fetch SFServiceInstance from target cluster. Setting state as succeeded",
+					"state", state, "lastOperation", lastOperation)
 				instance.SetState("succeeded")
 			} else {
-				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
-					"clusterID", clusterID, "state", state)
+				log.Error(err, "Failed to fetch SFServiceInstance from target cluster",
+					"state", state, "lastOperation", lastOperation)
 				// Error reading the object - requeue the request.
 				return ctrl.Result{}, err
 			}
 		} else {
-			replicaState := replica.GetState()
+			replicaState = replica.GetState()
+			replicaLabels = replica.GetLabels()
+			if replicaLabels == nil {
+				replicaLabels = make(map[string]string)
+			}
+			replicaLastOperation, ok = replicaLabels[constants.LastOperationKey]
+			if !ok {
+				replicaLastOperation = "in_queue"
+			}
 			if replicaState == "in_queue" || replicaState == "update" || replicaState == "delete" {
 				// replica not processed up by provisioner in target cluster
 				// ignore for now
+				log.Info("replica not yet processed in target cluster", "state", state, "lastOperation", lastOperation,
+					"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 				return ctrl.Result{}, nil
 			}
 			copyObject(replica, instance)
+			log.Info("copying sfserviceinstance from target cluster to master", "state", state, "lastOperation", lastOperation,
+				"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 		}
 
 		err = r.Update(ctx, instance)
 		if err != nil {
-			log.Error(err, "Failed to update SFServiceInstance in master cluster", "instance", instanceID,
-				"clusterID", clusterID, "state", state)
+			log.Error(err, "Failed to update SFServiceInstance in master cluster", "state", state, "lastOperation", lastOperation,
+				"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 			// Error updating the object - requeue the request.
 			return ctrl.Result{}, err
 		}
+		log.Info("Updated sfserviceinstance in master", "state", state, "lastOperation", lastOperation,
+			"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 	}
 
 	return ctrl.Result{}, nil
@@ -218,7 +248,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, namespace, clusterID string, delete bool) error {
 	ctx := context.Background()
-	log := r.Log.WithValues("clusterID", clusterID)
+	log := r.Log.WithValues("clusterID", clusterID, "namespace", namespace, "deleteNamespace", delete)
 
 	ns := &corev1.Namespace{}
 
@@ -228,24 +258,21 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			if delete {
+				log.Info("namespace already deleted in target cluster")
 				return nil
 			}
-			log.Info("creating namespace in target cluster", "clusterID", clusterID,
-				"namespace", namespace)
+			log.Info("creating namespace in target cluster")
 			ns.SetName(namespace)
 			err = targetClient.Create(ctx, ns)
 			if err != nil {
-				log.Error(err, "Failed to create namespace in target cluster", "namespace", namespace,
-					"clusterID", clusterID)
+				log.Error(err, "Failed to create namespace in target cluster")
 				// Error updating the object - requeue the request.
 				return err
 			}
-			log.Info("Created namespace in target cluster", "namespace", namespace,
-				"clusterID", clusterID)
+			log.Info("Created namespace in target cluster")
 			return nil
 		}
-		log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
-			"clusterID", clusterID)
+		log.Error(err, "Failed to fetch namespace from target cluster")
 		return err
 
 	}
@@ -254,13 +281,13 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 		if err != nil {
 			if apiErrors.IsConflict(err) || apiErrors.IsNotFound(err) {
 				// delete triggered
+				log.Info("namespace already delete already triggered in target cluster")
 				return nil
 			}
-			log.Error(err, "Failed to delete namespace from target cluster", "namespace", namespace,
-				"clusterID", clusterID)
-
+			log.Error(err, "Failed to delete namespace from target cluster")
 			return err
 		}
+		log.Info("namespace delete triggered in target cluster")
 	}
 
 	return nil
@@ -269,23 +296,32 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance) error {
 	instanceID := instance.GetName()
 	state := instance.GetState()
+	clusterID, _ := instance.GetClusterID()
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
 
 	ctx := context.Background()
-	log := r.Log.WithValues("instanceID", instanceID)
+	log := r.Log.WithValues("instanceID", instanceID, "clusterID", clusterID)
 
 	err := r.Get(ctx, types.NamespacedName{
 		Name:      instanceID,
 		Namespace: instance.GetNamespace(),
 	}, instance)
 	if err != nil {
-		log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "operation", state,
-			"instanceId", instanceID)
+		log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "state", state,
+			"lastOperation", lastOperation)
 		return err
 	}
 
 	state = instance.GetState()
 	instance.SetState("in progress")
-	labels := instance.GetLabels()
+	labels = instance.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
@@ -293,10 +329,12 @@ func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstan
 	instance.SetLabels(labels)
 	err = r.Update(ctx, instance)
 	if err != nil {
-		log.Error(err, "Updating status to in progress failed", "operation", state, "instanceId", instanceID)
+		log.Error(err, "Updating status to in progress failed", "state", state,
+			"lastOperation", lastOperation, "newLastOperation", state)
 		return err
 	}
-	log.Info("Updated status to in progress", "operation", state, "instanceId", instanceID)
+	log.Info("Updated status to in progress", "state", state,
+		"lastOperation", lastOperation, "newLastOperation", state)
 	return nil
 }
 

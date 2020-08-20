@@ -193,15 +193,15 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 		Name:      objectID,
 		Namespace: namespace,
 	}
-	log := r.Log.WithValues("sfserviceinstance", namespacedName)
+	log := r.Log.WithValues("instanceID", objectID)
 
 	err := r.Get(ctx, namespacedName, object)
 	if err != nil {
 		if retryCount < constants.ErrorThreshold {
-			log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
+			log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1)
 			return r.reconcileFinalizers(object, retryCount+1)
 		}
-		log.Error(err, "failed to fetch object", "objectID", objectID)
+		log.Error(err, "failed to fetch object")
 		return err
 	}
 	if object.GetDeletionTimestamp().IsZero() {
@@ -211,13 +211,13 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 			object.SetFinalizers(append(object.GetFinalizers(), constants.FinalizerName))
 			if err := r.Update(ctx, object); err != nil {
 				if retryCount < constants.ErrorThreshold {
-					log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
+					log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1)
 					return r.reconcileFinalizers(object, retryCount+1)
 				}
-				log.Error(err, "failed to add finalizer", "objectID", objectID)
+				log.Error(err, "failed to add finalizer")
 				return err
 			}
-			log.Info("added finalizer", "objectID", objectID)
+			log.Info("added finalizer")
 		}
 	}
 	return nil
@@ -225,37 +225,47 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 
 func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.NamespacedName, state string, resources []osbv1alpha1.Source, retryCount int) error {
 	ctx := context.Background()
-	log := r.Log.WithValues("sfserviceinstance", namespacedName)
+	log := r.Log.WithValues("sfserviceinstance", namespacedName, "function", "setInProgress")
 
 	if state == "in_queue" || state == "update" || state == "delete" {
 		instance := &osbv1alpha1.SFServiceInstance{}
 		err := r.Get(ctx, namespacedName, instance)
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
-				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
+				log.Info("Retrying", "retryCount", retryCount+1, "state", state)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed", "instanceId", namespacedName.Name)
+			log.Error(err, "Updating status to in progress failed")
 			return err
 		}
+
 		instance.SetState("in progress")
 		labels := instance.GetLabels()
 		if labels == nil {
 			labels = make(map[string]string)
 		}
+
+		lastOperation, ok := labels[constants.LastOperationKey]
+		if !ok {
+			lastOperation = "in_queue"
+		}
+
 		labels[constants.LastOperationKey] = state
 		instance.SetLabels(labels)
 		instance.Status.Resources = resources
+
+		newState := instance.GetState()
+
 		err = r.Update(ctx, instance)
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
-				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
+				log.Info("Retrying", "retryCount", retryCount+1, "state", state, "newState", newState, "lastOperation", lastOperation)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed", "instanceId", namespacedName.Name)
+			log.Error(err, "Updating status to in progress failed", "state", state, "newState", newState, "lastOperation", lastOperation)
 			return err
 		}
-		log.Info("Updated status to in progress", "operation", state, "instanceId", namespacedName.Name)
+		log.Info("Updated status to in progress", "state", state, "newState", newState, "lastOperation", lastOperation)
 	}
 	return nil
 }
@@ -269,11 +279,21 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(instance *osbv1alph
 	bindingID := ""
 	namespace := instance.GetNamespace()
 
-	log := r.Log.WithValues("sfserviceinstance", instanceID)
+	log := r.Log.WithValues("instanceId", instanceID)
+
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	state := instance.GetState()
 
 	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil && !errors.NotFound(err) {
-		log.Error(err, "ComputeStatus failed for deprovision", "instanceId", instanceID)
+		log.Error(err, "ComputeStatus failed for deprovision", "state", state, "lastOperation", lastOperation)
 		return err
 	}
 
@@ -290,7 +310,22 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(instance *osbv1alph
 	}
 	err = r.Get(ctx, namespacedName, instance)
 	if err != nil {
-		log.Error(err, "Failed to get instance", "instanceId", instanceID)
+		log.Error(err, "Failed to get instance", "state", state, "lastOperation", lastOperation)
+		return err
+	}
+
+	labels = instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok = labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	state = instance.GetState()
+	if state != "in progress" {
+		err = errors.NewPreconditionError("updateDeprovisionStatus", "state not in progress", nil)
+		log.Error(err, "state changed while processing instance", "state", state, "lastOperation", lastOperation)
 		return err
 	}
 
@@ -324,20 +359,21 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(instance *osbv1alph
 
 	if instance.GetState() == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
-		log.Info("Removing finalizer", "instance", instanceID)
+		log.Info("Removing finalizer", "state", state, "lastOperation", lastOperation)
 		instance.SetFinalizers(utils.RemoveString(instance.GetFinalizers(), constants.FinalizerName))
 		instance.SetState("succeeded")
 		updateRequired = true
 	}
 
 	if updateRequired {
-		log.Info("Updating deprovision status from template", "instance", namespacedName.Name)
+		newState := instance.GetState()
+		log.Info("Updating deprovision status from template", "state", state, "lastOperation", lastOperation, "newState", newState)
 		if err := r.Update(ctx, instance); err != nil {
 			if retryCount < constants.ErrorThreshold {
-				log.Info("Retrying", "function", "updateDeprovisionStatus", "retryCount", retryCount+1, "instanceID", instanceID)
+				log.Info("Retrying", "function", "updateDeprovisionStatus", "retryCount", retryCount+1)
 				return r.updateDeprovisionStatus(instance, retryCount+1)
 			}
-			log.Error(err, "failed to update deprovision status", "instance", instanceID)
+			log.Error(err, "failed to update deprovision status", "state", state, "lastOperation", lastOperation, "newState", newState)
 			return err
 		}
 	}
@@ -352,11 +388,11 @@ func (r *ReconcileSFServiceInstance) updateStatus(instance *osbv1alpha1.SFServic
 	namespace := instance.GetNamespace()
 
 	ctx := context.Background()
-	log := r.Log.WithValues("sfserviceinstance", instanceID)
+	log := r.Log.WithValues("instanceID", instanceID)
 
 	computedStatus, err := r.resourceManager.ComputeStatus(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
-		log.Error(err, "Compute status failed", "instance", instanceID)
+		log.Error(err, "Compute status failed")
 		return err
 	}
 
@@ -367,9 +403,25 @@ func (r *ReconcileSFServiceInstance) updateStatus(instance *osbv1alpha1.SFServic
 	}
 	err = r.Get(ctx, namespacedName, instance)
 	if err != nil {
-		log.Error(err, "failed to fetch instance", "instance", instanceID)
+		log.Error(err, "failed to fetch instance")
 		return err
 	}
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	state := instance.GetState()
+
+	if state != "in progress" {
+		err = errors.NewPreconditionError("updateStatus", "state not in progress", nil)
+		log.Error(err, "state changed while processing instance", "state", state, "lastOperation", lastOperation)
+		return err
+	}
+
 	updatedStatus := instance.Status.DeepCopy()
 	updatedStatus.State = computedStatus.Provision.State
 	updatedStatus.Error = computedStatus.Provision.Error
@@ -378,14 +430,15 @@ func (r *ReconcileSFServiceInstance) updateStatus(instance *osbv1alpha1.SFServic
 
 	if !reflect.DeepEqual(&instance.Status, updatedStatus) {
 		updatedStatus.DeepCopyInto(&instance.Status)
-		log.Info("Updating provision status from template", "instance", namespacedName.Name)
+		newState := instance.GetState()
+		log.Info("Updating provision status from template", "state", state, "lastOperation", lastOperation, "newState", newState)
 		err = r.Update(ctx, instance)
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
-				log.Info("Retrying", "function", "updateStatus", "retryCount", retryCount+1, "instanceID", instanceID)
+				log.Info("Retrying", "function", "updateStatus", "retryCount", retryCount+1)
 				return r.updateStatus(instance, retryCount+1)
 			}
-			log.Error(err, "failed to update status", "instanceId", instanceID)
+			log.Error(err, "failed to update status", "state", state, "lastOperation", lastOperation, "newState", newState)
 			return err
 		}
 	}
@@ -402,7 +455,7 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 	}
 
 	ctx := context.Background()
-	log := r.Log.WithValues("objectID", objectID)
+	log := r.Log.WithValues("objectID", objectID, "function", "handleError")
 
 	err := r.Get(ctx, namespacedName, object)
 	if err != nil {
@@ -410,10 +463,10 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 			return result, inputErr
 		}
 		if retryCount < constants.ErrorThreshold {
-			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+			log.Info("Retrying", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr)
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
-		log.Error(err, "failed to fetch object", "objectID", objectID)
+		log.Error(err, "failed to fetch object")
 		return result, inputErr
 	}
 
@@ -447,7 +500,7 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 	}
 
 	if count > constants.ErrorThreshold {
-		log.Error(inputErr, "Retry threshold reached. Ignoring error", "objectID", objectID)
+		log.Error(inputErr, "Retry threshold reached. Ignoring error")
 		object.Status.State = "failed"
 		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", objectID, inputErr.Error())
 		object.Status.Description = "Service Broker Error, status code: ETIMEDOUT, error code: 10008"
@@ -458,7 +511,7 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 		err := r.Update(ctx, object)
 		if err != nil {
 			if retryCount < constants.ErrorThreshold {
-				log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+				log.Info("Retrying", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr)
 				return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 			}
 			log.Error(err, "Failed to set state to failed", "objectID", objectID)
@@ -471,11 +524,12 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 	err = r.Update(ctx, object)
 	if err != nil {
 		if retryCount < constants.ErrorThreshold {
-			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+			log.Info("Retrying", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr)
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
 		log.Error(err, "Failed to update error count label", "objectID", objectID, "count", count)
 	}
+	log.Info("Updated error count", "retryCount", retryCount, "lastOperation", lastOperation, "err", inputErr, "count", count)
 	return result, inputErr
 }
 
