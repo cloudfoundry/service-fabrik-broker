@@ -3,15 +3,16 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-multiclusterdeployer-controller-manager
   labels:
-    control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
+    app: {{ .Release.Name }}-multiclusterdeployer-controller-manager
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
+      app: {{ .Release.Name }}-controller-manager
   template:
     metadata:
       labels:
+        app: {{ .Release.Name }}-controller-manager
         control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
       annotations:
         rollme: {{ randAlphaNum 5 | quote }}
