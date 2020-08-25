@@ -55,6 +55,15 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
+	//Get the total deployments before making pagination requests to server
+	completeInstancesList, err := sfserviceinstanceClient.List(listOptions)
+	if err != nil {
+		log.Error(err, "Error while reading sfserviceinstances from apiserver: ")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp := deploymentsSummaryResponse{}
+	resp.TotalDeployments = len(completeInstancesList.Items)
 	continueToken, limit := extractPaginationInfo(r, h.appConfig)
 	log.Info("extracted following information for pagination ", "pageSize", limit)
 	if limit != 0 {
@@ -70,7 +79,6 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 		return
 	}
 	log.Info("Number of instances obtained from the cluster: ", "instances", len(instances.Items))
-	resp := deploymentsSummaryResponse{}
 	resp.TotalDeploymentsOnPage = len(instances.Items)
 	for _, obj := range instances.Items {
 		log.Info("Service with ID was found", "ID", obj.GetName())

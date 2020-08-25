@@ -3,6 +3,7 @@ package handlers
 import "encoding/json"
 
 type deploymentsSummaryResponse struct {
+	TotalDeployments       int              `json:"totalDeployments"`
 	TotalDeploymentsOnPage int              `json:"totalDeploymentsOnPage"`
 	PageSize               int64            `json:"pageSize"`
 	NextPageURL            string           `json:"nextPageURL"`

@@ -28,6 +28,9 @@ matrix:
       git:
         depth: 3
       install:
+        - pushd interoperator
+        - ./scripts/install_test.sh
+        - popd
         - cd operator-apis
         - env GO111MODULE=on go mod download
         - cd ..
@@ -84,6 +87,11 @@ matrix:
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
         - go vet ./pkg/webhooks/manager/... ./pkg/apis/...
         - golint ./pkg/webhooks/manager/... ./pkg/apis/...
+        - popd
+        - pushd operator-apis
+        - go fmt ./internal/...
+        - go vet ./internal/...
+        - golint ./internal/...
         - popd
     - language: node_js
       node_js:

@@ -61,6 +61,9 @@ func extractPaginationInfo(r *http.Request, appConfig *config.OperatorApisConfig
 		log.Error(err, "")
 		limit = 0
 	}
+	if limit < 0 {
+		limit = 0
+	}
 	continueToken = r.URL.Query().Get("nextPageToken")
 	return continueToken, limit
 }
