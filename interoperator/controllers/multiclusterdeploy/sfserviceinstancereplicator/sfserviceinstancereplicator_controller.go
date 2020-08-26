@@ -129,6 +129,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Trigger delete for namespace in target cluster if deletion time stamp is set for instance
+	// Broker trigger namespace deletion along with instance deletion
 	err = r.reconcileNamespace(targetClient, instance.GetNamespace(), clusterID,
 		!instance.GetDeletionTimestamp().IsZero())
 	if err != nil {
@@ -151,7 +152,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if state == "in_queue" || state == "update" || state == "delete" {
 		err = targetClient.Get(ctx, req.NamespacedName, replica)
 		if err != nil {
-			if apiErrors.IsNotFound(err) {
+			if apiErrors.IsNotFound(err) && state != "delete" {
 				copyObject(instance, replica)
 				err = targetClient.Create(ctx, replica)
 				if err != nil {
@@ -160,7 +161,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					return ctrl.Result{}, err
 				}
 				log.Info("sfserviceinstance not found in target cluster. created as copy from master", "state", state, "lastOperation", lastOperation)
-			} else {
+			} else if !apiErrors.IsNotFound(err) {
 				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "state", state, "lastOperation", lastOperation)
 				// Error reading the object - requeue the request.
 				return ctrl.Result{}, err
@@ -252,12 +253,33 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 
 	ns := &corev1.Namespace{}
 
+	// Verify namespace needs to be deleted.
+	// If namespaced_separation is disabled the ns need not be deleted.
+	// Trigger delete only if the namespace is being deleted in master
+	sourceDeleting := false
+	if delete {
+		sourceNs := &corev1.Namespace{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name: namespace,
+		}, sourceNs)
+		if err != nil {
+			if !apiErrors.IsNotFound(err) {
+				log.Error(err, "Failed to get namespace in master cluster")
+				return err
+			}
+			// Namespace is deleted in master
+			sourceDeleting = true
+		} else if !sourceNs.GetDeletionTimestamp().IsZero() {
+			sourceDeleting = true
+		}
+	}
+
 	err := targetClient.Get(ctx, types.NamespacedName{
 		Name: namespace,
 	}, ns)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
-			if delete {
+			if delete && sourceDeleting {
 				log.Info("namespace already deleted in target cluster")
 				return nil
 			}
@@ -276,7 +298,7 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 		return err
 
 	}
-	if delete {
+	if delete && sourceDeleting {
 		err = targetClient.Delete(ctx, ns)
 		if err != nil {
 			if apiErrors.IsConflict(err) || apiErrors.IsNotFound(err) {
