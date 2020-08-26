@@ -1,0 +1,71 @@
+@startuml
+!pragma teoz true
+skinparam monochrome false
+skinparam sequenceMessageAlign center
+skinparam handwritten false
+skinparam BoxPadding 30
+autoactivate on
+
+title Service Fabrik Multi Cluster Flow
+actor OSB_Platform
+
+box "Master Cluster" #LightBlue
+	participant Broker
+    collections APIServer
+    control Scheduler
+    control Mutliclusterdeployer
+end box
+box "Sister Cluster" #lightgreen
+	control Provisioner
+    collections APIServer as APIServer2
+    control Service_Operator
+end box
+
+OSB_Platform -> Broker : Provision Instance
+Broker -> APIServer : Create SFServiceInstance(in_queue)
+APIServer --> Scheduler : Watch event (SFServiceInstance)
+Scheduler -> APIServer : Set Cluster ID (SFServiceInstance)
+APIServer --> Broker : Cluster ID is set (SFServiceInstance)
+Broker --> OSB_Platform : 202 Accepted
+||50||
+
+{poll_start} OSB_Platform -> Broker : last_operation
+Broker -> APIServer : state of SFServiceInstance
+APIServer --> Broker : State
+{poll_end} Broker --> OSB_Platform : State
+{poll_start} <-> {poll_end} : keep polling 
+
+autoactivate off
+
+APIServer --> Mutliclusterdeployer ++ : Watch event (SFServiceInstance)
+Mutliclusterdeployer -> APIServer2 : Copy SFServiceInstance to Sister (in_queue)
+Mutliclusterdeployer -> APIServer -- : Set state as in_progress
+
+APIServer2 --> Provisioner ++ : Watch event (SFServiceInstance)
+Provisioner -> Provisioner : Render provision template
+Provisioner -> APIServer2 : Create service Operator resource
+Provisioner -> APIServer2 -- : Set state as in_progress
+APIServer2 --> Service_Operator ++ : Watch event (SFServiceInstance)
+{operator_start} Service_Operator -> APIServer2 : Create service resources
+||75||
+{operator_end} Service_Operator -> APIServer2 -- : Update Service resource status
+{operator_start} <-> {operator_end} : some time taken
+
+APIServer2 --> Provisioner ++ : Watch event (Service Resource)
+Provisioner -> Provisioner : Render status template
+Provisioner -> APIServer2 -- : Set state as succeeded (From status template)
+
+APIServer2 --> Mutliclusterdeployer ++ : Watch event (SFServiceInstance)
+Mutliclusterdeployer --> APIServer2 : Read SFServiceInstance
+Mutliclusterdeployer -> APIServer -- : Copy status from Sister Api server\n to Master Api server 
+
+
+||50||
+
+{poll_start2} OSB_Platform -> Broker : last_operation
+Broker -> APIServer : state of SFServiceInstance
+APIServer --> Broker : State
+||75||
+{poll_end2} Broker --> OSB_Platform : State
+{poll_start2} <-> {poll_end2} : keep polling untill \n state is succeeded
+@enduml
