@@ -222,10 +222,10 @@ EOF
                     steps {
                         script {
                             sh '''#!/bin/bash
-                            if git tag -l | grep "$ENV_IMAGE_TAG" 
+                            if git tag -l | grep "v${ENV_IMAGE_TAG}" 
                             then
-                                git push --delete ${GIT_URL_SF_BROKER} "$ENV_IMAGE_TAG"
-                                git tag -d "$ENV_IMAGE_TAG" 
+                                git push --delete ${GIT_URL_SF_BROKER} "v${ENV_IMAGE_TAG}" 
+                                git tag -d "v${ENV_IMAGE_TAG}" 
                             fi
                             
                             echo "Installing kubectl & jq"
@@ -300,9 +300,9 @@ generate_post_data()
 {
 cat <<EOF
 {
-  "tag_name": "${ENV_IMAGE_TAG}",
+  "tag_name": "v${ENV_IMAGE_TAG}",
   "target_commitish": "$GIT_BRANCH",
-  "name": "Interoperator Release ${ENV_IMAGE_TAG}",
+  "name": "Interoperator Release v${ENV_IMAGE_TAG}",
   "body": "$text",
   "draft": false,
   "prerelease": false
@@ -310,7 +310,7 @@ cat <<EOF
 EOF
 }
                             repo_full_name="${GITHUB_OS_ORG}/service-fabrik-broker"
-                            echo "Create release $ENV_IMAGE_TAG for $repo_full_name :  branch: $GIT_BRANCH"
+                            echo "Create release v${ENV_IMAGE_TAG} for $repo_full_name :  branch: $GIT_BRANCH"
                             curl --data "$(generate_post_data)" "https://api.github.com/repos/$repo_full_name/releases?access_token=$GITHUB_OS_TOKEN"
                             '''
                         }
