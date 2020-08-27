@@ -29,17 +29,17 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-  - host: {{ .Values.cluster.op_apis_host }}
+  - host: {{ .Values.operator_apis.host }}
     http:
       paths:
       - backend:
           serviceName: {{ .Release.Name }}-op-apis-service
           servicePort: 80
-  {{- if .Values.cluster.ssl }} 
+  {{- if .Values.operator_apis.ssl }} 
   tls:
   - hosts:
-    - {{ .Values.cluster.op_apis_host }}
-    secretName: {{ .Values.cluster.sslsecret }}
+    - {{ .Values.operator_apis.host }}
+    secretName: {{ .Values.operator_apis.sslsecret }}
   {{- end }} 
 ---
 apiVersion: apps/v1
@@ -74,9 +74,9 @@ spec:
           protocol: TCP
         env:
         - name: OPERATOR_APIS_APP_USERNAME
-          value: admin
+          value: {{ .Values.operator_apis.username }}
         - name: OPERATOR_APIS_APP_PASSWORD
-          value: secret
+          value: {{ .Values.operator_apis.password }}
         livenessProbe:
           failureThreshold: 3
           httpGet:

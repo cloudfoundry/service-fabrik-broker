@@ -1,4 +1,4 @@
-# Build the manager binary
+# Build the operator-apis binary
 FROM golang:1.13 as builder
 
 WORKDIR /workspace
