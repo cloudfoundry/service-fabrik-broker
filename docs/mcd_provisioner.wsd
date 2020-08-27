@@ -1,0 +1,52 @@
+@startuml
+!pragma teoz true
+skinparam monochrome false
+skinparam sequenceMessageAlign center
+skinparam handwritten false
+skinparam BoxPadding 30
+autoactivate off
+
+title Service Fabrik MCD Provisioner
+
+participant User
+box "Master Cluster" #LightBlue
+    collections APIServer
+    control MCD_Provisioner
+end box
+box "Sister Cluster" #lightgreen
+    collections APIServer as APIServer2
+end box
+
+User -> APIServer : Create SFCluster
+APIServer -> MCD_Provisioner ++: Watch event (SFCluster)
+MCD_Provisioner -> APIServer : Get Target Cluster Kubeconfig
+APIServer --> MCD_Provisioner : Kubeconfig
+MCD_Provisioner -> MCD_Provisioner : Create Target Client
+
+MCD_Provisioner -> APIServer : Get SF CRDs
+APIServer --> MCD_Provisioner : SF CRDs
+MCD_Provisioner -> APIServer2 : Replicate SF CRDs
+
+MCD_Provisioner -> APIServer2 : Register watches for SFServiceInstance, SFServiceBinding, SFCluster\n Used by corresponding replicators
+
+MCD_Provisioner -> APIServer : Get SF Namespace object
+APIServer --> MCD_Provisioner : SF Namespace object
+MCD_Provisioner -> APIServer2 : Replicate SF Namespace
+
+MCD_Provisioner -> APIServer2 : Replicate SFCluster and Secret for the target cluster
+
+MCD_Provisioner -> APIServer : Get Cluster Role Bindings
+APIServer --> MCD_Provisioner : Cluster Role Bindings
+MCD_Provisioner -> APIServer2 : Replicate Cluster Role binding in target cluster
+
+MCD_Provisioner -> APIServer : Get Provisioner Deploment
+APIServer --> MCD_Provisioner : Provisioner Deploment
+
+MCD_Provisioner -> APIServer : Get Provisioner Deploment Image pull secrets
+APIServer --> MCD_Provisioner : Image pull secrets
+MCD_Provisioner -> APIServer2 : Replicate Provisioner Deploment Image pull secrets
+
+MCD_Provisioner -> APIServer2 -- : Replicate Provisioner Deploment
+
+
+@enduml
