@@ -56,14 +56,18 @@ func TestReconcile(t *testing.T) {
 		MetricsBindAddress: "0",
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c, err = client.New(cfg, client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c = mgr.GetClient()
 
 	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), configMap)
+
+	sfcluster1 := &resourcev1alpha1.SFCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "1",
+			Namespace: constants.InteroperatorNamespace,
+		},
+	}
+	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
 
 	SFServiceInstanceCounter := &SFServiceInstanceCounter{
 		Client: mgr.GetClient(),
@@ -83,13 +87,6 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	sfcluster1 := &resourcev1alpha1.SFCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "1",
-			Namespace: constants.InteroperatorNamespace,
-		},
-	}
-	g.Expect(c.Create(context.TODO(), sfcluster1)).NotTo(gomega.HaveOccurred())
 	sfCluster := &resourcev1alpha1.SFCluster{}
 
 	// when cluster selector evaluates to single cluster
