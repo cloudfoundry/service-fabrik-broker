@@ -34,6 +34,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	setupLog := ctrl.Log.WithName("setup").WithName("multiclusterdeploy")
 
+	if err = upgradeHook(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
+		setupLog.Error(err, "unable to run upgradeHook")
+		// Not failing even if upgrade hook fails
+	}
+
 	// Init watch manager
 	err = watchmanager.Initialize(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {
