@@ -77,11 +77,13 @@ spec:
           value: {{ .Values.operator_apis.username }}
         - name: OPERATOR_APIS_APP_PASSWORD
           value: {{ .Values.operator_apis.password }}
+        - name: OPERATOR_APIS_APP_PORT
+          value: "{{ .Values.operator_apis.port }}"
         livenessProbe:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9297
+            port: {{ .Values.operator_apis.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60
@@ -91,7 +93,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /
-            port: 9297
+            port: {{ .Values.operator_apis.port }}
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 60

@@ -63,7 +63,7 @@ operator_apis:
     tag: 0.1.0
     pullPolicy: Always
   service:
-    type: LoadBalancer
+    type: ClusterIP
   ssl: true
   sslsecret: op-api-ssl-cert
 
