@@ -57,6 +57,7 @@ defaults: &defaults
       "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": {{ (.Files.Get "crds/sfservicebinding.yaml") | b64enc }}
       "osb.servicefabrik.io_v1alpha1_sfservices.yaml": {{ (.Files.Get "crds/sfservice.yaml") | b64enc }}
       "osb.servicefabrik.io_v1alpha1_sfplans.yaml": {{ (.Files.Get "crds/sfplan.yaml") | b64enc }}
+      "resource.servicefabrik.io_v1alpha1_sfclusters.yaml": {{ (.Files.Get "crds/sfcluster.yaml") | b64enc }}
   ######################
   # APISERVER LOCK TTL #
   ######################
