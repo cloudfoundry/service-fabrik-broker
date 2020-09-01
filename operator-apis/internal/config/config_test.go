@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -77,7 +76,32 @@ func Test_config_InitConfig(t *testing.T) {
 					DefaultPageSize: 5,
 				}
 				os.Setenv("OPERATOR_APIS_APP_PORT", "9296")
+				os.Setenv("OPERATOR_APIS_APP_USERNAME", "admin")
 				os.Setenv("OPERATOR_APIS_APP_PASSWORD", "admin")
+				os.Setenv("OPERATOR_APIS_APP_PAGE_SIZE", "5")
+			},
+			cleanup: func(args *testArgs) {
+				os.Unsetenv("OPERATOR_APIS_APP_PORT")
+				os.Unsetenv("OPERATOR_APIS_APP_PASSWORD")
+			},
+		},
+		{
+			name:    "Handles invalid config values from environment",
+			args:    testArgs{},
+			want:    true,
+			wantErr: false,
+			setup: func(args *testArgs) {
+				args.expected = &OperatorApisConfig{
+					ServerPort:      "9296",
+					Username:        "admin",
+					Password:        "admin",
+					Kubeconfig:      &rest.Config{},
+					DefaultPageSize: 5,
+				}
+				os.Setenv("OPERATOR_APIS_APP_PORT", "9296")
+				os.Setenv("OPERATOR_APIS_APP_USERNAME", "admin")
+				os.Setenv("OPERATOR_APIS_APP_PASSWORD", "admin")
+				os.Setenv("OPERATOR_APIS_APP_PAGE_SIZE", "six")
 			},
 			cleanup: func(args *testArgs) {
 				os.Unsetenv("OPERATOR_APIS_APP_PORT")
@@ -95,7 +119,6 @@ func Test_config_InitConfig(t *testing.T) {
 			}
 			got := NewOperatorApisConfig(&rest.Config{})
 			got.InitConfig()
-			fmt.Println(os.Getenv("ServerPort"))
 			if tt.want == true && !reflect.DeepEqual(got, tt.args.expected) {
 				t.Errorf("Config Validation failed got %v, want %v", got, tt.args.expected)
 			}

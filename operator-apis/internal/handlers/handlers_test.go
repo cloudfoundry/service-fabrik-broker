@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/onsi/gomega"
@@ -23,6 +25,7 @@ import (
 type queryArgs struct {
 	serviceQuery         string
 	planQuery            string
+	pageSizeQuery        int
 	exepectedDeployments int
 }
 type testArgs struct {
@@ -193,24 +196,14 @@ func Test_handler_GetDeploymentsSummaryNoQuery(t *testing.T) {
 			},
 		},
 		{
-			name: "return deployment summary for instances on Cluster",
+			name: "returns error when proper kubeconfig is not provided",
 			args: testArgs{
 				appConfig: &config.OperatorApisConfig{
-					Kubeconfig: kubeConfig,
+					Kubeconfig: &rest.Config{},
 				},
-				totalDeployments: 2,
-				deploymentIDs:    []string{"instance-id-1", "instance-id-2"},
-				serviceIDs:       []string{"service-id-1", "service-id-2"},
-				planIDs:          []string{"plan-id-1", "plan-id-2"},
 			},
-			want:    true,
-			wantErr: false,
-			setup: func(args *testArgs) {
-				g.Expect(deployTestResources(c, args)).NotTo(gomega.HaveOccurred())
-			},
-			cleanup: func(args *testArgs) {
-				g.Expect(cleanupTestResources(c, args)).NotTo(gomega.HaveOccurred())
-			},
+			want:    false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -368,6 +361,90 @@ func Test_handler_GetDeploymentsSummaryQuery(t *testing.T) {
 	}
 }
 
+func Test_handler_GetDeploymentsSummaryPagination(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	tests := []struct {
+		name    string
+		args    testArgs
+		want    bool
+		wantErr bool
+		setup   func(*testArgs)
+		cleanup func(*testArgs)
+	}{
+		{
+			name: "returns summary based on pagesize parameter",
+			args: testArgs{
+				appConfig: &config.OperatorApisConfig{
+					Kubeconfig: kubeConfig,
+				},
+				totalDeployments: 4,
+				deploymentIDs:    []string{"instance-id-1", "instance-id-2", "instance-id-3", "instance-id-4"},
+				serviceIDs:       []string{"service-id-1", "service-id-2", "service-id-1", "service-id-1"},
+				planIDs:          []string{"plan-id-1", "plan-id-2", "plan-id-1", "plan-id-1"},
+				queryArgs: &queryArgs{
+					serviceQuery:         "service-id-1",
+					exepectedDeployments: 3,
+					pageSizeQuery:        2,
+				},
+			},
+			want:    true,
+			wantErr: false,
+			setup: func(args *testArgs) {
+				g.Expect(deployTestResources(c, args)).NotTo(gomega.HaveOccurred())
+			},
+			cleanup: func(args *testArgs) {
+				g.Expect(cleanupTestResources(c, args)).NotTo(gomega.HaveOccurred())
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup(&tt.args)
+			}
+			if tt.cleanup != nil {
+				defer tt.cleanup(&tt.args)
+			}
+			h, _ := NewOperatorApisHandler(tt.args.appConfig)
+			router := mux.NewRouter()
+			router.HandleFunc("/operator/deployments", h.GetDeploymentsSummary).Methods("GET")
+			deploymentsFetched := 0
+			reqURL := "/operator/deployments?service=" + tt.args.queryArgs.serviceQuery + "&pageSize=" + strconv.Itoa(tt.args.queryArgs.pageSizeQuery)
+			for {
+				req, err := http.NewRequest("GET", reqURL, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				rr := httptest.NewRecorder()
+				router.ServeHTTP(rr, req)
+				if status := rr.Code; status != http.StatusOK {
+					t.Errorf("handler returned wrong status code: got %v want %v",
+						status, http.StatusOK)
+				}
+				deploymentsSummaryResp := deploymentsSummaryResponse{}
+				json.Unmarshal(rr.Body.Bytes(), &deploymentsSummaryResp)
+				deploymentsFetched += deploymentsSummaryResp.TotalDeploymentsOnPage
+				if deploymentsSummaryResp.TotalDeployments != tt.args.queryArgs.exepectedDeployments {
+					t.Errorf("handler returned wrong deployment summary response. Total Deployments: got %v want %v",
+						deploymentsSummaryResp.TotalDeployments, tt.args.queryArgs.exepectedDeployments)
+				}
+				if deploymentsSummaryResp.NextPageURL != "" && deploymentsSummaryResp.TotalDeploymentsOnPage > tt.args.queryArgs.pageSizeQuery {
+					t.Errorf("handler returned wrong deployment summary response. More than expected number of deployments were returned: got %v want %v",
+						deploymentsSummaryResp.TotalDeploymentsOnPage, tt.args.queryArgs.pageSizeQuery)
+				}
+				if deploymentsSummaryResp.NextPageURL == "" && deploymentsFetched != tt.args.queryArgs.exepectedDeployments {
+					t.Errorf("handler returned wrong deployment summary response. NextPageURL is empty before all deployments are fetched")
+				}
+				if deploymentsSummaryResp.NextPageURL == "" {
+					break
+				} else {
+					reqURL = deploymentsSummaryResp.NextPageURL
+					time.Sleep(time.Duration(time.Second))
+				}
+			}
+		})
+	}
+}
 func Test_handler_UpdateDeployment(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	tests := []struct {
