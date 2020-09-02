@@ -150,6 +150,31 @@ func Test_provisioner_Fetch(t *testing.T) {
 }
 
 func Test_provisioner_Get(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.ProvisionerName,
+			Namespace: constants.InteroperatorNamespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{},
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "my-container",
+							Image: "foo",
+						},
+					},
+				},
+			},
+		},
+	}
+	labels := make(map[string]string)
+	labels["foo"] = "bar"
+	deployment.Spec.Template.SetLabels(labels)
+	deployment.Spec.Selector.MatchLabels = labels
+
 	type fields struct {
 		c          client.Client
 		deployment *appsv1.Deployment
@@ -158,18 +183,27 @@ func Test_provisioner_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
+		setup   func(*provisioner)
+		cleanup func(*provisioner)
 		want    *appsv1.Deployment
 		wantErr bool
 	}{
 		{
-			name: "should do nothing if deployment already fetched",
+			name: "should fetch deployment",
 			fields: fields{
 				c:          c,
 				namespace:  constants.InteroperatorNamespace,
 				deployment: &appsv1.Deployment{},
 			},
-			want:    &appsv1.Deployment{},
+			want:    deployment,
 			wantErr: false,
+			setup: func(p *provisioner) {
+				g.Expect(c.Create(context.TODO(), deployment)).NotTo(gomega.HaveOccurred())
+			},
+			cleanup: func(p *provisioner) {
+				g.Expect(p.deployment).NotTo(gomega.BeNil())
+				g.Expect(c.Delete(context.TODO(), p.deployment)).NotTo(gomega.HaveOccurred())
+			},
 		},
 		{
 			name: "should fail if deployment not found",
@@ -187,6 +221,12 @@ func Test_provisioner_Get(t *testing.T) {
 				c:          tt.fields.c,
 				deployment: tt.fields.deployment,
 				namespace:  tt.fields.namespace,
+			}
+			if tt.setup != nil {
+				tt.setup(p)
+			}
+			if tt.cleanup != nil {
+				defer tt.cleanup(p)
 			}
 			got, err := p.Get()
 			if (err != nil) != tt.wantErr {

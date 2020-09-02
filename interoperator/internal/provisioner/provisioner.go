@@ -71,11 +71,9 @@ func (p *provisioner) Fetch() error {
 }
 
 func (p *provisioner) Get() (*appsv1.Deployment, error) {
-	if p.deployment == nil {
-		err := p.Fetch()
-		if err != nil {
-			return nil, err
-		}
+	err := p.Fetch()
+	if err != nil {
+		return nil, err
 	}
 	return p.deployment, nil
 }
