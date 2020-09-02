@@ -29,7 +29,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-  - host: {{ .Values.operator_apis.host }}
+  - host: {{ .Values.operator_apis.host | default (nospace (cat "op.ingress" (split "ingress" .Values.cluster.host)._1)) }}
     http:
       paths:
       - backend:
@@ -38,7 +38,7 @@ spec:
   {{- if .Values.operator_apis.ssl }} 
   tls:
   - hosts:
-    - {{ .Values.operator_apis.host }}
+    - {{ .Values.operator_apis.host | default (nospace (cat "op.ingress" (split "ingress" .Values.cluster.host)._1)) }}
     secretName: {{ .Values.operator_apis.sslsecret }}
   {{- end }} 
 ---
