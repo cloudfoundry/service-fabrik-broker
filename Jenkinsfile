@@ -63,6 +63,19 @@ pipeline {
                             dockerfilePath: 'interoperator/Dockerfile')
                     }
                 }
+                stage('Build Operator API App Image') {
+                    steps {
+                        kanikoExecute(script: this,
+                            dockerConfigJsonCredentialsId: 'InteroperatorDockerAuthConfigJson',
+                            containerImage: "${ARTIFACT_DOCKER_HOST_URL}/images/operatorapis:${env.IMAGE_TAG}",
+                            dockerfilePath: 'operator-apis/Dockerfile',
+                            customTlsCertificateLinks: ["${CUSTOM_TLS_CERT_1}", "${CUSTOM_TLS_CERT_2}"])
+                        kanikoExecute(script: this,
+                            dockerConfigJsonCredentialsId: 'DockerHubCredentialsId',
+                            containerImage: "docker.io/servicefabrikjenkins/operatorapis:${env.IMAGE_TAG}",
+                            dockerfilePath: 'operator-apis/Dockerfile')
+                    }
+                }
             }
         } //End Stage: DockerBuild
         
@@ -89,6 +102,18 @@ pipeline {
                             userTokenCredentialsId: 'interoperator_whitesource_test_id',
                             configFilePath: './wss-unified-agent.config',
                             buildDescriptorFile: './interoperator/go.mod',
+                            securityVulnerabilities: false,
+                            orgToken: "${WHITESOURCE_ORG_TOKEN}")
+                    }
+                }
+                stage('WhitesourceScan - Operator APIs') {
+                    steps {
+                        whitesourceExecuteScan(script: this,
+                            scanType: 'golang',
+                            productName: "${WSS_PROD_NAME}",
+                            userTokenCredentialsId: 'interoperator_whitesource_test_id',
+                            configFilePath: './wss-unified-agent.config',
+                            buildDescriptorFile: './operator-apis/go.mod',
                             securityVulnerabilities: false,
                             orgToken: "${WHITESOURCE_ORG_TOKEN}")
                     }
@@ -120,6 +145,18 @@ pipeline {
                             dockerImage: "images/service-fabrik-interoperator:${env.IMAGE_TAG}",
                             dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
                             reportFileName: 'protecode_report_interoperator.pdf')
+                    }
+                }
+                stage('ProtecodeScan - Operator APIs') {
+                    steps {
+                        protecodeExecuteScan(script: this,
+                            protecodeCredentialsId: 'protecodeCredentialsId',
+                            protecodeGroup: "${INTOPERATOR_PROTECODE_GROUP_ID}",
+                            protecodeServerUrl: "${PROTECODE_SERVER_URL}",
+                            dockerRegistryUrl: "https://${ARTIFACT_DOCKER_HOST_URL}",
+                            dockerImage: "images/operatorapis:${env.IMAGE_TAG}",
+                            dockerCredentialsId: 'InteroperatorDockerAuthConfigJson',
+                            reportFileName: 'protecode_report_operator_apis.pdf')
                     }
                 }
             }
