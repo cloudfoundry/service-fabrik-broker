@@ -226,6 +226,7 @@ func TestReconcile(t *testing.T) {
 
 	// Delete instance from master cluster
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), ns)).NotTo(gomega.HaveOccurred())
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		instance.SetState("delete")
 		err := c.Update(context.TODO(), instance)
