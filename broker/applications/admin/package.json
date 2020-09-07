@@ -28,7 +28,7 @@
     "agenda": "0.10.0",
     "ajv": "5.0.0",
     "ali-oss": "6.9.1",
-    "aws-sdk": "2.710.0",
+    "aws-sdk": "2.747.0",
     "azure-arm-compute": "10.0.0",
     "azure-storage": "2.10.3",
     "basic-auth": "2.0.1",
