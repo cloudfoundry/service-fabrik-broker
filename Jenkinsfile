@@ -22,7 +22,7 @@ pipeline {
         stage('Setup') {
             steps {
                 deleteDir()
-                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
+                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'piper-test', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
