@@ -1,6 +1,6 @@
 module github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis
 
-go 1.13
+go 1.15
 
 require (
 	github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator v0.0.0-20200714073818-30941c89fc78
