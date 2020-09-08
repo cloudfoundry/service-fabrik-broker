@@ -25,5 +25,4 @@ FROM alpine:3.12.0
 WORKDIR /
 COPY --from=builder /workspace/operator-apis .
 
-# Default entrypoint is manager (provisioners)
 ENTRYPOINT ["/operator-apis"]
