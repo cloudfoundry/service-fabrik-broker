@@ -22,7 +22,7 @@ pipeline {
         stage('Setup') {
             steps {
                 deleteDir()
-                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'piper-test', credentialsId: 'GithubOsCredentialsId'
+                git url: 'https://github.com/cloudfoundry-incubator/service-fabrik-broker', branch: 'master', credentialsId: 'GithubOsCredentialsId'
                 setupPipelineEnvironment script: this
                 sh 'rm -rf broker/applications/admin'
                 sh 'rm -rf broker/applications/deployment_hooks'
@@ -35,7 +35,7 @@ pipeline {
                 sh 'printenv'
             }
         }// End Stage: Setup
-        /*stage('DockerBuild') {
+        stage('DockerBuild') {
             parallel {
                 stage('Build Broker Image') {
                     steps {
@@ -119,7 +119,7 @@ pipeline {
                     }
                 }
             }
-        }//End Stage: Whitesource Scan*/
+        }//End Stage: Whitesource Scan
 
         stage('Protecode Scan') {
             parallel {
