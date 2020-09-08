@@ -53,6 +53,21 @@ interoperator:
     schedulerWorkerCount: 2
     provisionerWorkerCount: 2
 
+operator_apis:
+  port: 9297
+  username: admin
+  password: secret
+  #host: op.ingress.sf21-intop.interop.shoot.canary.k8s-hana.ondemand.com
+  image:
+    repository: servicefabrikjenkins/operatorapis
+    tag: 0.10.0
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+  ssl: true
+  sslsecret: op-api-ssl-cert
+
+
 #imagePullSecrets:
 #- name: docker-dmz
 #- name: docker-dmz2

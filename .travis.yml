@@ -27,6 +27,24 @@ matrix:
         - "1.15"
       git:
         depth: 3
+      install:
+        - pushd interoperator
+        - ./scripts/install_test.sh
+        - popd
+        - cd operator-apis
+        - env GO111MODULE=on go mod download
+        - cd ..
+      script:
+        - pushd operator-apis
+        - env GO111MODULE=on go test -v -coverprofile=coverage.txt ./...
+        - popd
+    - language: go
+      os:
+        - linux
+      go:
+        - "1.15"
+      git:
+        depth: 3
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
@@ -69,6 +87,11 @@ matrix:
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
         - go vet ./pkg/webhooks/manager/... ./pkg/apis/...
         - golint ./pkg/webhooks/manager/... ./pkg/apis/...
+        - popd
+        - pushd operator-apis
+        - go fmt ./internal/...
+        - go vet ./internal/...
+        - golint ./internal/...
         - popd
     - language: node_js
       node_js:
