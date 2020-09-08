@@ -155,7 +155,7 @@ describe('#checkQuota', () => {
     service_id: service_id,
     plan_id: notEntitledPlanId,
     parameters: parameters,
-    context: {      
+    context: {
       platform: 'sapcp',
       origin: 'cloudfoundry',
       subaccount_id: subaccount_id
@@ -239,7 +239,7 @@ describe('#checkQuota', () => {
   it('K8S platform, should call next', () => {
     req.body = k8sContextBody;
     process.env.POD_NAMESPACE = 'default';
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -261,7 +261,7 @@ describe('#checkQuota', () => {
   });
   it('Quota not entitled, should call next with Forbidden', () => {
     req.body = notEntitledBody;
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -278,12 +278,12 @@ describe('#checkQuota', () => {
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => {
         expect(next).to.have.been.calledOnce;
-        expect(next.getCall(0).args[0] instanceof Forbidden);
+        expect(next.getCall(0).args[0]).to.be.an.instanceof(Forbidden);
       });
   });
   it('Quota invalid, should call next with Forbidden', () => {
     req.body = invalidQuotaBody;
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -300,12 +300,38 @@ describe('#checkQuota', () => {
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => {
         expect(next).to.have.been.calledOnce;
-        expect(next.getCall(0).args[0] instanceof Forbidden);
+        expect(next.getCall(0).args[0]).to.be.an.instanceof(Forbidden);
+      });
+  });
+  it('Quota invalid, should call next with Forbidden and keep message', () => {
+    req.body = invalidQuotaBody;
+    checkQuotaValidityStub.resolves({
+      quotaValid: CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA,
+      message: 'Custom error message',
+    });
+    checkQuota(req, res, next);
+    expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
+    expect(checkQuotaValidityStub).to.have.been.called;
+    expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
+      subaccountId: subaccount_id,
+      queryParams: {
+        planId: invalidQuotaPlanId,
+        previousPlanId: undefined,
+        useAPIServerForConsumedQuotaCheck: false,
+        reqMethod: 'PATCH',
+        orgId: organization_guid
+      }
+    }, true);
+    return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
+      .then(() => {
+        expect(next).to.have.been.calledOnce;
+        expect(next.getCall(0).args[0]).to.be.an.instanceof(Forbidden);
+        expect(next.getCall(0).args[0].message).to.equal('Custom error message');
       });
   });
   it('Quota valid, should call next', () => {
     req.body = validQuotaBody;
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -326,7 +352,7 @@ describe('#checkQuota', () => {
     req.body = validQuotaBody;
     let getServiceStub = sinon.stub(catalog, 'getService');
     getServiceStub.returns({quota_check_type: 'composite'});
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -347,7 +373,7 @@ describe('#checkQuota', () => {
   });
   it('SMCF platform, Quota valid, should call next', () => {
     req.body = SMCFContextBody;
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
@@ -368,7 +394,7 @@ describe('#checkQuota', () => {
   it('SMK8S platform, Quota valid, should call next', () => {
     req.body = SMK8SContextBody;
     process.env.POD_NAMESPACE = 'default';
-    checkQuotaValidityStub.resolves(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA);
+    checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
