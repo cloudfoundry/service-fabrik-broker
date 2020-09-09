@@ -1,3 +1,4 @@
+{{ $randomString := randAlphaNum 5 | quote -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,13 +15,20 @@ spec:
       labels:
         app: {{ .Release.Name }}-controller-manager
         control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
-      annotations:
-        rollme: {{ randAlphaNum 5 | quote }}
+        rollme: {{ $randomString }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 6 }}
       {{- end }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
+            rollme: {{ $randomString }}
       containers:
       - name: multiclusterdeployer
         image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
@@ -30,6 +38,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: REPLICA_COUNT
+          value: "{{ .Values.replicaCount }}"
         command:
         - /multiclusterdeploy
         args:

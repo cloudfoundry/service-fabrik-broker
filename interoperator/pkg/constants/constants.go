@@ -40,6 +40,9 @@ const (
 var (
 	InteroperatorNamespace = "default"
 	OwnClusterID           = "1" // "1" is the DefaultMasterClusterID
+
+	// used only in multiclusterdeploy build
+	ReplicaCount = 1
 )
 
 func init() {

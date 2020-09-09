@@ -1,3 +1,4 @@
+{{ $randomString := randAlphaNum 5 | quote -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -58,13 +59,20 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-broker
-      annotations:
-        rollme: {{ randAlphaNum 5 | quote }}
+        rollme: {{ $randomString }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 6 }}
       {{- end }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: {{ .Release.Name }}-broker
+            rollme: {{ $randomString }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"

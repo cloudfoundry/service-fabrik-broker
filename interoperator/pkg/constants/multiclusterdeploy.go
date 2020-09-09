@@ -18,7 +18,24 @@ limitations under the License.
 
 package constants
 
+import (
+	"os"
+	"strconv"
+)
+
 // Constants used by interoperator which are used only in multiclusterdeploy build
 const (
 	LeaderElectionID = "interoperator-leader-election-helper-multiclusterdeploy"
+
+	ReplicaCountEnvKey = "REPLICA_COUNT"
 )
+
+// Configs initialized at startup which are used only in multiclusterdeploy build
+func init() {
+	replicaCountStr, ok := os.LookupEnv(ReplicaCountEnvKey)
+	if ok {
+		if replicaCount, err := strconv.Atoi(replicaCountStr); err == nil {
+			ReplicaCount = replicaCount
+		}
+	}
+}
