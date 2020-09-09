@@ -49,7 +49,7 @@
     "json-stream": "^1.0.0",
     "jsonwebtoken": "8.5.1",
     "kubernetes-client": "7.0.1",
-    "lodash": "4.17.19",
+    "lodash": "4.17.20",
     "moment": "2.27.0",
     "mongoose": "5.9.24",
     "morgan": "1.10.0",
