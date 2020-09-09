@@ -79,6 +79,7 @@ exports.checkQuota = function () {
         const instanceBasedQuota = supportsInstanceBasedQuota(req.body.service_id);
         if(!instanceBasedQuota) {
           quotaClientOptions.data = _.cloneDeep(req.body);
+          _.set(quotaClientOptions.data, 'instance_id', req.params.instance_id)
         }
         return quotaClient.checkQuotaValidity(quotaClientOptions, instanceBasedQuota)
           .then(({ quotaValid, message }) => {
