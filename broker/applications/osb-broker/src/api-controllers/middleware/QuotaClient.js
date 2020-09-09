@@ -42,7 +42,7 @@ class QuotaClient extends HttpClient {
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
     return {
       quotaValid: res.body.quotaValidStatus,
-      message: _.get(res, 'message')
+      message: _.get(res.body, 'message')
     };
   }
   async putCompositeQuotaInfo(options) {
@@ -60,7 +60,7 @@ class QuotaClient extends HttpClient {
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
     return {
       quotaValid: res.body.quotaValidStatus,
-      message: _.get(res, 'message')
+      message: _.get(res.body, 'message')
     };
   }
 }
