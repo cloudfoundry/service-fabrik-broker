@@ -214,6 +214,9 @@ describe('#checkQuota', () => {
       name: 'user',
       pass: 'secret'
     },
+    params: {
+      instance_id: '54ce7ed5-d1ca-466d-b043-81de527c74c7'
+    },
     body: {
       plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f'
     }
@@ -365,7 +368,10 @@ describe('#checkQuota', () => {
         reqMethod: 'PATCH',
         orgId: organization_guid
       },
-      data: req.body
+      data: {
+        instance_id: '54ce7ed5-d1ca-466d-b043-81de527c74c7',
+        ...req.body
+      }
     }, false);
     getServiceStub.restore();
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
