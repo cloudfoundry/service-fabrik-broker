@@ -40,7 +40,10 @@ class QuotaClient extends HttpClient {
       json: true
     }, CONST.HTTP_STATUS_CODE.OK);
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
-    return res.body.quotaValidStatus;
+    return {
+      quotaValid: res.body.quotaValidStatus,
+      message: _.get(res.body, 'message')
+    };
   }
   async putCompositeQuotaInfo(options) {
     const subaccountId = _.get(options, 'subaccountId');
@@ -55,7 +58,10 @@ class QuotaClient extends HttpClient {
       json: true
     }, CONST.HTTP_STATUS_CODE.OK);
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
-    return res.body.quotaValidStatus;
+    return {
+      quotaValid: res.body.quotaValidStatus,
+      message: _.get(res.body, 'message')
+    };
   }
 }
 

@@ -79,17 +79,18 @@ exports.checkQuota = function () {
         const instanceBasedQuota = supportsInstanceBasedQuota(req.body.service_id);
         if(!instanceBasedQuota) {
           quotaClientOptions.data = _.cloneDeep(req.body);
+          _.set(quotaClientOptions.data, 'instance_id', req.params.instance_id);
         }
         return quotaClient.checkQuotaValidity(quotaClientOptions, instanceBasedQuota)
-          .then(quotaValid => {
+          .then(({ quotaValid, message }) => {
             const plan = getPlanFromRequest(req);
             logger.debug(`quota api response : ${quotaValid}`);
             if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
               logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
-              next(new Forbidden('Not entitled to create service instance'));
+              next(new Forbidden(message ? message : 'Not entitled to create service instance'));
             } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
               logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', subaccount '${subaccountId}', service '${plan.service.name}', plan '${plan.name}'`);
-              next(new Forbidden('Quota is not sufficient for this request'));
+              next(new Forbidden(message ? message : 'Quota is not sufficient for this request'));
             } else {
               logger.debug('[Quota]: calling next handler..');
               next();
