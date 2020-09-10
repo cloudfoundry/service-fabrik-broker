@@ -33,7 +33,7 @@ describe('#QuotaClient', () => {
   });
   it('should make appropriate call for instance based quota', async () => {
     requestStub.resolves({body: { quotaValidStatus: 0}});
-    const quotaStatus = await quotaClient.checkQuotaValidity(reqOptions, true);
+    const { quotaValid } = await quotaClient.checkQuotaValidity(reqOptions, true);
     expect(requestStub).to.have.been.calledWithExactly({
       url: `${config.quota_app.quota_endpoint}/${subaccount_id}/quota`,
       method: CONST.HTTP_METHOD.GET,
@@ -43,10 +43,10 @@ describe('#QuotaClient', () => {
       },
       qs: _.get(reqOptions, 'queryParams'),
       json: true
-      }, 
+      },
       CONST.HTTP_STATUS_CODE.OK
     );
-    expect(quotaStatus).to.be.equal(0);
+    expect(quotaValid).to.be.equal(0);
   });
   it('should make appropriate call for non-instance based quota', async () => {
     reqOptions.data = {
@@ -54,7 +54,7 @@ describe('#QuotaClient', () => {
         context: {}
     };
     requestStub.resolves({body: { quotaValidStatus: 0}});
-    const quotaStatus = await quotaClient.checkQuotaValidity(reqOptions, false);
+    const { quotaValid } = await quotaClient.checkQuotaValidity(reqOptions, false);
     expect(requestStub).to.have.been.calledWithExactly({
       url: `${config.quota_app.quota_endpoint}/${subaccount_id}/quota`,
       method: CONST.HTTP_METHOD.PUT,
@@ -64,9 +64,9 @@ describe('#QuotaClient', () => {
       },
       body: _.get(reqOptions, 'data'),
       json: true
-      }, 
+      },
       CONST.HTTP_STATUS_CODE.OK
     );
-    expect(quotaStatus).to.be.equal(0);
+    expect(quotaValid).to.be.equal(0);
   });
 });
