@@ -28,7 +28,7 @@
     "express": "4.17.1",
     "express-interceptor": "1.2.0",
     "express-jwt": "6.0.0",
-    "helmet": "3.23.3",
+    "helmet": "4.1.0",
     "hystrixjs": "0.2.0",
     "js-yaml": "3.14.0",
     "json-stream": "^1.0.0",
