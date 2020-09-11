@@ -1,3 +1,4 @@
+{{ $randomString := randAlphaNum 5 | quote -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,11 +15,20 @@ spec:
     metadata:
       labels:
         control-plane: {{ .Release.Name }}-controller-manager
+        rollme: {{ $randomString }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 6 }}
       {{- end }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            control-plane: {{ .Release.Name }}-controller-manager
+            rollme: {{ $randomString }}
       containers:
       - command:
         - /manager

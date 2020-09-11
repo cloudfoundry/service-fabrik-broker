@@ -19,6 +19,7 @@ package sfservicebinding
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 
@@ -53,6 +54,8 @@ type ReconcileSFServiceBinding struct {
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	resourceManager resources.ResourceManager
+	watchList       []osbv1alpha1.APIVersionKind
+	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
@@ -63,6 +66,8 @@ type ReconcileSFServiceBinding struct {
 func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfservicebinding", req.NamespacedName)
+
+	defer r.restartOnWatchUpdate()
 
 	// Fetch the SFServiceBinding instance
 	binding := &osbv1alpha1.SFServiceBinding{}
@@ -549,6 +554,18 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 	return result, inputErr
 }
 
+// Will kill the process if watchlist has changed
+func (r *ReconcileSFServiceBinding) restartOnWatchUpdate() {
+	if !constants.K8SDeployment {
+		return
+	}
+	interoperatorCfg := r.cfgManager.GetConfig()
+	if !watches.CompareWatchLists(interoperatorCfg.BindingContollerWatchList, r.watchList) {
+		r.Log.Info("Binding watch list changed. Restarting interoperator")
+		os.Exit(1)
+	}
+}
+
 // SetupWithManager registers the SFServiceBinding Controller with manager
 // and setups the watches.
 func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
@@ -574,6 +591,7 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
+	r.cfgManager = cfgManager
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("binding").
@@ -583,8 +601,10 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 		For(&osbv1alpha1.SFServiceBinding{})
 
 	// TODO dynamically setup rbac rules and watches
-	subresources := make([]runtime.Object, len(interoperatorCfg.InstanceContollerWatchList))
-	for i, gvk := range interoperatorCfg.BindingContollerWatchList {
+	r.watchList = make([]osbv1alpha1.APIVersionKind, len(interoperatorCfg.BindingContollerWatchList))
+	copy(r.watchList, interoperatorCfg.BindingContollerWatchList)
+	subresources := make([]runtime.Object, len(r.watchList))
+	for i, gvk := range r.watchList {
 		object := &unstructured.Unstructured{}
 		object.SetKind(gvk.GetKind())
 		object.SetAPIVersion(gvk.GetAPIVersion())

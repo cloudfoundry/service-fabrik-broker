@@ -23,7 +23,6 @@ import (
 	"time"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/provisioner/mock_provisioner"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
@@ -108,7 +107,6 @@ func TestReconcile(t *testing.T) {
 		Mapper: mgr.GetRESTMapper(),
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	targetReconciler := &ReconcileProvisioner{
@@ -116,14 +114,12 @@ func TestReconcile(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	controller := &ReconcileProvisioner{
 		Client:          mgr.GetClient(),
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	_addClusterToWatch := addClusterToWatch
@@ -155,9 +151,7 @@ func TestReconcile(t *testing.T) {
 	deploymentInstance.Spec.Selector.MatchLabels = labels
 	g.Expect(c.Create(context.TODO(), deploymentInstance)).NotTo(gomega.HaveOccurred())
 
-	mockProvisioner.EXPECT().Fetch().Return(nil).Times(1)
 	mockClusterRegistry.EXPECT().GetClient("2").Return(targetReconciler, nil).AnyTimes()
-	mockProvisioner.EXPECT().Get().Return(deploymentInstance, nil).Times(1)
 
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
@@ -238,7 +232,6 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		Mapper: mgr.GetRESTMapper(),
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	// Delete CRDs
@@ -261,7 +254,6 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 	type args struct {
 		clusterID    string
@@ -334,7 +326,6 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	r := &ReconcileProvisioner{
@@ -342,7 +333,6 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	type args struct {
@@ -408,7 +398,6 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 		c2.Delete(context.TODO(), sfTargetCluster)
 	}
 
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	r := &ReconcileProvisioner{
@@ -416,7 +405,6 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	type args struct {
@@ -493,7 +481,6 @@ func TestReconcileProvisioner_reconcileSecret(t *testing.T) {
 	clusterSecret.Data["foo"] = []byte("bar")
 	c.Create(context.TODO(), clusterSecret)
 
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	r := &ReconcileProvisioner{
@@ -501,7 +488,6 @@ func TestReconcileProvisioner_reconcileSecret(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	type args struct {
@@ -586,7 +572,6 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 	deploymentInstance.Spec.Selector.MatchLabels = labels
 	c.Create(context.TODO(), deploymentInstance)
 
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	r := &ReconcileProvisioner{
@@ -594,7 +579,6 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	type args struct {
@@ -669,7 +653,6 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		c2.Delete(context.TODO(), targetClusterRoleBinding)
 	}
 
-	mockProvisioner := mock_provisioner.NewMockProvisioner(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 
 	r := &ReconcileProvisioner{
@@ -677,7 +660,6 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
 		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
-		provisioner:     mockProvisioner,
 	}
 
 	type args struct {

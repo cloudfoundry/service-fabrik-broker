@@ -25,6 +25,9 @@ async function init() {
         res.render('index', {
           title: app.get('title')
         });
+        if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
+          utils.loadCatalogFromAPIServer();
+        }
       });
       app.use('/:platform(cf|k8s|sm)', routes.broker);
     });

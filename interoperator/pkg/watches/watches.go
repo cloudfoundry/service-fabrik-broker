@@ -60,12 +60,12 @@ func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper met
 func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches []osbv1alpha1.APIVersionKind) (bool, error) {
 	interoperatorCfg := cfgManager.GetConfig()
 	toUpdate := false
-	if !compareWatchLists(interoperatorCfg.InstanceContollerWatchList, instanceWatches) {
+	if !CompareWatchLists(interoperatorCfg.InstanceContollerWatchList, instanceWatches) {
 		toUpdate = true
 		interoperatorCfg.InstanceContollerWatchList = instanceWatches
 	}
 
-	if !compareWatchLists(interoperatorCfg.BindingContollerWatchList, bindingWatches) {
+	if !CompareWatchLists(interoperatorCfg.BindingContollerWatchList, bindingWatches) {
 		toUpdate = true
 		interoperatorCfg.BindingContollerWatchList = bindingWatches
 	}
@@ -79,7 +79,10 @@ func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches
 	return false, nil
 }
 
-func compareWatchLists(list1, list2 []osbv1alpha1.APIVersionKind) bool {
+// CompareWatchLists compares two watch lists.
+// Returns true if both are same.
+// Otherwise return false.
+func CompareWatchLists(list1, list2 []osbv1alpha1.APIVersionKind) bool {
 	if len(list1) != len(list2) {
 		return false
 	}

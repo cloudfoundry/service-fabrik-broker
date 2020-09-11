@@ -39,13 +39,18 @@ const (
 // Configs initialized at startup
 var (
 	InteroperatorNamespace = "default"
-	OwnClusterID           = "1" // "1" is the DefaultMasterClusterID
+	OwnClusterID           = "1"   // "1" is the DefaultMasterClusterID
+	K8SDeployment          = false // Set to true when POD_NAMESPACE env is set
+
+	// used only in multiclusterdeploy build
+	ReplicaCount = 1
 )
 
 func init() {
 	interoperatorNamespace, ok := os.LookupEnv(NamespaceEnvKey)
 	if ok {
 		InteroperatorNamespace = interoperatorNamespace
+		K8SDeployment = true
 	}
 
 	ownClusterID, ok := os.LookupEnv(OwnClusterIDEnvKey)

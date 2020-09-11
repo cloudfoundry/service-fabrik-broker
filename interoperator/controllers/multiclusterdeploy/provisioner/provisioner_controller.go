@@ -22,7 +22,6 @@ import (
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
@@ -50,7 +49,6 @@ type ReconcileProvisioner struct {
 	Log             logr.Logger
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
-	provisioner     provisioner.Provisioner
 }
 
 // Reconcile reads the SFCluster object and makes changes based on the state read
@@ -96,9 +94,14 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// Get deploment instance for provisioner
-	deplomentInstance, err := r.provisioner.Get()
+	// 2. Get deploment instance for provisioner
+	deplomentInstance := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{
+		Name:      constants.ProvisionerName,
+		Namespace: constants.InteroperatorNamespace,
+	}, deplomentInstance)
 	if err != nil {
+		log.Error(err, "Failed to get provisioner deployment from master cluster", "clusterId", clusterID)
 		return ctrl.Result{}, err
 	}
 
@@ -373,8 +376,8 @@ func (r *ReconcileProvisioner) reconcileDeployment(deploymentInstance *appsv1.De
 	provisionerInstance.SetLabels(deploymentInstance.GetLabels())
 	// copy spec
 	deploymentInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
-	// set replicaCount to 1
-	replicaCount := int32(1)
+	// set replicaCount
+	replicaCount := int32(constants.ReplicaCount)
 	provisionerInstance.Spec.Replicas = &replicaCount
 
 	// set env CLUSTER_ID for containers
@@ -479,19 +482,6 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 			return err
 		}
 		r.clusterRegistry = clusterRegistry
-	}
-
-	if r.provisioner == nil {
-		provisionerMgr, err := provisioner.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
-		if err != nil {
-			return err
-		}
-		r.provisioner = provisionerMgr
-	}
-
-	err = r.provisioner.Fetch()
-	if err != nil {
-		return err
 	}
 
 	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
