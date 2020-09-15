@@ -43,13 +43,19 @@ spec:
         image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
         imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
         name: manager
+        {{- with .Values.interoperator.resources }}
         resources:
+          {{- with .limits }}
           limits:
-            cpu: {{ .Values.interoperator.resources.limits.cpu }}
-            memory: {{ .Values.interoperator.resources.limits.memory }}
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+          {{- with .requests }}
           requests:
-            cpu: {{ .Values.interoperator.resources.requests.cpu }}
-            memory: {{ .Values.interoperator.resources.requests.memory }}
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+        {{- end }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
