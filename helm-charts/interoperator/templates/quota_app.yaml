@@ -61,6 +61,26 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: QUOTA_APP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: quota_app_username
+        - name: QUOTA_APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: quota_app_password
+        - name: QUOTA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: quota_username
+        - name: QUOTA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: quota_password
         volumeMounts:
         - name: settings
           mountPath: /opt/sf-config

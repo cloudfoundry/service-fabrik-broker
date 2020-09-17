@@ -67,6 +67,20 @@ if (process.env.POD_NAMESPACE) {
   config.sf_namespace = process.env.POD_NAMESPACE;
 }
 
+if (process.env.QUOTA_APP_USERNAME) {
+  config.quota_app.username = process.env.QUOTA_APP_USERNAME;
+}
+if (process.env.QUOTA_APP_PASSWORD) {
+  config.quota_app.password = process.env.QUOTA_APP_PASSWORD;
+}
+
+if (process.env.QUOTA_USERNAME) {
+  config.quota.username = process.env.QUOTA_USERNAME;
+}
+if (process.env.QUOTA_PASSWORD) {
+  config.quota.password = process.env.QUOTA_PASSWORD;
+}
+
 function updateLogFileConfig(logPath) {
   const logSuffix = `-worker-${process.env.worker}.log`;
   config.log_path = logPath.indexOf('.log') !== -1 ? logPath.replace('.log', logSuffix) : `${logPath}-${logSuffix}`;

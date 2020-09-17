@@ -82,9 +82,15 @@ spec:
           protocol: TCP
         env:
         - name: OPERATOR_APIS_APP_USERNAME
-          value: {{ .Values.operator_apis.username }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: operator_apis_username
         - name: OPERATOR_APIS_APP_PASSWORD
-          value: {{ .Values.operator_apis.password }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-creds
+              key: operator_apis_password
         - name: OPERATOR_APIS_APP_PORT
           value: "{{ .Values.operator_apis.port }}"
         livenessProbe:
