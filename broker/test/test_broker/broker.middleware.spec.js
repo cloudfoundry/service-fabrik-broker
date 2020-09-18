@@ -370,7 +370,7 @@ describe('#checkQuota', () => {
       },
       data: req.body
     }
-    expectedQuotaValidityArgs.instance_id = '54ce7ed5-d1ca-466d-b043-81de527c74c7';
+    expectedQuotaValidityArgs.data.instance_id = '54ce7ed5-d1ca-466d-b043-81de527c74c7';
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly(expectedQuotaValidityArgs, false);
     getServiceStub.restore();
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
