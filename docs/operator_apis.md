@@ -195,8 +195,8 @@ Trigger update of batch of deployments. Specify batch using service and plan que
 
 | Name | Type | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
-| service | query |  | No | string |
-| plan | query |  | No | string |
+| service | query | Instances with this service ID will be updated. | No | string |
+| plan | query | Instances with this plan ID will be updated. `service` and `plan` combination should be valid. | No | string |
 
 #### Responses
 
