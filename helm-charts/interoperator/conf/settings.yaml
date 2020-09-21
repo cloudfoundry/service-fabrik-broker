@@ -7,8 +7,6 @@ defaults: &defaults
   # GENERAL SETTINGS #
   ####################
   broker_name: interoperator-broker
-  username: {{ .Values.broker.username }}
-  password: {{ .Values.broker.password }}
   skip_ssl_validation: true
   log_path: /opt/service-fabrik-broker/broker/logs/kubernetes.log
   log_level: silly
@@ -39,8 +37,6 @@ defaults: &defaults
     port: {{ .Values.quota_app.port }}
     protocol: http
     host: {{ .Release.Name }}-quota-service.{{ .Release.Namespace }}.svc.cluster.local
-    username: {{ .Values.quota_app.username }}
-    password: {{ .Values.quota_app.password }}
     quota_app_url: http://{{ .Release.Name }}-quota-service.{{ .Release.Namespace }}.svc.cluster.local
     quota_endpoint: /v1/account
 
@@ -98,8 +94,6 @@ defaults: &defaults
     enabled: {{ .Values.broker.quota.enabled }}
     oauthDomain: {{ .Values.broker.quota.oauthDomain }}
     serviceDomain: {{ .Values.broker.quota.serviceDomain }}
-    username: {{ .Values.broker.quota.username }}
-    password: {{ .Values.broker.quota.password }}
 
 development: &development
   <<: *defaults
