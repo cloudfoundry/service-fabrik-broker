@@ -590,7 +590,7 @@ class DirectorService extends BaseDirectorService {
           .set('context', _.omit(context, 'params.previous_manifest'))
           .value();
         return deploymentHookClient.executeDeploymentActions(options)
-          .tap(actionResponse => logger.info(`${phase} response ...`, actionResponse));
+          .tap(actionResponse => logger.debug(`${phase} response ...`, actionResponse));
       } else {
         logger.info(`No actions to perform for ${context.deployment_name}`);
         return {};

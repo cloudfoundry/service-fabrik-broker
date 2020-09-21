@@ -20,7 +20,7 @@ class DeploymentHookController extends HookBaseController {
     }
     return ActionManager
       .executeActions(req.body.phase, req.body.actions, req.body.context)
-      .tap(body => logger.info('Sending response body: ', body))
+      .tap(body => logger.debug('Sending response body: ', body))
       .then(body => res
         .status(200)
         .send(body));
