@@ -67,6 +67,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
 - [Mass Update of Custom Resources for Interoperator Custom Resource changes](#mass-update-of-custom-resources-for-interoperator-custom-resource-changes)
   - [Context](#context-1)
   - [Solution](#solution)
+- [High Availability and Multi AZ Deployment](#high-availability-and-multi-az-deployment)
 
 
 ## Context
@@ -814,3 +815,8 @@ There are no generic guidelines from the OSB spec as well and the solution to th
 
 Interoperator being a generic broker, it should not trigger update blindly as well. We provide a flag `autoUpdateInstances` at the `SFPlans` level, which can be turned on if the service and the corresponding plan can afford to have blind/immediate update. In that case, a controller will reconcile all `SFServiceInstances` with update status, which would render the templates again and CRs updated again. However, this would not take care of the deleted/removed CRs if any, and the service operator will have to take care of obsolete CRs.
     Along with this, Interoperator will provide an admin API which can be triggered to update all service instances. In that case, even if the automatic and immediate update is turned off, service operators can trigger a bulk update of all service instances if needed.
+
+# High Availability and Multi AZ Deployment
+All the interoperator components (`broker`, `quota app`, `operator apis`, `multicluster deployer`, `scheduler` and `provisioner`) are by default deployed with replica count `2`. The replica count is configurable during deployment. For the components which exposes REST endpoints namely `broker`, `quota app` and `operator apis`, both the instances of the respective component functions in an `active-active` configuration and the requests are load balanced to the instances. For the components which are kubernetes controllers namely `multicluster deployer`, `scheduler` and `provisioner`, the replicas functions in an `active-passive` configuration. For these components at a time only one replica is `leader` and processes all the requests, while the other replicas is in a `subordinate` state and is just waiting for the `leader` to go down. When the `leader` goes down, one of the `subordinates` becomes the leader and starts processing the requests.
+
+Interoperator uses [Pod Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints) to distribute the pods to multiple availability zones. The pods are spread based on [topology.kubernetes.io/zone](https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/#topologykubernetesiozone) label on the nodes. For the interoperator deployment to be multi az, the cluster should have nodes in multiple availability zones. Note: [Pod Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints) is available only from kubernetes version 1.19 onwards. On cluster with older versions kubernetes, the pods may not be spread across different availability zones.

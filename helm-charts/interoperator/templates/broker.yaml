@@ -146,7 +146,20 @@ spec:
         args:
         - applications/osb-broker/src/server.js
         command:
-        - node 
+        - node
+        {{- with .Values.broker.resources }}
+        resources:
+          {{- with .limits }}
+          limits:
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+          {{- with .requests }}
+          requests:
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: settings
           configMap:

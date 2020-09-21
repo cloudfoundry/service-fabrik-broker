@@ -115,4 +115,17 @@ spec:
           timeoutSeconds: 1
         command: 
         - /operator-apis
+        {{- with .Values.operator_apis.resources }}
+        resources:
+          {{- with .limits }}
+          limits:
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+          {{- with .requests }}
+          requests:
+            cpu: {{ .cpu }}
+            memory: {{ .memory }}
+          {{- end }}
+        {{- end }}
       restartPolicy: Always
