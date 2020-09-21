@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,6 +45,7 @@ func (h *OperatorApisHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 
 // GetDeploymentsSummary returns summary of the existing deployments
 func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("labelSelector formed using query params: ", "labelSelector", labelSelector)
 	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
@@ -56,7 +58,7 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 		LabelSelector: labelSelector,
 	}
 	//Get the total deployments before making pagination requests to server
-	completeInstancesList, err := sfserviceinstanceClient.List(listOptions)
+	completeInstancesList, err := sfserviceinstanceClient.List(ctx, listOptions)
 	if err != nil {
 		log.Error(err, "Error while reading sfserviceinstances from apiserver: ")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,7 +74,7 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 	if continueToken != "" {
 		listOptions.Continue = continueToken
 	}
-	instances, err := sfserviceinstanceClient.List(listOptions)
+	instances, err := sfserviceinstanceClient.List(ctx, listOptions)
 	if err != nil {
 		log.Error(err, "Error while reading sfserviceinstances from apiserver: ")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -110,6 +112,7 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 
 // GetDeployment returns summary of the given deployment
 func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	instanceID := vars["deploymentID"]
 	deploymentID := GetKubernetesName(instanceID)
@@ -122,7 +125,7 @@ func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
-	instance, err := sfserviceinstanceClient.Get(deploymentID, metav1.GetOptions{})
+	instance, err := sfserviceinstanceClient.Get(ctx, deploymentID, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Error while getting service instance from apiserver")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -147,6 +150,7 @@ func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Reque
 
 // UpdateDeployment triggers update of a single deployment
 func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	instanceID := vars["deploymentID"]
 	deploymentID := GetKubernetesName(instanceID)
@@ -159,14 +163,14 @@ func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Re
 	}
 	instanceNamespace := "sf-" + deploymentID
 	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
-	instance, err := sfserviceinstanceClient.Get(deploymentID, metav1.GetOptions{})
+	instance, err := sfserviceinstanceClient.Get(ctx, deploymentID, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Error while getting service instance from apiserver")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	instance.SetState("update")
-	_, err = sfserviceinstanceClient.Update(instance)
+	_, err = sfserviceinstanceClient.Update(ctx, instance, metav1.UpdateOptions{})
 	if err != nil {
 		log.Error(err, "Error while updating instance")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -178,6 +182,7 @@ func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Re
 
 // UpdateDeploymentsInBatch triggers update of all deployments in given batch
 func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	labelSelector := createLabelSelectorFromQueryParams(r)
 	log.Info("Using following labelSelector for triggering update: ", "labelSelector", labelSelector)
 	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
@@ -187,7 +192,7 @@ func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r 
 		return
 	}
 	sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances("")
-	instances, err := sfserviceinstanceClient.List(metav1.ListOptions{
+	instances, err := sfserviceinstanceClient.List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -204,13 +209,14 @@ func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r 
 }
 
 func triggerBatchUpdates(instances *osbv1alpha1.SFServiceInstanceList, clientset *versioned.Clientset) int {
+	ctx := context.Background()
 	successCount := 0
 	log.Info(fmt.Sprintf("Attempting to trigger the update for %d deployments", len(instances.Items)))
 	for _, obj := range instances.Items {
 		instanceNamespace := "sf-" + obj.GetName()
 		sfserviceinstanceClient := clientset.OsbV1alpha1().SFServiceInstances(instanceNamespace)
 		obj.SetState("update")
-		_, err := sfserviceinstanceClient.Update(&obj)
+		_, err := sfserviceinstanceClient.Update(ctx, &obj, metav1.UpdateOptions{})
 		if err != nil {
 			log.Error(err, "Error while updating deployment", "deploymentID", obj.GetName())
 		} else {

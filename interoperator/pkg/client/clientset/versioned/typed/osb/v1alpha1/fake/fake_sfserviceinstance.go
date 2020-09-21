@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var sfserviceinstancesResource = schema.GroupVersionResource{Group: "osb", Versi
 var sfserviceinstancesKind = schema.GroupVersionKind{Group: "osb", Version: "v1alpha1", Kind: "SFServiceInstance"}
 
 // Get takes name of the sFServiceInstance, and returns the corresponding sFServiceInstance object, and an error if there is any.
-func (c *FakeSFServiceInstances) Get(name string, options v1.GetOptions) (result *v1alpha1.SFServiceInstance, err error) {
+func (c *FakeSFServiceInstances) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.SFServiceInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(sfserviceinstancesResource, c.ns, name), &v1alpha1.SFServiceInstance{})
 
@@ -49,7 +51,7 @@ func (c *FakeSFServiceInstances) Get(name string, options v1.GetOptions) (result
 }
 
 // List takes label and field selectors, and returns the list of SFServiceInstances that match those selectors.
-func (c *FakeSFServiceInstances) List(opts v1.ListOptions) (result *v1alpha1.SFServiceInstanceList, err error) {
+func (c *FakeSFServiceInstances) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SFServiceInstanceList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(sfserviceinstancesResource, sfserviceinstancesKind, c.ns, opts), &v1alpha1.SFServiceInstanceList{})
 
@@ -71,14 +73,14 @@ func (c *FakeSFServiceInstances) List(opts v1.ListOptions) (result *v1alpha1.SFS
 }
 
 // Watch returns a watch.Interface that watches the requested sFServiceInstances.
-func (c *FakeSFServiceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeSFServiceInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(sfserviceinstancesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a sFServiceInstance and creates it.  Returns the server's representation of the sFServiceInstance, and an error, if there is any.
-func (c *FakeSFServiceInstances) Create(sFServiceInstance *v1alpha1.SFServiceInstance) (result *v1alpha1.SFServiceInstance, err error) {
+func (c *FakeSFServiceInstances) Create(ctx context.Context, sFServiceInstance *v1alpha1.SFServiceInstance, opts v1.CreateOptions) (result *v1alpha1.SFServiceInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(sfserviceinstancesResource, c.ns, sFServiceInstance), &v1alpha1.SFServiceInstance{})
 
@@ -89,7 +91,7 @@ func (c *FakeSFServiceInstances) Create(sFServiceInstance *v1alpha1.SFServiceIns
 }
 
 // Update takes the representation of a sFServiceInstance and updates it. Returns the server's representation of the sFServiceInstance, and an error, if there is any.
-func (c *FakeSFServiceInstances) Update(sFServiceInstance *v1alpha1.SFServiceInstance) (result *v1alpha1.SFServiceInstance, err error) {
+func (c *FakeSFServiceInstances) Update(ctx context.Context, sFServiceInstance *v1alpha1.SFServiceInstance, opts v1.UpdateOptions) (result *v1alpha1.SFServiceInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(sfserviceinstancesResource, c.ns, sFServiceInstance), &v1alpha1.SFServiceInstance{})
 
@@ -100,7 +102,7 @@ func (c *FakeSFServiceInstances) Update(sFServiceInstance *v1alpha1.SFServiceIns
 }
 
 // Delete takes name of the sFServiceInstance and deletes it. Returns an error if one occurs.
-func (c *FakeSFServiceInstances) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeSFServiceInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(sfserviceinstancesResource, c.ns, name), &v1alpha1.SFServiceInstance{})
 
@@ -108,15 +110,15 @@ func (c *FakeSFServiceInstances) Delete(name string, options *v1.DeleteOptions) 
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeSFServiceInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(sfserviceinstancesResource, c.ns, listOptions)
+func (c *FakeSFServiceInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(sfserviceinstancesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.SFServiceInstanceList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched sFServiceInstance.
-func (c *FakeSFServiceInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.SFServiceInstance, err error) {
+func (c *FakeSFServiceInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SFServiceInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(sfserviceinstancesResource, c.ns, name, pt, data, subresources...), &v1alpha1.SFServiceInstance{})
 

@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var sfservicebindingsResource = schema.GroupVersionResource{Group: "osb", Versio
 var sfservicebindingsKind = schema.GroupVersionKind{Group: "osb", Version: "v1alpha1", Kind: "SFServiceBinding"}
 
 // Get takes name of the sFServiceBinding, and returns the corresponding sFServiceBinding object, and an error if there is any.
-func (c *FakeSFServiceBindings) Get(name string, options v1.GetOptions) (result *v1alpha1.SFServiceBinding, err error) {
+func (c *FakeSFServiceBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.SFServiceBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(sfservicebindingsResource, c.ns, name), &v1alpha1.SFServiceBinding{})
 
@@ -49,7 +51,7 @@ func (c *FakeSFServiceBindings) Get(name string, options v1.GetOptions) (result 
 }
 
 // List takes label and field selectors, and returns the list of SFServiceBindings that match those selectors.
-func (c *FakeSFServiceBindings) List(opts v1.ListOptions) (result *v1alpha1.SFServiceBindingList, err error) {
+func (c *FakeSFServiceBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SFServiceBindingList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(sfservicebindingsResource, sfservicebindingsKind, c.ns, opts), &v1alpha1.SFServiceBindingList{})
 
@@ -71,14 +73,14 @@ func (c *FakeSFServiceBindings) List(opts v1.ListOptions) (result *v1alpha1.SFSe
 }
 
 // Watch returns a watch.Interface that watches the requested sFServiceBindings.
-func (c *FakeSFServiceBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeSFServiceBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(sfservicebindingsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a sFServiceBinding and creates it.  Returns the server's representation of the sFServiceBinding, and an error, if there is any.
-func (c *FakeSFServiceBindings) Create(sFServiceBinding *v1alpha1.SFServiceBinding) (result *v1alpha1.SFServiceBinding, err error) {
+func (c *FakeSFServiceBindings) Create(ctx context.Context, sFServiceBinding *v1alpha1.SFServiceBinding, opts v1.CreateOptions) (result *v1alpha1.SFServiceBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(sfservicebindingsResource, c.ns, sFServiceBinding), &v1alpha1.SFServiceBinding{})
 
@@ -89,7 +91,7 @@ func (c *FakeSFServiceBindings) Create(sFServiceBinding *v1alpha1.SFServiceBindi
 }
 
 // Update takes the representation of a sFServiceBinding and updates it. Returns the server's representation of the sFServiceBinding, and an error, if there is any.
-func (c *FakeSFServiceBindings) Update(sFServiceBinding *v1alpha1.SFServiceBinding) (result *v1alpha1.SFServiceBinding, err error) {
+func (c *FakeSFServiceBindings) Update(ctx context.Context, sFServiceBinding *v1alpha1.SFServiceBinding, opts v1.UpdateOptions) (result *v1alpha1.SFServiceBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(sfservicebindingsResource, c.ns, sFServiceBinding), &v1alpha1.SFServiceBinding{})
 
@@ -100,7 +102,7 @@ func (c *FakeSFServiceBindings) Update(sFServiceBinding *v1alpha1.SFServiceBindi
 }
 
 // Delete takes name of the sFServiceBinding and deletes it. Returns an error if one occurs.
-func (c *FakeSFServiceBindings) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeSFServiceBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(sfservicebindingsResource, c.ns, name), &v1alpha1.SFServiceBinding{})
 
@@ -108,15 +110,15 @@ func (c *FakeSFServiceBindings) Delete(name string, options *v1.DeleteOptions) e
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeSFServiceBindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(sfservicebindingsResource, c.ns, listOptions)
+func (c *FakeSFServiceBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(sfservicebindingsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.SFServiceBindingList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched sFServiceBinding.
-func (c *FakeSFServiceBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.SFServiceBinding, err error) {
+func (c *FakeSFServiceBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SFServiceBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(sfservicebindingsResource, c.ns, name, pt, data, subresources...), &v1alpha1.SFServiceBinding{})
 

@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
@@ -36,15 +37,15 @@ type SFClustersGetter interface {
 
 // SFClusterInterface has methods to work with SFCluster resources.
 type SFClusterInterface interface {
-	Create(*v1alpha1.SFCluster) (*v1alpha1.SFCluster, error)
-	Update(*v1alpha1.SFCluster) (*v1alpha1.SFCluster, error)
-	UpdateStatus(*v1alpha1.SFCluster) (*v1alpha1.SFCluster, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.SFCluster, error)
-	List(opts v1.ListOptions) (*v1alpha1.SFClusterList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.SFCluster, err error)
+	Create(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.CreateOptions) (*v1alpha1.SFCluster, error)
+	Update(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (*v1alpha1.SFCluster, error)
+	UpdateStatus(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (*v1alpha1.SFCluster, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.SFCluster, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.SFClusterList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SFCluster, err error)
 	SFClusterExpansion
 }
 
@@ -63,20 +64,20 @@ func newSFClusters(c *ResourceV1alpha1Client, namespace string) *sFClusters {
 }
 
 // Get takes name of the sFCluster, and returns the corresponding sFCluster object, and an error if there is any.
-func (c *sFClusters) Get(name string, options v1.GetOptions) (result *v1alpha1.SFCluster, err error) {
+func (c *sFClusters) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.SFCluster, err error) {
 	result = &v1alpha1.SFCluster{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("sfclusters").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of SFClusters that match those selectors.
-func (c *sFClusters) List(opts v1.ListOptions) (result *v1alpha1.SFClusterList, err error) {
+func (c *sFClusters) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SFClusterList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -87,13 +88,13 @@ func (c *sFClusters) List(opts v1.ListOptions) (result *v1alpha1.SFClusterList, 
 		Resource("sfclusters").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested sFClusters.
-func (c *sFClusters) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *sFClusters) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -104,87 +105,90 @@ func (c *sFClusters) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("sfclusters").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a sFCluster and creates it.  Returns the server's representation of the sFCluster, and an error, if there is any.
-func (c *sFClusters) Create(sFCluster *v1alpha1.SFCluster) (result *v1alpha1.SFCluster, err error) {
+func (c *sFClusters) Create(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.CreateOptions) (result *v1alpha1.SFCluster, err error) {
 	result = &v1alpha1.SFCluster{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("sfclusters").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(sFCluster).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a sFCluster and updates it. Returns the server's representation of the sFCluster, and an error, if there is any.
-func (c *sFClusters) Update(sFCluster *v1alpha1.SFCluster) (result *v1alpha1.SFCluster, err error) {
+func (c *sFClusters) Update(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (result *v1alpha1.SFCluster, err error) {
 	result = &v1alpha1.SFCluster{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("sfclusters").
 		Name(sFCluster.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(sFCluster).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *sFClusters) UpdateStatus(sFCluster *v1alpha1.SFCluster) (result *v1alpha1.SFCluster, err error) {
+func (c *sFClusters) UpdateStatus(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (result *v1alpha1.SFCluster, err error) {
 	result = &v1alpha1.SFCluster{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("sfclusters").
 		Name(sFCluster.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(sFCluster).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the sFCluster and deletes it. Returns an error if one occurs.
-func (c *sFClusters) Delete(name string, options *v1.DeleteOptions) error {
+func (c *sFClusters) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("sfclusters").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *sFClusters) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *sFClusters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("sfclusters").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched sFCluster.
-func (c *sFClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.SFCluster, err error) {
+func (c *sFClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SFCluster, err error) {
 	result = &v1alpha1.SFCluster{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("sfclusters").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
