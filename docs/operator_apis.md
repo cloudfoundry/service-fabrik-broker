@@ -41,7 +41,7 @@ Basic authentication is supported
 #### Examples
 **Request**
 ```shell
-GET https://op.ingress.jayesh1.interop.shoot.canary.k8s-hana.ondemand.com/operator/deployments/21d94798-e29e-4635-a5a6-4b0db0494bcd
+GET https://<operator-apis-ingress-host>/operator/deployments/21d94798-e29e-4635-a5a6-4b0db0494bcd
 ```
 
 **Response**
@@ -92,7 +92,7 @@ Basic authentication is supported
 #### Examples
 **Request**
 ```shell
-PATCH https://op.ingress.jayesh1.interop.shoot.canary.k8s-hana.ondemand.com/operator/deployments/21d94798-e29e-4635-a5a6-4b0db0494bcd
+PATCH https://<operator-apis-ingress-host>/operator/deployments/21d94798-e29e-4635-a5a6-4b0db0494bcd
 ```
 
 **Response**
@@ -134,7 +134,7 @@ Basic authentication is supported
 #### Examples
 **Request**
 ```shell
-GET https://op.ingress.jayesh1.interop.shoot.canary.k8s-hana.ondemand.com/operator/deployments?service=24731fb8-7b84-5f57-914f-d3d55d793dd4&plan=29d7d4c8-6fe2-4c2a-a5ca-b826937d5a88&pageSize=2
+GET https://<operator-apis-ingress-host>/operator/deployments?service=24731fb8-7b84-5f57-914f-d3d55d793dd4&plan=29d7d4c8-6fe2-4c2a-a5ca-b826937d5a88&pageSize=2
 ```
 **Response**
 ```shell
@@ -212,7 +212,7 @@ Basic authentication is supported
 #### Examples
 **Request**
 ```shell
-PATCH https://op.ingress.jayesh1.interop.shoot.canary.k8s-hana.ondemand.com/operator/deployments?service=24731fb8-7b84-5f57-914f-d3d55d793dd4&plan=29d7d4c8-6fe2-4c2a-a5ca-b826937d5a88
+PATCH https://<operator-apis-ingress-host>/operator/deployments?service=24731fb8-7b84-5f57-914f-d3d55d793dd4&plan=29d7d4c8-6fe2-4c2a-a5ca-b826937d5a88
 ```
 
 **Response**
