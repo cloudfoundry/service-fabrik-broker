@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var sfclustersResource = schema.GroupVersionResource{Group: "resource", Version:
 var sfclustersKind = schema.GroupVersionKind{Group: "resource", Version: "v1alpha1", Kind: "SFCluster"}
 
 // Get takes name of the sFCluster, and returns the corresponding sFCluster object, and an error if there is any.
-func (c *FakeSFClusters) Get(name string, options v1.GetOptions) (result *v1alpha1.SFCluster, err error) {
+func (c *FakeSFClusters) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.SFCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(sfclustersResource, c.ns, name), &v1alpha1.SFCluster{})
 
@@ -49,7 +51,7 @@ func (c *FakeSFClusters) Get(name string, options v1.GetOptions) (result *v1alph
 }
 
 // List takes label and field selectors, and returns the list of SFClusters that match those selectors.
-func (c *FakeSFClusters) List(opts v1.ListOptions) (result *v1alpha1.SFClusterList, err error) {
+func (c *FakeSFClusters) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SFClusterList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(sfclustersResource, sfclustersKind, c.ns, opts), &v1alpha1.SFClusterList{})
 
@@ -71,14 +73,14 @@ func (c *FakeSFClusters) List(opts v1.ListOptions) (result *v1alpha1.SFClusterLi
 }
 
 // Watch returns a watch.Interface that watches the requested sFClusters.
-func (c *FakeSFClusters) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeSFClusters) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(sfclustersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a sFCluster and creates it.  Returns the server's representation of the sFCluster, and an error, if there is any.
-func (c *FakeSFClusters) Create(sFCluster *v1alpha1.SFCluster) (result *v1alpha1.SFCluster, err error) {
+func (c *FakeSFClusters) Create(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.CreateOptions) (result *v1alpha1.SFCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(sfclustersResource, c.ns, sFCluster), &v1alpha1.SFCluster{})
 
@@ -89,7 +91,7 @@ func (c *FakeSFClusters) Create(sFCluster *v1alpha1.SFCluster) (result *v1alpha1
 }
 
 // Update takes the representation of a sFCluster and updates it. Returns the server's representation of the sFCluster, and an error, if there is any.
-func (c *FakeSFClusters) Update(sFCluster *v1alpha1.SFCluster) (result *v1alpha1.SFCluster, err error) {
+func (c *FakeSFClusters) Update(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (result *v1alpha1.SFCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(sfclustersResource, c.ns, sFCluster), &v1alpha1.SFCluster{})
 
@@ -101,7 +103,7 @@ func (c *FakeSFClusters) Update(sFCluster *v1alpha1.SFCluster) (result *v1alpha1
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeSFClusters) UpdateStatus(sFCluster *v1alpha1.SFCluster) (*v1alpha1.SFCluster, error) {
+func (c *FakeSFClusters) UpdateStatus(ctx context.Context, sFCluster *v1alpha1.SFCluster, opts v1.UpdateOptions) (*v1alpha1.SFCluster, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(sfclustersResource, "status", c.ns, sFCluster), &v1alpha1.SFCluster{})
 
@@ -112,7 +114,7 @@ func (c *FakeSFClusters) UpdateStatus(sFCluster *v1alpha1.SFCluster) (*v1alpha1.
 }
 
 // Delete takes name of the sFCluster and deletes it. Returns an error if one occurs.
-func (c *FakeSFClusters) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeSFClusters) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(sfclustersResource, c.ns, name), &v1alpha1.SFCluster{})
 
@@ -120,15 +122,15 @@ func (c *FakeSFClusters) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeSFClusters) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(sfclustersResource, c.ns, listOptions)
+func (c *FakeSFClusters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(sfclustersResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.SFClusterList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched sFCluster.
-func (c *FakeSFClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.SFCluster, err error) {
+func (c *FakeSFClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SFCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(sfclustersResource, c.ns, name, pt, data, subresources...), &v1alpha1.SFCluster{})
 

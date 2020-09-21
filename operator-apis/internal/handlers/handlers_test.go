@@ -14,6 +14,8 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"github.com/gorilla/mux"
+	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -727,7 +729,21 @@ func deployTestResources(c client.Client, args *testArgs) error {
 				Description: "Deployment succeeded",
 			},
 		}
-		err := c.Create(context.TODO(), instance)
+		ns := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "sf-" + args.deploymentIDs[i],
+			},
+		}
+		err := c.Get(context.TODO(), types.NamespacedName{
+			Name: "sf-" + args.deploymentIDs[i],
+		}, ns)
+		if err != nil && apiErrors.IsNotFound(err) {
+			err := c.Create(context.TODO(), ns)
+			if err != nil {
+				return err
+			}
+		}
+		err = c.Create(context.TODO(), instance)
 		if err != nil {
 			return err
 		}
