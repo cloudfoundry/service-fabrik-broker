@@ -359,7 +359,7 @@ describe('#checkQuota', () => {
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
-    expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
+    let expectedQuotaValidityArgs = {
       subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
@@ -368,11 +368,10 @@ describe('#checkQuota', () => {
         reqMethod: 'PATCH',
         orgId: organization_guid
       },
-      data: {
-        instance_id: '54ce7ed5-d1ca-466d-b043-81de527c74c7',
-        ...req.body
-      }
-    }, false);
+      data: req.body
+    }
+    expectedQuotaValidityArgs.data.instance_id = '54ce7ed5-d1ca-466d-b043-81de527c74c7';
+    expect(checkQuotaValidityStub).to.have.been.calledWithExactly(expectedQuotaValidityArgs, false);
     getServiceStub.restore();
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());
