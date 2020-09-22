@@ -33,4 +33,9 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+  - package-ecosystem: "docker"
+    directory: "/operator-apis"
+    schedule:
+      interval: "weekly"
+      day: "monday"
    
