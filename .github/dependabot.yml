@@ -13,6 +13,16 @@ updates:
       - dependency-name: pkgcloud
       - dependency-name: dockerode
       - dependency-name: agenda
+  - package-ecosystem: "gomod"
+    directory: "/interoperator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+  - package-ecosystem: "gomod"
+    directory: "/operator-apis"
+    schedule:
+      interval: "weekly"
+      day: "monday"
   - package-ecosystem: "docker"
     directory: "/broker"
     schedule:

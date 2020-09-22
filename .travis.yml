@@ -71,7 +71,6 @@ matrix:
         - go get -v honnef.co/go/tools/cmd/staticcheck
       install:
         - cd interoperator
-        - PKGS=$(go list ./... | grep -v /vendor/)
         - env GO111MODULE=on go mod download
         - cd ../webhooks
         - dep ensure -v
@@ -81,6 +80,7 @@ matrix:
         - env GO111MODULE=on go fmt ./api/... ./controllers/... ./internal/... ./pkg/... ./
         - env GO111MODULE=on go vet ./api/... ./controllers/... ./internal/... ./pkg/... ./
         - env GO111MODULE=on golint ./api/... ./controllers/... ./internal/... ./pkg/... ./
+        - PKGS=$(go list ./... | grep -v /vendor/)
         - staticcheck $PKGS
         - popd
         - pushd webhooks
@@ -92,6 +92,8 @@ matrix:
         - go fmt ./internal/...
         - go vet ./internal/...
         - golint ./internal/...
+        - PKGS=$(go list ./... | grep -v /vendor/)
+        - staticcheck $PKGS
         - popd
     - language: node_js
       node_js:
