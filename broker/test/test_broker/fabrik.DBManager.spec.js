@@ -467,6 +467,10 @@ describe('fabrik', function () {
             .then(out => {
               taskId = out.task_id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
+              // validStatesDuringCreation can be bind_in_progress as well due to added delay of fetching it from ApiServer
+              const validStatesDuringCreation = [CONST.DB.STATE.TB_INIT, CONST.DB.STATE.BIND_IN_PROGRESS];	
+              expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);	
+              // Can be any one of the state
             })
             .then(() => Promise.delay(10))
             .then(() => {
