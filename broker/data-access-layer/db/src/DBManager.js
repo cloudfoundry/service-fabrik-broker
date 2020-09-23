@@ -259,7 +259,10 @@ class DBManager {
     this.dbState = CONST.DB.STATE.BIND_IN_PROGRESS;
     return this
       .getDbBindInfo()
-      .then(() => this.initialize())
+      .then(() => {
+        this.dbState = CONST.DB.STATE.TB_INIT;
+        return this.initialize();
+      })
       .catch(NotFound, () => {
         return this
           .directorService
@@ -280,7 +283,10 @@ class DBManager {
               minDelay: 5000
             });
           })
-          .then(() => this.initialize());
+          .then(() => {
+            this.dbState = CONST.DB.STATE.TB_INIT;
+            return this.initialize();
+          });
       })
       .catch(err => {
         this.dbState = CONST.DB.STATE.BIND_FAILED;
