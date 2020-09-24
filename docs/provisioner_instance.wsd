@@ -1,0 +1,73 @@
+@startuml
+!pragma teoz true
+skinparam monochrome false
+skinparam sequenceMessageAlign center
+skinparam handwritten false
+skinparam BoxPadding 30
+autoactivate off
+
+title Service Fabrik Provisioner SFServiceInstance Controller 
+
+participant MCD_SFServiceInstance_Replicator
+box "Master Cluster" #lightgreen
+    control MCD_SFServiceInstance_Replicator
+end box
+box "Sister Cluster" #LightBlue
+    collections APIServer
+    control SFServiceInstance_Controller
+end box
+
+MCD_SFServiceInstance_Replicator -> APIServer : Create SFServiceInstance
+APIServer -> SFServiceInstance_Controller ++: Watch event (SFServiceInstance)
+SFServiceInstance_Controller -> APIServer : Get SFServiceInstance
+APIServer --> SFServiceInstance_Controller : SFServiceInstance
+SFServiceInstance_Controller -> SFServiceInstance_Controller : Get Cluster ID
+
+alt #transparent Cluster ID Not set or Cluster ID not equal to Own Cluster ID
+    SFServiceInstance_Controller --> SFServiceInstance_Controller : Return
+else Cluster ID is Own Cluster ID
+    alt #transparent Deletion timestamp is not set\n and finalizer not present
+        SFServiceInstance_Controller -> APIServer : Add Finalizer
+    end
+    alt #transparent Deletion timestamp is set \nand state is delete
+        SFServiceInstance_Controller -> APIServer : Trigger delete of all subresources
+        SFServiceInstance_Controller -> APIServer : Set state as in_progress and \nset lastoperation as delete
+    else state is in_queue/update
+        SFServiceInstance_Controller -> SFServiceInstance_Controller : Render provision template
+        SFServiceInstance_Controller -> SFServiceInstance_Controller : Add owner ref to rendered resources
+        SFServiceInstance_Controller -> APIServer : Reconcile rendered resources
+        SFServiceInstance_Controller -> APIServer : Set state as in_progress and \nset lastoperation as in_queue/update
+    end
+    
+    SFServiceInstance_Controller -> APIServer : Get SFServiceInstance
+    APIServer --> SFServiceInstance_Controller : SFServiceInstance
+    alt #transparent State is in_progress
+        alt #transparent lastOperation is delete
+            SFServiceInstance_Controller -> SFServiceInstance_Controller : Render status template
+            SFServiceInstance_Controller -> APIServer : Get SFServiceInstance
+            APIServer --> SFServiceInstance_Controller : SFServiceInstance
+            alt #transparent state not equal to in_progress
+                SFServiceInstance_Controller -> SFServiceInstance_Controller : Return error
+            end
+            SFServiceInstance_Controller -> SFServiceInstance_Controller : Update status from the status template
+            SFServiceInstance_Controller -> APIServer : Fetch all the reources in the ResouceArray
+            SFServiceInstance_Controller -> SFServiceInstance_Controller : Remove resource which are not found from ResouceArray
+            alt #transparent rendered state is succeeded or \nno resource are remaining
+                SFServiceInstance_Controller -> SFServiceInstance_Controller : Set state as succeeded
+                SFServiceInstance_Controller -> SFServiceInstance_Controller : Remove finalizer
+            end
+            SFServiceInstance_Controller -> APIServer : Update status
+        else lastOperation is in_queue/update
+            SFServiceInstance_Controller -> SFServiceInstance_Controller : Render status template
+            SFServiceInstance_Controller -> APIServer : Get SFServiceInstance
+            APIServer --> SFServiceInstance_Controller : SFServiceInstance
+            alt #transparent state not equal to in_progress
+                SFServiceInstance_Controller -> SFServiceInstance_Controller : Return error
+            end
+            SFServiceInstance_Controller -> SFServiceInstance_Controller : Update status from the status template
+            SFServiceInstance_Controller -> APIServer --: Update status
+        end
+    end
+end
+deactivate MCD_SFServiceInstance_Replicator
+@enduml
