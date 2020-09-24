@@ -28,20 +28,34 @@ alt #transparent Cluster ID Not set
 else Cluster ID is master Cluster
     MCD_SFServiceInstance_Replicator --> MCD_SFServiceInstance_Replicator : Return
 else Cluster ID is a diffent Cluster
-    MCD_SFServiceInstance_Replicator -> APIServer2 : Create Namepace if deletion not triggered
-    MCD_SFServiceInstance_Replicator -> APIServer2 : Trigger delete SFServiceInstance if deletion is \n triggered in master and state is delete
+    alt #transparent If SFServiceInstance deletion timestamp is set\n and ns is deleting/deleted in master
+        MCD_SFServiceInstance_Replicator -> APIServer2 : Delete Namepace
+    else SFServiceInstance deletion timestamp not set\n and NS not exist in sister
+        MCD_SFServiceInstance_Replicator -> APIServer2 : Create Namepace
+    end
+    alt #transparent If SFServiceInstance deletion timestamp is \nset and state is delete in master
+        MCD_SFServiceInstance_Replicator -> APIServer2 : Trigger delete SFServiceInstance
+    end
     alt #transparent State is in_queue/update/delete in master
-        MCD_SFServiceInstance_Replicator -> APIServer2 : Replicate from master to sister
-        MCD_SFServiceInstance_Replicator -> APIServer : Set state as in_progress
+        alt #transparent If SFServiceInstance not found in sister\n and state is not delete in master
+            MCD_SFServiceInstance_Replicator -> APIServer2 : Create SFServiceInstance in sister from master
+        end
+        alt #transparent If SFServiceInstance found in sister
+            MCD_SFServiceInstance_Replicator -> APIServer2 : Update SFServiceInstance in sister from master
+        end
+        MCD_SFServiceInstance_Replicator -> APIServer : Set state as in_progress in master and \nset lastoperation as the previous state
     end
     alt #transparent State is in_progress in master
         MCD_SFServiceInstance_Replicator -> APIServer2 : Get SFServiceInstance
         APIServer2 --> MCD_SFServiceInstance_Replicator : SFServiceInstance
-        MCD_SFServiceInstance_Replicator -> APIServer : Replicate from sister to master
-
-        alt #transparent State is succeed in sister and last opertion is delete
-            MCD_SFServiceInstance_Replicator -> APIServer2 : Trigger deletion of namespace
+        alt #transparent If SFServiceInstance not found in sister\n and state is delete in master
+            MCD_SFServiceInstance_Replicator -> MCD_SFServiceInstance_Replicator : Set SFServiceInstance state as succeeded
+        else if state is sister is in_queue/update/delete
+            MCD_SFServiceInstance_Replicator --> MCD_SFServiceInstance_Replicator : Return
+        else
+            MCD_SFServiceInstance_Replicator --> MCD_SFServiceInstance_Replicator : Copy SFServiceInstance from sister to master
         end
+        MCD_SFServiceInstance_Replicator -> APIServer --: Update SFServiceInstance in master
     end
 end
 deactivate MCD_SFServiceInstance_Replicator
