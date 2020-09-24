@@ -6,10 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/config"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-var log = ctrl.Log.WithName("handler")
 
 // Middlewares represents a set of functions to provide supporting middlewares for operator apis
 type Middlewares struct {
