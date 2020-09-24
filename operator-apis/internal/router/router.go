@@ -5,10 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/handlers"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/middlewares"
 	"github.com/gorilla/mux"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-var log = ctrl.Log.WithName("router")
 
 // GetOperatorApisRouter sets up and returns router for Admin Application
 func GetOperatorApisRouter(appConfig *config.OperatorApisConfig) (*mux.Router, error) {

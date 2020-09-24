@@ -27,7 +27,7 @@ type OperatorApisHandler struct {
 // NewOperatorApisHandler returns OperatorApisHandler using given configuration
 func NewOperatorApisHandler(appConfig *config.OperatorApisConfig) (*OperatorApisHandler, error) {
 	if appConfig == nil {
-		return nil, errors.New("Configuration was not passed while initializing handler")
+		return nil, errors.New("configuration was not passed while initializing handler")
 	}
 	return &OperatorApisHandler{
 		appConfig: appConfig,
