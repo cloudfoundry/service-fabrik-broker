@@ -375,8 +375,7 @@ describe('fabrik', function () {
         deferred.reject(new NotFound('Deployment not found'));
         return Promise.delay(2).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
-          expect(loggerWarnSpy).to.be.calledOnce;
-          expect(loggerWarnSpy.firstCall.args[1] instanceof NotFound).to.eql(true); let taskId;
+          let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
             .tap(() => bindPropertyFoundOnApiServer = true)
@@ -398,8 +397,6 @@ describe('fabrik', function () {
         deferred.reject(new NotFound('Deployment not found'));
         return Promise.delay(2).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
-          expect(loggerWarnSpy).to.be.calledOnce;
-          expect(loggerWarnSpy.firstCall.args[1] instanceof NotFound).to.eql(true);
           let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
@@ -424,7 +421,6 @@ describe('fabrik', function () {
         deferred.reject(new NotFound('Deployment not found'));
         return Promise.delay(5).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
-          expect(loggerWarnSpy).not.to.be.called;
           expect(dbInitializeForCreateSpy).called;
           let taskId;
           errorsWithApiServer = false;
@@ -471,8 +467,9 @@ describe('fabrik', function () {
             .then(out => {
               taskId = out.task_id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
-              const validStatesDuringCreation = [CONST.DB.STATE.TB_INIT];
-              expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);
+              // validStatesDuringCreation can be bind_in_progress as well due to added delay of fetching it from ApiServer
+              const validStatesDuringCreation = [CONST.DB.STATE.TB_INIT, CONST.DB.STATE.BIND_IN_PROGRESS];	
+              expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);	
               // Can be any one of the state
             })
             .then(() => Promise.delay(10))

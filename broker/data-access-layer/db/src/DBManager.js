@@ -38,6 +38,7 @@ class DBManager {
   constructor() {
     this.dbInitialized = false;
     this.bindInfo = undefined;
+    this.dbState = CONST.DB.STATE.TB_INIT;
     this.initialize();
   }
 
@@ -51,7 +52,6 @@ class DBManager {
       if (_.get(config, 'mongodb.provision.plan_id') !== undefined && _.get(config, 'mongodb.provision.network_index') === undefined) {
         logger.warn('Plan Id is defined. Must also define network segment index where mongodb is to be deployed, else DB create/update will fail');
       }
-      this.dbState = CONST.DB.STATE.TB_INIT;
       this.director = bosh.director;
       if (_.get(config, 'mongodb.provision.plan_id') !== undefined) {
         logger.info(`ServiceFabrik configured to use mongo plan: ${config.mongodb.provision.plan_id}`);
@@ -79,9 +79,6 @@ class DBManager {
         return this.initDb(config.mongodb);
       }
     })
-      .catch(NotFound , err => {
-        logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
-      })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
         logger.info(`Will attempt to reinitalize DB Manager after ${config.mongodb.retry_connect.min_delay} (ms)`);
@@ -114,9 +111,6 @@ class DBManager {
       throw err.error;
     }
     return Promise.try(() => {
-      if (this.bindInfo) {
-        return this.bindInfo;
-      }
       return commonFunctions.retry(tries => {
         logger.debug(`+-> Attempt ${tries + 1} to get db binding from apiserver`);
         return apiServerClient.getResource({
@@ -265,7 +259,10 @@ class DBManager {
     this.dbState = CONST.DB.STATE.BIND_IN_PROGRESS;
     return this
       .getDbBindInfo()
-      .then(() => this.initialize())
+      .then(() => {
+        this.dbState = CONST.DB.STATE.TB_INIT;
+        return this.initialize();
+      })
       .catch(NotFound, () => {
         return this
           .directorService
@@ -286,7 +283,10 @@ class DBManager {
               minDelay: 5000
             });
           })
-          .then(() => this.initialize());
+          .then(() => {
+            this.dbState = CONST.DB.STATE.TB_INIT;
+            return this.initialize();
+          });
       })
       .catch(err => {
         this.dbState = CONST.DB.STATE.BIND_FAILED;
