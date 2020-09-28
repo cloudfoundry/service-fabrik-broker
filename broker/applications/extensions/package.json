@@ -57,7 +57,7 @@
     "pubsub-js": "1.8.0",
     "pug": "3.0.0",
     "request": "2.88.2",
-    "riemannjs": "1.0.1",
+    "riemann": "2.0.0",
     "rxjs": "5.0.0",
     "session-file-store": "1.4.0",
     "ssh2": "0.8.9",
