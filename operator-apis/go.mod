@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator v0.0.0-20200714073818-30941c89fc78
-	github.com/go-logr/logr v0.1.0
+	github.com/go-logr/logr v0.2.1
 	github.com/gorilla/mux v1.7.4
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
