@@ -29,6 +29,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -348,6 +349,7 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 	}
 	type args struct {
 		instance *osbv1alpha1.SFServiceInstance
+		state    string
 	}
 	tests := []struct {
 		name    string
@@ -360,33 +362,79 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 			name: "Set the state to in progress",
 			args: args{
 				instance: instance,
+				state:    "in_queue",
 			},
 			setup: func() {
 				instance.SetResourceVersion("")
 				instance.SetState("in_queue")
+				instance.SetLabels(nil)
 				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 			},
 			wantErr: false,
 			cleanup: func() {
 				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
 				g.Expect(instance.GetState()).To(gomega.Equal("in progress"))
+				g.Expect(instance.GetLabels()).To(gomega.HaveKeyWithValue(constants.LastOperationKey, "in_queue"))
 				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-				g.Expect(c.Get(context.TODO(), instanceKey, instance)).To(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
+			},
+		},
+		{
+			name: "Not Set the state to in progress if state is different",
+			args: args{
+				instance: instance,
+				state:    "in_queue",
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("update")
+				instance.SetLabels(nil)
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+			},
+			wantErr: false,
+			cleanup: func() {
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance.GetState()).NotTo(gomega.Equal("in progress"))
+				g.Expect(instance.GetLabels()).NotTo(gomega.HaveKeyWithValue(constants.LastOperationKey, "in_queue"))
+				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
 			},
 		},
 		{
 			name: "fail if instance is gone",
 			args: args{
 				instance: instance,
+				state:    "in_queue",
 			},
 			setup: func() {
-				instance.SetResourceVersion("")
-				instance.SetState("in_queue")
-				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-
-				//Modify it on api server and pass outdated value
-				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
-				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
 			},
 			wantErr: true,
 		},
@@ -399,7 +447,7 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup()
 			}
-			if err := r.setInProgress(tt.args.instance); (err != nil) != tt.wantErr {
+			if err := r.setInProgress(tt.args.instance, tt.args.state); (err != nil) != tt.wantErr {
 				t.Errorf("InstanceReplicator.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

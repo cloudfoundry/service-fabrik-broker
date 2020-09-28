@@ -153,7 +153,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		err = targetClient.Get(ctx, req.NamespacedName, replica)
 		if err != nil {
 			if apiErrors.IsNotFound(err) && state != "delete" {
-				copyObject(instance, replica)
+				copyObject(instance, replica, true)
 				err = targetClient.Create(ctx, replica)
 				if err != nil {
 					log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
@@ -167,7 +167,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{}, err
 			}
 		} else {
-			copyObject(instance, replica)
+			copyObject(instance, replica, true)
 			err = targetClient.Update(ctx, replica)
 			if err != nil {
 				log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
@@ -178,7 +178,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			return r.setInProgress(instance)
+			return r.setInProgress(instance, state)
 		})
 		if err != nil {
 			return ctrl.Result{}, err
@@ -228,7 +228,7 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 				return ctrl.Result{}, nil
 			}
-			copyObject(replica, instance)
+			copyObject(replica, instance, false)
 			log.Info("copying sfserviceinstance from target cluster to master", "state", state, "lastOperation", lastOperation,
 				"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 		}
@@ -315,9 +315,8 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 	return nil
 }
 
-func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance) error {
+func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance, state string) error {
 	instanceID := instance.GetName()
-	state := instance.GetState()
 	clusterID, _ := instance.GetClusterID()
 	labels := instance.GetLabels()
 	if labels == nil {
@@ -341,7 +340,13 @@ func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstan
 		return err
 	}
 
-	state = instance.GetState()
+	curentState := instance.GetState()
+	if curentState != state {
+		log.Info("Error while trying to set in progress. state mismatch", "state", state,
+			"currentState", curentState, "lastOperation", lastOperation)
+		// Will get requeued since a change has happened
+		return nil
+	}
 	instance.SetState("in progress")
 	labels = instance.GetLabels()
 	if labels == nil {
@@ -360,13 +365,22 @@ func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstan
 	return nil
 }
 
-func copyObject(source, destination *osbv1alpha1.SFServiceInstance) {
+func copyObject(source, destination *osbv1alpha1.SFServiceInstance, preserveResources bool) {
 	destination.SetName(source.GetName())
 	destination.SetNamespace(source.GetNamespace())
 	destination.SetLabels(source.GetLabels())
 	destination.SetAnnotations(source.GetAnnotations())
 	source.Spec.DeepCopyInto(&destination.Spec)
-	source.Status.DeepCopyInto(&destination.Status)
+
+	// Do not overwrite resources array in sister cluster
+	if preserveResources {
+		resources := make([]osbv1alpha1.Source, len(destination.Status.Resources))
+		copy(resources, destination.Status.Resources)
+		source.Status.DeepCopyInto(&destination.Status)
+		destination.Status.Resources = resources
+	} else {
+		source.Status.DeepCopyInto(&destination.Status)
+	}
 }
 
 // SetupWithManager registers the MCD Instance replicator with manager
