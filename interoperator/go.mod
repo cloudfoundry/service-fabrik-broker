@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/sprig/v3 v3.0.2
 	github.com/go-logr/logr v0.1.0
-	github.com/golang/mock v1.2.0
+	github.com/golang/mock v1.4.4
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/prometheus/client_golang v1.7.1
