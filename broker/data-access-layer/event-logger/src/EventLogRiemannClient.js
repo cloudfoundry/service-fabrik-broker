@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const riemannClient = require('riemannjs');
+const riemannClient = require('riemann');
 const pubsub = require('pubsub-js');
 
 const logger = require('@sf/logger');
