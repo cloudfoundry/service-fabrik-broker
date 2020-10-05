@@ -2,8 +2,8 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const middleware = proxyquire('../../applications/osb-broker/src/api-controllers/middleware', {
-  'basic-auth': function (req) {
+const middleware = proxyquire('../src/api-controllers/middleware', {
+    'basic-auth': function (req) {
     return req.auth;
   }
 });
@@ -16,8 +16,8 @@ const {
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
-const ServiceFabrikApiController = require('../../applications/extensions/src/api-controllers/ServiceFabrikApiController');
-const QuotaClient = require('../../applications/osb-broker/src/api-controllers/middleware/QuotaClient');
+const ServiceFabrikApiController = require('../../extensions/src/api-controllers/ServiceFabrikApiController');
+const QuotaClient = require('../src/api-controllers/middleware/QuotaClient');
 const PROMISE_WAIT_SIMULATED_DELAY = 30;
 
 class Response {
@@ -44,22 +44,22 @@ describe('#timeout', function () {
   before(function () {
     getInfoStub = sinon.stub(ServiceFabrikApiController.prototype, 'getInfo');
     config.http_timeout = 10;
-    delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
-    app = require('./support/apps').external;
+    delete require.cache[require.resolve('../../../test/test_broker/support/apps')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers')];
+    app = require('../../../test/test_broker/support/apps').external;
   });
   after(function () {
     config.http_timeout = original_http_timeout;
     getInfoStub.restore();
-    delete require.cache[require.resolve('./support/apps')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers/routes/api/v1')];
-    delete require.cache[require.resolve('../../applications/extensions/src/api-controllers')];
-    app = require('./support/apps').external;
+    delete require.cache[require.resolve('../../../test/test_broker/support/apps')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../extensions/src/api-controllers')];
+    app = require('../../../test/test_broker/support/apps').external;
   });
   it('should return 503 after timeout occurs', function () {
     return chai.request(app)
@@ -359,7 +359,7 @@ describe('#checkQuota', () => {
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.called;
-    let expectedQuotaValidityArgs = {
+    expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
         planId: validQuotaPlanId,
@@ -368,10 +368,11 @@ describe('#checkQuota', () => {
         reqMethod: 'PATCH',
         orgId: organization_guid
       },
-      data: req.body
-    }
-    expectedQuotaValidityArgs.data.instance_id = '54ce7ed5-d1ca-466d-b043-81de527c74c7';
-    expect(checkQuotaValidityStub).to.have.been.calledWithExactly(expectedQuotaValidityArgs, false);
+      data: {
+        instance_id: '54ce7ed5-d1ca-466d-b043-81de527c74c7',
+        ...req.body
+      }
+    }, false);
     getServiceStub.restore();
     return Promise.delay(PROMISE_WAIT_SIMULATED_DELAY)
       .then(() => expect(next).to.have.been.calledOnce.calledWithExactly());

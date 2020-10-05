@@ -6,7 +6,8 @@ const {
   CONST
 } = require('@sf/common-utils');
 
-const QuotaClient = require('../../applications/osb-broker/src/api-controllers/middleware/QuotaClient');
+const QuotaClient = require('../src/api-controllers/middleware/QuotaClient');
+
 
 describe('#QuotaClient', () => {
   let requestStub;
@@ -28,9 +29,11 @@ describe('#QuotaClient', () => {
       }
     };
   });
+  
   afterEach(() => {
     requestStub.restore();
   });
+  
   it('should make appropriate call for instance based quota', async () => {
     requestStub.resolves({body: { quotaValidStatus: 0}});
     const { quotaValid } = await quotaClient.checkQuotaValidity(reqOptions, true);
