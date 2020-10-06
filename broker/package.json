@@ -58,6 +58,7 @@
     "mocha": "^2.5.3",
     "mocha-lcov-reporter": "^1.3.0",
     "nock": "^13.0.4",
+    "nyc": "^15.1.0",
     "prettier": "1.16.4",
     "prettier-eslint": "8.8.2",
     "prettier-eslint-cli": "4.7.1",
@@ -79,6 +80,9 @@
     "test-ci": "./test/init test-ci",
     "test-cov": "./test/init test-cov",
     "test-coverall": "./test/init test-coverall"
+  },
+  "nyc": {
+    "exclude": ["applications/**/test/*.js", "applications/**/test/**/*.js", "test/**/*.js"]
   },
   "dependencies": {
     "@sf/admin": "file:applications/admin",
