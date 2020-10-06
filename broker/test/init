@@ -6,7 +6,7 @@ test_broker(){
     case $1 in 
         "test")             _mocha "test/test_broker/**/*.js" "applications/**/test/*.js" "applications/**/test/**/*.js" --opts test/test_broker/mocha_broker.opts;;
         "test-ci")          nyc --reporter=cobertura --reporter=text-summary mocha "test/test_broker/**/*.js" "applications/**/test/*.js" "applications/**/test/**/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-coverall")    nyc --reporter=lcov --reporter=text-summary mocha "test/test_broker/**/*.js" "applications/**/test/*.js" "applications/**/test/**/*.js" --opts test/test_broker/mocha_broker.opts && nyc report --reporter=text-lcov | coveralls;;
+        "test-coverall")    nyc --reporter=lcovonly --reporter=text-summary mocha "test/test_broker/**/*.js" "applications/**/test/*.js" "applications/**/test/**/*.js" --opts test/test_broker/mocha_broker.opts;;
         "test-cov")         nyc --reporter=lcov --reporter=text-summary mocha "test/test_broker/**/*.js" "applications/**/test/*.js" "applications/**/test/**/*.js" --opts test/test_broker/mocha_broker.opts;;
     esac
     rm -Rf .nyc_output/
