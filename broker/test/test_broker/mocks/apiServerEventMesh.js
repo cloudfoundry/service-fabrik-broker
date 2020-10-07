@@ -104,7 +104,7 @@ function nockGetCrd(resourceGroup, resourceType, response, times, expectedStatus
 
 function nockCreateResource(resourceGroup, resourceType, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`, verifier)
+    .post(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`, _.matches(verifier))
     .times(times || 1)
     .reply(expectedStatusCode || 201, response);
 }
@@ -121,7 +121,9 @@ function nockPatchResource(resourceGroup, resourceType, id, response, times, pay
         'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
       }
     })
-    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, payload)
+    .patch(
+      `/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, _.matches(payload)
+    )
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }

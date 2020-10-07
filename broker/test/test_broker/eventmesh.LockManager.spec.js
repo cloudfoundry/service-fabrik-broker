@@ -290,7 +290,6 @@ describe('eventmesh', () => {
       it('should successfully unlock resource in first try given lockId', () => {
         const payload1 = {
           metadata: {
-            resourceVersion: samplelock6.metadata.resourceVersion,
             labels: {
               state: CONST.APISERVER.RESOURCE_STATE.UNLOCKED
             }
@@ -299,18 +298,19 @@ describe('eventmesh', () => {
             state: CONST.APISERVER.RESOURCE_STATE.UNLOCKED
           }
         };
-        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock6', samplelock6, 1, payload1);
-        return lockManager.unlock('samplelock6', samplelock6.metadata.resourceVersion)
+        const lockId = samplelock4.metadata.resourceVersion;
+        if (lockId) {
+          // update payload, if lockId is available
+          payload1.metadata.resourceVersion = lockId;
+        }
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock4', samplelock4, 1, payload1);
+        return lockManager.unlock('samplelock4', lockId)
           .then(() => {
             mocks.verify();
           });
       });
       it('should successfully unlock resource in first try if lock is not found', () => {
-        const payload1 = {
-          metadata: {
-            resourceVersion: samplelock6.metadata.resourceVersion
-          }
-        };
+        const payload1 = {};
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock6', samplelock6, 1, payload1, 404);
         return lockManager.unlock('samplelock6', samplelock6.metadata.resourceVersion)
           .then(() => {
@@ -318,11 +318,7 @@ describe('eventmesh', () => {
           });
       });
       it('should successfully unlock resource in first try if apiserver returns conflict', () => {
-        const payload1 = {
-          metadata: {
-            resourceVersion: samplelock6.metadata.resourceVersion
-          }
-        };
+        const payload1 = {};
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock6', samplelock6, 1, payload1, 409);
         return lockManager.unlock('samplelock6', samplelock6.metadata.resourceVersion)
           .then(() => {

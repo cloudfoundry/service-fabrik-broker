@@ -176,12 +176,9 @@ function getServicePlans(broker_guid, plan_guid, plan_unique_id) {
     });
 }
 
-function getSpaces(broker_guid, space_guid) {
+function getSpaces(space_guid) {
   return nock(cloudControllerUrl)
     .get('/v2/spaces')
-    .query({
-      q: `service_broker_guid:${broker_guid}`
-    })
     .reply(200, {
       resources: [{
         metadata: {
@@ -192,12 +189,9 @@ function getSpaces(broker_guid, space_guid) {
     });
 }
 
-function getOrganizations(broker_guid, org_guid) {
+function getOrganizations(org_guid) {
   return nock(cloudControllerUrl)
     .get('/v2/organizations')
-    .query({
-      q: `service_broker_guid:${broker_guid}`
-    })
     .reply(200, {
       resources: [{
         metadata: {

@@ -42,12 +42,12 @@ exports.jwtTokenOtherUser = jwtTokenOtherUser;
 
 function getAccessToken() {
   return nock(tokenEndpointUrl)
-    .post('/oauth/token', {
+    .post('/oauth/token', _.matches({
       grant_type: 'password',
       client_id: 'cf',
       username: 'admin',
       password: 'admin'
-    })
+    }))
     .reply(200, {
       access_token: jwtToken,
       refresh_token: jwtToken,
@@ -64,11 +64,11 @@ function getAccessTokenWithAuthorizationCode(service_id) {
       authorization: `Basic ${basicAuth}`
     }
   })
-    .post('/oauth/token', {
+    .post('/oauth/token', _.matches({
       grant_type: 'authorization_code',
       code: authorizationCode,
       redirect_uri: redirect_uri
-    })
+    }))
     .reply(200, {
       access_token: jwtToken,
       refresh_token: jwtToken,
