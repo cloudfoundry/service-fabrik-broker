@@ -29,7 +29,6 @@ import (
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -327,6 +326,187 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ReconcileSFServiceInstance.handleError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReconcileSFServiceInstance_setInProgress(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var instance = &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "instance-id",
+			Namespace: constants.InteroperatorNamespace,
+		},
+		Spec: osbv1alpha1.SFServiceInstanceSpec{
+			ServiceID:        "service-id",
+			PlanID:           "plan-id",
+			RawContext:       nil,
+			OrganizationGUID: "organization-guid",
+			SpaceGUID:        "space-guid",
+			RawParameters:    nil,
+			PreviousValues:   nil,
+		},
+		Status: osbv1alpha1.SFServiceInstanceStatus{
+			State: "in_queue",
+		},
+	}
+	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
+	subResource := osbv1alpha1.Source{
+		APIVersion: "foo",
+		Kind:       "bar",
+		Name:       "subresource",
+		Namespace:  constants.InteroperatorNamespace,
+	}
+
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: "0",
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
+
+	r := &ReconcileSFServiceInstance{
+		Client:          c,
+		Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
+		scheme:          mgr.GetScheme(),
+		clusterRegistry: mockClusterRegistry,
+		resourceManager: mockResourceManager,
+	}
+
+	type args struct {
+		namespacedName types.NamespacedName
+		state          string
+		resources      []osbv1alpha1.Source
+		retryCount     int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		setup   func()
+		cleanup func()
+	}{
+		{
+			name: "Set the state to in progress",
+			args: args{
+				namespacedName: instanceKey,
+				state:          "in_queue",
+				resources: []osbv1alpha1.Source{
+					subResource,
+				},
+				retryCount: 0,
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("in_queue")
+				instance.SetLabels(nil)
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					return c.Get(context.TODO(), instanceKey, instance)
+				}, timeout).Should(gomega.Succeed())
+			},
+			wantErr: false,
+			cleanup: func() {
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance.GetState()).To(gomega.Equal("in progress"))
+				g.Expect(instance.GetLabels()).To(gomega.HaveKeyWithValue(constants.LastOperationKey, "in_queue"))
+				g.Expect(instance.Status.Resources).To(gomega.ContainElement(subResource))
+				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
+			},
+		},
+		{
+			name: "Not set state to in progress if current state is different",
+			args: args{
+				namespacedName: instanceKey,
+				state:          "in_queue",
+				resources: []osbv1alpha1.Source{
+					subResource,
+				},
+				retryCount: 0,
+			},
+			setup: func() {
+				instance.SetResourceVersion("")
+				instance.SetState("update")
+				instance.SetLabels(nil)
+				g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					return c.Get(context.TODO(), instanceKey, instance)
+				}, timeout).Should(gomega.Succeed())
+			},
+			wantErr: false,
+			cleanup: func() {
+				g.Expect(c.Get(context.TODO(), instanceKey, instance)).NotTo(gomega.HaveOccurred())
+				g.Expect(instance.GetState()).NotTo(gomega.Equal("in progress"))
+				g.Expect(instance.GetLabels()).NotTo(gomega.HaveKeyWithValue(constants.LastOperationKey, "in_queue"))
+				g.Expect(instance.Status.Resources).To(gomega.ContainElement(subResource))
+				g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
+			},
+		},
+		{
+			name: "fail if instance is gone",
+			args: args{
+				namespacedName: instanceKey,
+				state:          "in_queue",
+				resources: []osbv1alpha1.Source{
+					subResource,
+				},
+				retryCount: 0,
+			},
+			setup: func() {
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), instanceKey, instance)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("not deleted")
+				}, timeout).Should(gomega.Succeed())
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			if tt.cleanup != nil {
+				defer tt.cleanup()
+			}
+			if err := r.setInProgress(tt.args.namespacedName, tt.args.state, tt.args.resources, tt.args.retryCount); (err != nil) != tt.wantErr {
+				t.Errorf("ReconcileSFServiceInstance.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

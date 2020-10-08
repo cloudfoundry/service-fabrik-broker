@@ -244,7 +244,6 @@ func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.Namespac
 			return err
 		}
 
-		instance.SetState("in progress")
 		labels := instance.GetLabels()
 		if labels == nil {
 			labels = make(map[string]string)
@@ -256,7 +255,15 @@ func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.Namespac
 		}
 
 		labels[constants.LastOperationKey] = state
-		instance.SetLabels(labels)
+
+		// Do not update state if another operation happend in between
+		if state == instance.GetState() {
+			instance.SetState("in progress")
+			instance.SetLabels(labels)
+		} else {
+			log.Info("Error while trying to set in progress. state mismatch", "state", state,
+				"currentState", instance.GetState(), "lastOperation", lastOperation)
+		}
 		instance.Status.Resources = resources
 
 		newState := instance.GetState()
