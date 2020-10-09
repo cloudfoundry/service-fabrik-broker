@@ -1,5 +1,6 @@
 'use strict';
 
+require("../../../../test/test_broker/acceptance/dashboard.director.spec.js");
 const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../../../../test/test_broker/support/apps').internal;
