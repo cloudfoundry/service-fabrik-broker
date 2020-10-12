@@ -2,6 +2,9 @@
 
 const api = require('../../applications/osb-broker/src/api-controllers').serviceBrokerApi;
 const {
+  commonFunctions: {
+    isValidKubernetesName
+  },
   errors: {
     PreconditionFailed,
     ContinueWithNext
@@ -69,6 +72,38 @@ describe('fabrik', function () {
           .catch(err => expect(err).to.be.instanceof(ContinueWithNext));
       });
 
+    });
+
+    describe('#getKubernetesName', function () {
+      it('should return the same name if the name is valid', function () {
+        const str = 'abcd.1234-efgh';
+        expect(isValidKubernetesName(str)).to.be.true;
+        expect(api.getKubernetesName(str)).to.eql(str);
+      });
+
+      it('should return a valid name if it is invalid starting with -', function () {
+        const str = '-abcd1234';
+        expect(isValidKubernetesName(str)).to.be.false;
+        const res = api.getKubernetesName(str)
+        expect(res).not.to.eql(str);
+        expect(isValidKubernetesName(res)).to.be.true;
+      });
+
+      it('should return a valid name if it is invalid starting with .', function () {
+        const str = '.abcd1234';
+        expect(isValidKubernetesName(str)).to.be.false;
+        const res = api.getKubernetesName(str)
+        expect(res).not.to.eql(str);
+        expect(isValidKubernetesName(res)).to.be.true;
+      });
+
+      it('should return a valid name if it is invalid with upper case', function () {
+        const str = 'abcD.1234';
+        expect(isValidKubernetesName(str)).to.be.false;
+        const res = api.getKubernetesName(str)
+        expect(res).not.to.eql(str);
+        expect(isValidKubernetesName(res)).to.be.true;
+      });
     });
   });
 });

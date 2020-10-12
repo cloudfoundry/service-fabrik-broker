@@ -21,6 +21,8 @@ exports.compareVersions = compareVersions;
 exports.encodeBase64 = encodeBase64;
 exports.decodeBase64 = decodeBase64;
 exports.uuidV4 = uuidV4;
+exports.sha224Sum = sha224Sum;
+exports.isValidKubernetesName = isValidKubernetesName;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
 exports.streamToPromise = streamToPromise;
 exports.isFeatureEnabled = isFeatureEnabled;
@@ -110,6 +112,30 @@ function uuidV4() {
     .then(buffer => uuid.v4({
       random: buffer
     }));
+}
+
+function sha224Sum(str) {
+  const hash = crypto.createHash('sha224');
+  hash.update(str, 'utf8');
+  return hash.digest('hex');
+}
+
+function isValidKubernetesName(str) {
+  // "a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters,
+  // '-' or '.', and must start and end with an alphanumeric character"
+  const dns1123LabelFmt = '[a-z0-9]([-a-z0-9]*[a-z0-9])?';
+
+  const dns1123SubdomainFmt = dns1123LabelFmt + '(\\.' + dns1123LabelFmt + ')*';
+
+  // DNS1123SubdomainMaxLength is a subdomain's max length in DNS (RFC 1123)
+  const DNS1123SubdomainMaxLength = 253;
+
+  if (str.length <= 0 || str.length > DNS1123SubdomainMaxLength) {
+    return false;
+  }
+
+  const dns1123SubdomainRegexp = new RegExp('^' + dns1123SubdomainFmt + '$');
+  return dns1123SubdomainRegexp.test(str);
 }
 
 function isServiceFabrikOperation(params) {
