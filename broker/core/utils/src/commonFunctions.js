@@ -23,6 +23,7 @@ exports.decodeBase64 = decodeBase64;
 exports.uuidV4 = uuidV4;
 exports.sha224Sum = sha224Sum;
 exports.isValidKubernetesName = isValidKubernetesName;
+exports.isValidKubernetesLabelValue = isValidKubernetesLabelValue;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
 exports.streamToPromise = streamToPromise;
 exports.isFeatureEnabled = isFeatureEnabled;
@@ -136,6 +137,26 @@ function isValidKubernetesName(str) {
 
   const dns1123SubdomainRegexp = new RegExp('^' + dns1123SubdomainFmt + '$');
   return dns1123SubdomainRegexp.test(str);
+}
+
+// isValidKubernetesLabelValue tests whether the value passed is a valid label value.
+// a valid label must be an empty string or consist of alphanumeric characters, '-', '_' 
+// or '.', and must start and end with an alphanumeric character
+function isValidKubernetesLabelValue(value) {
+  const qnameCharFmt = '[A-Za-z0-9]';
+  const qnameExtCharFmt = '[-A-Za-z0-9_.]';
+  const qualifiedNameFmt = '(' + qnameCharFmt + qnameExtCharFmt + '*)?' + qnameCharFmt;
+  const labelValueFmt = '(' + qualifiedNameFmt + ')?';
+
+  // LabelValueMaxLength is a label's max length
+  const LabelValueMaxLength = 63;
+
+  const labelValueRegexp = new RegExp('^' + labelValueFmt + '$');
+
+  if (value.length > LabelValueMaxLength) {
+    return false;
+  }
+  return labelValueRegexp.test(value);
 }
 
 function isServiceFabrikOperation(params) {

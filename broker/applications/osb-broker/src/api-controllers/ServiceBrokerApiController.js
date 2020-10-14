@@ -14,6 +14,7 @@ const {
     encodeBase64,
     decodeBase64,
     isValidKubernetesName,
+    isValidKubernetesLabelValue,
     sha224Sum
   },
   errors: {
@@ -113,6 +114,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
       namespaceLabel[CONST.APISERVER.NAMESPACE_LABEL_KEY] = _.get(config, 'sf_namespace');
     }
 
+    const labels = _.mapValues(_.merge({
+      plan_id: planId,
+      service_id: serviceId
+    }, contextLabels, namespaceLabel),
+    value => _.trim(value));
+
+    _.forIn(labels, function(value, key) {
+      if (!isValidKubernetesLabelValue(value)) {
+        throw new BadRequest(`Parameter ${key} value "${value}" must be a valid label value`);
+      }
+    });
+
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise.try(() => eventmesh.apiServerClient.createNamespace(eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id))))
       .then(() => eventmesh.apiServerClient.createOSBResource({
@@ -122,10 +135,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         metadata: {
           finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
         },
-        labels: _.merge({
-          plan_id: planId,
-          service_id: serviceId
-        }, contextLabels, namespaceLabel),
+        labels: labels,
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
@@ -387,6 +397,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
       namespaceLabel[CONST.APISERVER.NAMESPACE_LABEL_KEY] = _.get(config, 'sf_namespace');
     }
 
+    const labels = _.mapValues(_.merge({
+      instance_guid: params.instance_id
+    }, namespaceLabel),
+    value => _.trim(value));
+
+    _.forIn(labels, function(value, key) {
+      if (!isValidKubernetesLabelValue(value)) {
+        throw new BadRequest(`Parameter ${key} value "${value}" must be a valid label value`);
+      }
+    });
+
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createOSBResource({
@@ -396,9 +417,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           metadata: {
             finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
           },
-          labels: _.merge({
-            instance_guid: params.instance_id
-          }, namespaceLabel),
+          labels: labels,
           spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
