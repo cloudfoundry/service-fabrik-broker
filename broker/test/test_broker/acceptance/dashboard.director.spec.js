@@ -112,7 +112,8 @@ describe('dashboard', function () {
             expect(res.body.userId).to.equal('me');
             expect(res.body.instance.metadata.name).to.equal(instance_id);
             expect(res.body.instance.task.id).to.eql(`${deployment_name}_324`);
-            mocks.verify();
+            let ignoreNock = ["POST https://uaa.bosh-lite.com:443/oauth/token"];
+            mocks.verify(ignoreNock);
           });
       });
 

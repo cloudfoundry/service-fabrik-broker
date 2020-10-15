@@ -44,8 +44,20 @@ function init() {
   return exports;
 }
 
-function verify() {
+function verify(ignoreList = []) {
   /* jshint expr:true */
+  if(nock.pendingMocks().length > 0) {
+    if(nock.pendingMocks().length == ignoreList.length) {
+      let count = 0;
+      for(let i = 0; i < ignoreList.length; i++) {
+        if(nock.pendingMocks()[i] == ignoreList[i])
+          count++;
+      }
+      if(count == ignoreList.length)
+        reset();
+    }    
+  }
+
   logger.info('checking mocks: %j', nock.pendingMocks());
   if (!nock.isDone()) {
     logger.error('pending mocks: %j', nock.pendingMocks());
