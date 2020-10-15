@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const nock = require('nock');
 const credentials = {
   host: 'example.org:31415',
@@ -69,7 +70,7 @@ function deprovision() {
 function preUpdate(expectedReturnStatusCode) {
   return nock(agentUrl)
     .replyContentLength()
-    .post('/v1/lifecycle/preupdate', {})
+    .post('/v1/lifecycle/preupdate', _.matches({}))
     .reply(expectedReturnStatusCode || 200, {});
 }
 
@@ -95,9 +96,9 @@ function createCredentials() {
 
 function deleteCredentials() {
   return nock(agentUrl)
-    .post('/v1/credentials/delete', {
+    .post('/v1/credentials/delete', _.matches({
       credentials: credentials
-    })
+    }))
     .reply(200);
 }
 

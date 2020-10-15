@@ -31,7 +31,7 @@ function startDeploymentBackup(name, response, payload) {
   });
   return nock(serviceBrokerAdminUrl)
     .replyContentLength()
-    .post(`/admin/deployments/${name}/backup`, payload)
+    .post(`/admin/deployments/${name}/backup`, _.matches(payload))
     .reply(response.status || 202, {
       operation: 'backup',
       backup_guid: response.backup_guid || backupGuid,

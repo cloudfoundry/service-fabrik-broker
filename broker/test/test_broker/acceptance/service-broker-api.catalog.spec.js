@@ -35,7 +35,8 @@ describe('service-broker-api', function () {
             name: 's1'
           }
         }]
-      });
+      },
+        {});
       mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {
         items: [{
           spec: {
@@ -45,7 +46,8 @@ describe('service-broker-api', function () {
         }]
       }, {
         labelSelector: 'serviceId=service1'
-      });
+      },
+        {});
       config.apiserver.isServiceDefinitionAvailableOnApiserver = true;
       return chai.request(app)
         .get(`${baseCFUrl}/catalog`)
