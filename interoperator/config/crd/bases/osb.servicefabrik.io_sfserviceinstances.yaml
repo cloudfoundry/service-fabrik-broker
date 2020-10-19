@@ -51,6 +51,8 @@ spec:
               context:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              instanceId:
+                type: string
               organizationGuid:
                 type: string
               parameters:
@@ -80,6 +82,8 @@ spec:
                   context:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
+                  instanceId:
+                    type: string
                   organizationGuid:
                     type: string
                   parameters:

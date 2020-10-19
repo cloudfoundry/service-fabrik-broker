@@ -635,9 +635,14 @@ For example,
 apiVersion: osb.servicefabrik.io/v1alpha1
 kind: SFServiceInstance
 metadata:
-  # Name would map to the instance_id from the OSB provision request.
+  # Name would map to the instance_id from the OSB provision request,
+  # if the instance_id is a valid k8s name. Otherwise the name is 
+  # the sha224 sum of the instance_id.
   name: '0304b210-fcfd-11e8-a31b-b6001f10c97f'
 spec:
+  # instance_id as in the OSB provision request.
+  instanceId: 0304b210-fcfd-11e8-a31b-b6001f10c97f
+
   # service_id as in the OSB provision request.
   serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
 
@@ -685,10 +690,15 @@ For example,
 apiVersion: osb.servicefabrik.io/v1alpha1
 kind: SFServiceBinding
 metadata:
-  # Name would map to the binding_id from the OSB bind request.
+  # Name would map to the binding_id from the OSB bind request,
+  # if the binding_id is a valid k8s name. Otherwise the name is 
+  # the sha224 sum of the binding_id
   name: 'de3dd272-fcfc-11e8-a31b-b6001f10c97f'
 spec:
-  # instance_id as in the OSB bind request.
+  # binding_id as in the OSB bind request.
+  id: de3dd272-fcfc-11e8-a31b-b6001f10c97f
+
+  # instance_id is the name of of the SFServiceInstance
   instanceId: 0304b210-fcfd-11e8-a31b-b6001f10c97f
 
   # service_id as in the OSB bind request.

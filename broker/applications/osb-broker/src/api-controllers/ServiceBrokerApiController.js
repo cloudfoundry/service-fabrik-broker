@@ -87,7 +87,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       'space_guid',
       'origin',
       'subaccount_id'
-    ]); 
+    ]);
+    _.set(params, 'instance_id', req.params.instance_id);
+
     function done(sfserviceinstance) {
       _.set(context, 'instance', sfserviceinstance);
       const dashboardUrl = this.getDashboardUrl(context);
@@ -236,6 +238,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         } else {
+          _.set(params, 'instance_id', req.params.instance_id);
           return eventmesh.apiServerClient.patchOSBResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
