@@ -111,9 +111,10 @@ func (h *OperatorApisHandler) GetDeploymentsSummary(w http.ResponseWriter, r *ht
 // GetDeployment returns summary of the given deployment
 func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	deploymentID := vars["deploymentID"]
+	instanceID := vars["deploymentID"]
+	deploymentID := GetKubernetesName(instanceID)
 	instanceNamespace := "sf-" + deploymentID
-	log.Info("Trying to get summary for : ", "deployment", deploymentID, "namespace", instanceNamespace)
+	log.Info("Trying to get summary for : ", "instanceID", instanceID, "deployment", deploymentID, "namespace", instanceNamespace)
 	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clientset")
@@ -147,8 +148,9 @@ func (h *OperatorApisHandler) GetDeployment(w http.ResponseWriter, r *http.Reque
 // UpdateDeployment triggers update of a single deployment
 func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	deploymentID := vars["deploymentID"]
-	log.Info("Trying to trigger update for: ", "deployment", deploymentID)
+	instanceID := vars["deploymentID"]
+	deploymentID := GetKubernetesName(instanceID)
+	log.Info("Trying to trigger update for: ", "instanceID", instanceID, "deployment", deploymentID)
 	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
 	if err != nil {
 		log.Error(err, "Error while initializing clients")
@@ -170,7 +172,7 @@ func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Info("Triggered update for: ", "deployment", deploymentID)
+	log.Info("Triggered update for: ", "instanceID", instanceID, "deployment", deploymentID)
 	fmt.Fprintf(w, "Update for %s was successfully triggered", deploymentID)
 }
 

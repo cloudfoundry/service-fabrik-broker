@@ -58,6 +58,69 @@ describe('utils', function () {
     });
   });
 
+  describe('#sha224Sum', function () {
+    it('should return a valid kubernetes name', function () {
+      expect(commonFunctions.isValidKubernetesName(commonFunctions.sha224Sum('-abcd1234'))).to.be.true;
+    });
+    it('should return a valid kubernetes name', function () {
+      expect(commonFunctions.isValidKubernetesName(commonFunctions.sha224Sum('.abcd1234'))).to.be.true;
+    });
+    it('should return a valid kubernetes name', function () {
+      expect(commonFunctions.isValidKubernetesName(commonFunctions.sha224Sum('abcD1234'))).to.be.true;
+    });
+    it('should return a valid kubernetes name', function () {
+      expect(commonFunctions.isValidKubernetesName(commonFunctions.sha224Sum('abcd.1234-efgh'))).to.be.true;
+    });
+  });
+
+  describe('#isValidKubernetesName', function () {
+    it('should return false if str starts with -', function () {
+      expect(commonFunctions.isValidKubernetesName('-abcd1234')).to.be.false;
+    });
+    it('should return false if str starts with .', function () {
+      expect(commonFunctions.isValidKubernetesName('.abcd1234')).to.be.false;
+    });
+    it('should return false if str contains Uppercase with .', function () {
+      expect(commonFunctions.isValidKubernetesName('abcD1234')).to.be.false;
+    });
+    it('should return false if str is too long', function () {
+      let str = '';
+      for(let i = 0; i < 31; i++) {
+        str += '12345678';
+      }
+      str += '123456';
+      expect(commonFunctions.isValidKubernetesName(str)).to.be.false;
+    });
+    it('should return true if str consist of lower case alphanumeric characters, - or . ,  start and end with an alphanumeric character', function () {
+      expect(commonFunctions.isValidKubernetesName('abcd.1234-efgh')).to.be.true;
+    });
+  });
+
+  describe('#isValidKubernetesLabelValue', function () {
+    it('should return false if str starts with -', function () {
+      expect(commonFunctions.isValidKubernetesLabelValue('-abcD1234')).to.be.false;
+    });
+    it('should return false if str starts with .', function () {
+      expect(commonFunctions.isValidKubernetesLabelValue('.abcD1234')).to.be.false;
+    });
+    it('should return false if str does not end with alphanumeric character', function () {
+      expect(commonFunctions.isValidKubernetesLabelValue('abcD1234_')).to.be.false;
+    });
+    it('should return false if str is too long', function () {
+      let str = '';
+      for(let i = 0; i < 8; i++) {
+        str += '12345678';
+      }
+      expect(commonFunctions.isValidKubernetesLabelValue(str)).to.be.false;
+    });
+    it('should return true if str is an empty string', function () {
+      expect(commonFunctions.isValidKubernetesLabelValue('')).to.be.true;
+    });
+    it('should return true if str consist of alphanumeric characters, - _ or . ,  start and end with an alphanumeric character', function () {
+      expect(commonFunctions.isValidKubernetesLabelValue('abcd.1234-efgh_HIJK')).to.be.true;
+    });
+  });
+
   describe('#isServiceFabrikOperation', function () {
     /* jshint expr:true */
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';

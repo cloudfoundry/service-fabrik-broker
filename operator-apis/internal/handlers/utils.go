@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -78,4 +81,36 @@ func getNextPageURL(r *http.Request, limit int64, continueToken string) (string,
 	q.Set("nextPageToken", continueToken)
 	newURL.RawQuery = q.Encode()
 	return newURL.String(), nil
+}
+
+// IsDNS1123Subdomain tests for a string that conforms to the definition of a
+// subdomain in DNS (RFC 1123).
+func IsDNS1123Subdomain(value string) bool {
+	const dns1123LabelFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	const dns1123SubdomainFmt string = dns1123LabelFmt + "(\\." + dns1123LabelFmt + ")*"
+
+	// DNS1123SubdomainMaxLength is a subdomain's max length in DNS (RFC 1123)
+	const DNS1123SubdomainMaxLength int = 253
+	var dns1123SubdomainRegexp = regexp.MustCompile("^" + dns1123SubdomainFmt + "$")
+
+	if len(value) <= 0 || len(value) > DNS1123SubdomainMaxLength {
+		return false
+	}
+	return dns1123SubdomainRegexp.MatchString(value)
+}
+
+// Sha224Sum returns the SHA224 checksum of the input string
+// as a hex decoded string, with lower-case letters for a-f
+func Sha224Sum(value string) string {
+	return fmt.Sprintf("%x", sha256.Sum224([]byte(value)))
+}
+
+// GetKubernetesName tests for the id to be a valid kubernetes name
+// and return the id if it already valid. If the input is not a valid
+// kubernetes name, it returns the SHA224 sum of the input
+func GetKubernetesName(id string) string {
+	if IsDNS1123Subdomain(id) {
+		return id
+	}
+	return Sha224Sum(id)
 }

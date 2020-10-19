@@ -26,8 +26,9 @@ import (
 
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
 type SFServiceInstanceSpec struct {
-	ServiceID string `json:"serviceId"`
-	PlanID    string `json:"planId"`
+	InstanceID string `json:"instanceId,omitempty"`
+	ServiceID  string `json:"serviceId"`
+	PlanID     string `json:"planId"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	RawContext       *runtime.RawExtension `json:"context,omitempty"`
