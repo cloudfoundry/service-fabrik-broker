@@ -45,9 +45,10 @@ function init() {
 }
 
 function verify(ignoreList = []) { 
-  /* Due to dynamic order of execution of UTs, some mocks donot get hit. To overcome this, an optional ignoreList is sent by the UT */ 
+  /* Due to change in order of execution of UTs, some mocks donot get hit. To overcome this, an optional ignoreList is sent by the UT */ 
+  /* structure of an element of ignoreList : "<HTTP Request> <URL>"*/
   /* jshint expr:true */
-  let nockPendingMocks = _.clone(nock.pendingMocks());
+  let nockPendingMocks = nock.pendingMocks();
   logger.info('checking mocks: %j', nockPendingMocks);
   logger.info('ignore mocks: %j', ignoreList);
 
