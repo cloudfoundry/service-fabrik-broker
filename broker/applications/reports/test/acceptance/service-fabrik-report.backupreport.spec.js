@@ -1,6 +1,6 @@
 'use strict';
 
-const app = require('../support/apps').report;
+const app = require('../../../../test/test_broker/support/apps').report;
 const config = require('@sf/app-config');
 
 describe('service-fabrik-report', function () {

@@ -6,7 +6,7 @@ const {
 const {
   CONST
 } = require('@sf/common-utils');
-const QuotaApiController = require('../../applications/quota-app/src/QuotaApiController');
+const QuotaApiController = require('../src/QuotaApiController');
 
 class Response {
   constructor() {
