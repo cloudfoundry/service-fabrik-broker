@@ -1,11 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const app = require('../support/apps').admin;
+const app = require('../../../../test/test_broker/support/apps').admin;
 const config = require('@sf/app-config');
 const proxyquire = require('proxyquire');
 const { CONST } = require('@sf/common-utils');
-const ServiceFabrikAdminController = require('../../../applications/admin/src/api-controllers/ServiceFabrikAdminController');
+const ServiceFabrikAdminController = require('../../src/api-controllers/ServiceFabrikAdminController');
 const { ApiServerClient } = require('@sf/eventmesh');
 const numOfInstances = 2 * config.mongodb.record_max_fetch_count;
 const ScheduleManager = require('@sf/jobs');
@@ -213,7 +213,7 @@ describe('service-fabrik-admin', function () {
   });
 
   describe('#getInstancesWithUpdateScheduled', function () {
-    const adminController = proxyquire('../../../applications/admin/src/api-controllers/ServiceFabrikAdminController', {
+    const adminController = proxyquire('../../src/api-controllers/ServiceFabrikAdminController', {
       '@sf/common-utils': {
         Repository: Repository
       }

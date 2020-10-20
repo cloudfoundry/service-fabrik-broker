@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const app = require('../support/apps').admin;
+const app = require('../../../../test/test_broker/support/apps').admin;
 const dbManager = require('@sf/db').dbManager;
 const config = require('@sf/app-config');
 const {

@@ -6,7 +6,7 @@ const {
   CONST
 } = require('@sf/common-utils');
 
-const QuotaClient = require('../../applications/osb-broker/src/api-controllers/middleware/QuotaClient');
+const QuotaClient = require('../src/api-controllers/middleware/QuotaClient');
 
 describe('#QuotaClient', () => {
   let requestStub;

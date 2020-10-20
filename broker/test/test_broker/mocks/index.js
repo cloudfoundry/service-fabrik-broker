@@ -44,11 +44,31 @@ function init() {
   return exports;
 }
 
-function verify() {
+function verify(ignoreList = []) { 
+  /* Due to change in order of execution of UTs, some mocks donot get hit. To overcome this, an optional ignoreList is sent by the UT */ 
+  /* structure of an element of ignoreList : "<HTTP Request> <URL>"*/
   /* jshint expr:true */
-  logger.info('checking mocks: %j', nock.pendingMocks());
+  let nockPendingMocks = nock.pendingMocks();
+  logger.info('checking mocks: %j', nockPendingMocks);
+  logger.info('ignore mocks: %j', ignoreList);
+
+  if(nockPendingMocks.length > 0) {
+    nockPendingMocks.sort();
+    ignoreList.sort();
+    if(nockPendingMocks.length === ignoreList.length) {
+      logger.info('Comparing pending mocks with ignore mocks');
+      let count = 0;     
+      for(let i = 0; i < ignoreList.length; i++) {
+        if(nockPendingMocks[i] === ignoreList[i])
+          count++;
+      }
+      if(count == ignoreList.length)
+        reset();
+    }    
+  }
+ 
   if (!nock.isDone()) {
-    logger.error('pending mocks: %j', nock.pendingMocks());
+    logger.error('pending mocks: %j', nockPendingMocks);
   }
   expect(nock.isDone()).to.be.true;
 }

@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const app = require('../support/apps').internal;
+const app = require('../../../../test/test_broker/support/apps').internal;
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
 const {
