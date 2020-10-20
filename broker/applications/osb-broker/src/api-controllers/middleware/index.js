@@ -13,6 +13,7 @@ const {
   },
   commonFunctions
 } = require('@sf/common-utils');
+const Promise = require('bluebird');
 const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
@@ -117,18 +118,18 @@ exports.injectPlanInRequest = function() {
           resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id
         })
-        .then(resource => {
-          _.set(req, 'body.plan_id', _.get(resource, 'spec.options.planId'));
-          logger.info(`injected plan_id ${req.body.plan_id} in request for instance ${req.params.instance_id}`);
-        })
-        .catch(err => {
-          logger.warn(`resource could not be fetched for instance id ${req.params.instance_id}. Error: ${err}`);
-        })
-        .finally(() => next())
+          .then(resource => {
+            _.set(req, 'body.plan_id', _.get(resource, 'spec.planId'));
+            logger.info(`injected plan_id ${req.body.plan_id} in request for instance ${req.params.instance_id}`);
+          })
+          .catch(err => {
+            logger.warn(`resource could not be fetched for instance id ${req.params.instance_id}. Error: ${err}`);
+          })
+          .finally(() => next());
       }
-    })
-  }
-}
+    });
+  };
+};
 
 function getPlanFromRequest(req) {
   const plan_id = req.body.plan_id || req.query.plan_id;
