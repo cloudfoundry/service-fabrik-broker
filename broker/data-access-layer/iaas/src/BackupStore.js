@@ -53,7 +53,7 @@ class BackupStore {
             logger.debug('list of files recieved - ', files);
             if (files && files.length > 0) {
               fileList = fileList.concat(files);
-              if (files[0].isTruncated === true && level < 10) {
+              if (files[0].isTruncated === true && level < 20) {
                 options.marker = files[files.length - 1].name;
                 return fetchFiles()
                   .then(() => resolve())
