@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
+const logger = require('@sf/logger');
 const { DeploymentHookClient } = require('@sf/common-utils');
 const deploymentHookClient = new DeploymentHookClient();
 
@@ -12,7 +13,10 @@ describe('Utils', function () {
         const options = {
           method: method,
           url: path,
-          json: true
+          headers: {
+            'Content-type': 'application/json'
+          },
+          responseType: "json"
         };
         if (_.isObject(statusCode)) {
           data = statusCode;
@@ -25,7 +29,7 @@ describe('Utils', function () {
               query: data
             });
           } else {
-            options.body = data;
+            options.data = data;
           }
         }
         _.set(response, 'statusCode', statusCode || 200);
@@ -57,6 +61,7 @@ describe('Utils', function () {
           '/hook',
           200, body);
         return deploymentHookClient.executeDeploymentActions(body)
+          .tap(result => logger.debug(`Response received with status code ${result.statusCode}`))
           .then(result => {
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
             expect(result).to.eql({});

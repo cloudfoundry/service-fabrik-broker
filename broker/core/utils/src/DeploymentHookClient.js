@@ -1,20 +1,20 @@
 'use strict';
 
 const config = require('@sf/app-config');
-const HttpClient = require('./HttpClient');
+const AxiosHttpClient = require('./AxiosHttpClient');
 const logger = require('@sf/logger');
-class DeploymentHookClient extends HttpClient {
+class DeploymentHookClient extends AxiosHttpClient {
   constructor() {
     super({
-      baseUrl: `${config.deployment_hooks.protocol}://${config.deployment_hooks.host}`,
+      baseURL: `${config.deployment_hooks.protocol}://${config.deployment_hooks.host}`,
       auth: {
-        user: config.deployment_hooks.username,
-        pass: config.deployment_hooks.password
+        username: config.deployment_hooks.username,
+        password: config.deployment_hooks.password
       },
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: false,
+      maxRedirects: 0,
       rejectUnauthorized: !config.skip_ssl_validation
     });
   }
@@ -25,8 +25,11 @@ class DeploymentHookClient extends HttpClient {
       .request({
         method: 'POST',
         url: '/hook',
-        body: options,
-        json: true
+        data: options,
+        headers: {
+          'Content-type': 'application/json'
+        },
+        responseType: 'json'
       }, 200)
       .then(res => res.body);
   }
