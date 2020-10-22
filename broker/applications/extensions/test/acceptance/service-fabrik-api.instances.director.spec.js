@@ -9,7 +9,7 @@ const {
     unifyDiffResult
   }
 } = require('@sf/common-utils');
-const apps = require('../support/apps');
+const apps = require('../../../../test/test_broker/support/apps');
 const config = require('@sf/app-config');
 const {
   backupStore,

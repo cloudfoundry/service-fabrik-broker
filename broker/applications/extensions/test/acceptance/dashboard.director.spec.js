@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const parseUrl = require('url').parse;
 const { CONST } = require('@sf/common-utils');
-const app = require('../support/apps').external;
+const app = require('../../../../test/test_broker/support/apps').external;
 
 describe('dashboard', function () {
   describe('director', function () {

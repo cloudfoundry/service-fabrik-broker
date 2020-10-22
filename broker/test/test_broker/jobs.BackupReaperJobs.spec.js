@@ -194,7 +194,8 @@ describe('Jobs', function () {
       // Mocks done
       getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
-        mocks.verify();
+        let ignoreNock = ["POST https://myopenstackcloud.com:5000/v3/auth/tokens"];
+        mocks.verify(ignoreNock);
         const expectedBackupResponse = {
           deleted_guids: [backup_guid, backup_guidOob]
         };
