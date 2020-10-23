@@ -16,7 +16,11 @@ exports.scheduleUpdate = scheduleUpdate;
 exports.getBackupState = getBackupState;
 
 function startBackup(instance_id, payload, response) {
-  return nock(serviceFabrikUrl)
+  return nock(serviceFabrikUrl, {
+    reqheaders: {
+      authorization: /^bearer/i
+    }
+  })
     .replyContentLength()
     .post(`/api/v1/service_instances/${instance_id}/backup`, payload)
     .reply(response.status || 202, {
@@ -38,7 +42,11 @@ function scheduleBackup(instance_id, payload) {
   const repeatTimezone = 'America/New_York';
   const username = 'hugo';
 
-  return nock(serviceFabrikUrl)
+  return nock(serviceFabrikUrl, {
+    reqheaders: {
+      authorization: /^bearer/i
+    }
+  })
     .replyContentLength()
     .put(`/api/v1/service_instances/${instance_id}/schedule_backup`, payload)
     .reply(201, {
@@ -64,7 +72,11 @@ function scheduleUpdate(instance_id, payload) {
   const repeatTimezone = 'America/New_York';
   const username = 'hugo';
 
-  return nock(serviceFabrikUrl)
+  return nock(serviceFabrikUrl, {
+    reqheaders: {
+      authorization: /^bearer/i
+    }
+  })
     .replyContentLength()
     .put(`/api/v1/service_instances/${instance_id}/schedule_update`, payload)
     .reply(201, {
@@ -86,7 +98,11 @@ function scheduleUpdate(instance_id, payload) {
 }
 
 function deleteBackup(backup_guid, space_guid, instance_deleted) {
-  return nock(serviceFabrikUrl)
+  return nock(serviceFabrikUrl, {
+    reqheaders: {
+      authorization: /^bearer/i
+    }
+  })
     .replyContentLength()
     .delete(`/api/v1/backups/${backup_guid}?space_guid=${space_guid}&instance_deleted=${instance_deleted}`)
     .reply(200, {});

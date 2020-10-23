@@ -15,6 +15,7 @@
     "@sf/models": "file:../../core/models",
     "@sf/quota": "file:../../data-access-layer/quota",
     "ajv": "6.12.6",
+    "axios": "^0.20.0",
     "basic-auth": "2.0.1",
     "bluebird": "3.7.2",
     "body-parser": "1.19.0",

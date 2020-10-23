@@ -29,6 +29,7 @@
     "ajv": "6.12.6",
     "ali-oss": "6.10.0",
     "aws-sdk": "2.747.0",
+    "axios": "^0.20.0",
     "azure-arm-compute": "10.0.0",
     "azure-storage": "2.10.3",
     "basic-auth": "2.0.1",

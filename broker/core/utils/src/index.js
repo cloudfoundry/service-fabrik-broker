@@ -4,6 +4,7 @@ const commonFunctions = require('./commonFunctions');
 const commonVarliables = require('./commonVariables');
 const serviceFlowMapper = require('./ServiceFlowMapper');
 const HttpClient = require('./HttpClient');
+const AxiosHttpClient = require('./AxiosHttpClient');
 const errors = require('./errors');
 const JWT = require('./jwt');
 const Repository = require('./Repository');
@@ -17,6 +18,7 @@ module.exports = {
   CONST: commonVarliables,
   serviceFlowMapper,
   HttpClient,
+  AxiosHttpClient,
   JWT,
   Repository,
   EncryptionManager,
