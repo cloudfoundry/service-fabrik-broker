@@ -19,6 +19,8 @@ limitations under the License.
 package schedulers
 
 import (
+	"context"
+
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
@@ -40,7 +42,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	_ = mgr.GetFieldIndexer().IndexField(&osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
 		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
 		return []string{planID}
 	})

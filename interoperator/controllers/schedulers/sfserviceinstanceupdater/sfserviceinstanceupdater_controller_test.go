@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), configMap)
 
-	_ = mgr.GetFieldIndexer().IndexField(&osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.TODO(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
 		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
 		return []string{planID}
 	})
