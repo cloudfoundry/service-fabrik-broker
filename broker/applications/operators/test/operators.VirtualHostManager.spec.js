@@ -5,7 +5,13 @@ const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const config = require('@sf/app-config');
-const { CONST } = require('@sf/common-utils');
+const {
+  CONST,
+  errors: {
+    ServiceInstanceNotFound
+  }
+} = require('@sf/common-utils');
+
 const {
   ApiServerClient,
   apiServerClient
@@ -14,13 +20,16 @@ const {
 const service_id = '3c266123-8e6e-4034-a2aa-e48e13fbf893';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
 const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+const parent_instance_id = '312eb96a-5fba-4f62-be43-053c8624cd84';
 const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
-const jsonWriteDelay = 50;
+let parameters = {
+  dedicated_rabbitmq_instance: 'rmq'
+};
 
-const DockerOperatorDummy = {
+const VirtualHostOperatorDummy = {
   registerWatcherDummy: () => {},
-  createDockerServiceDummy: () => {},
+  createVirtualHostServiceDummy: () => {},
   createDummy: () => {},
   updateDummy: () => {},
   deleteDummy: () => {},
@@ -29,62 +38,75 @@ const DockerOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DockerOperator = proxyquire('../../applications/operators/src/docker-operator/DockerOperator', {
+const VirtualHostOperator = proxyquire('../src/virtualhost-operator/VirtualHostOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        DockerOperatorDummy.getOperationOptionsDummy(opts);
+        VirtualHostOperatorDummy.getOperationOptionsDummy(opts);
+        return Promise.resolve(resultOptions);
+      },
+      'updateResource': function (opts) {
+        VirtualHostOperatorDummy.updateDummy(opts);
+        return Promise.resolve(resultOptions);
+      },
+      'deleteResource': function (opts) {
+        VirtualHostOperatorDummy.deleteDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
-  './DockerService': {
-    'createInstance': function (instance_id, options) {
-      DockerOperatorDummy.createDockerServiceDummy(instance_id, options);
+  './VirtualHostService': {
+    'createVirtualHostService': function (instance_id, options) {
+      VirtualHostOperatorDummy.createVirtualHostServiceDummy(instance_id, options);
       return Promise.resolve({
-        'create': opts => {
-          DockerOperatorDummy.createDummy(opts);
+        'create': () => {
+          VirtualHostOperatorDummy.createDummy();
+          if (parameters !== null) {
+            return Promise.resolve({});
+          } else {
+            throw new ServiceInstanceNotFound(parent_instance_id);
+          }
+        },
+        'update': () => {
+          VirtualHostOperatorDummy.updateDummy();
           return Promise.resolve({});
         },
-        'update': opts => {
-          DockerOperatorDummy.updateDummy(opts);
-          return Promise.resolve({});
-        },
-        'delete': opts => {
-          DockerOperatorDummy.deleteDummy(opts);
+        'delete': () => {
+          VirtualHostOperatorDummy.deleteDummy();
           return Promise.resolve({});
         }
       });
     }
   }
 });
+const jsonWriteDelay = 50;
 
-function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
+function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const bm = new DockerOperator();
-  bm.init();
+  const vm = new VirtualHostOperator();
+  vm.init();
   return Promise.delay(100)
     .then(() => {
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT);
-      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       expect(registerWatcherStub.firstCall.args[3]).to.eql('state in (in_queue,update,delete)');
       registerWatcherStub.restore();
     });
 }
 
-describe('docker-operator', function () {
-  describe('DockerOperator', function () {
-    let createDockerServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
+describe('operators', function () {
+  describe('VirtualHostOperator', function () {
+    let createVirtualHostServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      createDockerServiceSpy = sinon.spy(DockerOperatorDummy, 'createDockerServiceDummy');
-      createSpy = sinon.spy(DockerOperatorDummy, 'createDummy');
-      updateSpy = sinon.spy(DockerOperatorDummy, 'updateDummy');
-      deleteSpy = sinon.spy(DockerOperatorDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(DockerOperatorDummy, 'getOperationOptionsDummy');
+      createVirtualHostServiceSpy = sinon.spy(VirtualHostOperatorDummy, 'createVirtualHostServiceDummy');
+      createSpy = sinon.spy(VirtualHostOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(VirtualHostOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(VirtualHostOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(VirtualHostOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -93,12 +115,12 @@ describe('docker-operator', function () {
         });
       };
       registerWatcherStub = sandbox.stub(ApiServerClient.prototype, 'registerWatcher').callsFake(registerWatcherFake);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
+      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
     afterEach(function () {
       sandbox.restore();
-      createDockerServiceSpy.restore();
+      createVirtualHostServiceSpy.restore();
       createSpy.restore();
       updateSpy.restore();
       deleteSpy.restore();
@@ -122,7 +144,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -132,20 +154,63 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
-          expect(createSpy.firstCall.args[0]).to.eql(options);
+          mocks.verify();
+        });
+    });
+
+    it('Should process any error in create request successfully', () => {
+      const options = {
+        plan_id: plan_id,
+        service_id: service_id,
+        organization_guid: organization_guid,
+        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        }
+      };
+      const changeObject = {
+        object: {
+          metadata: {
+            name: instance_id,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+          },
+          spec: {
+            options: JSON.stringify(options)
+          },
+          status: {
+            state: 'in_queue'
+          }
+        }
+      };
+      parameters = null;
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 2);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(jsonWriteDelay).then(() => {
+          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createSpy.callCount).to.equal(1);
           mocks.verify();
         });
     });
@@ -166,7 +231,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -176,21 +241,20 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(1);
-          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(updateSpy.callCount).to.equal(1);
-          expect(updateSpy.firstCall.args[0]).to.eql(options);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(1);
+          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(updateSpy.callCount).to.equal(2);
           mocks.verify();
         });
     });
@@ -211,7 +275,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -221,21 +285,20 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(1);
-          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(deleteSpy.callCount).to.equal(1);
-          expect(deleteSpy.firstCall.args[0]).to.eql(options);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(1);
+          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(deleteSpy.callCount).to.equal(2);
           mocks.verify();
         });
     });
@@ -256,7 +319,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`,
             annotations: {
               lockedByManager: config.broker_ip
             }
@@ -269,11 +332,11 @@ describe('docker-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(0);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -295,7 +358,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -305,17 +368,17 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 409);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(0);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -337,7 +400,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -347,17 +410,17 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(0);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -379,7 +442,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`,
             annotations: {
               lockedByManager: '10.12.12.12'
             }
@@ -392,11 +455,11 @@ describe('docker-operator', function () {
           }
         }
       };
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.callCount).to.equal(0);
+          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -418,7 +481,7 @@ describe('docker-operator', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -428,25 +491,27 @@ describe('docker-operator', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      parameters = {
+        dedicated_rabbitmq_instance: 'rmq'
+      };
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value());
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, _.chain(changeObject.object)
         .cloneDeep()
         .merge('metadata', {
           annotations: config.broker_ip
         })
         .value(), 1, undefined, 404);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
-          expect(createSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
         });
     });

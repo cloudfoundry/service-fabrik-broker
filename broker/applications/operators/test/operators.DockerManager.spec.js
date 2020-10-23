@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const JSONStream = require('json-stream');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
@@ -17,9 +18,9 @@ const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
 const jsonWriteDelay = 50;
 
-const BoshOperatorDummy = {
+const DockerOperatorDummy = {
   registerWatcherDummy: () => {},
-  createDirectorServiceDummy: () => {},
+  createDockerServiceDummy: () => {},
   createDummy: () => {},
   updateDummy: () => {},
   deleteDummy: () => {},
@@ -28,65 +29,62 @@ const BoshOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const BoshOperator = proxyquire('../../applications/operators/src/bosh-operator/BoshOperator', {
+const DockerOperator = proxyquire('../src/docker-operator/DockerOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        BoshOperatorDummy.getOperationOptionsDummy(opts);
+        DockerOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
-  '@sf/provisioner-services': { 
-    DirectorService: {
+  './DockerService': {
     'createInstance': function (instance_id, options) {
-      BoshOperatorDummy.createDirectorServiceDummy(instance_id, options);
+      DockerOperatorDummy.createDockerServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': opts => {
-          BoshOperatorDummy.createDummy(opts);
+          DockerOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
         'update': opts => {
-          BoshOperatorDummy.updateDummy(opts);
+          DockerOperatorDummy.updateDummy(opts);
           return Promise.resolve({});
         },
         'delete': opts => {
-          BoshOperatorDummy.deleteDummy(opts);
+          DockerOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
         }
       });
     }
   }
-  }
 });
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const bm = new BoshOperator();
+  const bm = new DockerOperator();
   bm.init();
   return Promise.delay(100)
     .then(() => {
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT);
-      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       expect(registerWatcherStub.firstCall.args[3]).to.eql('state in (in_queue,update,delete)');
       registerWatcherStub.restore();
     });
 }
 
-describe('operators', function () {
-  describe('BoshOperator', function () {
-    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
+describe('docker-operator', function () {
+  describe('DockerOperator', function () {
+    let createDockerServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
-
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      createDirectorServiceSpy = sinon.spy(BoshOperatorDummy, 'createDirectorServiceDummy');
-      createSpy = sinon.spy(BoshOperatorDummy, 'createDummy');
-      updateSpy = sinon.spy(BoshOperatorDummy, 'updateDummy');
-      deleteSpy = sinon.spy(BoshOperatorDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(BoshOperatorDummy, 'getOperationOptionsDummy');
+      createDockerServiceSpy = sinon.spy(DockerOperatorDummy, 'createDockerServiceDummy');
+      createSpy = sinon.spy(DockerOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(DockerOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(DockerOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(DockerOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -100,98 +98,12 @@ describe('operators', function () {
 
     afterEach(function () {
       sandbox.restore();
-      createDirectorServiceSpy.restore();
+      createDockerServiceSpy.restore();
       createSpy.restore();
       updateSpy.restore();
       deleteSpy.restore();
       getOperationOptionsSpy.restore();
       registerWatcherStub.restore();
-    });
-
-    it('Should not process create request if already being processed', () => {
-      const options = {
-        plan_id: plan_id,
-        service_id: service_id,
-        organization_guid: organization_guid,
-        space_guid: space_guid,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        }
-      };
-      const changeObject = {
-        object: {
-          metadata: {
-            name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
-            annotations: {
-              lockedByManager: '10.0.2.2',
-              processingStartedAt: new Date()
-            }
-          },
-          spec: {
-            options: JSON.stringify(options)
-          },
-          status: {
-            state: 'in_progress'
-          }
-        }
-      };
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
-
-      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(0);
-          expect(createSpy.callCount).to.equal(0);
-          mocks.verify();
-        });
-    });
-
-    it('Should process create request successfully if processing time expired', () => {
-      const options = {
-        plan_id: plan_id,
-        service_id: service_id,
-        organization_guid: organization_guid,
-        space_guid: space_guid,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        }
-      };
-      const changeObject = {
-        object: {
-          metadata: {
-            name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
-            annotations: {
-              lockedByManager: '10.0.2.2',
-              processingStartedAt: new Date(new Date() - 600000)
-            }
-          },
-          spec: {
-            options: JSON.stringify(options)
-          },
-          status: {
-            state: 'in_queue'
-          }
-        }
-      };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
-
-
-      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(createSpy.callCount).to.equal(1);
-          expect(createSpy.firstCall.args[0]).to.eql(options);
-          mocks.verify();
-        });
     });
 
     it('Should process create request successfully', () => {
@@ -210,7 +122,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -220,15 +132,18 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
-
-
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 2);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
           expect(createSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
@@ -251,7 +166,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -261,15 +176,19 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
-
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 2);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(1);
-          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createDockerServiceSpy.callCount).to.equal(1);
+          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
           expect(updateSpy.callCount).to.equal(1);
           expect(updateSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
@@ -292,7 +211,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -302,15 +221,19 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 2);
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 2);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(1);
-          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createDockerServiceSpy.callCount).to.equal(1);
+          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
           expect(deleteSpy.callCount).to.equal(1);
           expect(deleteSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
@@ -333,7 +256,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`,
             annotations: {
               lockedByManager: config.broker_ip
             }
@@ -346,12 +269,11 @@ describe('operators', function () {
           }
         }
       };
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -373,7 +295,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -383,13 +305,17 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 409);
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 1, undefined, 409);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -411,7 +337,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -421,13 +347,17 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 404);
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 1, undefined, 404);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -449,7 +379,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`,
             annotations: {
               lockedByManager: '10.12.12.12'
             }
@@ -462,12 +392,11 @@ describe('operators', function () {
           }
         }
       };
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -489,7 +418,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/dockers/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -499,14 +428,23 @@ describe('operators', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object);
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, changeObject.object, 1, undefined, 404);
-
-      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
-      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP);
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value());
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, _.chain(changeObject.object)
+        .cloneDeep()
+        .merge('metadata', {
+          annotations: config.broker_ip
+        })
+        .value(), 1, undefined, 404);
+      const crdJsonDeployment = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
+      mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, undefined, undefined, 1);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
           expect(createSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();

@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const ServiceInstanceBackupTask = require('../../applications/operators/src/serviceflow-operator/task/ServiceInstanceBackupTask');
+const ServiceInstanceBackupTask = require('../src/serviceflow-operator/task/ServiceInstanceBackupTask');
 const { apiServerClient } = require('@sf/eventmesh');
 const {
   CONST,

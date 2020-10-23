@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BaseStatusPoller = require('../../applications/operators/src/BaseStatusPoller');
+const BaseStatusPoller = require('../src/BaseStatusPoller');
 
 describe('operators', function () {
   describe('BoshPostProcessingPoller', function () {
@@ -97,7 +97,7 @@ describe('operators', function () {
       it('create postprocessing should stay as long as it is processing', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { 
             DirectorService: {
             'createInstance': function () {
@@ -145,7 +145,7 @@ describe('operators', function () {
       it('update postprocessing should stay as long as it is processing', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { DirectorService : {
             'createInstance': function () {
               /* jshint unused:false */
@@ -192,7 +192,7 @@ describe('operators', function () {
       it('create postprocessing should succeed', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
@@ -239,7 +239,7 @@ describe('operators', function () {
       it('update postprocessing should succeed', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
@@ -286,7 +286,7 @@ describe('operators', function () {
       it('create postprocessing should be able to fail', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
@@ -334,7 +334,7 @@ describe('operators', function () {
       it('update postprocessing should be able to fail', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { DirectorService: {
             'createInstance': function () {
               /* jshint unused:false */
@@ -381,7 +381,7 @@ describe('operators', function () {
       it('no ops for deployment type unknown', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshPostProcessingPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshPostProcessingPoller.js', {
+        const BoshPostProcessingPoller = proxyquire('../src/bosh-operator/BoshPostProcessingPoller.js', {
           '@sf/provisioner-services': { 
             DirectorService: {}
           }

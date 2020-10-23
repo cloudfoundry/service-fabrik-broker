@@ -3,8 +3,9 @@
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BackupService = require('../../applications/operators/src/backup-operator');
+const BackupService = require('../src/backup-operator');
 const { ApiServerClient } = require('@sf/eventmesh');
+const logger = require('@sf/logger');
 
 describe('operators', function () {
   describe('BackupStatusPoller', function () {
@@ -36,7 +37,7 @@ describe('operators', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const BackupStatusPoller = proxyquire('../../applications/operators/src/backup-operator/BackupStatusPoller.js', {
+    const BackupStatusPoller = proxyquire('../src/backup-operator/BackupStatusPoller.js', {
       '@sf/app-config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
@@ -83,13 +84,20 @@ describe('operators', function () {
     });
 
     afterEach(function () {
+      logger.info('Inside After each block');
       expect(registerWatcherStub.callCount).to.equal(1);
+      logger.info('first');
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.BACKUP);
+      logger.info('second');
       expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      logger.info('third');
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound startPoller');
+      logger.info('fourth');
       expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`);
+      logger.info('fifth');
       registerWatcherStub.resetHistory();
       backupOperationStub.resetHistory();
+      logger.info('End : afterEach block');
     });
 
     after(function () {
@@ -206,10 +214,12 @@ describe('operators', function () {
             config.lockttl.backup = oldTTLConfig;
             expect(backupOperationStub).to.be.calledOnce;
             mocks.verify();
+            logger.info('End : backup is aborting - within abort timeout');
           });
       });
 
       it('backup is aborting - abort timeout exceeded', function () {
+        logger.info('Start : backup is aborting - abort timeout exceeded');
         const backupStatusPoller = new BackupStatusPoller();
         const oldAbortTimeConfig = config.backup.abort_time_out;
         const oldTTLConfig = config.lockttl.backup;

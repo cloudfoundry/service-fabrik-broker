@@ -26,7 +26,7 @@ const DefaultBackupOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DefaultBackupOperator = proxyquire('../../applications/operators/src/backup-operator/DefaultBackupOperator', {
+const DefaultBackupOperator = proxyquire('../src/backup-operator/DefaultBackupOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {

@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BaseStatusPoller = require('../../applications/operators/src/BaseStatusPoller');
+const BaseStatusPoller = require('../src/BaseStatusPoller');
 
 describe('operators', function () {
   describe('BoshStaggeredDeploymentPoller', function () {
@@ -81,7 +81,7 @@ describe('operators', function () {
       it('cached deployment status check should be succesful and status is in_progress', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
               'createInstance': function (instance_id, options) {
@@ -126,7 +126,7 @@ describe('operators', function () {
       it('cached deployment status check should be succesful and status is waiting', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
               DirectorService: {
               'createInstance': function (instance_id, options) {
@@ -165,7 +165,7 @@ describe('operators', function () {
       it('cached deployment status check should be unsuccessful', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns();
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
             'createInstance': function (instance_id, options) {
@@ -201,7 +201,7 @@ describe('operators', function () {
       it('create should be succesful and status is in_progress', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
             'createInstance': function (instance_id, options) {
@@ -246,7 +246,7 @@ describe('operators', function () {
       it('update should be succesful and status is in_progress', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
             'createInstance': function (instance_id, options) {
@@ -292,7 +292,7 @@ describe('operators', function () {
       it('delete should be succesful and status is in_progress', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
             'createInstance': function (instance_id, options) {
@@ -336,7 +336,7 @@ describe('operators', function () {
       it('no ops for deployment type unknown', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../applications/operators/src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../src/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           '@sf/provisioner-services': {
             DirectorService: {
             'createInstance': function (instance_id, options) {

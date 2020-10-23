@@ -7,8 +7,8 @@ const {
     encodeBase64
   }
 } = require('@sf/common-utils');
-const MultitenancyService = require('../../applications/operators/src/multitenancy-operator/MultitenancyService');
-const MultitenancyBindService = require('../../applications/operators/src/multitenancy-operator/MultitenancyBindService');
+const MultitenancyService = require('../src/multitenancy-operator/MultitenancyService');
+const MultitenancyBindService = require('../src/multitenancy-operator/MultitenancyBindService');
 
 describe('#MultitenancyService', function () {
   this.timeout(0);

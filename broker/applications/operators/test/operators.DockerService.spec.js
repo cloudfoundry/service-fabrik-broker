@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const DockerService = require('../../applications/operators/src/docker-operator/DockerService');
-const DockerImageLoaderService = require('../../applications/operators/src/docker-operator/DockerImageLoaderService');
+const DockerService = require('../src/docker-operator/DockerService');
+const DockerImageLoaderService = require('../src/docker-operator/DockerImageLoaderService');
 const docker = require('@sf/docker');
 const { catalog } = require('@sf/models');
 const parseUrl = require('url').parse;
