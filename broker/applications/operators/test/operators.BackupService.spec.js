@@ -10,7 +10,6 @@ const {
 const moment = require('moment');
 const config = require('@sf/app-config');
 const { CONST } = require('@sf/common-utils');
-const logger = require('@sf/logger');
 
 describe('operators', function () {
   describe('BackupService', function () {
