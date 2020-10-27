@@ -9,7 +9,7 @@ const {
   Repository
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
-const { maintenanceManager } = require('../../applications/scheduler/src/maintenance');
+const { maintenanceManager } = require('../src/maintenance');
 
 describe('maintenance', function () {
   /* jshint unused:false */
