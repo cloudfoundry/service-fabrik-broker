@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
 const {
-  HttpClient,
+  AxiosHttpClient,
   errors: {
     ServiceInstanceNotFound,
     SecurityGroupNotFound,
@@ -14,18 +14,18 @@ const {
 const logger = require('@sf/logger');
 const ResourceStream = require('./ResourceStream');
 
-class CloudControllerClient extends HttpClient {
+class CloudControllerClient extends AxiosHttpClient {
   constructor(tokenIssuer) {
     super({
-      baseUrl: config.cf.url,
+      baseURL: config.cf.url,
       auth: {
-        user: config.cf.username,
-        pass: config.cf.password
+        username: config.cf.username,
+        password: config.cf.password
       },
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: false,
+      maxRedirects: 10,
       rejectUnauthorized: !config.skip_ssl_validation
     });
     this.tokenIssuer = tokenIssuer;
@@ -46,8 +46,11 @@ class CloudControllerClient extends HttpClient {
       .request({
         method: 'GET',
         url: '/v2/info',
-        auth: undefined,
-        json: true
+        headers: {
+          'Content-type': 'application/json'
+        },
+        auth: false,
+        responseType: 'json'
       }, 200)
       .then(res => res.body);
   }
@@ -63,7 +66,7 @@ class CloudControllerClient extends HttpClient {
   getServiceInstancesInOrgWithPlansGuids(orgId, planGuids) {
     let commaSeparatedPlanGuids = _.join(planGuids, ',');
     return this.getServiceInstances({
-      qs: {
+      params: {
         q: [`organization_guid:${orgId}`, `service_plan_guid IN ${commaSeparatedPlanGuids}`]
       }
     });
@@ -75,7 +78,7 @@ class CloudControllerClient extends HttpClient {
 
   getServiceInstanceByName(name, space_guid) {
     return this.getServiceInstances({
-      qs: {
+      params: {
         q: [`space_guid:${space_guid}`, `name:${name}`]
       }
     })
@@ -90,26 +93,31 @@ class CloudControllerClient extends HttpClient {
 
   updateServiceInstance(instance_id, options) {
     options = options || {};
-    const auth = options.auth || {};
+    const bearer = _.replace(
+      _.get(options, 'headers.authorization'),
+      /Bearer /i, '' // remove token type from header value
+    );
     const parameters = options.parameters || null;
     const expectedResponseCode = options.isOperationSync ? 201 : 202;
     // CC returns 201 for SYNC and 202 for ASYNC operations.
     return Promise
-      .try(() => auth.bearer || this.tokenIssuer.getAccessToken())
+      .try(() => bearer || this.tokenIssuer.getAccessToken())
       .then(accessToken => this
         .request({
           method: 'PUT',
           url: `/v2/service_instances/${instance_id}`,
-          auth: {
-            bearer: accessToken
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'Content-type': 'application/json'
           },
-          qs: {
+          auth: false,
+          params: {
             accepts_incomplete: true
           },
-          body: {
+          data: {
             parameters: parameters
           },
-          json: true
+          responseType: 'json'
         }, expectedResponseCode)
       )
       .then(res => res.body);
@@ -183,11 +191,13 @@ class CloudControllerClient extends HttpClient {
         .request({
           method: 'POST',
           url: '/v2/security_groups',
-          auth: {
-            bearer: accessToken
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'Content-type': 'application/json'
           },
-          json: true,
-          body: body
+          auth: false,
+          responseType: 'json',
+          data: body
         }, 201)
         .then(res => res.body)
       );
@@ -204,11 +214,13 @@ class CloudControllerClient extends HttpClient {
         .request({
           method: 'DELETE',
           url: `/v2/security_groups/${guid}`,
-          auth: {
-            bearer: accessToken
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'Content-type': 'application/json'
           },
-          json: true,
-          qs: {
+          auth: false,
+          responseType: 'json',
+          params: {
             async: false
           }
         }, 204)
@@ -303,17 +315,22 @@ class CloudControllerClient extends HttpClient {
       options = pathname;
       pathname = options.url;
     }
-    const bearer = _.get(options, 'auth.bearer');
+    const bearer = _.replace(
+      _.get(options, 'headers.authorization'),
+      /Bearer /i, '' // remove token type from header value
+    );
     return Promise
       .try(() => bearer || this.tokenIssuer.getAccessToken())
       .then(bearer => this
         .request({
           method: 'GET',
           url: pathname,
-          auth: {
-            bearer: bearer
+          headers: {
+            authorization: `Bearer ${bearer}`,
+            'Content-type': 'application/json'
           },
-          json: true
+          auth: false,
+          responseType: 'json'
         }, 200)
       )
       .then(res => res.body);
@@ -325,11 +342,11 @@ class CloudControllerClient extends HttpClient {
       pathname = options.url;
     }
     if (_.isString(options)) {
-      options = _.set({}, 'qs.q', options);
+      options = _.set({}, 'params.q', options);
     }
     return new ResourceStream(this, this.tokenIssuer, _
       .chain(options)
-      .pick('qs', 'auth')
+      .pick('params', 'headers')
       .set('url', pathname)
       .value());
   }
