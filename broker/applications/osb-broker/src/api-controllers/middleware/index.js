@@ -116,7 +116,7 @@ exports.injectPlanInRequest = function() {
         return apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-          resourceId: req.params.instance_id
+          resourceId: commonFunctions.getKubernetesName(req.params.instance_id)
         })
           .then(resource => {
             _.set(req, 'body.plan_id', _.get(resource, 'spec.planId'));

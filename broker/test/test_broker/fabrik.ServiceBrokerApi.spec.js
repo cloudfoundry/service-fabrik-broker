@@ -3,7 +3,8 @@
 const api = require('../../applications/osb-broker/src/api-controllers').serviceBrokerApi;
 const {
   commonFunctions: {
-    isValidKubernetesName
+    isValidKubernetesName,
+    getKubernetesName
   },
   errors: {
     PreconditionFailed,
@@ -78,13 +79,13 @@ describe('fabrik', function () {
       it('should return the same name if the name is valid', function () {
         const str = 'abcd.1234-efgh';
         expect(isValidKubernetesName(str)).to.be.true;
-        expect(api.getKubernetesName(str)).to.eql(str);
+        expect(getKubernetesName(str)).to.eql(str);
       });
 
       it('should return a valid name if it is invalid starting with -', function () {
         const str = '-abcd1234';
         expect(isValidKubernetesName(str)).to.be.false;
-        const res = api.getKubernetesName(str)
+        const res = getKubernetesName(str)
         expect(res).not.to.eql(str);
         expect(isValidKubernetesName(res)).to.be.true;
       });
@@ -92,7 +93,7 @@ describe('fabrik', function () {
       it('should return a valid name if it is invalid starting with .', function () {
         const str = '.abcd1234';
         expect(isValidKubernetesName(str)).to.be.false;
-        const res = api.getKubernetesName(str)
+        const res = getKubernetesName(str)
         expect(res).not.to.eql(str);
         expect(isValidKubernetesName(res)).to.be.true;
       });
@@ -100,7 +101,7 @@ describe('fabrik', function () {
       it('should return a valid name if it is invalid with upper case', function () {
         const str = 'abcD.1234';
         expect(isValidKubernetesName(str)).to.be.false;
-        const res = api.getKubernetesName(str)
+        const res = getKubernetesName(str)
         expect(res).not.to.eql(str);
         expect(isValidKubernetesName(res)).to.be.true;
       });
