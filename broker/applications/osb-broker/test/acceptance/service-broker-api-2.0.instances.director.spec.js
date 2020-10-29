@@ -755,6 +755,86 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
+        it('returns 202 Accepted if resource is already present and plan_id is not present in the request', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockedResourceDetails: {
+                  operation: 'update'
+                }
+              })
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            metadata: {
+              resourceVersion: 10
+            }
+          });
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec = camelcaseKeys(payload.spec);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            spec: {
+              planId: plan_id_update
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, testPayload);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              parameters: parameters,
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .then(res => {
+              mocks.verify();
+              expect(res).to.have.status(202);
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
+                'type': 'update'
+              }));
+            });
+        });
+
+        it('returns ServicePlanNotFound error if resource could not be fetched and plan_id is not present in the request', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec = camelcaseKeys(payload.spec);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1 , 500);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              parameters: parameters,
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              mocks.verify();
+              expect(res).to.have.status(404);
+            });
+        });
+
         it('returns 422 Unprocessable Entity when accepts_incomplete not in query', function () {
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)

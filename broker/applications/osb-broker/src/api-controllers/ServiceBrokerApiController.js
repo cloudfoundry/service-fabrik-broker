@@ -13,9 +13,8 @@ const {
     compareVersions,
     encodeBase64,
     decodeBase64,
-    isValidKubernetesName,
     isValidKubernetesLabelValue,
-    sha224Sum
+    getKubernetesName
   },
   errors: {
     PreconditionFailed,
@@ -129,11 +128,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
     });
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
-    return Promise.try(() => eventmesh.apiServerClient.createNamespace(eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id))))
+    return Promise.try(() => eventmesh.apiServerClient.createNamespace(eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id))))
       .then(() => eventmesh.apiServerClient.createOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-        resourceId: this.getKubernetesName(req.params.instance_id),
+        resourceId: getKubernetesName(req.params.instance_id),
         metadata: {
           finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
         },
@@ -148,14 +147,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-            resourceId: this.getKubernetesName(req.params.instance_id),
-            namespaceId: eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id)),
+            resourceId: getKubernetesName(req.params.instance_id),
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
           });
         }
       })
-      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(this.getKubernetesName(req.params.instance_id)) : {})
+      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)) : {})
       .then(done.bind(this))
       .catch(Conflict, conflict);
   }
@@ -203,8 +202,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     let lastOperationState = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-      resourceId: this.getKubernetesName(req.params.instance_id),
-      namespaceId: eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id)),
+      resourceId: getKubernetesName(req.params.instance_id),
+      namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
       start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
       started_at: new Date()
     };
@@ -230,7 +229,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.createResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
-            resourceId: this.getKubernetesName(serviceFlow.id),
+            resourceId: getKubernetesName(serviceFlow.id),
             options: serviceFlowOptions,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -242,7 +241,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.patchOSBResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-            resourceId: this.getKubernetesName(req.params.instance_id),
+            resourceId: getKubernetesName(req.params.instance_id),
             spec: params,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
@@ -256,7 +255,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus(lastOperationState);
         }
       })
-      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(this.getKubernetesName(req.params.instance_id)) : {})
+      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)) : {})
       .then(done.bind(this));
   }
 
@@ -277,8 +276,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         } else {
           return this.removeFinalizersFromOSBResource(
             CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-            this.getKubernetesName(req.params.instance_id),
-            eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id))
+            getKubernetesName(req.params.instance_id),
+            eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id))
           );
         }
       })
@@ -295,12 +294,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return eventmesh.apiServerClient.deleteResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-      resourceId: this.getKubernetesName(req.params.instance_id)
+      resourceId: getKubernetesName(req.params.instance_id)
     })
       .then(() => eventmesh.apiServerClient.patchOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-        resourceId: this.getKubernetesName(req.params.instance_id),
+        resourceId: getKubernetesName(req.params.instance_id),
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.DELETE,
           description: ''
@@ -311,8 +310,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-            resourceId: this.getKubernetesName(req.params.instance_id),
-            namespaceId: eventmesh.apiServerClient.getNamespaceId(this.getKubernetesName(req.params.instance_id)),
+            resourceId: getKubernetesName(req.params.instance_id),
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
             start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
             started_at: new Date()
           });
@@ -366,7 +365,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
     const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
-    const resourceId = this.getKubernetesName(operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id);
+    const resourceId = getKubernetesName(operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id);
     return eventmesh.apiServerClient.getLastOperation({
       resourceGroup: resourceGroup,
       resourceType: resourceType,
@@ -380,9 +379,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   putBinding(req, res) {
     const params = _(req.body)
-      .set('binding_id', this.getKubernetesName(req.params.binding_id))
+      .set('binding_id', getKubernetesName(req.params.binding_id))
       .set('id', req.params.binding_id)
-      .set('instance_id', this.getKubernetesName(req.params.instance_id))
+      .set('instance_id', getKubernetesName(req.params.instance_id))
       .value();
 
     function done(bindResponse) {
@@ -449,9 +448,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   deleteBinding(req, res) {
     const params = _(req.query)
-      .set('binding_id', this.getKubernetesName(req.params.binding_id))
+      .set('binding_id', getKubernetesName(req.params.binding_id))
       .set('id', req.params.binding_id)
-      .set('instance_id', this.getKubernetesName(req.params.instance_id))
+      .set('instance_id', getKubernetesName(req.params.instance_id))
       .value();
 
     function done() {
@@ -520,14 +519,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return null;
     }
   }
-
-  getKubernetesName(id) {
-    if (isValidKubernetesName(id)) {
-      return id;
-    }
-    return sha224Sum(id);
-  }
-
 }
 
 module.exports = ServiceBrokerApiController;

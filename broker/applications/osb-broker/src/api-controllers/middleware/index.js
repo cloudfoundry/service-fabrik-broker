@@ -13,10 +13,11 @@ const {
   },
   commonFunctions
 } = require('@sf/common-utils');
+const Promise = require('bluebird');
 const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const { catalog } = require('@sf/models');
-const { lockManager } = require('@sf/eventmesh');
+const { lockManager, apiServerClient } = require('@sf/eventmesh');
 const QuotaClient = require('./QuotaClient');
 
 exports.validateCreateRequest = function () {
@@ -101,6 +102,32 @@ exports.checkQuota = function () {
           });
       }
     }
+  };
+};
+
+exports.injectPlanInRequest = function() {
+  return function (req, res, next) {
+    /* jshint unused:false */
+    return Promise.try(() => {
+      const plan_id = req.body.plan_id || req.query.plan_id;
+      if(!_.isEmpty(plan_id)) {
+        next();
+      } else {
+        return apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+          resourceId: commonFunctions.getKubernetesName(req.params.instance_id)
+        })
+          .then(resource => {
+            _.set(req, 'body.plan_id', _.get(resource, 'spec.planId'));
+            logger.info(`injected plan_id ${req.body.plan_id} in request for instance ${req.params.instance_id}`);
+          })
+          .catch(err => {
+            logger.warn(`resource could not be fetched for instance id ${req.params.instance_id}. Error: ${err}`);
+          })
+          .finally(() => next());
+      }
+    });
   };
 };
 

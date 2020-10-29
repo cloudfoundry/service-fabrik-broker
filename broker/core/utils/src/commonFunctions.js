@@ -24,6 +24,7 @@ exports.uuidV4 = uuidV4;
 exports.sha224Sum = sha224Sum;
 exports.isValidKubernetesName = isValidKubernetesName;
 exports.isValidKubernetesLabelValue = isValidKubernetesLabelValue;
+exports.getKubernetesName = getKubernetesName;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
 exports.streamToPromise = streamToPromise;
 exports.isFeatureEnabled = isFeatureEnabled;
@@ -137,6 +138,13 @@ function isValidKubernetesName(str) {
 
   const dns1123SubdomainRegexp = new RegExp('^' + dns1123SubdomainFmt + '$');
   return dns1123SubdomainRegexp.test(str);
+}
+
+function getKubernetesName(id) {
+  if (isValidKubernetesName(id)) {
+    return id;
+  }
+  return sha224Sum(id);
 }
 
 // isValidKubernetesLabelValue tests whether the value passed is a valid label value.
