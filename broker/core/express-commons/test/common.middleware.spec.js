@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const commonMiddleware = proxyquire('../../core/express-commons/src/middleware', {
+const commonMiddleware = proxyquire('../src/middleware', {
   'basic-auth': function (req) {
     return req.auth;
   }

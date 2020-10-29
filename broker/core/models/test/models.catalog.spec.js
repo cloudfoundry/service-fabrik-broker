@@ -24,7 +24,7 @@ let service1 = {
   plans: [plan1, plan2]
 };
 
-const catalog = proxyquire('../../core/models/src/catalog', {
+const catalog = proxyquire('../src/catalog', {
   '@sf/app-config': {
     services: [service1]
   },

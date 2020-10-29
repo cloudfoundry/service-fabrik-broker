@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const _ = require('lodash');
-const CfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
+const CfPlatformManager = require('../src/CfPlatformManager');
 const { BasePlatformManager } = require('@sf/platforms');
 const { cloudController } = require('@sf/cf');
 const assert = require('assert');
@@ -186,10 +186,10 @@ describe('fabrik', function () {
       const disallow_org_sharing = {
         enable_cross_organization_sharing: false
       };
-      const CfPlatformManagerAllowOrgSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerAllowOrgSharing = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': allow_org_sharing
       });
-      const CfPlatformManagerDisallowOrgSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerDisallowOrgSharing = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': disallow_org_sharing
       });
       let getSpaceStub;
@@ -283,10 +283,10 @@ describe('fabrik', function () {
           AllowInstanceSharing: false
         }
       };
-      const CfPlatformManagerAllowSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerAllowSharing = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': allowSharingConfig
       });
-      const CfPlatformManagerDisallowSharing = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerDisallowSharing = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': disallowSharingConfig
       });
 
@@ -330,10 +330,10 @@ describe('fabrik', function () {
           whitelist: ['test']
         }
       };
-      const CfPlatformManagerInternal = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerInternal = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': multi_az_internal_config
       });
-      const BasePlatformManagerInternal = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+      const BasePlatformManagerInternal = proxyquire('../src/BasePlatformManager', {
         '@sf/app-config': multi_az_internal_config
       });
       const multi_az_all_config = {
@@ -343,16 +343,16 @@ describe('fabrik', function () {
       const multi_az_all_config_wrong = {
         multi_az_enabled: 'INCORRECT_VAL'
       };
-      const CfPlatformManagerExterrnal = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerExterrnal = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': multi_az_all_config
       });
-      const BasePlatformManagerExterrnal = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+      const BasePlatformManagerExterrnal = proxyquire('../src/BasePlatformManager', {
         '@sf/app-config': multi_az_all_config
       });
-      const CfPlatformManagerWrongConfig = proxyquire('../../core/platform-managers/src/CfPlatformManager', {
+      const CfPlatformManagerWrongConfig = proxyquire('../src/CfPlatformManager', {
         '@sf/app-config': multi_az_all_config_wrong
       });
-      const BasePlatformManagerWrongConfig = proxyquire('../../core/platform-managers/src/BasePlatformManager', {
+      const BasePlatformManagerWrongConfig = proxyquire('../src/BasePlatformManager', {
         '@sf/app-config': multi_az_all_config_wrong
       });
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
