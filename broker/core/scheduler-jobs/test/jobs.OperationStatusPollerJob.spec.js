@@ -7,10 +7,10 @@ const {
     encodeBase64
   }
 } = require('@sf/common-utils');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const BaseJob = require('../src/jobs/BaseJob');
+const ScheduleManager = require('../src/ScheduleManager');
 const { BackupStore } = require('@sf/iaas');
-const OperationStatusPollerJob = require('../../core/scheduler-jobs/src/jobs/OperationStatusPollerJob');
+const OperationStatusPollerJob = require('../src/jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

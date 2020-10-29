@@ -10,9 +10,9 @@ const {
 const config = require('@sf/app-config');
 const moment = require('moment');
 const Promise = require('bluebird');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
-const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const ScheduleManager = require('../src/ScheduleManager');
+const JobFabrik = require('../src/jobs/JobFabrik');
+const BaseJob = require('../src/jobs/BaseJob');
 const { 
   backupStore,
   CloudProviderClient

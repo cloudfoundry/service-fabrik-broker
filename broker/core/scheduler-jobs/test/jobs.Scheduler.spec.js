@@ -17,8 +17,8 @@ const {
   }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const { maintenanceManager } = require('../../applications/scheduler/src/maintenance');
+const BaseJob = require('../src/jobs/BaseJob');
+const { maintenanceManager } = require('../../../applications/scheduler/src/maintenance');
 
 const MONGO_INIT_SUCCEEDED = 2;
 const MONGO_INIT_FAILED = 1;
@@ -220,8 +220,8 @@ const proxyLibs = {
 
 const cloneProxyLibs = _.cloneDeep(proxyLibs);
 cloneProxyLibs['@sf/app-config'].scheduler = schedulerConfig;
-const SchedulerPubSub = proxyquire('../../core/scheduler-jobs/src/Scheduler', cloneProxyLibs);
-const Scheduler = proxyquire('../../core/scheduler-jobs/src/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
+const SchedulerPubSub = proxyquire('../src/Scheduler', cloneProxyLibs);
+const Scheduler = proxyquire('../src/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 
 describe('Jobs', function () {
   let clock;
@@ -284,6 +284,7 @@ describe('Jobs', function () {
     });
     after(function () {
       sandbox.restore();
+      logSpy.restore();
     });
 
     describe('#InitializeScheduler', function () {

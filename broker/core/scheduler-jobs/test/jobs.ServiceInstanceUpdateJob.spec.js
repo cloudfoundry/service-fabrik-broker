@@ -12,9 +12,9 @@ const {
 } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
 const config = require('@sf/app-config');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const BaseJob = require('../src/jobs/BaseJob');
+const JobFabrik = require('../src/jobs/JobFabrik');
+const ScheduleManager = require('../src/ScheduleManager');
 const { NetworkSegmentIndex } = require('@sf/bosh');
 
 describe('Jobs', function () {

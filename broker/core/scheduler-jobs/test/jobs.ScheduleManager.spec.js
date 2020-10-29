@@ -195,7 +195,7 @@ class Repository {
 }
 
 describe('Jobs', function () {
-  const ScheduleManager = proxyquire('../../core/scheduler-jobs/src/ScheduleManager', {
+  const ScheduleManager = proxyquire('../src/ScheduleManager', {
     './Scheduler': Scheduler,
     '@sf/common-utils': {
       Repository: Repository
@@ -677,7 +677,7 @@ describe('Jobs', function () {
         sandbox = sinon.createSandbox();
         subStub = sandbox.stub(pubsub, 'subscribe').callsFake((topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
-        ScheduleManager2 = proxyquire('../../core/scheduler-jobs/src/ScheduleManager', {
+        ScheduleManager2 = proxyquire('../src/ScheduleManager', {
           '@sf/app-config': systemJobConfig
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');

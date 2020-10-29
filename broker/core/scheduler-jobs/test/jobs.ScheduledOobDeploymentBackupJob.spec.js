@@ -9,12 +9,12 @@ const {
   }
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const BaseJob = require('../src/jobs/BaseJob');
+const ScheduleManager = require('../src/ScheduleManager');
 const iaas = require('@sf/iaas');
 const backupStore = iaas.backupStoreForOob;
 const filename = iaas.backupStoreForOob.filename;
-const ScheduledOobDeploymentBackupJob = require('../../core/scheduler-jobs/src/jobs/ScheduledOobDeploymentBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../src/jobs/ScheduledOobDeploymentBackupJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

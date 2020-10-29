@@ -1,6 +1,6 @@
 'use strict';
 
-const api = require('../../applications/osb-broker/src/api-controllers').serviceBrokerApi;
+const api = require('../src/api-controllers').serviceBrokerApi;
 const {
   commonFunctions: {
     isValidKubernetesName,

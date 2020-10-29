@@ -2,9 +2,9 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
-const DbCollectionReaperJob = require('../../core/scheduler-jobs/src/jobs/DbCollectionReaperJob');
+const BaseJob = require('../src/jobs/BaseJob');
+const ScheduleManager = require('../src/ScheduleManager');
+const DbCollectionReaperJob = require('../src/jobs/DbCollectionReaperJob');
 const {
   CONST,
   Repository

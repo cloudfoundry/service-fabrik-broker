@@ -58,7 +58,7 @@ describe('utils', () => {
       }
     };
     before(() => {
-      KeyGenSubjectFailure2 = proxyquire('../../core/utils/src/RsaKeyGenerator', {
+      KeyGenSubjectFailure2 = proxyquire('../src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
@@ -67,7 +67,7 @@ describe('utils', () => {
           tmpdir: () => __dirname
         }
       });
-      KeyGenSubjectFailure = proxyquire('../../core/utils/src/RsaKeyGenerator', {
+      KeyGenSubjectFailure = proxyquire('../src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
@@ -79,7 +79,7 @@ describe('utils', () => {
           spawn: spawnStub
         }
       });
-      KeyGenSubject = proxyquire('../../core/utils/src/RsaKeyGenerator', {
+      KeyGenSubject = proxyquire('../src/RsaKeyGenerator', {
         'uuid': {
           v4: () => 'abcd'
         },
