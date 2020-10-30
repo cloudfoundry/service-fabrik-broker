@@ -1,6 +1,6 @@
 'use strict';
 
-const ArchiveMeteredEventsJob = require('../../core/scheduler-jobs/src/jobs/ArchiveMeteredEventsJob');
+const ArchiveMeteredEventsJob = require('../src/jobs/ArchiveMeteredEventsJob');
 const { meteringArchiveStore } = require('@sf/iaas');
 const { apiServerClient } = require('@sf/eventmesh');
 

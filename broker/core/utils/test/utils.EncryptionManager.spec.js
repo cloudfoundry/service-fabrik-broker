@@ -12,7 +12,7 @@ class MockKeyGenerator {
   }
 }
 
-const EncryptionManager = proxyquire('../../core/utils/src/EncryptionManager', {
+const EncryptionManager = proxyquire('../src/EncryptionManager', {
   './RsaKeyGenerator': MockKeyGenerator
 });
 

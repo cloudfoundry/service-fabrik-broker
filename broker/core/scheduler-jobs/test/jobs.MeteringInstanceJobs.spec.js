@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const MeterInstanceJob = require('../../core/scheduler-jobs/src/jobs/MeterInstanceJob');
+const MeterInstanceJob = require('../src/jobs/MeterInstanceJob');
 const { CONST } = require('@sf/common-utils');
 const { EventLogInterceptor } = require('@sf/event-logger');
 

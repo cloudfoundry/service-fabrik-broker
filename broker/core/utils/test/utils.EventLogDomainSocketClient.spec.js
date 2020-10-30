@@ -36,7 +36,7 @@ class Connection extends EventEmitter {
     netConnectionStub.end();
   }
 }
-const DomainSocketClient = proxyquire('../../data-access-layer/event-logger/src/EventLogDomainSocketClient', {
+const DomainSocketClient = proxyquire('../../../data-access-layer/event-logger/src/EventLogDomainSocketClient', {
   net: {
     createConnection: (path, callback) => {
       return new Connection(path, callback);

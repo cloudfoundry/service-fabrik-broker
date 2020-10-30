@@ -1,14 +1,14 @@
 'use strict';
 
-const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
-const ScheduledBackup = require('../../core/scheduler-jobs/src/jobs/ScheduleBackupJob');
-const ScheduledOobDeploymentBackupJob = require('../../core/scheduler-jobs/src/jobs/ScheduledOobDeploymentBackupJob');
-const OperationStatusPollerJob = require('../../core/scheduler-jobs/src/jobs/OperationStatusPollerJob');
-const BluePrintJob = require('../../core/scheduler-jobs/src/jobs/BluePrintJob');
-const BackupReaperJob = require('../../core/scheduler-jobs/src/jobs/BackupReaperJob');
-const ServiceInstanceUpdateJob = require('../../core/scheduler-jobs/src/jobs/ServiceInstanceUpdateJob');
-const DbCollectionReaperJob = require('../../core/scheduler-jobs/src/jobs/DbCollectionReaperJob');
-const MeterInstanceJob = require('../../core/scheduler-jobs/src/jobs/MeterInstanceJob');
+const JobFabrik = require('../src/jobs/JobFabrik');
+const ScheduledBackup = require('../src/jobs/ScheduleBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../src/jobs/ScheduledOobDeploymentBackupJob');
+const OperationStatusPollerJob = require('../src/jobs/OperationStatusPollerJob');
+const BluePrintJob = require('../src/jobs/BluePrintJob');
+const BackupReaperJob = require('../src/jobs/BackupReaperJob');
+const ServiceInstanceUpdateJob = require('../src/jobs/ServiceInstanceUpdateJob');
+const DbCollectionReaperJob = require('../src/jobs/DbCollectionReaperJob');
+const MeterInstanceJob = require('../src/jobs/MeterInstanceJob');
 const { CONST } = require('@sf/common-utils');
 const AssertionError = require('assert').AssertionError;
 

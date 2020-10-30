@@ -9,9 +9,9 @@ const {
 } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const moment = require('moment');
-const JobFabrik = require('../../core/scheduler-jobs/src/jobs/JobFabrik');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
-const ScheduleManager = require('../../core/scheduler-jobs/src/ScheduleManager');
+const JobFabrik = require('../src/jobs/JobFabrik');
+const BaseJob = require('../src/jobs/BaseJob');
+const ScheduleManager = require('../src/ScheduleManager');
 const { backupStore } = require('@sf/iaas');
 const filename = backupStore.filename;
 

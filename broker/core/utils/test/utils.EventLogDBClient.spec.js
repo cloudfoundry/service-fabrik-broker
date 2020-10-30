@@ -10,7 +10,7 @@ const {
 describe('utils', function () {
   /* jshint expr:true */
   describe('EventLogDBClient', function () {
-    const EventLogDBClient = proxyquire('../../data-access-layer/event-logger/src/EventLogDBClient', {
+    const EventLogDBClient = proxyquire('../../../data-access-layer/event-logger/src/EventLogDBClient', {
       '@sf/app-config': {
         monitoring: {
           events_logged_in_db: 'get_backup_by_guid,update_instance'

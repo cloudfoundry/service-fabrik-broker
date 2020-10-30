@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const BaseJob = require('../../core/scheduler-jobs/src/jobs/BaseJob');
+const BaseJob = require('../src/jobs/BaseJob');
 const {
   CONST,
   Repository
