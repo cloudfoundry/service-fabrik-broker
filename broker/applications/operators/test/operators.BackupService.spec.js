@@ -30,7 +30,7 @@ describe('operators', function () {
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-    const BackupService = require('../../applications/operators/src/backup-operator/BackupService');
+    const BackupService = require('../src/backup-operator/BackupService');
     const started_at = '2015-11-18T11-28-42Z';
     const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);
@@ -199,6 +199,7 @@ describe('operators', function () {
         sandbox.restore();
         mocks.agent.getBackupLogs(fakeLogs);
         mocks.agent.lastBackupOperation(backup_state);
+        mocks.cloudProvider.auth(1);
         mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename], 200);
         mocks.cloudProvider.download(pathname, data);
         mocks.cloudProvider.upload(pathname, undefined);
@@ -222,7 +223,8 @@ describe('operators', function () {
           .then(res => {
             expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
             expect(res.state).to.eql('succeeded');
-            mocks.verify();
+            let ignoreNock = ["POST https://myopenstackcloud.com:5000/v3/auth/tokens"];
+            mocks.verify(ignoreNock);
           });
       });
     });

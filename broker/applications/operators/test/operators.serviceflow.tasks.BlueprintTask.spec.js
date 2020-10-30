@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const BlueprintTask = require('../../applications/operators/src/serviceflow-operator/task/BlueprintTask');
+const BlueprintTask = require('../src/serviceflow-operator/task/BlueprintTask');
 const { apiServerClient } = require('@sf/eventmesh');
 const { CONST } = require('@sf/common-utils');
 

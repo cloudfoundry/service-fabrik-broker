@@ -1,8 +1,8 @@
 'use strict';
 
-const DefaultBoshRestoreOperator = require('../../applications/operators/src/bosh-restore-operator/DefaultBoshRestoreOperator');
-const BoshRestoreService = require('../../applications/operators/src/bosh-restore-operator/BoshRestoreService');
-const BaseOperator = require('../../applications/operators/src/BaseOperator');
+const DefaultBoshRestoreOperator = require('../src/bosh-restore-operator/DefaultBoshRestoreOperator');
+const BoshRestoreService = require('../src/bosh-restore-operator/BoshRestoreService');
+const BaseOperator = require('../src/BaseOperator');
 const { CONST } = require('@sf/common-utils');
 const { apiServerClient } = require('@sf/eventmesh');
 

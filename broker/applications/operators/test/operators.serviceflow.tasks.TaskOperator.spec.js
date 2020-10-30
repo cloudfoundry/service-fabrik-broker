@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const BaseOperator = require('../../applications/operators/src/BaseOperator');
-const TaskFabrik = require('../../applications/operators/src/serviceflow-operator/task/TaskFabrik');
+const BaseOperator = require('../src/BaseOperator');
+const TaskFabrik = require('../src/serviceflow-operator/task/TaskFabrik');
 const { CONST } = require('@sf/common-utils');
 const { apiServerClient } = require('@sf/eventmesh');
 
@@ -49,7 +49,7 @@ describe('operators', function () {
             return Promise.resolve(true);
           });
           registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
-          TaskOperator = require('../../applications/operators/src/serviceflow-operator/task/TaskOperator');
+          TaskOperator = require('../src/serviceflow-operator/task/TaskOperator');
           updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve({
             body: changeObject.object
           }));

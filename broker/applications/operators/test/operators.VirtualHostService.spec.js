@@ -7,7 +7,7 @@ const {
     encodeBase64
   }
 } = require('@sf/common-utils');
-const VirtualHostService = require('../../applications/operators/src/virtualhost-operator/VirtualHostService');
+const VirtualHostService = require('../src/virtualhost-operator/VirtualHostService');
 
 describe('#VirtualHostService', function () {
   describe('instances', function () {

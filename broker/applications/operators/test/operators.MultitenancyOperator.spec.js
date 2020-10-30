@@ -10,7 +10,7 @@ const {
   ApiServerClient,
   apiServerClient
 } = require('@sf/eventmesh');
-const MultitenancyService = require('../../applications/operators/src/multitenancy-operator/MultitenancyService');
+const MultitenancyService = require('../src/multitenancy-operator/MultitenancyService');
 const service_id = '6db542eb-8187-4afc-8a85-e08b4a3cc24e';
 const plan_id = '2fcf6682-5a4a-4297-a7cd-a97bbe085b8e';
 const instance_id = 'e68446f8-023a-404a-af84-12d1ab4c8ac1';
@@ -37,7 +37,7 @@ const resultOptions = {
 };
 
 
-const MultitenancyOperator = proxyquire('../../applications/operators/src/multitenancy-operator/MultitenancyOperator', {
+const MultitenancyOperator = proxyquire('../src/multitenancy-operator/MultitenancyOperator', {
   '@sf/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {

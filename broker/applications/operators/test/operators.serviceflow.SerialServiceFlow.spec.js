@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const BaseOperator = require('../../applications/operators/src/BaseOperator');
+const BaseOperator = require('../src/BaseOperator');
 const {
   CONST,
   errors: {
@@ -87,7 +87,7 @@ describe('operators', function () {
           Promise.resolve(true);
         });
         registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
-        SerialServiceFlowOperator = require('../../applications/operators/src/serviceflow-operator/SerialServiceFlowOperator');
+        SerialServiceFlowOperator = require('../src/serviceflow-operator/SerialServiceFlowOperator');
         updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => {
           return Promise.try(() => {
             if (throwExceptionOnUpdate) {

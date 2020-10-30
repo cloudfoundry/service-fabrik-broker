@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
 const proxyquire = require('proxyquire');
-const BackupService = require('../../applications/operators/src/backup-operator');
+const BackupService = require('../src/backup-operator');
 const { ApiServerClient } = require('@sf/eventmesh');
 
 describe('operators', function () {
@@ -36,7 +36,7 @@ describe('operators', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const BackupStatusPoller = proxyquire('../../applications/operators/src/backup-operator/BackupStatusPoller.js', {
+    const BackupStatusPoller = proxyquire('../src/backup-operator/BackupStatusPoller.js', {
       '@sf/app-config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
