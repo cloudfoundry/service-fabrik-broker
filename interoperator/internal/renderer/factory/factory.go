@@ -84,7 +84,7 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		if content == "" {
 			return nil, fmt.Errorf("content & contentEncoded fields empty for %s template ", template.Action)
 		}
-		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, template.Action), values)
+		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s/%s", name.Name, template.Action), values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
@@ -98,7 +98,7 @@ func GetRendererInputFromSources(template *osbv1alpha1.TemplateSpec, name types.
 	rendererType := template.Type
 	action := template.Action
 
-	var content string
+	content := " "
 	if template.Content != "" {
 		content = template.Content
 	} else if template.ContentEncoded != "" {
@@ -117,7 +117,7 @@ func GetRendererInputFromSources(template *osbv1alpha1.TemplateSpec, name types.
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, content, sources)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s-%s", name.Name, action), sources)
+		input := gotemplate.NewInput(template.URL, content, fmt.Sprintf("%s/%s", name.Name, action), sources)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)

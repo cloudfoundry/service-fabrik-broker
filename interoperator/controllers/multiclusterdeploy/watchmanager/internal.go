@@ -4,8 +4,11 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
+	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -58,7 +61,14 @@ func (wm *watchManager) addCluster(clusterID string) error {
 		return err
 	}
 
-	cfg, err := cluster.GetKubeConfig(wm.defaultCluster)
+	var cfg *rest.Config
+	if clusterID == constants.OwnClusterID {
+		// Use in cluster config
+		cfg, err = ctrl.GetConfig()
+	} else {
+		// Get config from secret
+		cfg, err = cluster.GetKubeConfig(wm.defaultCluster)
+	}
 	if err != nil {
 		log.Error(err, "unable to get sfcluster config", "clusterID", clusterID)
 		return err

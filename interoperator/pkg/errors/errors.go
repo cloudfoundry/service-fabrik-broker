@@ -11,6 +11,9 @@ type InteroperatorError struct {
 
 // Error returns an error message describing 'e'.
 func (e *InteroperatorError) Error() string {
+	if e.Err != nil {
+		return e.Message + ". " + e.Err.Error()
+	}
 	return e.Message
 }
 

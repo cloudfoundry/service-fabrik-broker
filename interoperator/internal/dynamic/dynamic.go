@@ -20,7 +20,7 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 	res := make([]*unstructured.Unstructured, 0, len(contents))
 
 	for _, content := range contents {
-		trimmedContent := strings.Trim(content, "\n")
+		trimmedContent := strings.TrimSpace(content)
 		if trimmedContent == "" {
 			continue
 		}
