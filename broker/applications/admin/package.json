@@ -42,7 +42,7 @@
     "express-interceptor": "1.2.0",
     "express-jwt": "6.0.0",
     "express-session": "1.17.1",
-    "helmet": "4.1.0",
+    "helmet": "4.2.0",
     "hystrixjs": "0.2.0",
     "ip": "1.1.5",
     "js-yaml": "3.14.0",
