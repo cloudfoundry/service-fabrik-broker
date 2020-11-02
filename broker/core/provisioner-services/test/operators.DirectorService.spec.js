@@ -19,7 +19,7 @@ const {
   CloudProviderClient
 } = require('@sf/iaas');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const cfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
+const cfPlatformManager = require('@sf/platforms/src/CfPlatformManager');
 
 describe('#DirectorService', function () {
   describe('instances', function () {

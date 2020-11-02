@@ -15,7 +15,7 @@ const {
   }
 } = require('@sf/common-utils');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const CfPlatformManager = require('../../core/platform-managers/src/CfPlatformManager');
+const CfPlatformManager = require('@sf/platforms/src/CfPlatformManager');
 
 const guid = 'guid';
 const task_id = 'task_id';
@@ -91,7 +91,7 @@ describe('service', () => {
       codSpy.returns(Promise.resolve({
         task_id: undefined
       }));
-      DirectorServiceSub = proxyquire('../../core/provisioner-services/src/DirectorService.js', {
+      DirectorServiceSub = proxyquire('../src/DirectorService.js', {
         '@sf/app-config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
@@ -242,7 +242,7 @@ describe('service', () => {
       deleteDeploymentSpy = sandbox.stub();
       deleteDeploymentSpy.returns(Promise.resolve(task_id));
       getTaskSpy = sandbox.stub();
-      DirectorServiceSub = proxyquire('../../core/provisioner-services/src/DirectorService.js', {
+      DirectorServiceSub = proxyquire('../src/DirectorService.js', {
         '@sf/app-config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
@@ -519,7 +519,7 @@ describe('service', () => {
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
       deploymentSpy.returns(Promise.resolve(task_id));
-      let DirectorServiceSub = proxyquire('../../core/provisioner-services/src/DirectorService.js', {
+      let DirectorServiceSub = proxyquire('../src/DirectorService.js', {
         '@sf/app-config': configStub,
         '@sf/bosh': boshStub
       });
