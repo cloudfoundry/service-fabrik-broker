@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const CloudControllerClient = require('../../data-access-layer/cf/src/CloudControllerClient');
+const CloudControllerClient = require('../src/CloudControllerClient');
 const {
   errors: {
     ServiceInstanceNotFound,

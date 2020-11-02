@@ -15,7 +15,7 @@ function Client() {
   return connection;
 }
 
-const BoshSshClient = proxyquire('../../data-access-layer/bosh/src/BoshSshClient', {
+const BoshSshClient = proxyquire('../src/BoshSshClient', {
   'ssh2': {
     Client: Client
   }

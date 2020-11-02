@@ -2,7 +2,7 @@
 
 const { catalog } = require('@sf/models');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
+const BoshDirectorClient = require('../src').BoshDirectorClient;
 
 const proxyquire = require('proxyquire');
 let networks = [{
@@ -29,7 +29,7 @@ let networks = [{
 
 let mock_config;
 
-const NetworkSegmentIndex = proxyquire('../../data-access-layer/bosh/src/NetworkSegmentIndex', {
+const NetworkSegmentIndex = proxyquire('../src/NetworkSegmentIndex', {
   lodash: {
     sample: function (collection) {
       return collection[2];

@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const TokenIssuer = proxyquire('../../data-access-layer/cf/src/TokenIssuer', {});
+const TokenIssuer = proxyquire('../src/TokenIssuer', {});
 const assert = require('assert');
 const logger = require('@sf/logger');
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
