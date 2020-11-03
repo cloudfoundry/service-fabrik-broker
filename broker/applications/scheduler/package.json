@@ -13,7 +13,7 @@
     "@alicloud/pop-core": "1.7.9",
     "@google-cloud/compute": "2.1.0",
     "@google-cloud/storage": "5.3.0",
-    "@kubernetes/client-node": "0.12.0",
+    "@kubernetes/client-node": "0.12.3",
     "@sf/app-config": "file:../../core/app-config",
     "@sf/cf": "file:../../data-access-layer/cf",
     "@sf/common-controllers": "file:../../core/controllers",
