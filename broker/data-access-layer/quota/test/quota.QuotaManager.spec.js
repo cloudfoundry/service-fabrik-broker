@@ -7,7 +7,7 @@ const { getQuotaManagerInstance } = require('@sf/quota');
 const cfquotaManager = getQuotaManagerInstance(CONST.PLATFORM.CF);
 const proxyquire = require('proxyquire');
 const { catalog } = require('@sf/models');
-const CloudControllerClient = require('../../data-access-layer/cf/src/CloudControllerClient');
+const CloudControllerClient = require('../../cf/src/CloudControllerClient');
 
 
 describe('quota', () => {
@@ -125,7 +125,7 @@ describe('quota', () => {
     });
 
     describe('checkQuota', () => {
-      const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
+      const QuotaManager = proxyquire('../src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
         '@sf/app-config': {
           quota: {
             enabled: true,
@@ -423,7 +423,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is not whitelisted', () => {
-        const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
+        const QuotaManager = proxyquire('../src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
           '@sf/app-config': {
             quota: {
               enabled: true,
@@ -440,7 +440,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is whitelisted', () => {
-        const QuotaManager = proxyquire('../../data-access-layer/quota/src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
+        const QuotaManager = proxyquire('../src/cf-platform-quota-manager/CFPlatformQuotaManager.js', {
           '@sf/app-config': {
             quota: {
               enabled: true,

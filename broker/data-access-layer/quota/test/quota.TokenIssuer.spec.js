@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const TokenIssuer = proxyquire('../../data-access-layer/quota/src/TokenIssuer', {});
+const TokenIssuer = proxyquire('../src/TokenIssuer', {});
 
 let tokenExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';

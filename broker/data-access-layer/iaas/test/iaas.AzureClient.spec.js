@@ -66,7 +66,7 @@ describe('iaas', function () {
 
       let AzureClient, client;
       before(() => {
-        AzureClient = proxyquire('../../data-access-layer/iaas/src/AzureClient', {
+        AzureClient = proxyquire('../src/AzureClient', {
           'uuid': {
             v4: () => diskName
           }
