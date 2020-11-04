@@ -325,19 +325,21 @@ describe('eventmesh', () => {
             mocks.verify();
           });
       });
-      it('should fail to unlock resource after multiple retries', () => {
+      it('should fail to unlock resource after multiple retries', function(done) {
         const payload1 = {
           metadata: {
-            resourceVersion: samplelock6.metadata.resourceVersion
+            resourceVersion: samplelock4.metadata.resourceVersion
           }
         };
-        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock6', samplelock6, 3, payload1, 500);
-        return lockManager.unlock('samplelock6', samplelock6.metadata.resourceVersion, 3, 100)
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock4', samplelock4, 3, payload1, 500);
+        return lockManager.unlock('samplelock4', samplelock4.metadata.resourceVersion, 3, 100)
+          .then(() => done(new Error("expected error but got success response")))
           .catch(err => {
             mocks.verify();
             expect(err.code).to.eql('ETIMEDOUT');
             expect(err.error.status).to.eql(500);
-            expect(err.error.description).to.eql('Could not unlock resource samplelock6 even after 3 retries');
+            expect(err.error.description).to.eql('Could not unlock resource samplelock4 even after 3 retries');
+            done();
           });
       });
     });
