@@ -3,10 +3,10 @@
 test_broker(){
     rm -f ./logs/test.log
     case $1 in 
-        "test")             _mocha "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test")             _mocha "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
     esac
 }
 

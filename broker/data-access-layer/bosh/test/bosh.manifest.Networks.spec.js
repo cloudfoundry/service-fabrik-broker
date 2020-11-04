@@ -1,6 +1,6 @@
 'use strict';
 
-const Networks = require('../../data-access-layer/bosh/src/manifest/Networks');
+const Networks = require('../src/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {

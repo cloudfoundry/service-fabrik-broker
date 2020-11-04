@@ -1,8 +1,8 @@
 'use strict';
 
-const Addons = require('../../data-access-layer/bosh/src/manifest/Addons');
+const Addons = require('../src/manifest/Addons');
 const { CONST } = require('@sf/common-utils');
-const Networks = require('../../data-access-layer/bosh/src/manifest/Networks');
+const Networks = require('../src/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {

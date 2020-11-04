@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const ServiceFabrikClient = require('../../data-access-layer/cf/src/ServiceFabrikClient');
+const ServiceFabrikClient = require('../src/ServiceFabrikClient');
 const { CONST } = require('@sf/common-utils');
 
 const tokenIssuerStub = {

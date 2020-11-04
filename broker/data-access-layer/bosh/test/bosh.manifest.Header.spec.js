@@ -1,6 +1,6 @@
 'use strict';
 
-const Header = require('../../data-access-layer/bosh/src/manifest/Header');
+const Header = require('../src/manifest/Header');
 
 describe('bosh', () => {
   describe('manifest', () => {

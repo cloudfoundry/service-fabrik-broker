@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const Network = require('../../data-access-layer/bosh/src/manifest/Network');
+const Network = require('../src/manifest/Network');
 
 describe('bosh', () => {
   describe('manifest', () => {
