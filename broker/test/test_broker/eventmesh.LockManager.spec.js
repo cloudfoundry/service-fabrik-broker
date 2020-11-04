@@ -333,11 +333,7 @@ describe('eventmesh', () => {
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'samplelock4', samplelock4, 3, payload1, 500);
         return lockManager.unlock('samplelock4', samplelock4.metadata.resourceVersion, 3, 100)
-<<<<<<< HEAD
           .then(() => done(new Error("expected error but got success response")))
-=======
-          .then(() => done(new Error("Promise accepted")))
->>>>>>> 5c0877f8e7015de92dacf1c5d81a0832c05bf03a
           .catch(err => {
             mocks.verify();
             expect(err.code).to.eql('ETIMEDOUT');
