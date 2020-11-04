@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const DockerCredentials = require('../../data-access-layer/docker/src/DockerCredentials');
+const DockerCredentials = require('../src/DockerCredentials');
 const {
   CONST
 } = require('@sf/common-utils');
