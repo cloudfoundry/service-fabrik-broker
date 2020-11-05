@@ -63,13 +63,13 @@ func (r *gotemplateRenderer) Render(rawInput renderer.Input) (renderer.Output, e
 	}
 	engine, err := template.New(input.name).Funcs(r.funcMap).Parse(input.content)
 	if err != nil {
-		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't create template from %s", input.name), err)
+		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't create template for %s", input.name), err)
 	}
 
 	buf := new(bytes.Buffer)
 	err = engine.Execute(buf, input.values)
 	if err != nil {
-		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't render from %s", input.name), err)
+		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't render template for %s", input.name), err)
 	}
 
 	return &gotemplateOutput{content: *buf}, nil

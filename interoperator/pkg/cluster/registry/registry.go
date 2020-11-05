@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -81,7 +82,14 @@ func (r *clusterRegistry) GetClient(clusterID string) (kubernetes.Client, error)
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := cluster.GetKubeConfig(r.c)
+	var cfg *rest.Config
+	if clusterID == constants.OwnClusterID {
+		// Use in cluster config
+		cfg, err = ctrl.GetConfig()
+	} else {
+		// Get config from secret
+		cfg, err = cluster.GetKubeConfig(r.c)
+	}
 	if err != nil {
 		log.Error(err, "unable to get kubeconfig", "clusterID", clusterID)
 		return nil, err

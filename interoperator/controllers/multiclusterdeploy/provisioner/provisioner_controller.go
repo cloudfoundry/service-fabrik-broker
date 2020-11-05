@@ -135,7 +135,12 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
 	err = r.reconcileSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
-		return ctrl.Result{}, err
+		// Skip if secret not found for leader cluster
+		if !(apiErrors.IsNotFound(err) && clusterID == constants.OwnClusterID) {
+			return ctrl.Result{}, err
+		}
+		log.Info("Ignoring secret not found error for leader cluster", "clusterId", clusterID,
+			"secretRef", clusterInstance.Spec.SecretRef)
 	}
 
 	// 8. Deploy cluster rolebinding
