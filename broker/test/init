@@ -2,21 +2,35 @@
 
 test_broker(){
     rm -f ./logs/test.log
+
+    admin="applications/admin/test/acceptance/*.js"
+    extensions="applications/extensions/test/acceptance/*.js"
+    operators="applications/operators/test/**/*.js"
+    osbBrokerA="applications/osb-broker/test/acceptance/*.js"
+    osbBroker="applications/osb-broker/test/*.js"
+    quotaApp="applications/quota-app/test/*.js"
+    reportsA="applications/reports/test/acceptance/*.js"
+    reports="applications/reports/test/*.js"
+    scheduler="applications/scheduler/test/*.js"
+    testB="test/test_broker/*.js"
+    core="core/**/test/*.js"
+    dataAccessLayer="data-access-layer/**/test/*.js"
+    
     case $1 in 
-        "test")             _mocha "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test")             _mocha $testB $admin $extensions $operators $osbBrokerA $osbBroker $quotaApp $reportsA $reports $scheduler $core $dataAccessLayer --opts test/test_broker/mocha_broker.opts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- $testB $admin $extensions $operators $osbBrokerA $osbBroker $quotaApp $reportsA $reports $scheduler $core $dataAccessLayer --opts test/test_broker/mocha_broker.opts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- $testB $admin $extensions $operators $osbBrokerA $osbBroker $quotaApp $reportsA $reports $scheduler $core $dataAccessLayer --opts test/test_broker/mocha_broker.opts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- $testB $admin $extensions $operators $osbBrokerA $osbBroker $quotaApp $reportsA $reports $scheduler $core $dataAccessLayer --opts test/test_broker/mocha_broker.opts;;
     esac
 }
 
 test_deployment_hooks(){
     rm -f ./logs/test.log
     case $1 in 
-        "test")             _mocha test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+        "test")             _mocha "applications/deployment_hooks/test/*.js" --opts applications/deployment_hooks/test/mocha_deployment_hooks.opts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- "applications/deployment_hooks/test/*.js" --opts applications/deployment_hooks/test/mocha_deployment_hooks.opts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- "applications/deployment_hooks/test/*.js" --opts applications/deployment_hooks/test/mocha_deployment_hooks.opts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- "applications/deployment_hooks/test/*.js" --opts applications/deployment_hooks/test/mocha_deployment_hooks.opts;;
     esac
 }
 

@@ -3,7 +3,7 @@ const path = require('path');
 const child_process = require('child_process');
 
 process.env.NODE_ENV = 'test';
-process.env.CONF_DIR = path.join(__dirname, '../../../applications/deployment_hooks/src/config');
+process.env.CONF_DIR = path.join(__dirname, '../../src/config');
 process.env.SETTINGS_PATH = path.join(process.env.CONF_DIR, 'settings.yml');
 process.env.NODE_CMD = 'node';
 delete process.env.HTTP_PROXY;
@@ -34,4 +34,4 @@ global.chai.use(require('sinon-chai'));
 global.chai.use(require('chai-http'));
 
 // Load action scripts after decoding them from base64 from config.
-child_process.execSync(`node ${path.join(__dirname, '../../../applications/deployment_hooks/src/', 'lib', 'LoadDeploymentActions.js')}`);
+child_process.execSync(`node ${path.join(__dirname, '../../src/', 'lib', 'LoadDeploymentActions.js')}`);

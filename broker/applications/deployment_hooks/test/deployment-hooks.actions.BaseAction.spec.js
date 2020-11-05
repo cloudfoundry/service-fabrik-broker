@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
-const BaseAction = require('../../applications/deployment_hooks/src/lib/actions/js/BaseAction');
+const BaseAction = require('../src/lib/actions/js/BaseAction');
 
 describe('action', function () {
   describe('BaseAction', function () {

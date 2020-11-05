@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const proxyquire = require('proxyquire');
-const ScriptExecutor = require('../../applications/deployment_hooks/src/lib/utils/ScriptExecutor');
+const ScriptExecutor = require('../src/lib/utils/ScriptExecutor');
 describe('deployment_hooks', function () {
   describe('utils', function () {
     describe('#ScriptExecuter', function () {
@@ -35,7 +35,7 @@ describe('deployment_hooks', function () {
       });
 
       it('should execute script successfully with seccomp enabled', function () {
-        const testScriptExecutor = proxyquire('../../applications/deployment_hooks/src/lib/utils/ScriptExecutor', {
+        const testScriptExecutor = proxyquire('../src/lib/utils/ScriptExecutor', {
           '../config': {
             enable_syscall_filters: true,
             whitelisted_syscalls: 'read'
