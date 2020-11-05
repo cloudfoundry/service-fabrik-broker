@@ -35,7 +35,7 @@ const CONSTANTS = {
     WATCHER_ERROR_DELAY: 1200000
   }
 };
-const UnlockResourcePoller = proxyquire('../../data-access-layer/eventmesh/src/UnlockResourcePoller', {
+const UnlockResourcePoller = proxyquire('../src/UnlockResourcePoller', {
   '@sf/common-utils': {
     CONST: _.defaults({}, CONSTANTS, CONST)
   }
@@ -298,7 +298,7 @@ describe('common', function () {
           WATCHER_ERROR_DELAY: 300
         }
       };
-      const UnlockResourcePollerNew = proxyquire('../../data-access-layer/eventmesh/src/UnlockResourcePoller', {
+      const UnlockResourcePollerNew = proxyquire('../src/UnlockResourcePoller', {
         '@sf/common-utils': {
           CONST: NEWCONST
         }

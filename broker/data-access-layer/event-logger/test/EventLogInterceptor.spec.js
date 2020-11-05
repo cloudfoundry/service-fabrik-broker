@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const DockerService = require('../../applications/operators/src/docker-operator/DockerService');
+const DockerService = require('../../../applications/operators/src/docker-operator/DockerService');
 const { catalog } = require('@sf/models');
 const {
   commonFunctions: {
@@ -16,7 +16,7 @@ const pubSubStub = {
   publish: () => undefined
 };
 
-const EventLogInterceptor = proxyquire('../../data-access-layer/event-logger/src/EventLogInterceptor', {
+const EventLogInterceptor = proxyquire('../src/EventLogInterceptor', {
   'pubsub-js': {
     /* jshint unused:false */
     publish: function (event, data) {

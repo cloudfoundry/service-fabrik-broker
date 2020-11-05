@@ -47,7 +47,7 @@ class Mongoose {
   }
 }
 
-const dbInitializer = proxyquire('../../data-access-layer/db/src/DbConnectionManager', {
+const dbInitializer = proxyquire('../src/DbConnectionManager', {
   'mongoose': new Mongoose()
 });
 
