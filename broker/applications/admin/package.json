@@ -50,7 +50,7 @@
     "jsonwebtoken": "8.5.1",
     "@kubernetes/client-node": "0.12.3",
     "lodash": "4.17.20",
-    "moment": "2.27.0",
+    "moment": "2.29.1",
     "mongoose": "5.9.24",
     "morgan": "1.10.0",
     "pkgcloud": "1.7.0",
