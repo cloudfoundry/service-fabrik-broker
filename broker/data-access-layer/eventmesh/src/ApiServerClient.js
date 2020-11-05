@@ -592,7 +592,7 @@ class ApiServerClient {
     const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
     const client = this._getApiClient(group, version);
 
-    return Promise.try(() => client.deleteCollectionNamespacedCustomObject_2(group, version, namespaceId, plural, opts.resourceId))
+    return Promise.try(() => client.deleteNamespacedCustomObject(group, version, namespaceId, plural, opts.resourceId))
       .then(res => {
         if (_.get(config, 'apiserver.enable_namespaced_separation') && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);

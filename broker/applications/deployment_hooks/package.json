@@ -42,7 +42,7 @@
     "js-yaml": "3.14.0",
     "json-stream": "^1.0.0",
     "jsonwebtoken": "8.5.1",
-    "kubernetes-client": "7.0.1",
+    "@kubernetes/client-node": "0.12.3",
     "lodash": "4.17.20",
     "moment": "2.27.0",
     "mongoose": "5.9.24",
