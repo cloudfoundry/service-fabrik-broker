@@ -1,3 +1,4 @@
+{{ if .Values.broker.quota.enabled -}}
 {{ $randomString := randAlphaNum 5 | quote -}}
 apiVersion: v1
 kind: Service
@@ -130,3 +131,4 @@ spec:
           configMap:
             name: sf-settings-config
       restartPolicy: Always
+{{- end }}

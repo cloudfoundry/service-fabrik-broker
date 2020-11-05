@@ -81,6 +81,7 @@ interoperator:
     provisionerWorkerCount: 2
 
 operator_apis:
+  enabled: true
   port: 9297
   username: admin
   password: secret
