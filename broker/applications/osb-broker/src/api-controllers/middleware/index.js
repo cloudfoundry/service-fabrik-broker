@@ -62,8 +62,10 @@ exports.checkQuota = function () {
     } else {
       const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
       const subaccountId = _.get(req, 'body.context.subaccount_id');
-      if (orgId === undefined && subaccountId === undefined) {
-        next(new BadRequest('organization_id and subaccountId are undefined'));
+      if (subaccountId === undefined) {
+        next(new BadRequest('subaccount_id is undefined, for quota check, subaccount_id is necessary'));
+      } else if (orgId === undefined) {
+        next(new BadRequest('organization_id is undefined'));
       } else {  
         const quotaClient = new QuotaClient({});
         const useAPIServerForConsumedQuotaCheck = !commonFunctions.isBrokerBoshDeployment();
