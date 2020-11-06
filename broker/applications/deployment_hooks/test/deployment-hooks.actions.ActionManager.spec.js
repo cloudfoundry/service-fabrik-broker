@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const { CONST } = require('@sf/common-utils');
-const ActionManager = require('../../applications/deployment_hooks/src/lib/actions/ActionManager');
+const ActionManager = require('../src/lib/actions/ActionManager');
 
 describe('action', function () {
   describe('ActionManager', function () {

@@ -2,21 +2,32 @@
 
 test_broker(){
     rm -f ./logs/test.log
+
+    testBroker="test/test_broker/*.js" #for global.setup.js 
+    app=$(ls applications/**/test/*.js applications/**/test/**/*.js | grep -v "^applications/deployment_hooks")
+    core="core/**/test/*.js"
+    dataAccessLayer="data-access-layer/**/test/*.js"
+    brokerOpts="test/test_broker/mocha_broker.opts"
+    
     case $1 in 
-        "test")             _mocha "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- "test/test_broker/**/*.js" "applications/**/test/**/*.js" "core/**/test/*.js" "data-access-layer/**/test/*.js" --opts test/test_broker/mocha_broker.opts;;
+        "test")             _mocha $testBroker $app $core $dataAccessLayer --opts $brokerOpts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts;;
     esac
 }
 
 test_deployment_hooks(){
     rm -f ./logs/test.log
+
+    testHooks="applications/deployment_hooks/test/*.js"
+    hooksOpts="applications/deployment_hooks/test/mocha_deployment_hooks.opts"
+
     case $1 in 
-        "test")             _mocha test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+        "test")             _mocha $testHooks --opts $hooksOpts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- $testHooks --opts $hooksOpts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- $testHooks --opts $hooksOpts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- $testHooks --opts $hooksOpts;;
     esac
 }
 

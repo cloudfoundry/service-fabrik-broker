@@ -1,6 +1,6 @@
 'use strict';
 
-const routes = require('../../../applications/deployment_hooks/src/lib/routes');
+const routes = require('../../src/lib/routes');
 const { ExpressApp } = require('@sf/express-commons');
 
 // hook app

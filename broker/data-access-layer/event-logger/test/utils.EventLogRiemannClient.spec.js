@@ -18,7 +18,7 @@ const riemannJSStub = {
 };
 
 let riemannClientEventHandlers = {};
-const RiemannClient = proxyquire('../../../data-access-layer/event-logger/src/EventLogRiemannClient', {
+const RiemannClient = proxyquire('../src/EventLogRiemannClient', {
   'riemannjs': {
     createClient: function () {
       return {
