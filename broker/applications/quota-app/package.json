@@ -40,7 +40,7 @@
     "pubsub-js": "1.8.0",
     "pug": "3.0.0",
     "request": "2.88.2",
-    "riemann": "2.0.0",
+    "riemannjs": "1.0.1",
     "rxjs": "5.0.0",
     "uuid": "8.2.0",
     "winston": "3.3.3",
