@@ -19,7 +19,7 @@ const riemannJSStub = {
 
 let riemannClientEventHandlers = {};
 const RiemannClient = proxyquire('../../../data-access-layer/event-logger/src/EventLogRiemannClient', {
-  'riemann': {
+  'riemannjs': {
     createClient: function () {
       return {
         on: function (event, callback) {
@@ -144,7 +144,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
         riemannClient.handleEvent(config.internal.event_type, {
           event: event,
@@ -189,7 +188,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
         const expectedSecondResultObject = _
           .chain(event)
@@ -203,7 +201,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
 
         riemannClient.handleEvent(config.internal.event_type, {
@@ -252,7 +249,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
         const expectedSecondResultObject = _
           .chain(event)
@@ -266,7 +262,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
 
         riemannClient.handleEvent(config.internal.event_type, {
@@ -315,7 +310,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
         const expectedSecondResultObject = _
           .chain(event)
@@ -329,7 +323,6 @@ describe('utils', function () {
             key: 'response',
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
-          .set('metricF', event.metric)
           .value();
 
         riemannClient.handleEvent(config.internal.event_type, {
@@ -429,7 +422,6 @@ describe('utils', function () {
             key: 'request',
             value: (typeof event.request === 'object' ? JSON.stringify(event.request) : event.request)
           }])
-          .set('metricF', event.metric)
           .value();
         expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED);
         riemannClient.handleEvent(config.internal.event_type, {
