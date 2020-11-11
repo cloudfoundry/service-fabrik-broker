@@ -7,7 +7,6 @@ updates:
       interval: "weekly"
       day: "monday"
     ignore:
-      - dependency-name: bluebird
       - dependency-name: ajv
       - dependency-name: rxjs
       - dependency-name: pkgcloud
