@@ -7,21 +7,21 @@ const config = require('@sf/app-config');
 
 const {
   CONST,
-  HttpClient
+  AxiosHttpClient
 } = require('@sf/common-utils');
 
-class ServiceBrokerClient extends HttpClient {
+class ServiceBrokerClient extends AxiosHttpClient {
   constructor() {
     super({
-      baseUrl: `${config.internal.protocol}://${config.internal.host}`,
+      baseURL: `${config.internal.protocol}://${config.internal.host}`,
       auth: {
-        user: config.username,
-        pass: config.password
+        username: config.username,
+        password: config.password
       },
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: true,
+      maxRedirects: 10,
       rejectUnauthorized: !config.skip_ssl_validation
     });
   }
@@ -32,14 +32,17 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'POST',
-        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
+        baseURL: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${options.deployment_name}/backup`,
         auth: {
-          user: config.username,
-          pass: config.password
+          username: config.username,
+          password: config.password
         },
-        body: body,
-        json: true
+        data: body,
+        headers: {
+          'Content-type': 'application/json'
+        },
+        responseType: 'json'
       }, 202)
       .then(res => res.body);
   }
@@ -48,20 +51,23 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
-        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
+        baseURL: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${name}/backup/status`,
         auth: {
-          user: config.username,
-          pass: config.password
+          username: config.username,
+          password: config.password
         },
-        qs: {
+        params: {
           token: token,
           bosh_director: boshDirectorName
         },
-        body: {
+        data: {
           agent_properties: agentProperties
         },
-        json: true
+        headers: {
+          'Content-type': 'application/json'
+        },
+        responseType: 'json'
       }, 200)
       .then(res => res.body);
   }
@@ -69,20 +75,23 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
-        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
+        baseURL: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/deployments/${name}/restore/status`,
         auth: {
-          user: config.username,
-          pass: config.password
+          username: config.username,
+          password: config.password
         },
-        qs: {
+        params: {
           token: token,
           bosh_director: boshDirectorName
         },
-        body: {
+        data: {
           agent_properties: agentProperties
         },
-        json: true
+        headers: {
+          'Content-type': 'application/json'
+        },
+        responseType: 'json'
       }, 200)
       .then(res => res.body);
   }
@@ -95,19 +104,19 @@ class ServiceBrokerClient extends HttpClient {
         method: 'PATCH',
         url: `/cf/v2/service_instances/${options.instance_id}`,
         auth: {
-          user: config.username,
-          pass: config.password
+          username: config.username,
+          password: config.password
         },
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Broker-API-Version': CONST.SF_BROKER_API_VERSION_MIN
         },
-        qs: {
+        params: {
           accepts_incomplete: true
         },
-        body: body,
-        json: true
+        data: body,
+        responseType: 'json'
       }, 202)
       .then(res => res.body);
   }
@@ -117,13 +126,16 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'GET',
-        baseUrl: `${config.admin_app.protocol}://${config.admin_app.host}`,
+        baseURL: `${config.admin_app.protocol}://${config.admin_app.host}`,
         url: `/admin/config/${key}`,
         auth: {
-          user: config.username,
-          pass: config.password
+          username: config.username,
+          password: config.password
         },
-        json: true
+        headers: {
+          'Content-type': 'application/json'
+        },
+        responseType: 'json'
       }, 200)
       .then(res => res.body.value);
   }
