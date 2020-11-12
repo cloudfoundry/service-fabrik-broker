@@ -77,7 +77,6 @@
     "jsdoc": "jsdoc -c jsdoc.json",
     "test": "./test/init test",
     "test-ci": "./test/init test-ci",
-    "test-cov": "./test/init test-cov",
     "test-coverall": "./test/init test-coverall"
   },
   "dependencies": {

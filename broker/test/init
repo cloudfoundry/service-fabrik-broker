@@ -21,16 +21,13 @@ test_broker(){
                             mv ./coverage/coverage.json ./coverage/coverage-broker.json
                             babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- $testHooks --opts $hooksOpts || exit 1;;
         
-        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts || exit 1;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts || exit 1;
                             mv ./coverage/lcov.info ./coverage/lcov_broker.info
-                            babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- $testHooks --opts $hooksOpts || exit 1;;
-        
-        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts || exit 1;
                             mkdir ./coverage/broker_report
-                            mv -v ./coverage/coverage.json ./coverage/lcov.info ./coverage/lcov-report/ ./coverage/broker_report
+                            mv -v ./coverage/coverage.json ./coverage/lcov-report/ ./coverage/broker_report
                             babel-node ./node_modules/.bin/isparta cover _mocha -- $testHooks --opts $hooksOpts || exit 1;
                             mkdir ./coverage/hooks_report
-                            mv -v ./coverage/coverage.json ./coverage/lcov.info ./coverage/lcov-report/ ./coverage/hooks_report/ ;;
+                            mv -v ./coverage/coverage.json ./coverage/lcov-report/ ./coverage/hooks_report/ ;;
     esac
 }
 
@@ -57,13 +54,6 @@ main(){
                 "")             test_broker test-ci;exit;;
                 "help")         help test-ci; exit;;
                 *)              help test-ci;exit;;
-            esac
-            ;;
-        "test-cov")
-            case $2 in
-                "")             test_broker test-cov;;
-                "help")         help test-cov; exit;;
-                *)              help test-cov;exit;;
             esac
             ;;
         "test-coverall")
