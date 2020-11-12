@@ -4,6 +4,7 @@ const nock = require('nock');
 const config = require('@sf/app-config');
 
 exports.mockAuthCall = mockAuthCall;
+exports.mockFailedAuthCall = mockFailedAuthCall;
 exports.mockSendUsageRecord = mockSendUsageRecord;
 
 
@@ -25,6 +26,15 @@ function mockAuthCall(mock_token) {
       'scope': 'uaa.resource',
       'jti': 'ca438af50a4846f1ae09e21aa50cfef8'
     });
+}
+
+function mockFailedAuthCall() {
+  return nock(config.metering.token_url)
+    .get('/oauth/token')
+    .query({
+      grant_type: 'client_credentials'
+    })
+    .reply(404);
 }
 
 function mockSendUsageRecord(token, response_code, test_body_fn) {

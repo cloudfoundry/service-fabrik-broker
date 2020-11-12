@@ -7,18 +7,18 @@ const config = require('@sf/app-config');
 const { TokenInfo } = require('@sf/quota');
 const {
   CONST,
-  HttpClient
+  AxiosHttpClient
 } = require('@sf/common-utils');
 
-class MeteringClient extends HttpClient {
+class MeteringClient extends AxiosHttpClient {
 
   constructor(options) {
     super(_.defaultsDeep({
-      baseUrl: config.metering.metering_url,
+      baseURL: config.metering.metering_url,
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: false
+      maxRedirects: 10
     }, options));
     this.clientId = config.metering.client_id;
     this.clientSecret = config.metering.client_secret;
@@ -30,17 +30,17 @@ class MeteringClient extends HttpClient {
   async getAuthToken() {
     let res = await this
       .request({
-        baseUrl: this.tokenUrl,
+        baseURL: this.tokenUrl,
         url: CONST.URL.METERING_AUTH,
         auth: {
-          user: this.clientId,
-          pass: this.clientSecret
+          username: this.clientId,
+          password: this.clientSecret
         },
-        qs: {
+        params: {
           grant_type: 'client_credentials'
         }
       }, 200);
-    const serverResponse = JSON.parse(res.body);
+    const serverResponse = res.body;
     return serverResponse.access_token;
   }
 
@@ -51,14 +51,16 @@ class MeteringClient extends HttpClient {
     return this.request({
       url: CONST.URL.METERING_USAGE,
       method: CONST.HTTP_METHOD.PUT,
-      auth: {
-        bearer: this.tokenInfo.accessToken
-      },
-      qs: {
+      params: {
         timeBased: 'true'
       },
-      body: usageRecords,
-      json: true
+      data: usageRecords,
+      auth: false,
+      headers: {
+        authorization: `Bearer ${this.tokenInfo.accessToken}`,
+        'Content-type': 'application/json'
+      },
+      responseType: 'json'
     }, CONST.HTTP_STATUS_CODE.OK);
   }
 }

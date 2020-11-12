@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('@sf/logger');
 const MeteringClient = require('../src/MeteringClient');
 
 describe('metering', () => {
@@ -18,10 +19,12 @@ describe('metering', () => {
           });
       });
       it('should log and throw error if auth fails', () => {
+        mocks.metering.mockFailedAuthCall();
         const metering_client = new MeteringClient();
         return metering_client.getAuthToken()
           .catch(err => {
-            expect(err).to.be.an('object');
+            expect(err.status).to.be.equal(404);
+            // expect(err).to.be.an(object);
           });
       });
     });
