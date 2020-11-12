@@ -22,8 +22,8 @@ test_broker(){
                             babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- $testHooks --opts $hooksOpts || exit 1;;
         
         "test-coverall")    babel-node ./node_modules/.bin/isparta cover _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts || exit 1;
-                            mv ./coverage/lcov.info ./coverage/lcov_broker.info
                             mkdir ./coverage/broker_report
+                            mv ./coverage/lcov.info ./coverage/lcov_broker.info
                             mv -v ./coverage/coverage.json ./coverage/lcov-report/ ./coverage/broker_report
                             babel-node ./node_modules/.bin/isparta cover _mocha -- $testHooks --opts $hooksOpts || exit 1;
                             mkdir ./coverage/hooks_report
