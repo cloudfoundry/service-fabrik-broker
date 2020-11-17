@@ -14,7 +14,7 @@
     "@sf/logger": "file:../../core/logging",
     "@sf/models": "file:../../core/models",
     "@sf/quota": "file:../../data-access-layer/quota",
-    "ajv": "5.0.0",
+    "ajv": "6.12.6",
     "basic-auth": "2.0.1",
     "bluebird": "3.4.0",
     "body-parser": "1.19.0",

@@ -20,7 +20,7 @@
     "@sf/express-commons": "file:../../core/express-commons",
     "@sf/logger": "file:../../core/logging",
     "agenda": "0.10.0",
-    "ajv": "5.0.0",
+    "ajv": "6.12.6",
     "ali-oss": "6.10.0",
     "aws-sdk": "2.747.0",
     "azure-arm-compute": "10.0.0",
