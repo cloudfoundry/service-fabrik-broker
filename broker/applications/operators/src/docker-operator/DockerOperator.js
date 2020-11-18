@@ -68,7 +68,7 @@ class DockerOperator extends BaseOperator {
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          appliedOptions: changedOptions
+          appliedOptions: changeObjectBody.spec.options
         }
       }));
   }
@@ -88,7 +88,7 @@ class DockerOperator extends BaseOperator {
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          appliedOptions: changedOptions
+          appliedOptions: changeObjectBody.spec.options
         }
       }));
   }

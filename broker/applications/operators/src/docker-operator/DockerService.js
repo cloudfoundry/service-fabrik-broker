@@ -425,20 +425,12 @@ class DockerService extends BaseService {
   }
 
   update(params) {
-    const parameters = params.parameters;
-    let exposedPorts;
-    const options = {};
+    // Just verify the container is running on update requests.
+    // The process of removing and creating the container again,
+    // can possible lead to unusable instance if docker host changes.
     return this
       .inspectContainer()
-      .tap(containerInfo => {
-        exposedPorts = containerInfo.Config.ExposedPorts;
-        options.portBindings = containerInfo.HostConfig.PortBindings;
-        options.environment = this.getEnvironment();
-      })
       .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(() => this.removeContainer())
-      .then(() => this.buildContainerOptions(parameters, exposedPorts, options))
-      .then(opts => this.createAndStartContainer(opts, false))
       .then(() => this.ensureContainerIsRunning(false));
   }
 
