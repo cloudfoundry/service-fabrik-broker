@@ -161,7 +161,7 @@ class EventLogRiemannClient {
           // Following line is added to handle https://github.com/riemann/riemann-nodejs-client/issues/36
           _.set(info, 'metricF', info.metric); 
           logger.debug(`Trying to send event to riemann, attempt ${attempt} : `, info);
-          this.riemannClient.send(this.riemannClient.Event(info));
+          this.riemannClient.send(this.riemannClient.Event(info), this.riemannClient.tcp);
           logger.debug('logging following to riemann : ', info);
           // returning true as other events in queue can be processed successfully
           return true;
