@@ -178,10 +178,6 @@ describe('docker-operator', function () {
     describe('#update', function () {
       it('returns 200 OK', function () {
         mocks.docker.inspectContainer(instance_id);
-        mocks.docker.deleteContainer();
-        mocks.docker.createContainer(instance_id);
-        mocks.docker.startContainer();
-        mocks.docker.inspectContainer();
         const options = {
           service_id: service_id,
           plan_id: plan_id,
@@ -205,10 +201,6 @@ describe('docker-operator', function () {
       });
       it('returns 200 OK : For K8S', function () {
         mocks.docker.inspectContainer(instance_id);
-        mocks.docker.deleteContainer();
-        mocks.docker.createContainer(instance_id);
-        mocks.docker.startContainer();
-        mocks.docker.inspectContainer();
         const options = {
           service_id: service_id,
           plan_id: plan_id,
