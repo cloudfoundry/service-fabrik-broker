@@ -13,6 +13,10 @@ spec:
       control-plane: {{ .Release.Name }}-controller-manager
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8443"
+        prometheus.io/scrape: "true"
       labels:
         control-plane: {{ .Release.Name }}-controller-manager
         rollme: {{ $randomString }}
