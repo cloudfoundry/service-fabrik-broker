@@ -1325,10 +1325,14 @@ describe('bosh', () => {
 
         dummyBoshDirectorClient.makeRequestWithConfig({}, 200, directorConfig)
           .then(() => {
-            expect(requestStub).to.be.calledOnce;
+            expect(requestStub).to.be.calledTwice;
             sandbox.restore();
             config.directors = prevConfigDirectors;
             done();
+          })
+          .catch(() => {
+            sandbox.restore();
+            done(new Error('expected success but recieved error'));
           });
       });
     });

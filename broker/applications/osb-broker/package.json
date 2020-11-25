@@ -16,7 +16,7 @@
     "@sf/quota": "file:../../data-access-layer/quota",
     "ajv": "6.12.6",
     "basic-auth": "2.0.1",
-    "bluebird": "3.4.0",
+    "bluebird": "3.7.2",
     "body-parser": "1.19.0",
     "camelcase-keys": "6.2.2",
     "connect-timeout": "1.9.0",
