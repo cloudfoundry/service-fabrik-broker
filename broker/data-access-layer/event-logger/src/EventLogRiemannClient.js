@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const riemannClient = require('riemannjs');
+const riemannClient = require('riemann');
 const pubsub = require('pubsub-js');
 
 const logger = require('@sf/logger');
@@ -158,8 +158,10 @@ class EventLogRiemannClient {
         return false;
       } else {
         try {
+          // Following line is added to handle https://github.com/riemann/riemann-nodejs-client/issues/36
+          _.set(info, 'metricF', info.metric); 
           logger.debug(`Trying to send event to riemann, attempt ${attempt} : `, info);
-          this.riemannClient.send(this.riemannClient.Event(info));
+          this.riemannClient.send(this.riemannClient.Event(info), this.riemannClient.tcp);
           logger.debug('logging following to riemann : ', info);
           // returning true as other events in queue can be processed successfully
           return true;
