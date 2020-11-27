@@ -33,7 +33,7 @@
     "camelcase-keys": "6.2.2",
     "connect-timeout": "1.9.0",
     "decamelize-keys-deep": "0.1.1",
-    "dockerode": "2.2.10",
+    "dockerode": "3.2.1",
     "express": "4.17.1",
     "express-interceptor": "1.2.0",
     "express-jwt": "6.0.0",
