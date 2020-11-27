@@ -13,14 +13,16 @@ const {
     compareVersions,
     getBrokerAgentCredsFromManifest
   },
-  HttpClient
+  AxiosHttpClient
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 var AGENT_CACHE = {}; // eslint-disable-line no-var
-class Agent extends HttpClient {
+class Agent extends AxiosHttpClient {
   constructor(settings) {
     super({
-      json: true
+      headers: {
+        'Content-type': 'application/json'
+      }
     });
     this.settings = settings;
   }
@@ -111,7 +113,7 @@ class Agent extends HttpClient {
           method: 'POST',
           url: url,
           auth: (authObject ? authObject : this.auth),
-          body: body
+          data: body
         }, expectedStatusCode || CONST.HTTP_STATUS_CODE.OK)
         .then(res => res.body));
   }
@@ -123,7 +125,7 @@ class Agent extends HttpClient {
         method: 'PUT',
         url: url,
         auth: this.auth,
-        body: body
+        data: body
       }, expectedStatusCode || 204))
       .return();
   }
@@ -135,7 +137,7 @@ class Agent extends HttpClient {
         method: 'DELETE',
         url: url,
         auth: this.auth,
-        body: body
+        data: body
       }, expectedStatusCode || 204))
       .return();
   }
@@ -283,7 +285,7 @@ class Agent extends HttpClient {
           method: 'GET',
           url: url,
           auth: this.auth,
-          json: false
+          responseType: 'text'
         }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => _
         .chain(res.body)
@@ -328,7 +330,7 @@ class Agent extends HttpClient {
           method: 'GET',
           url: url,
           auth: this.auth,
-          json: false
+          responseType: 'text'
         }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => _
         .chain(res.body)
