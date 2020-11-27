@@ -86,8 +86,8 @@ describe('cf', () => {
           redirect_uri: 3
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithAuthorizationCode(client, 500).then(content => {
-          expect(content).to.eql(body);
+        new MockUaaClient(body, 200).accessWithAuthorizationCode(client, 500).then(content => {
+          expect(content).to.deep.eql(body);
           done();
         }).catch(done);
       });
@@ -99,8 +99,8 @@ describe('cf', () => {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithPassword('user', 'pass').then(content => {
-          expect(content).to.eql(body);
+        new MockUaaClient(body, 200).accessWithPassword('user', 'pass').then(content => {
+          expect(content).to.deep.eql(body);
           done();
         }).catch(done);
       });
@@ -112,8 +112,8 @@ describe('cf', () => {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithRefreshToken('token').then(content => {
-          expect(content).to.eql(body);
+        new MockUaaClient(body, 200).accessWithRefreshToken('token').then(content => {
+          expect(content).to.deep.eql(body);
           done();
         }).catch(done);
       });
@@ -125,8 +125,8 @@ describe('cf', () => {
           uuid: uuid.v4()
         };
 
-        new MockUaaClient(JSON.stringify(body), 200).accessWithClientCredentials('client_id', 'client_secret').then(content => {
-          expect(content).to.eql(body);
+        new MockUaaClient(body, 200).accessWithClientCredentials('client_id', 'client_secret').then(content => {
+          expect(content).to.deep.eql(body);
           done();
         }).catch(done);
       });

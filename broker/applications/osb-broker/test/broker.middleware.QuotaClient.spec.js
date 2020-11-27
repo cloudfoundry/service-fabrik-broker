@@ -37,12 +37,8 @@ describe('#QuotaClient', () => {
     expect(requestStub).to.have.been.calledWithExactly({
       url: `${config.quota_app.quota_endpoint}/${subaccount_id}/quota`,
       method: CONST.HTTP_METHOD.GET,
-      auth: {
-        user: config.quota_app.username,
-        password: config.quota_app.password
-      },
-      qs: _.get(reqOptions, 'queryParams'),
-      json: true
+      params: _.get(reqOptions, 'queryParams'),
+      responseType: 'json'
       },
       CONST.HTTP_STATUS_CODE.OK
     );
@@ -58,12 +54,8 @@ describe('#QuotaClient', () => {
     expect(requestStub).to.have.been.calledWithExactly({
       url: `${config.quota_app.quota_endpoint}/${subaccount_id}/quota`,
       method: CONST.HTTP_METHOD.PUT,
-      auth: {
-        user: config.quota_app.username,
-        password: config.quota_app.password
-      },
-      body: _.get(reqOptions, 'data'),
-      json: true
+      data: _.get(reqOptions, 'data'),
+      responseType: 'json'
       },
       CONST.HTTP_STATUS_CODE.OK
     );

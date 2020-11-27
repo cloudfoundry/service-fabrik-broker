@@ -41,8 +41,8 @@ describe('quota', () => {
           uuid: uuid.v4()
         };
 
-        new MockQuotaAPIAuthClient(JSON.stringify(body), 200).accessWithClientCredentials().then(content => {
-          expect(content).to.eql(body);
+        new MockQuotaAPIAuthClient(body, 200).accessWithClientCredentials().then(content => {
+          expect(content).to.deep.eql(body);
           done();
         }).catch(done);
       });

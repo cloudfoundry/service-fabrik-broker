@@ -88,7 +88,7 @@ class TokenIssuer {
       logger.debug('reusing access token.');
       return Promise.resolve(this.tokenInfo.accessToken);
     }
-    logger.debug(`explicit request for access token being made to ${this.uaa.baseUrl}`);
+    logger.debug(`explicit request for access token being made to ${this.uaa.baseURL}`);
     return Promise.try(() => this.uaa.accessWithClientCredentials(clientId, clientSecret))
       .then(result => {
         this.tokenInfo.update(result);
