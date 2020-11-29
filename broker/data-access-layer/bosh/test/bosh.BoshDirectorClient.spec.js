@@ -1320,16 +1320,17 @@ describe('bosh', () => {
           'uaaEnabled': true
         };
         let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
+        let sandbox = sinon.createSandbox();
+        let requestStub = sandbox.stub(AxiosHttpClient.prototype, 'request');
         // create actual boshDirectorClient
         let dummyBoshDirectorClient = new BoshDirectorClient();
-        let sandbox = sinon.createSandbox();
         let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
-        let requestStub = sandbox.stub(AxiosHttpClient.prototype, 'request');
         getAccessTokenBoshUAAStub.returns(tokenNotExpired);
 
         dummyBoshDirectorClient.makeRequestWithConfig({}, 200, directorConfig)
           .then(() => {
             expect(requestStub).to.be.calledTwice;
+            expect(getAccessTokenBoshUAAStub).to.be.calledOnce;
             sandbox.restore();
             config.directors = prevConfigDirectors;
             done();
