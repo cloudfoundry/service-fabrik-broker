@@ -13,11 +13,11 @@ const {
     compareVersions,
     getBrokerAgentCredsFromManifest
   },
-  AxiosHttpClient
+  HttpClient
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 var AGENT_CACHE = {}; // eslint-disable-line no-var
-class Agent extends AxiosHttpClient {
+class Agent extends HttpClient {
   constructor(settings) {
     super({
       headers: {

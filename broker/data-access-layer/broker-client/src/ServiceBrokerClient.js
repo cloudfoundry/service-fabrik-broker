@@ -7,10 +7,10 @@ const config = require('@sf/app-config');
 
 const {
   CONST,
-  AxiosHttpClient
+  HttpClient
 } = require('@sf/common-utils');
 
-class ServiceBrokerClient extends AxiosHttpClient {
+class ServiceBrokerClient extends HttpClient {
   constructor() {
     super({
       baseURL: `${config.internal.protocol}://${config.internal.host}`,

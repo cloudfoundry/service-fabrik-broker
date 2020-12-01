@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
 const {
-  AxiosHttpClient,
+  HttpClient,
   errors: {
     ServiceInstanceNotFound,
     SecurityGroupNotFound,
@@ -14,7 +14,7 @@ const {
 const logger = require('@sf/logger');
 const ResourceStream = require('./ResourceStream');
 
-class CloudControllerClient extends AxiosHttpClient {
+class CloudControllerClient extends HttpClient {
   constructor(tokenIssuer) {
     super({
       baseURL: config.cf.url,

@@ -1,11 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const { CONST, AxiosHttpClient } = require('@sf/common-utils');
+const { CONST, HttpClient } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 const qs = require('qs');
 
-class QuotaAPIAuthClient extends AxiosHttpClient {
+class QuotaAPIAuthClient extends HttpClient {
   constructor(options) {
     super(_.defaultsDeep({
       headers: {

@@ -7,10 +7,10 @@ const config = require('@sf/app-config');
 const { TokenInfo } = require('@sf/quota');
 const {
   CONST,
-  AxiosHttpClient
+  HttpClient
 } = require('@sf/common-utils');
 
-class MeteringClient extends AxiosHttpClient {
+class MeteringClient extends HttpClient {
 
   constructor(options) {
     super(_.defaultsDeep({

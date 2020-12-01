@@ -2,9 +2,9 @@
 
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
-const { AxiosHttpClient } = require('@sf/common-utils');
+const { HttpClient } = require('@sf/common-utils');
 
-class QuotaAPIClient extends AxiosHttpClient {
+class QuotaAPIClient extends HttpClient {
   constructor(tokenIssuer) {
     super({
       baseURL: config.quota.serviceDomain,

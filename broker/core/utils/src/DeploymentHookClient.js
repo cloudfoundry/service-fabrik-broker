@@ -1,9 +1,9 @@
 'use strict';
 
 const config = require('@sf/app-config');
-const AxiosHttpClient = require('./AxiosHttpClient');
+const HttpClient = require('./HttpClient');
 const logger = require('@sf/logger');
-class DeploymentHookClient extends AxiosHttpClient {
+class DeploymentHookClient extends HttpClient {
   constructor() {
     super({
       baseURL: `${config.deployment_hooks.protocol}://${config.deployment_hooks.host}`,

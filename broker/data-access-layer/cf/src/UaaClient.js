@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const querystring = require('querystring');
-const { AxiosHttpClient } = require('@sf/common-utils');
+const { HttpClient } = require('@sf/common-utils');
 const config = require('@sf/app-config');
 
-class UaaClient extends AxiosHttpClient {
+class UaaClient extends HttpClient {
   constructor(options, baseUrl = '') {
     if (!baseUrl) {
       baseUrl = config.cf.token_endpoint;

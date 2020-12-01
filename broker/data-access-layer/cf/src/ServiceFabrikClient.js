@@ -1,10 +1,10 @@
 const _ = require('lodash');
 const config = require('@sf/app-config');
-const { AxiosHttpClient, errors: {
+const { HttpClient, errors: {
   InternalServerError
 }, CONST } = require('@sf/common-utils');
 
-class ServiceFabrikClient extends AxiosHttpClient {
+class ServiceFabrikClient extends HttpClient {
   constructor(tokenIssuer) {
     super({
       baseURL: `${_.get(config, 'external.protocol')}://${_.get(config, 'external.host')}`,

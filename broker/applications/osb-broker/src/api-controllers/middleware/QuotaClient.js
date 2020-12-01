@@ -4,11 +4,11 @@ const _ = require('lodash');
 const config = require('@sf/app-config');
 const {
   CONST,
-  AxiosHttpClient
+  HttpClient
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 
-class QuotaClient extends AxiosHttpClient {
+class QuotaClient extends HttpClient {
   constructor(options) {
     super(_.defaultsDeep({
       baseURL: config.quota_app.quota_app_url,

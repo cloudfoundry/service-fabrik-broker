@@ -17,7 +17,7 @@ const {
     InternalServerError,
     DirectorServiceUnavailable
   },
-  AxiosHttpClient,
+  HttpClient,
   commonFunctions: {
     retry,
     parseServiceInstanceIdFromDeployment,
@@ -34,7 +34,7 @@ const { HttpServer } = require('@sf/express-commons');
 const { apiServerClient } = require('@sf/eventmesh');
 const BoshSshClient = require('./BoshSshClient');
 
-class BoshDirectorClient extends AxiosHttpClient {
+class BoshDirectorClient extends HttpClient {
   constructor() {
     super({
       headers: {
