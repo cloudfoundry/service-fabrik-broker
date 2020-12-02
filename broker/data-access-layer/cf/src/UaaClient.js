@@ -14,9 +14,9 @@ class UaaClient extends HttpClient {
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: false
+      maxRedirects: 0
     }, options, {
-      baseUrl: baseUrl,
+      baseURL: baseUrl,
       rejectUnauthorized: !config.skip_ssl_validation
     }));
     this.clientId = config.cf.client_id || 'cf';
@@ -39,13 +39,14 @@ class UaaClient extends HttpClient {
     return this.request({
       method: 'GET',
       url: '/userinfo',
-      auth: {
-        bearer: accessToken
+      auth: false,
+      headers: {
+        authorization: `Bearer ${accessToken}`
       },
-      qs: {
+      params: {
         schema: 'openid'
       },
-      json: true
+      responseType: 'json'
     }, 200).then(res => {
       return res.body;
     });
@@ -57,7 +58,7 @@ class UaaClient extends HttpClient {
       .request({
         method: 'GET',
         url: '/token_key',
-        json: true
+        responseType: 'json'
       }, 200)
       .then(res => res.body);
   }
@@ -68,15 +69,18 @@ class UaaClient extends HttpClient {
         method: 'POST',
         url: '/check_token',
         auth: {
-          user: client.id,
-          pass: client.secret
+          username: client.id,
+          password: client.secret
         },
-        form: {
+        data: querystring.stringify({
           token: token,
           scopes: _.join(scopes, ',')
+        }),
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded'
         }
       }, 200)
-      .then(res => JSON.parse(res.body));
+      .then(res => res.body);
   }
 
   accessWithAuthorizationCode(client, code) {
@@ -84,16 +88,19 @@ class UaaClient extends HttpClient {
       method: 'POST',
       url: '/oauth/token',
       auth: {
-        user: client.id,
-        pass: client.secret
+        username: client.id,
+        password: client.secret
       },
-      form: {
+      data: querystring.stringify({
         grant_type: 'authorization_code',
         code: code,
         redirect_uri: client.redirect_uri
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
       }
     }, 200).then(res => {
-      return JSON.parse(res.body);
+      return res.body;
     });
   }
 
@@ -109,25 +116,29 @@ class UaaClient extends HttpClient {
   }
 
   accessWithPassword(username, password) {
+    let formData = {
+      grant_type: 'password',
+      client_id: this.clientId,
+      username: username,
+      password: password
+    };
+    if (config.cf.identity_provider) {
+      formData.login_hint = `{"origin":"${config.cf.identity_provider}"}`;
+    }
     const reqBody = {
       method: 'POST',
       url: '/oauth/token',
       auth: {
-        user: this.clientId,
-        pass: ''
+        username: this.clientId,
+        password: ''
       },
-      form: {
-        grant_type: 'password',
-        client_id: this.clientId,
-        username: username,
-        password: password
+      data: querystring.stringify(formData),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
       }
     };
-    if (config.cf.identity_provider) {
-      reqBody.form.login_hint = `{"origin":"${config.cf.identity_provider}"}`;
-    }
     return this.request(reqBody, 200).then(res => {
-      return JSON.parse(res.body);
+      return res.body;
     });
   }
 
@@ -136,15 +147,18 @@ class UaaClient extends HttpClient {
       method: 'POST',
       url: '/oauth/token',
       auth: {
-        user: this.clientId,
-        pass: ''
+        username: this.clientId,
+        password: ''
       },
-      form: {
+      data: querystring.stringify({
         grant_type: 'refresh_token',
         refresh_token: refreshToken
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
       }
     }, 200).then(res => {
-      return JSON.parse(res.body);
+      return res.body;
     });
   }
 
@@ -153,15 +167,18 @@ class UaaClient extends HttpClient {
       method: 'POST',
       url: '/oauth/token',
       auth: {
-        user: clientId,
-        pass: clientSecret
+        username: clientId,
+        password: clientSecret
       },
-      form: {
+      data: querystring.stringify({
         grant_type: 'client_credentials',
         response_type: 'token'
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
       }
     }, 200).then(res => {
-      return JSON.parse(res.body);
+      return res.body;
     });
   }
 }

@@ -7,8 +7,8 @@ const { HttpClient } = require('@sf/common-utils');
 class QuotaAPIClient extends HttpClient {
   constructor(tokenIssuer) {
     super({
-      baseUrl: config.quota.serviceDomain,
-      followRedirect: false,
+      baseURL: config.quota.serviceDomain,
+      maxRedirects: 0,
       rejectUnauthorized: !config.skip_ssl_validation
     });
     this.tokenIssuer = tokenIssuer;
@@ -22,13 +22,14 @@ class QuotaAPIClient extends HttpClient {
         .request({
           method: 'GET',
           url: requestUrl,
-          auth: {
-            bearer: accessToken
+          auth: false,
+          headers: {
+            authorization: `Bearer ${accessToken}`
           }
         }, 200)
       )
       .then(res => {
-        return JSON.parse(res.body).quota;
+        return res.body.quota;
       });
   }
 }

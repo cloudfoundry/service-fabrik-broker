@@ -11,14 +11,16 @@ const logger = require('@sf/logger');
 class QuotaClient extends HttpClient {
   constructor(options) {
     super(_.defaultsDeep({
-      baseUrl: config.quota_app.quota_app_url,
+      baseURL: config.quota_app.quota_app_url,
       headers: {
         Accept: 'application/json'
       },
-      followRedirect: false
+      maxRedirects: 0,
+      auth: {
+        username: config.quota_app.username,
+        password: config.quota_app.password
+      }
     }, options));
-    this.username = config.quota_app.username;
-    this.password = config.quota_app.password;
   }
   async checkQuotaValidity(options, instanceBasedQuota) {
     if(instanceBasedQuota) {
@@ -32,12 +34,8 @@ class QuotaClient extends HttpClient {
     const res = await this.request({
       url: `${config.quota_app.quota_endpoint}/${subaccountId}/quota`,
       method: CONST.HTTP_METHOD.GET,
-      auth: {
-        user: this.username,
-        password: this.password
-      },
-      qs: _.get(options, 'queryParams'),
-      json: true
+      params: _.get(options, 'queryParams'),
+      responseType: 'json'
     }, CONST.HTTP_STATUS_CODE.OK);
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
     return {
@@ -50,12 +48,8 @@ class QuotaClient extends HttpClient {
     const res = await this.request({
       url: `${config.quota_app.quota_endpoint}/${subaccountId}/quota`,
       method: CONST.HTTP_METHOD.PUT,
-      auth: {
-        user: this.username,
-        password: this.password
-      },
-      body: _.get(options, 'data'),
-      json: true
+      data: _.get(options, 'data'),
+      responseType: 'json'
     }, CONST.HTTP_STATUS_CODE.OK);
     logger.info(`Quota app returned following quotaValidStatus: ${res.body.quotaValidStatus}`);
     return {

@@ -55,10 +55,12 @@ describe('cf', function () {
       const options = {
         method: method,
         url: '/v2' + path,
-        auth: {
-          bearer: bearer
-        },
-        json: true
+        auth: false,
+        headers: {
+          authorization: `Bearer bearer`,
+          'Content-type': 'application/json'
+          },
+        responseType: 'json'
       };
       if (_.isObject(statusCode)) {
         data = statusCode;
@@ -71,7 +73,7 @@ describe('cf', function () {
             query: data
           });
         } else {
-          options.body = data;
+          options.data = data;
         }
       }
       _.set(response, 'statusCode', statusCode || 200);
@@ -95,7 +97,7 @@ describe('cf', function () {
       const [options, statusCode] = buildExpectedRequestArgs('GET', '/info');
 
       it('should return the JSON body with Status 200', () => {
-        _.set(options, 'auth', undefined);
+        options.headers = _.omit(options.headers, 'authorization');
         return cloudController.getInfo()
           .then(result => {
             expect(getAccessTokenSpy).not.to.be.called;
@@ -145,8 +147,8 @@ describe('cf', function () {
 
       it('should return the JSON body with Status 200 with bearer specified', function () {
         return cloudController.getServiceInstancePermissions(id, {
-          auth: {
-            bearer: bearer
+          headers: {
+            authorization: `Bearer ${bearer}`
           }
         })
           .then(result => {
@@ -272,7 +274,7 @@ describe('cf', function () {
       const [options, statusCode] = buildExpectedRequestArgs('DELETE', `/security_groups/${guid}`, 204);
 
       it('should delete a security group and return with Status 204', function () {
-        _.set(options, 'qs.async', false);
+        _.set(options, 'params.async', false);
         return cloudController.deleteSecurityGroup(guid)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
@@ -300,10 +302,12 @@ describe('cf', function () {
         return {
           method: 'GET',
           url: url(i),
-          auth: {
-            bearer: bearer
+          auth: false,
+          headers: {
+            authorization: `Bearer bearer`,
+            'Content-type': 'application/json'
           },
-          json: true
+          responseType: 'json'
         };
       }
 
@@ -321,10 +325,11 @@ describe('cf', function () {
         });
         return cloudController
           .getSpaces({
-            auth: {
-              bearer: bearer
+            auth: false,
+            headers: {
+              authorization: 'Bearer bearer'
             },
-            qs: {
+            params: {
               'results-per-page': 1
             }
           })

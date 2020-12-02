@@ -120,7 +120,7 @@ describe('fabrik', function () {
           method: 'POST',
           url: createUrl(pathname),
           auth: auth,
-          body: body
+          data: body
         }, expectedStatus)
         .returns(Promise.resolve(response));
       requestStub
@@ -128,7 +128,7 @@ describe('fabrik', function () {
           method: 'POST',
           url: createUrl(pathname),
           auth: auth,
-          body: context
+          data: context
         }, expectedStatus)
         .returns(Promise.resolve(response));
       requestStub
@@ -143,7 +143,7 @@ describe('fabrik', function () {
           method: 'GET',
           url: createUrl(pathname),
           auth: auth,
-          json: false
+          responseType: 'text'
         }, expectedStatus)
         .returns(Promise.resolve({
           body: _

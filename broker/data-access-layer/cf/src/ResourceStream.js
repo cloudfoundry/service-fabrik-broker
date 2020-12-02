@@ -30,10 +30,13 @@ class ResourceStream extends Readable {
         .chain(options.url)
         .thru(parseUrl)
         .pick('pathname', 'query')
-        .tap(_.partialRight(mergeQuery, options.qs))
+        .tap(_.partialRight(mergeQuery, options.params))
         .thru(formatUrl)
         .value();
-      this.bearer = _.get(options, 'auth.bearer');
+      this.bearer = _.replace(
+        _.get(options, 'headers.authorization'),
+        /Bearer /i, '' // remove token type from header value
+      );
     }
     this.isNew = true;
   }
@@ -73,10 +76,12 @@ class ResourceStream extends Readable {
         .request({
           method: 'GET',
           url: this.url,
-          auth: {
-            bearer: bearer
+          auth: false, // Disabling basic auth,
+          headers: { // and passing bearer auth in header
+            authorization: `Bearer ${bearer}`,
+            'Content-type': 'application/json'
           },
-          json: true
+          responseType: 'json'
         }, 200)
       )
       .then(res => this.pushResources(res.body));

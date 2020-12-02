@@ -3,37 +3,38 @@
 const _ = require('lodash');
 const { CONST, HttpClient } = require('@sf/common-utils');
 const config = require('@sf/app-config');
+const qs = require('qs');
 
 class QuotaAPIAuthClient extends HttpClient {
   constructor(options) {
     super(_.defaultsDeep({
       headers: {
-        'Content-Type': CONST.QUOTA_API_AUTH_CLIENT.CONTENT_TYPE,
         Accept: CONST.QUOTA_API_AUTH_CLIENT.ACCEPT
       },
-      followRedirect: false
+      maxRedirects: 0,
+      auth: {
+        username: config.quota.username,
+        password: config.quota.password
+      }
     }, options, {
-      baseUrl: config.quota.oauthDomain,
+      baseURL: config.quota.oauthDomain,
       rejectUnauthorized: !config.skip_ssl_validation
     }));
-    this.clientId = config.quota.username;
-    this.clientSecret = config.quota.password;
   }
 
   accessWithClientCredentials() {
     return this.request({
       method: 'POST',
       url: '/oauth/token',
-      auth: {
-        user: this.clientId,
-        pass: this.clientSecret
-      },
-      form: {
+      data: qs.stringify({
         grant_type: 'client_credentials'
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
       }
     }, 200)
       .then(res => {
-        return JSON.parse(res.body);
+        return res.body;
       });
   }
 }

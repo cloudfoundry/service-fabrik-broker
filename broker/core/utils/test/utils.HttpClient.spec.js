@@ -11,26 +11,46 @@ const responseObject = {
   statusMessage: 'HTTP_Status_Message',
   headers: []
 };
+
 const expectedResultObject = _.assign({}, responseObject, {
   body: responseBody
 });
 
+class StubAxios {
+  constructor(options) {
+    this.defaultOptions = options || {};
+  }
+
+  request(options) {
+    options = options || {};
+    return new Promise((resolve, reject) => {
+      var response = _.update(
+        _.assign({}, { status: responseObject.statusCode },
+          { statusText: responseObject.statusMessage },
+          { headers: responseObject.headers },
+          { data: this.defaultOptions.respondWithBody || responseBody }
+        ),
+        'status', () => {  // Update status if passed through constructor
+          return this.defaultOptions.respondWithStatusCode || 200;
+        });
+
+      var validateStatus = options.validateStatus;
+      if (!response.status || !validateStatus || validateStatus(response.status)) {
+        resolve(response);
+      } else {
+        var error = new Error('Request failed with status code ' + response.status);
+        error.response = response;
+        reject(error);
+      }
+    });
+  }
+
+}
+
 const HttpClient = proxyquire('../src/HttpClient', {
-  bluebird: {
-    promisify(fun) {
-      return fun;
-    }
-  },
-  request: {
-    defaults(options) {
-      return function () {
-        return Promise.resolve([
-          _.update(_.assign({}, responseObject), 'statusCode', () => {
-            return options.respondWithStatusCode || 200;
-          }),
-          options.respondWithBody || responseBody
-        ]);
-      };
+  axios: {
+    create(options) {
+      return new StubAxios(options);
     }
   }
 });
@@ -151,26 +171,12 @@ describe('utils', () => {
           }
         }
       };
-      const httpHandler = function (options) {
-        options = options || {};
-        return Promise.resolve([
-          _.update(_.assign({}, responseObject), 'statusCode', () => {
-            return options.respondWithStatusCode || 200;
-          }),
-          options.respondWithBody || responseBody
-        ]);
-      };
+
+      var httpHandler = (options) => new StubAxios(options);
       const httpClientWithCircuitBreaker = proxyquire('../src/HttpClient', {
-        bluebird: {
-          promisify(fun) {
-            return fun;
-          }
-        },
         '@sf/app-config': config,
-        request: {
-          defaults(options) {
-            return () => httpHandler(options);
-          }
+        axios: {
+          create: httpHandler
         }
       });
       let sandbox, commandFactoryStub, commandStub;
@@ -190,11 +196,11 @@ describe('utils', () => {
         commandStub.errorHandler.withArgs().returns(cmd);
         commandStub.build.withArgs().returns(cmd);
         commandStub.execute = options => {
-          return httpHandler(options)
+          return Promise.resolve(httpHandler(options))
             .spread((res, body) => {
               const result = {
-                statusCode: res.statusCode,
-                statusMessage: res.statusMessage,
+                statusCode: res.status,
+                statusMessage: res.statusText,
                 headers: res.headers,
                 body: body
               };
@@ -264,10 +270,10 @@ describe('utils', () => {
 
       it('builds circuit breaker config for the configured Base URL, HTTP method & specific path', function () {
         const httpClient = new httpClientWithCircuitBreaker({
-          baseUrl: 'https://192.168.50.4:25555',
+          baseURL: 'https://192.168.50.4:25555',
           auth: {
-            user: 'admin',
-            pass: 'admin'
+            username: 'admin',
+            password: 'admin'
           }
         });
         assertResponse(httpClient);

@@ -24,7 +24,7 @@ describe('quota', function () {
     const service = 'service';
     const plan = 'plan';
     const bearer = 'bearer';
-    const body = '{ "quota": 2 }';
+    const body = { "quota": 2 };
     const response = {
       statusCode: undefined,
       body: body
@@ -39,8 +39,9 @@ describe('quota', function () {
       const options = {
         method: method,
         url: url,
-        auth: {
-          bearer: bearer
+        auth: false,
+        headers: {
+          authorization: `Bearer ${bearer}`
         }
       };
       _.set(response, 'statusCode', statusCode || 200);
@@ -66,7 +67,7 @@ describe('quota', function () {
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
-            expect(result).to.equal(JSON.parse(body).quota);
+            expect(result).to.equal(body.quota);
           });
       });
       it('should return integer with Status 200 for subaccount quota', () => {
@@ -75,7 +76,7 @@ describe('quota', function () {
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
-            expect(result).to.equal(JSON.parse(body).quota);
+            expect(result).to.equal(body.quota);
           });
       });
     });

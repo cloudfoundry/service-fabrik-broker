@@ -201,14 +201,14 @@ describe('bosh', () => {
           url: '/info'
         };
         let response = {
-          body: JSON.stringify({
+          body: {
             uuid: uuid.v4()
-          }),
+          },
           statusCode: 200
         };
 
         new MockBoshDirectorClient(request, response).getInfo().then(content => {
-          expect(content).to.eql(JSON.parse(response.body));
+          expect(content).to.eql(response.body);
           done();
         }).catch(done);
       });
@@ -223,13 +223,13 @@ describe('bosh', () => {
         let request = {
           method: 'GET',
           url: '/tasks',
-          qs: {
+          params: {
             state: 'processing,cancelling',
             verbose: 2
           }
         };
         let response = {
-          body: JSON.stringify([{
+          body: [{
             id: 1,
             state: 'processing',
             context_id: 'Fabrik::Operation::Auto'
@@ -253,7 +253,7 @@ describe('bosh', () => {
             id: 5,
             state: 'processing'
           }
-          ]),
+          ],
           statusCode: 200
         };
         new MockBoshDirectorClient(request, response).getCurrentTasks().then(content => {
@@ -285,13 +285,13 @@ describe('bosh', () => {
           url: '/deployments'
         };
         let response = {
-          body: JSON.stringify({
+          body: {
             uuid: uuid.v4()
-          }),
+          },
           statusCode: 200
         };
         new MockBoshDirectorClient(request, response).getDeployments().then(content => {
-          expect(content).to.eql([JSON.parse(response.body)]);
+          expect(content).to.eql([response.body]);
           done();
         }).catch(done);
       });
@@ -375,14 +375,14 @@ describe('bosh', () => {
           url: `/deployments/${id}`
         };
         let response = {
-          body: JSON.stringify({
+          body: {
             uuid: uuid.v4()
-          }),
+          },
           statusCode: 200
         };
 
         new MockBoshDirectorClient(request, response).getDeployment(id).then(content => {
-          expect(content).to.eql(JSON.parse(response.body));
+          expect(content).to.eql(response.body);
           done();
         }).catch(done);
       });
@@ -395,9 +395,9 @@ describe('bosh', () => {
           url: `/deployments/${id}`
         };
         let response = {
-          body: JSON.stringify({
+          body: {
             manifest: id
-          }),
+          },
           statusCode: 200
         };
 
@@ -418,8 +418,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           body: JSON.stringify({
@@ -447,8 +447,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           body: JSON.stringify({
@@ -476,8 +476,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': 'Fabrik::Operation::create'
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           body: JSON.stringify({
@@ -506,8 +506,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': 'Fabrik::Operation::update'
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           body: JSON.stringify({
@@ -535,8 +535,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': 'Fabrik::Operation::update'
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           code: 'ECONNREFUSED'
@@ -558,8 +558,8 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml',
             'X-Bosh-Context-Id': 'Fabrik::Operation::update'
           },
-          qs: undefined,
-          body: manifest
+          params: undefined,
+          data: manifest
         };
         let response = {
           statusCode: 502
@@ -625,7 +625,7 @@ describe('bosh', () => {
           url: `/deployments/${id}/vms`
         };
         let response = {
-          body: JSON.stringify(vms),
+          body: vms,
           statusCode: 200
         };
 
@@ -649,7 +649,7 @@ describe('bosh', () => {
           url: `/deployments/${id}/instances`
         };
         let response = {
-          body: JSON.stringify(vms),
+          body: vms,
           statusCode: 200
         };
 
@@ -695,7 +695,7 @@ describe('bosh', () => {
         };
         const res = {
           statusCode: 200,
-          body: JSON.stringify(['smoke-tests', 'status'])
+          body: ['smoke-tests', 'status']
         };
         let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
         return mockBoshDirectorClient.getDeploymentErrands(deployment_name)
@@ -713,11 +713,14 @@ describe('bosh', () => {
         const req = {
           method: 'POST',
           url: `/deployments/${deployment_name}/errands/${errandName}/runs`,
-          body: {
+          data: {
             'keep-alive': true,
             'instances': instances
           },
-          json: true
+          headers: {
+            'Content-type': 'application/json'
+          },
+          responseType: 'json'
         };
         const res = {
           statusCode: 302,
@@ -906,7 +909,7 @@ describe('bosh', () => {
         const req = {
           method: 'PUT',
           url: `/disks/${diskCid}/attachments`,
-          qs: {
+          params: {
             deployment: deployment_name,
             job: jobName,
             instance_id: instanceId,
@@ -935,7 +938,7 @@ describe('bosh', () => {
         request = {
           method: 'PUT',
           url: `/deployments/${deployment_name}/jobs/*`,
-          qs: {
+          params: {
             state: 'stopped'
           },
           headers: {
@@ -974,7 +977,7 @@ describe('bosh', () => {
         request = {
           method: 'PUT',
           url: `/deployments/${deployment_name}/jobs/*`,
-          qs: {
+          params: {
             state: 'started'
           },
           headers: {
@@ -1010,23 +1013,23 @@ describe('bosh', () => {
         let request = {
           method: 'GET',
           url: '/tasks',
-          qs: {
+          params: {
             deployment: deployment_name,
             limit: 1000
           }
         };
         let response = {
-          body: JSON.stringify([{
+          body: [{
             id: 1234,
             uuid: uuid.v4()
-          }]),
+          }],
           statusCode: 200
         };
 
         new MockBoshDirectorClient(request, response).getTasks({
           deployment: deployment_name
         }).then(content => {
-          let body = JSON.parse(response.body)[0];
+          let body = response.body[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
           done();
@@ -1037,7 +1040,7 @@ describe('bosh', () => {
         let request = {
           method: 'GET',
           url: '/tasks',
-          qs: {
+          params: {
             deployment: deployment_name,
             limit: 1000
           }
@@ -1059,16 +1062,16 @@ describe('bosh', () => {
         request = {
           method: 'GET',
           url: '/tasks',
-          qs: {
+          params: {
             deployment: deployment_name,
             limit: 1000
           }
         };
         response = {
-          body: JSON.stringify([{
+          body: [{
             id: 1234,
             uuid: uuid.v4()
-          }]),
+          }],
           statusCode: 200
         };
 
@@ -1094,7 +1097,7 @@ describe('bosh', () => {
         mockBoshDirectorClient.getTasks({
           deployment: deployment_name
         }, true).then(content => {
-          let body = JSON.parse(response.body)[0];
+          let body = response.body[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
           expect(getDirectorConfigStub).to.be.calledOnce;
@@ -1110,14 +1113,14 @@ describe('bosh', () => {
           url: `/tasks/${taskId}`
         };
         let response = {
-          body: JSON.stringify({
+          body: {
             uuid: uuid.v4()
-          }),
+          },
           statusCode: 200
         };
 
         new MockBoshDirectorClient(request, response).getTask(bosh_taskId).then(content => {
-          expect(content).to.eql(JSON.parse(response.body));
+          expect(content).to.eql(response.body);
           done();
         }).catch(done);
       });
@@ -1132,9 +1135,10 @@ describe('bosh', () => {
         let request = {
           method: 'GET',
           url: `/tasks/${taskId}/output`,
-          qs: {
+          params: {
             type: 'result'
-          }
+          },
+          responseType: 'text'
         };
         const body = {
           uuid: uuid.v4()
@@ -1162,7 +1166,7 @@ describe('bosh', () => {
         let request = {
           method: 'GET',
           url: `/tasks/${taskId}/output`,
-          qs: {
+          params: {
             type: 'event'
           }
         };
@@ -1316,21 +1320,24 @@ describe('bosh', () => {
           'uaaEnabled': true
         };
         let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
+        let sandbox = sinon.createSandbox();
+        let requestStub = sandbox.stub(HttpClient.prototype, 'request');
+        requestStub.returns({ body: {} });
         // create actual boshDirectorClient
         let dummyBoshDirectorClient = new BoshDirectorClient();
-        let sandbox = sinon.createSandbox();
         let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
-        let requestStub = sandbox.stub(HttpClient.prototype, 'request');
         getAccessTokenBoshUAAStub.returns(tokenNotExpired);
 
         dummyBoshDirectorClient.makeRequestWithConfig({}, 200, directorConfig)
           .then(() => {
             expect(requestStub).to.be.calledTwice;
+            expect(getAccessTokenBoshUAAStub).to.be.calledTwice;
             sandbox.restore();
             config.directors = prevConfigDirectors;
             done();
           })
-          .catch(() => {
+          .catch((err) => {
+            logger.error(err);
             sandbox.restore();
             done(new Error('expected success but recieved error'));
           });
@@ -1371,8 +1378,11 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
-          json: true,
-          body: {
+          headers: {
+            'Content-type': 'application/json'
+          },
+          responseType: 'json',
+          data: {
             command: 'cleanup',
             deployment_name: deployment_name,
             target: {
@@ -1432,8 +1442,11 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
-          json: true,
-          body: {
+          headers: {
+            'Content-type': 'application/json'
+          },
+          responseType: 'json',
+          data: {
             command: 'setup',
             deployment_name: deployment_name,
             target: {
