@@ -1322,6 +1322,7 @@ describe('bosh', () => {
         let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
         let sandbox = sinon.createSandbox();
         let requestStub = sandbox.stub(HttpClient.prototype, 'request');
+        requestStub.returns({ body: {} });
         // create actual boshDirectorClient
         let dummyBoshDirectorClient = new BoshDirectorClient();
         let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
@@ -1330,12 +1331,13 @@ describe('bosh', () => {
         dummyBoshDirectorClient.makeRequestWithConfig({}, 200, directorConfig)
           .then(() => {
             expect(requestStub).to.be.calledTwice;
-            expect(getAccessTokenBoshUAAStub).to.be.calledOnce;
+            expect(getAccessTokenBoshUAAStub).to.be.calledTwice;
             sandbox.restore();
             config.directors = prevConfigDirectors;
             done();
           })
-          .catch(() => {
+          .catch((err) => {
+            logger.error(err);
             sandbox.restore();
             done(new Error('expected success but recieved error'));
           });
