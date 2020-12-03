@@ -6,7 +6,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}-multiclusterdeployer-controller-manager
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ default .Values.replicaCount .Values.interoperator.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-controller-manager
@@ -39,24 +39,22 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: REPLICA_COUNT
-          value: "{{ .Values.replicaCount }}"
+          value: "{{ default .Values.replicaCount .Values.interoperator.replicaCount }}"
         command:
         - /multiclusterdeploy
         args:
         - --metrics-addr=:8443
         - --enable-leader-election
-        {{- with .Values.interoperator.resources }}
-        resources:
-          {{- with .limits }}
-          limits:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
+        {{- $resourceSpec := dict }}
+        {{- with .Values.interoperator.multiclusterdeployer.resources }}
+          {{- $resourceSpec = deepCopy . }}
+        {{- else }}
+          {{- with .Values.interoperator.resources }}
+            {{- $resourceSpec = deepCopy . }}
           {{- end }}
-          {{- with .requests }}
-          requests:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
+        {{- end }}
+        {{- if not (empty $resourceSpec) }}
+        {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
         livenessProbe:
           failureThreshold: 3

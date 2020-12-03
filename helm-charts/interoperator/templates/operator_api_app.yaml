@@ -51,7 +51,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}-op-apis-app
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ default .Values.replicaCount .Values.operator_apis.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-op-apis-app
@@ -116,18 +116,12 @@ spec:
           timeoutSeconds: 1
         command: 
         - /operator-apis
+        {{- $resourceSpec := dict }}
         {{- with .Values.operator_apis.resources }}
-        resources:
-          {{- with .limits }}
-          limits:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
-          {{- with .requests }}
-          requests:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
+          {{- $resourceSpec = deepCopy . }}
+        {{- end }}
+        {{- if not (empty $resourceSpec) }}
+        {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
       restartPolicy: Always
 {{- end }}

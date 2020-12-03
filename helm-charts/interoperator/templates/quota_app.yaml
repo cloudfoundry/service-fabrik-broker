@@ -23,7 +23,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}-quota-app
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ default .Values.replicaCount .Values.quota_app.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-quota-app
@@ -113,18 +113,12 @@ spec:
         - applications/quota-app/src/index.js
         command:
         - node
+        {{- $resourceSpec := dict }}
         {{- with .Values.quota_app.resources }}
-        resources:
-          {{- with .limits }}
-          limits:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
-          {{- with .requests }}
-          requests:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
+          {{- $resourceSpec = deepCopy . }}
+        {{- end }}
+        {{- if not (empty $resourceSpec) }}
+        {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
       volumes:
         - name: settings

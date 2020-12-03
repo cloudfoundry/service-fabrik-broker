@@ -47,18 +47,16 @@ spec:
         image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
         imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
         name: manager
-        {{- with .Values.interoperator.resources }}
-        resources:
-          {{- with .limits }}
-          limits:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
+        {{- $resourceSpec := dict }}
+        {{- with .Values.interoperator.provisioner.resources }}
+          {{- $resourceSpec = deepCopy . }}
+        {{- else }}
+          {{- with .Values.interoperator.resources }}
+            {{- $resourceSpec = deepCopy . }}
           {{- end }}
-          {{- with .requests }}
-          requests:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
+        {{- end }}
+        {{- if not (empty $resourceSpec) }}
+        {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
         livenessProbe:
           failureThreshold: 3

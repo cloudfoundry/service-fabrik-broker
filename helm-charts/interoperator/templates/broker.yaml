@@ -51,7 +51,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}-broker
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ default .Values.replicaCount .Values.broker.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-broker
@@ -151,18 +151,12 @@ spec:
         - applications/osb-broker/src/server.js
         command:
         - node
+        {{- $resourceSpec := dict }}
         {{- with .Values.broker.resources }}
-        resources:
-          {{- with .limits }}
-          limits:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
-          {{- with .requests }}
-          requests:
-            cpu: {{ .cpu }}
-            memory: {{ .memory }}
-          {{- end }}
+          {{- $resourceSpec = deepCopy . }}
+        {{- end }}
+        {{- if not (empty $resourceSpec) }}
+        {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
       volumes:
         - name: settings

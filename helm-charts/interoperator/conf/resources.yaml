@@ -1,0 +1,11 @@
+resources:
+  {{- with .limits }}
+  limits:
+    cpu: {{ .cpu }}
+    memory: {{ .memory }}
+  {{- end }}
+  {{- with .requests }}
+  requests:
+    cpu: {{ .cpu }}
+    memory: {{ .memory }}
+  {{- end }}
