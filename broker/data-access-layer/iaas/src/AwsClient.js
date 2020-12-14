@@ -123,7 +123,7 @@ class AwsClient extends BaseCloudClient {
     }
 
     let s3Options = {
-      Bucket : container
+      Bucket: container
     };
 
     return this.storage.
@@ -141,15 +141,15 @@ class AwsClient extends BaseCloudClient {
     let s3Options = {
       Bucket: container
     };
-  
+
     if (options.marker) {
       s3Options.Marker = options.marker;
     }
-  
+
     if (options.prefix) {
       s3Options.Prefix = options.prefix;
     }
-  
+
     if (options.maxKeys) {
       s3Options.MaxKeys = options.maxKeys;
     }
@@ -159,22 +159,22 @@ class AwsClient extends BaseCloudClient {
       .then(data => {
         let isTruncated = data.IsTruncated;
         let list = data.Contents;
-        
+
         list.forEach(element => {
           element.name = element.Key;
           element.lastModified = element.LastModified;
           delete element.Key;
           delete element.LastModified;
         });
-    
+
         const files = [];
         _.each(list, file => files.push(_
-        .chain(file)
-        .pick('name', 'lastModified')
-        .set('isTruncated', isTruncated)
-        .value()
+          .chain(file)
+          .pick('name', 'lastModified')
+          .set('isTruncated', isTruncated)
+          .value()
         ));
-      return files;
+        return files;
       });
   }
 
@@ -205,7 +205,7 @@ class AwsClient extends BaseCloudClient {
 
   upload(options) {
     let s3Settings = {
-      partSize: 5 * 1024 * 1024, 
+      partSize: 5 * 1024 * 1024,
       queueSize: 1
     };
     return this.storage.uploadAsync(options, s3Settings);
@@ -278,12 +278,12 @@ class AwsClient extends BaseCloudClient {
         maxRetries: options.max_retries
       });
     }
-    
-    return new S3(s3Config); 
+
+    return new S3(s3Config);
   }
 
   static createComputeClient(settings) {
-      return ComputeClient.createComputeClient(settings).value();
+    return ComputeClient.createComputeClient(settings).value();
   }
 }
 
