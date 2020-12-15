@@ -2,6 +2,7 @@
 
 const config = require('@sf/app-config');
 const CloudProviderClient = require('./CloudProviderClient');
+const AwsClient = require('./AwsClient');
 const AzureClient = require('./AzureClient');
 const GcpClient = require('./GcpClient');
 const AliClient = require('./AliClient');
@@ -18,6 +19,7 @@ const getCloudClient = function (settings) {
     case 'gcp':
       return new GcpClient(settings);
     case 'aws':
+      return new AwsClient(settings);
     case 'openstack':
     case 'os':
       return new CloudProviderClient(settings);
@@ -30,6 +32,7 @@ const getCloudClient = function (settings) {
 const cloudProvider = getCloudClient(config.backup.provider);
 
 exports.CloudProviderClient = CloudProviderClient;
+exports.AwsClient = AwsClient;
 exports.AzureClient = AzureClient;
 exports.GcpClient = GcpClient;
 exports.AliClient = AliClient;

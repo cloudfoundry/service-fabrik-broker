@@ -21,6 +21,7 @@ const BaseCloudClient = require('./BaseCloudClient');
 class AwsClient extends BaseCloudClient {
   constructor(settings) {
     super(settings);
+    this.constructor.validateParams(this.settings);
     this.storage = this.constructor.createStorageClient(_
       .chain(this.settings)
       .omit('name')
@@ -263,6 +264,23 @@ class AwsClient extends BaseCloudClient {
             throw err;
           });
       });
+  }
+
+  static validateParams(options) {
+    if (!options) {
+      throw new Error('AwsClient can not be instantiated as backup provider config not found');
+    }
+    if (!options.keyId) {
+      throw new Error('AwsClient can not be instantiated as keyId not found in backup provider config');
+    }
+    if(!options.key) {
+      throw new Error('AwsClient can not be instantiated as key not found in backup provider config');
+    }
+    if(!options.region) {
+      throw new Error('AwsClient can not be instantiated as region not found in backup provider config');
+    } 
+  
+    return true;
   }
 
   static createStorageClient(options) {

@@ -1,17 +1,10 @@
 'use strict';
 
-const pkgcloud = require('pkgcloud');
-const { CloudProviderClient } = require('@sf/iaas');
+const { AwsClient } = require('@sf/iaas');
 
 describe('iaas', function () {
-  describe('CloudProviderClient', function () {
+  describe('AwsClient', function () {
     this.slow(200);
-
-    const createClientSpy = sinon.spy(pkgcloud.storage, 'createClient');
-
-    afterEach(function () {
-      createClientSpy.resetHistory();
-    });
 
     describe('#createDiskFromSnapshot', function () {
       const diskId = 'sample-disk';
@@ -35,7 +28,7 @@ describe('iaas', function () {
         Volumes: [response]
       };
       it('should create disk from snapshot for aws', function () {
-        const client = new CloudProviderClient({
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -88,7 +81,7 @@ describe('iaas', function () {
           });
       });
       it('should fail on creating disk from snapshot for aws', function () {
-        const client = new CloudProviderClient({
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -124,7 +117,7 @@ describe('iaas', function () {
           });
       });
       it('should fail on waiting for disk from snapshot for aws', function () {
-        const client = new CloudProviderClient({
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -186,7 +179,7 @@ describe('iaas', function () {
         }]
       };
       it('should fetch disk metadata for aws', function () {
-        const client = new CloudProviderClient({
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -216,7 +209,7 @@ describe('iaas', function () {
       });
 
       it('should throw error while fetching disk metadata for aws', function () {
-        const client = new CloudProviderClient({
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -237,8 +230,8 @@ describe('iaas', function () {
     });
 
     describe('#deleteSnapshot', function () {
-      it('bubbles up the error if cloudprovider throws error', function () {
-        const client = new CloudProviderClient({
+      it('bubbles up the error if aws throws error', function () {
+        const client = new AwsClient({
           name: 'aws',
           key: 'key',
           keyId: 'keyId',
@@ -253,83 +246,48 @@ describe('iaas', function () {
           .deleteSnapshot('fake-snap')
           .catch(err => expect(err.message).to.equal(errorMessageExpected));
       });
-      it('should throw error for openstack cloudprovider client', function () {
-        const client = new CloudProviderClient({
-          name: 'os',
-          authUrl: 'https://keystone.org:5000/test/v3',
-          keystoneAuthVersion: 'v3',
-          domainName: 'domain',
-          tenantName: 'service-fabrik',
-          username: 'user',
-          password: 'secret'
-        });
-        const errorMessageExpected = 'ComputeClient is not supported for openstack';
-        client
-          .deleteSnapshot('fake-snap')
-          .catch(err => err)
-          .then(err => {
-            expect(err.status).to.equal(501);
-            expect(err.message).to.equal(errorMessageExpected);
-          });
-      });
     });
 
-    describe('#constructor', function () {
+    describe('#ValidateParams', function () {
 
-      it('should create an aws client instance', function () {
-        const client = new CloudProviderClient({
-          name: 'aws',
+      it('should throw error if config is not passed', function () {
+        expect(() => AwsClient.validateParams(null)).to.throw();
+      });
+
+      it('should throw error if key is not provided in config', function () {
+        let config = {
+          keyId: 'keyId',
+          region: 'eu-central-1'
+        };
+        expect(() => AwsClient.validateParams(config)).to.throw();
+      });
+
+      it('should throw error if keyId is not provided in config', function () {
+        let config = {
+          key: 'key',
+          region: 'eu-central-1'
+        };
+        expect(() => AwsClient.validateParams(config)).to.throw();
+      });
+
+      it('should throw error if region is not provided in config', function () {
+        let config = {
           key: 'key',
           keyId: 'keyId'
-        });
-        expect(client.provider).to.equal('amazon');
-        expect(createClientSpy)
-          .to.be.calledWith({
-            provider: 'amazon',
-            key: 'key',
-            keyId: 'keyId'
-          });
+        };
+        expect(() => AwsClient.validateParams(config)).to.throw();
       });
 
-      it('should create an aws client instance with max_retries', function () {
-        const client = new CloudProviderClient({
-          name: 'aws',
+      it('should return true if key, keyId and region are provided in config', function () {
+        let config = {
           key: 'key',
           keyId: 'keyId',
-          max_retries: 12
-        });
-        expect(client.provider).to.equal('amazon');
-        expect(createClientSpy)
-          .to.be.calledWith({
-            provider: 'amazon',
-            key: 'key',
-            keyId: 'keyId',
-            max_retries: 12
-          });
+          region: 'eu-central-1'
+        };
+        expect(AwsClient.validateParams(config)).to.equal(true);
       });
 
-      it('should create an openstack client instance', function () {
-        const client = new CloudProviderClient({
-          name: 'os',
-          authUrl: 'https://keystone.org:5000/test/v3',
-          keystoneAuthVersion: 'v3',
-          domainName: 'domain',
-          tenantName: 'service-fabrik',
-          username: 'user',
-          password: 'secret'
-        });
-        expect(client.provider).to.equal('openstack');
-        expect(createClientSpy)
-          .to.be.calledWithMatch({
-            provider: 'openstack',
-            authUrl: 'https://keystone.org:5000/test',
-            keystoneAuthVersion: 'v3',
-            domainName: 'domain',
-            tenantName: 'service-fabrik',
-            username: 'user',
-            password: 'secret'
-          });
-      });
+      
     });
   });
 });
