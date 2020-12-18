@@ -69,7 +69,8 @@
     "prettier-eslint-cli": "5.0.0",
     "proxyquire": "^1.7.9",
     "sinon": "^7.1.1",
-    "sinon-chai": "^3.0.0"
+    "sinon-chai": "^3.0.0",
+    "pkgcloud": "1.7.0"
   },
   "engines": {
     "node": ">= 6.2.1"
