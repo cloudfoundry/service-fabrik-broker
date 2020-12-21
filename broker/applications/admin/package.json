@@ -52,7 +52,7 @@
     "@kubernetes/client-node": "0.12.3",
     "lodash": "4.17.20",
     "moment": "2.27.0",
-    "mongoose": "5.9.24",
+    "mongoose": "5.11.8",
     "morgan": "1.10.0",
     "pkgcloud": "1.7.0",
     "pubsub-js": "1.8.0",
