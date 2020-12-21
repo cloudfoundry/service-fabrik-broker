@@ -15,6 +15,14 @@
     "@sf/common-utils": "file:../../core/utils",
     "@sf/eventmesh": "file:../eventmesh",
     "@sf/express-commons": "file:../../core/express-commons",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/logger": "file:../../core/logging",
+    "@sf/models": "file:../../core/models",
+    "@sf/provisioner-services": "file:../../core/provisioner-services",
+    "bluebird": "3.7.2",
+    "ip": "1.1.5",
+    "js-yaml": "3.14.0",
+    "lodash": "4.17.20",
+    "ssh2": "0.8.9",
+    "uuid": "8.2.0"
   }
 }

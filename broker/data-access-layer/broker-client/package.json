@@ -10,7 +10,8 @@
   "dependencies": {
     "@sf/app-config": "file:../../core/app-config",
     "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/logger": "file:../../core/logging",
+    "lodash": "4.17.20"
   },
   "repository": {},
   "license": "Apache-2.0"

@@ -11,6 +11,8 @@
     "@sf/app-config": "file:../app-config",
     "@sf/common-utils": "file:../utils",
     "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
-    "@sf/models": "file:../models"
+    "@sf/models": "file:../models",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20"
   }
 }

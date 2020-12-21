@@ -20,6 +20,13 @@
     "@sf/iaas": "file:../../data-access-layer/iaas",
     "@sf/logger": "file:../logging",
     "@sf/metering": "file:../../data-access-layer/metering",
-    "@sf/models": "file:../models"
+    "@sf/models": "file:../models",
+    "@sf/provisioner-services": "file:../provisioner-services",
+    "agenda": "0.10.0",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "moment": "2.27.0",
+    "pubsub-js": "1.8.0",
+    "mongoose": "5.9.24"
   }
 }

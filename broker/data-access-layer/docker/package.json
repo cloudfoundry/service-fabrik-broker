@@ -12,6 +12,9 @@
   "dependencies": {
     "@sf/app-config": "file:../../core/app-config",
     "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/logger": "file:../../core/logging",
+    "bluebird": "3.7.2",
+    "dockerode": "2.2.10",
+    "lodash": "4.17.20"
   }
 }

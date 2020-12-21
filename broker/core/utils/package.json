@@ -9,6 +9,17 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@sf/app-config": "file:../app-config",
-    "@sf/logger": "file:../logging"
+    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
+    "@sf/logger": "file:../logging",
+    "@sf/platforms": "file:../../core/platform-managers",
+    "@sf/provisioner-services": "file:../provisioner-services",
+    "axios": "0.20.0",
+    "bluebird": "3.7.2",
+    "hystrixjs": "0.2.0",
+    "lodash": "4.17.20",
+    "jsonwebtoken": "8.5.1",
+    "uuid": "8.2.0",
+    "moment": "2.27.0",
+    "mongoose": "5.9.24"
   }
 }

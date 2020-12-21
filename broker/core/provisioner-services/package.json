@@ -19,6 +19,11 @@
     "@sf/jobs": "file:../scheduler-jobs",
     "@sf/logger": "file:../logging",
     "@sf/models": "file:../models",
-    "@sf/service-agent": "file:../../data-access-layer/service-agent"
+    "@sf/platforms": "file:../platform-managers",
+    "@sf/service-agent": "file:../../data-access-layer/service-agent",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "js-yaml": "3.14.0",
+    "selfsigned": "1.10.7"
   }
 }
