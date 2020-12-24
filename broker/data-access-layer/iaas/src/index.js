@@ -1,7 +1,7 @@
 'use strict';
 
 const config = require('@sf/app-config');
-const CloudProviderClient = require('./CloudProviderClient');
+const CloudProviderClient = (process.env.NODE_ENV !== 'production') ? require('./CloudProviderClient') : undefined;
 const AwsClient = require('./AwsClient');
 const AzureClient = require('./AzureClient');
 const GcpClient = require('./GcpClient');
@@ -22,7 +22,10 @@ const getCloudClient = function (settings) {
       return new AwsClient(settings);
     case 'openstack':
     case 'os':
-      return new CloudProviderClient(settings);
+      if(process.env.NODE_ENV !== 'production') {
+        return new CloudProviderClient(settings);
+      }
+      return undefined;
     case 'ali':
       return new AliClient(settings);
     default:
@@ -31,7 +34,9 @@ const getCloudClient = function (settings) {
 };
 const cloudProvider = getCloudClient(config.backup.provider);
 
-exports.CloudProviderClient = CloudProviderClient;
+if(process.env.NODE_ENV !== 'production') {
+  exports.CloudProviderClient = CloudProviderClient;
+}
 exports.AwsClient = AwsClient;
 exports.AzureClient = AzureClient;
 exports.GcpClient = GcpClient;
