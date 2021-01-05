@@ -598,6 +598,10 @@ function demux(stream, options) {
     stream.on('readable', onreadable);
     stream.once('end', onend);
     stream.once('error', onerror);
+
+    setTimeout(function() {
+      stream.destroy();
+    }, 2000);
   });
 }
 
