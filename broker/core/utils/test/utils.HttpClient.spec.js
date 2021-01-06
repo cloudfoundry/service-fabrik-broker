@@ -39,6 +39,10 @@ class StubAxios {
         resolve(response);
       } else {
         var error = new Error('Request failed with status code ' + response.status);
+        error.config = {
+          url: "/Dummy-URL",
+          method: "POST"
+        }
         error.response = response;
         reject(error);
       }

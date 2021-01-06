@@ -264,6 +264,7 @@ class HttpClient {
         return result;
       })
       .catch(error => {
+        logger.info(`Got error for: ${error.config.url}, HTTP Method: ${error.config.method}`);
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the expected range.
@@ -273,6 +274,7 @@ class HttpClient {
           // or, something happened in setting up the request that triggered an Error.
           const err = _.pick(error.toJSON(), [
             'message', 'name', 'description',
+            'config.url', 'config.method',
             'stack', 'code'
           ]);
           logger.error('HTTP request failed:', err);
