@@ -70,7 +70,7 @@ spec:
                 description: ServiceSchemas is definitions for Service Instances and
                   Service Bindings for the Service Plan.
                 properties:
-                  binding:
+                  service_binding:
                     description: ServiceBindingSchema is the  schema definition for
                       creating a Service Binding. Used only if the Service Plan is
                       bindable.
@@ -85,7 +85,7 @@ spec:
                         - parameters
                         type: object
                     type: object
-                  instance:
+                  service_instance:
                     description: ServiceInstanceSchema is the schema definitions for
                       creating and updating a Service Instance.
                     properties:

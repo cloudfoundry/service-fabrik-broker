@@ -67,8 +67,8 @@ type ServiceBindingSchema struct {
 // ServiceSchemas is definitions for Service Instances and
 // Service Bindings for the Service Plan.
 type ServiceSchemas struct {
-	Instance ServiceInstanceSchema `json:"instance,omitempty"`
-	Binding  ServiceBindingSchema  `json:"binding,omitempty"`
+	Instance ServiceInstanceSchema `json:"service_instance,omitempty"`
+	Binding  ServiceBindingSchema  `json:"service_binding,omitempty"`
 }
 
 // SFPlanSpec defines the desired state of SFPlan
