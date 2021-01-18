@@ -181,10 +181,6 @@ func Test_gotemplateRenderer_Render(t *testing.T) {
 				t.Errorf("gotemplateRenderer.Render() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if _, ok := got.(renderer.Output); (got != nil) != tt.want || ok != tt.want {
-				t.Errorf("gotemplateRenderer.Render() = %v, want %v", got, tt.want)
-				return
-			}
 			if tt.want {
 				out, err := got.FileContent("main")
 				if err != nil {

@@ -58,13 +58,10 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := New(tt.args.kubeConfig, tt.args.scheme, tt.args.mapper)
+			_, err := New(tt.args.kubeConfig, tt.args.scheme, tt.args.mapper)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if _, ok := got.(ClusterRegistry); ok != tt.want {
-				t.Errorf("New() = %v, want ClusterRegistry", got)
 			}
 		})
 	}
