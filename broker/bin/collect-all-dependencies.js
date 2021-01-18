@@ -3,8 +3,21 @@
 const _ = require('lodash');
 const fs = require('fs');
 
-const osbBrokerDeps = JSON.parse(fs.readFileSync('/Users/i350504/sources/other_info/yarn/service-fabrik-broker/broker/applications/osb-broker/package.json')).dependencies;
-const rootDeps = JSON.parse(fs.readFileSync('/Users/i350504/sources/other_info/yarn/service-fabrik-broker/broker/package.json')).dependencies;
+const packagePath = process.argv[2];
+const rootPackagePath = process.argv[3];
+const destPackagePath = process.argv[4];
+
+if(_.isEmpty(packagePath) || _.isEmpty(rootPackagePath) || _.isEmpty(destPackagePath)) {
+  console.log("usage: ./collect-all-dependecies <path-to-mod-package-json> <path-to-root-package-json> <path-to-output-package-json>");
+  return;
+}
+
+let packageSpec = JSON.parse(fs.readFileSync(packagePath));
+let rootPackageSpec = JSON.parse(fs.readFileSync(rootPackagePath));
+
+let packageDeps = packageSpec.dependencies;
+let rootDeps = rootPackageSpec.dependencies;
+
 let visited = {};
 
 function isSFMod(name) {
@@ -24,12 +37,9 @@ function collectAllDeps(modDeps, rootDeps) {
     if(isSFMod(dep)) {
       if(_.has(visited, dep)) continue; 
       visited[dep] = 'visited';
-      let packagePath = _.split(rootDeps[dep], 'file:')[1] + '/package.json';
+      let packagePath = './' + _.split(rootDeps[dep], 'file:')[1] + '/package.json';
       let currentModDeps = getDepsFromPackage(packagePath);
       let tempDeps = collectAllDeps(currentModDeps, rootDeps);
-      console.log(dep);
-      console.log(tempDeps);
-      console.log("---------------------------------------------");
       if(!_.isEmpty(tempDeps)) {
         //remove duplicates from deps and tempDeps and merge
         for (let childModDep in tempDeps) {
@@ -57,5 +67,7 @@ function collectAllDeps(modDeps, rootDeps) {
   return deps;
 }
 
-let deps = collectAllDeps(osbBrokerDeps, rootDeps);
-console.log(deps);
+let deps = collectAllDeps(packageDeps, rootDeps);
+packageSpec.dependencies = deps;
+const jsonData = JSON.stringify(packageSpec, null, 2);
+fs.writeFileSync(destPackagePath, jsonData);
