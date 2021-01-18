@@ -97,7 +97,7 @@ matrix:
         - popd
     - language: node_js
       node_js:
-        - "12.18"
+        - "14.15"
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
@@ -107,7 +107,7 @@ matrix:
         - popd
     - language: node_js
       node_js:
-        - "12.18"
+        - "14.15"
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
@@ -118,7 +118,7 @@ matrix:
         - popd
     - language: node_js
       node_js:
-        - "12.18"
+        - "14.15"
       before_install:
         # - pip install --user truffleHog==2.0.89
         - |
