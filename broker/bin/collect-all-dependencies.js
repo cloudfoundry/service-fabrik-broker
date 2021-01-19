@@ -31,15 +31,18 @@ function getDepsFromPackage(packagePath) {
   return JSON.parse(fs.readFileSync(packagePath)).dependencies;
 }
 
-function collectAllDeps(modDeps, rootDeps) {
+function collectAllDeps(modDeps, rootDeps, pathStr) {
   let deps = {};
   for(let dep in modDeps) {
     if(isSFMod(dep)) {
-      if(_.has(visited, dep)) continue; 
+      if(_.has(visited, dep)) {
+        console.log(`${pathStr},${dep}`);
+        continue;
+      } 
       visited[dep] = 'visited';
       let packagePath = './' + _.split(rootDeps[dep], 'file:')[1] + '/package.json';
       let currentModDeps = getDepsFromPackage(packagePath);
-      let tempDeps = collectAllDeps(currentModDeps, rootDeps);
+      let tempDeps = collectAllDeps(currentModDeps, rootDeps, `${pathStr},${dep}`);
       if(!_.isEmpty(tempDeps)) {
         //remove duplicates from deps and tempDeps and merge
         for (let childModDep in tempDeps) {

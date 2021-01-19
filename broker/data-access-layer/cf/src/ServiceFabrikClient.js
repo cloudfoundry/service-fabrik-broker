@@ -119,6 +119,25 @@ class ServiceFabrikClient extends HttpClient {
       );
   }
 
+  getScheduleBackupState(options) {
+    return this.tokenIssuer
+      .getAccessToken()
+      .then(accessToken => this
+        .request({
+          method: 'GET',
+          url: `/api/v1/service_instances/${options.instance_id}/schedule_backup`,
+          auth: false,
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'Content-type': 'application/json'
+          },
+          responseType: 'json',
+          data: body
+        }, CONST.HTTP_STATUS_CODE.OK)
+        .then(res => res.body) //throw an error
+      );
+  }
+
   scheduleUpdate(options) {
     const body = _.omit(options, 'instance_id');
     return this.tokenIssuer
