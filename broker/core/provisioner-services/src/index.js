@@ -1,4 +1,6 @@
 'use strict';
 module.exports = {
-  DirectorService: require('./DirectorService')
+  DirectorService: require('./DirectorService'),
+  BaseDirectorService: require('./BaseDirectorService'),
+  BaseService: require('./BaseService')
 };

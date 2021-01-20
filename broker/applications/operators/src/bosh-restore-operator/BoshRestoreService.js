@@ -18,7 +18,7 @@ const logger = require('@sf/logger');
 const { director } = require('@sf/bosh');
 const { catalog } = require('@sf/models');
 const config = require('@sf/app-config');
-const BaseDirectorService = require('../../../../core/provisioner-services/src/BaseDirectorService');
+const BaseDirectorService = require('@sf/provisioner-services').BaseDirectorService;
 
 /*
   This Operator carries out new improved restore by following a sequence of steps.
