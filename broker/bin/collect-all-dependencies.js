@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const _ = require('lodash');
 const fs = require('fs');
@@ -8,7 +8,7 @@ const rootPackagePath = process.argv[3];
 const destPackagePath = process.argv[4];
 
 if(_.isEmpty(packagePath) || _.isEmpty(rootPackagePath) || _.isEmpty(destPackagePath)) {
-  console.log("usage: ./collect-all-dependecies <path-to-mod-package-json> <path-to-root-package-json> <path-to-output-package-json>");
+  console.log('usage: ./collect-all-dependecies <path-to-mod-package-json> <path-to-root-package-json> <path-to-output-package-json>');
   return;
 }
 
@@ -44,7 +44,7 @@ function collectAllDeps(modDeps, rootDeps, pathStr) {
       let currentModDeps = getDepsFromPackage(packagePath);
       let tempDeps = collectAllDeps(currentModDeps, rootDeps, `${pathStr},${dep}`);
       if(!_.isEmpty(tempDeps)) {
-        //remove duplicates from deps and tempDeps and merge
+        // remove duplicates from deps and tempDeps and merge
         for (let childModDep in tempDeps) {
           if(_.has(deps, childModDep)) {
             if (deps[childModDep] != tempDeps[childModDep]) {
