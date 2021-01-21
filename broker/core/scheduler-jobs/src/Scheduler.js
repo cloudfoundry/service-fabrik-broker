@@ -37,7 +37,7 @@ class Scheduler {
     this.time = new Date();
     this.config = config.scheduler;
     if(!this.config) {
-      logger.info(`Config for scheduler not defined. Scheduler will not be started`);
+      logger.info('Config for scheduler not defined. Scheduler will not be started');
       return;
     }
     this.runWithWebProcess = this.config.run_with_web_process === undefined || this.config.run_with_web_process === true;
