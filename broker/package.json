@@ -37,6 +37,7 @@
     "data-access-layer/*"
   ],
   "devDependencies": {
+    "@yarnpkg/parsers": "^2.3.0",
     "babel-cli": "^6.9.0",
     "babel-eslint": "10.1.0",
     "chai": "^4.0.0",
