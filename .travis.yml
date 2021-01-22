@@ -119,6 +119,7 @@ matrix:
         - yarn install
         - "yarn run eslint"
         - "yarn run jsdoc"
+        - "yarn constraints"
         - popd
     - language: node_js
       node_js:

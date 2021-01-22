@@ -28,8 +28,10 @@ function isSFMod(name) {
 }
 
 function getDepsFromLockfile(packageName) {
-  let packageKeyName = _.find(depNames, (name) => _.startsWith(name, packageName));
-  if(!packageKeyName) exit(1);
+  let packageKeyName = _.find(depNames, name => _.startsWith(name, packageName));
+  if(!packageKeyName) {
+    exit(1);
+  }
   return lockFileJson[packageKeyName].dependencies;
 }
 
