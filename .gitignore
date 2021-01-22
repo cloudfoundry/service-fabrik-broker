@@ -8,7 +8,7 @@
 !**/.yarn/releases
 !**/.yarn/plugins
 !**/.yarn/sdks
-/.pnp.*
+**/.pnp.*
 **/coverage
 **/.env
 **/npm-debug.log
