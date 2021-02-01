@@ -532,6 +532,80 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return null;
     }
   }
+
+  getServiceInstance(req, res) {
+    function badRequest(err) {
+      res.status(CONST.HTTP_STATUS_CODE.FORBIDDEN).send({});
+    }
+    function notFound(err) {
+      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({});
+    }
+    function unprocessableEntity(err) {
+      res.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY).send({
+        error: err.reason,
+        description: err.message
+      });
+    }
+
+    return Promise.try(() => {
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: getKubernetesName(req.params.instance_id)
+      })
+        .then(resource => {
+          const isServiceInstanceRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'instance_retrievable',false);
+          // if service instance is not retrievable
+          if(!isServiceInstanceRetrievable) {
+            // note clarify when to throw when to call next
+            throw new BadRequest('Service does not support instance retrieval');
+          }
+          const resourceState = _.get(resource, 'status.state');
+          // if resource state is enqueued or deleted.
+          if(resourceState === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE || resourceState === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+            throw new NotFound('Service Instance not found');
+          } else if(resourceState === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+            // resource is being updated?
+            throw new UnprocessableEntity('Service Instance is being updated and therefore cannot be fetched at this time', 'ConcurrencyError');
+          } else if(resourceState === CONST.OPERATION.IN_PROGRESS || resourceState === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+            // check the last operation and send 422 accordingly.
+            const labels = _.get(resource, 'metadata.labels', false);
+            const lastOperation = labels ? labels['interoperator.servicefabrik.io/lastoperation'] : '';
+
+            if(lastOperation === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+              throw new NotFound('Service Instance not found');
+            } else if(lastOperation === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+              throw new UnprocessableEntity('Service Instance updation is in progress and therefore cannot be fetched at this time', 'ConcurrencyError');
+            } else if(lastOperation === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+              throw new UnprocessableEntity('Service Instance deletion is in progress and therefore cannot be fetched at this time', 'ConcurrencyError');
+            }
+            throw new UnprocessableEntity(`Service Instance cannot be fetched:lastOperation: ${lastOperation}`, 'ConcurrencyError');
+          } else if(resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+            // return response with 200
+            const body = {};
+            // generate dashboard client
+            const context = {};
+            const plan = catalog.getPlan(_.get(resource, 'spec.planId'));
+            _.set(context,'plan',plan);
+            _.set(context,'instance_id',req.params.instance_id);
+            const dashboardUrl = this.getDashboardUrl(context);
+            if (dashboardUrl) {
+              body.dashboard_url = dashboardUrl;
+            }
+            _.set(body,'service_id',_.get(resource, 'spec.serviceId'));
+            _.set(body,'plan_id',_.get(resource, 'spec.planId'));
+            _.set(body,'parameters',_.get(resource, 'spec.parameters'));
+
+            return res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
+          }
+        })
+        .catch(BadRequest, badRequest)
+        .catch(NotFound, notFound)
+        .catch(UnprocessableEntity, unprocessableEntity);
+
+    });
+
+  }
 }
 
 module.exports = ServiceBrokerApiController;
