@@ -85,7 +85,7 @@ describe('service-broker-api-enhancement', function () {
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
-          expect(res).to.have.status(403);
+          expect(res).to.have.status(400);
         });
     });
 

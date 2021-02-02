@@ -535,7 +535,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getServiceInstance(req, res) {
     function badRequest(err) {
-      res.status(CONST.HTTP_STATUS_CODE.FORBIDDEN).send({});
+      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({});
     }
     function notFound(err) {
       res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({});
