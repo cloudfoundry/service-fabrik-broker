@@ -8,7 +8,6 @@ const { CONST } = require('@sf/common-utils');
 
 
 const camelcaseKeys = require('camelcase-keys');
-
 describe('service-broker-api-enhancement', function () {
   describe('get instance endpoint', function () {
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
@@ -81,7 +80,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -95,7 +94,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, 404);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -119,7 +118,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -145,7 +144,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -171,7 +170,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -198,7 +197,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -227,7 +226,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
@@ -253,7 +252,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .then(res => {
           config.services = oldServices;
@@ -284,7 +283,7 @@ describe('service-broker-api-enhancement', function () {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
       return chai.request(app)
         .get(`${baseCFUrl}/service_instances/${instance_id}`)
-        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .set('X-Broker-API-Version', '2.14')
         .auth(config.username, config.password)
         .then(res => {
           config.services = oldServices;
@@ -296,6 +295,20 @@ describe('service-broker-api-enhancement', function () {
             dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
           })
         });
+    });
+
+    it('returns 412 (PreconditionFailed) error if broker api version is not atleast 2.14', function () {
+        const testPayload2 = _.cloneDeep(payload2);
+        testPayload2.spec = camelcaseKeys(payload2.spec);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+        return chai.request(app)
+          .get(`${baseCFUrl}/service_instances/${instance_id}`)
+          .set('X-Broker-API-Version', '2.12')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(412);
+          });
     });
 
   });

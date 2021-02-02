@@ -33,7 +33,7 @@ instanceRouter.route('/')
   .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
   .patch([middleware.injectPlanInRequest(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
   .delete([middleware.validateRequest(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
-  .get(controller.handler('getServiceInstance'))
+  .get([middleware.minApiVersion('2.14'), controller.handler('getServiceInstance')])
   .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE', 'GET']));
 instanceRouter.route('/last_operation')
   .get(controller.handler('getLastInstanceOperation'))
