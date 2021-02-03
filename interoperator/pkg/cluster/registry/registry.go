@@ -4,6 +4,7 @@ import (
 	"context"
 
 	resourceV1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
@@ -83,7 +84,15 @@ func (r *clusterRegistry) GetClient(clusterID string) (kubernetes.Client, error)
 		return nil, err
 	}
 	var cfg *rest.Config
-	if clusterID == constants.OwnClusterID {
+
+	cfgManager, err := config.New(r.kubeConfig, r.scheme, r.mapper)
+	if err != nil {
+		return nil, err
+	}
+	interoperatorCfg := cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
+	if clusterID == constants.OwnClusterID || clusterID == currPrimaryClusterID {
 		// Use in cluster config
 		cfg, err = ctrl.GetConfig()
 	} else {

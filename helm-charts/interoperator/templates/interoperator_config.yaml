@@ -9,3 +9,4 @@ data:
     bindingWorkerCount: "{{ .Values.interoperator.config.bindingWorkerCount }}"
     schedulerWorkerCount: "{{ .Values.interoperator.config.schedulerWorkerCount }}"
     provisionerWorkerCount: "{{ .Values.interoperator.config.provisionerWorkerCount }}"
+    primaryClusterId: "1"

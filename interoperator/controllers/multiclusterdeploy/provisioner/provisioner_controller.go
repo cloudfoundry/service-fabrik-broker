@@ -18,6 +18,7 @@ package provisioner
 
 import (
 	"context"
+	"os"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
@@ -49,12 +50,13 @@ type ReconcileProvisioner struct {
 	Log             logr.Logger
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
+	cfgManager      config.Config
 }
 
 // Reconcile reads the SFCluster object and makes changes based on the state read
 // and what is actual state of components deployed in the sister cluster
 /* Functions of this method
-1. Get target cluster client
+1. Get target cluster client and reconcile primary cluster id in configmap
 2. Get deployment instance deployed in master cluster
 3. Register SF CRDs in target cluster (Must be done before registering watches)
 4. Add watches on resources in target sfcluster
@@ -63,7 +65,8 @@ type ReconcileProvisioner struct {
 7. Kubeconfig secret in target cluster
 8. Create clusterrolebinding in target cluster
 9. Image pull secrets in target cluster
-10. Deploy provisioner in target cluster
+10. Deploy provisioner in target cluster (for provisioner on master, primary cluster id
+	should be injected in provisioner env)
 */
 func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -87,6 +90,12 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 	clusterID := clusterInstance.GetName()
 	log.Info("reconciling cluster", "clusterID", clusterID)
+
+	//reconcile primaryClusterID in the configmap
+	err = r.reconcilePrimaryClusterIDConfig()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Get targetClient for targetCluster
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
@@ -133,10 +142,14 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
+	// Fetch current primary cluster id from configmap
+	interoperatorCfg := r.cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
 	err = r.reconcileSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
 	if err != nil {
 		// Skip if secret not found for leader cluster
-		if !(apiErrors.IsNotFound(err) && clusterID == constants.OwnClusterID) {
+		if !(apiErrors.IsNotFound(err) && clusterID == currPrimaryClusterID) {
 			return ctrl.Result{}, err
 		}
 		log.Info("Ignoring secret not found error for leader cluster", "clusterId", clusterID,
@@ -164,6 +177,33 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *ReconcileProvisioner) reconcilePrimaryClusterIDConfig() error {
+	ctx := context.Background()
+	log := r.Log.WithName("PrimaryClusterID reconciler")
+	sfClustersList := &resourcev1alpha1.SFClusterList{}
+	err := r.List(ctx, sfClustersList, client.MatchingLabels{constants.PrimaryClusterKey: "true"})
+	if err != nil {
+		log.Error(err, "Failed to reconcile PrimaryClusterID config. Failed to fetch sfcluster list")
+		return err
+	}
+	if len(sfClustersList.Items) == 1 {
+		//update interoperator  configmap
+		interoperatorCfg := r.cfgManager.GetConfig()
+		interoperatorCfg.PrimaryClusterID = sfClustersList.Items[0].GetName()
+		err = r.cfgManager.UpdateConfig(interoperatorCfg)
+		if err != nil {
+			log.Error(err, "Failed to reconcile PrimaryClusterID config. Updating configmap failed")
+			return err
+		}
+		constants.OwnClusterID = sfClustersList.Items[0].GetName() // keep OwnClusterID up-to-date
+	} else if len(sfClustersList.Items) > 1 {
+		//more than one sfcluster has primary cluster label
+		log.Info("More than one sfcluster CR with label: " + constants.PrimaryClusterKey)
+		os.Exit(1)
+	}
+	return nil
 }
 
 func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient client.Client) error {
@@ -494,6 +534,7 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
+	r.cfgManager = cfgManager
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_provisioner").

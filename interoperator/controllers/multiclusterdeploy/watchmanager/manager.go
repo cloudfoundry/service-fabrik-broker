@@ -1,6 +1,7 @@
 package watchmanager
 
 import (
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
@@ -62,6 +63,12 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 	if err != nil {
 		return err
 	}
+
+	cfgManager, err := config.New(kubeConfig, scheme, mapper)
+	if err != nil {
+		return err
+	}
+
 	instanceEvents := make(chan event.GenericEvent, 1024)
 	bindingEvents := make(chan event.GenericEvent, 1024)
 	clusterEvents := make(chan event.GenericEvent, 1024)
@@ -70,6 +77,7 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 	wm := &watchManager{
 		defaultCluster:  defaultCluster,
 		clusterRegistry: clusterRegistry,
+		cfgManager:      cfgManager,
 		clusterWatchers: make([]*clusterWatcher, 0),
 		instanceEvents:  instanceEvents,
 		bindingEvents:   bindingEvents,

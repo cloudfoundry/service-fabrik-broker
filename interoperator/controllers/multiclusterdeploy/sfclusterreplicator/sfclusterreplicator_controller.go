@@ -21,8 +21,8 @@ import (
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
@@ -77,6 +77,7 @@ type SFClusterReplicator struct {
 	Log             logr.Logger
 	Scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
+	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFCluster object on master and sister clusters
@@ -109,7 +110,11 @@ func (r *SFClusterReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	instancesMetric.WithLabelValues(clusterID).Set(float64(cluster.Status.ServiceInstanceCount))
 
-	if clusterID == constants.OwnClusterID {
+	// Fetch current primary cluster id from configmap
+	interoperatorCfg := r.cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
+	if clusterID == currPrimaryClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
 		return ctrl.Result{}, nil
@@ -242,6 +247,12 @@ func (r *SFClusterReplicator) SetupWithManager(mgr ctrl.Manager) error {
 		}
 		r.clusterRegistry = clusterRegistry
 	}
+
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+	r.cfgManager = cfgManager
 
 	// Watch for changes to SFCluster in sister clusters
 	watchEvents, err := getWatchChannel("sfclusters")

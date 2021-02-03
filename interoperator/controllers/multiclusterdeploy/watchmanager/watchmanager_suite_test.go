@@ -24,24 +24,34 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/go-logr/logr"
 
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var cfg1, cfg2 *rest.Config
 var c1, c2 client.Client
 var mapper1, mapper2 meta.RESTMapper
+var cfgManager config.Config
+var testLog logr.Logger
 
 func TestMain(m *testing.M) {
 	var err error
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(ginkgo.GinkgoWriter)))
+	testLog = ctrl.Log.WithName("test").WithName("mcd_watchmanager")
 	t1 := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 	}
@@ -91,6 +101,12 @@ func setupClients(g *gomega.GomegaWithT) {
 		Scheme: scheme.Scheme,
 		Mapper: mapper2,
 	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+}
+
+func setupCfgManager(g *gomega.GomegaWithT) {
+	var err error
+	cfgManager, err = config.New(cfg1, scheme.Scheme, mapper1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
