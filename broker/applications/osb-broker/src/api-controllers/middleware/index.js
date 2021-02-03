@@ -208,7 +208,6 @@ exports.checkBlockingOperationInProgress = function () {
 
 exports.minApiVersion = function (minVersion) {
   return function (req, res, next) {
-    logger.info(`Bansal ${minVersion}`);
     const version = _.get(req.headers, 'x-broker-api-version', '1.0');
     if(commonFunctions.compareVersions(version, minVersion) < 0) {
       return next(new PreconditionFailed(`At least Broker API version ${minVersion} is required.`));

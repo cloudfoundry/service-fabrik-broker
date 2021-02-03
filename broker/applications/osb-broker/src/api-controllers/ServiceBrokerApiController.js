@@ -606,6 +606,60 @@ class ServiceBrokerApiController extends FabrikBaseController {
     });
 
   }
+
+  getServiceBinding(req, res) {
+    function badRequest(err) {
+      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({});
+    }
+    function notFound(err) {
+      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({});
+    }
+    function done(bindResponse, body) {
+      const response = decodeBase64(bindResponse);
+      _.merge(body,response);
+      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
+    }
+
+    return Promise.try(() => {
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+        resourceId: req.params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id)
+      })
+        .then(resource => {
+          const isServiceBindingRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'bindings_retrievable',false);
+          const isServiceBindable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'bindable',false);
+          // if service binding is not retrievable
+          if(!isServiceBindingRetrievable) {
+            throw new BadRequest('Service does not support binding retrieval');
+          }
+          const isPlanBindable = _.get(catalog.getPlan(_.get(resource, 'spec.planId')), 'bindable',isServiceBindable);
+          // if plan is bindable
+          if(!isPlanBindable) {
+            throw new BadRequest('Service plan is not bindable');
+          }
+          const resourceStatus = _.get(resource, 'status');
+          const resourceState = resourceStatus.state;
+          if(resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+            // return response with 200
+            const body = {};
+            _.set(body,'parameters',_.get(resource, 'spec.parameters'));
+
+            const secretName = resourceStatus.response.secretRef;
+            return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(req.params.instance_id))
+              .then(secret => done(secret.data.response, body));
+          } else {
+            throw new NotFound(`Service binding not found with status ${resourceState}`);
+          }
+        })
+        .catch(BadRequest, badRequest)
+        .catch(NotFound, notFound);
+
+    });
+
+  }
+
 }
 
 module.exports = ServiceBrokerApiController;

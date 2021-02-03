@@ -41,4 +41,5 @@ instanceRouter.route('/last_operation')
 instanceRouter.route('/service_bindings/:binding_id')
   .put([middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), controller.handler('putBinding')])
   .delete(middleware.checkBlockingOperationInProgress(), controller.handler('deleteBinding'))
-  .all(middleware.methodNotAllowed(['PUT', 'DELETE']));
+  .get([middleware.minApiVersion('2.14'), controller.handler('getServiceBinding')])
+  .all(middleware.methodNotAllowed(['PUT', 'DELETE', 'GET']));
