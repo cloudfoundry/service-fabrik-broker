@@ -8,9 +8,17 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models"
+    "@kubernetes/client-node": "0.12.3",
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "bluebird": "3.7.2",
+    "camelcase-keys": "6.2.2",
+    "decamelize-keys-deep": "0.1.1",
+    "js-yaml": "3.14.0",
+    "json-stream": "^1.0.0",
+    "lodash": "4.17.20",
+    "pubsub-js": "1.8.0"
   }
 }

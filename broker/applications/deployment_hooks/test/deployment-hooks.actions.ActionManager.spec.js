@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const { CONST } = require('@sf/common-utils');
 const ActionManager = require('../src/lib/actions/ActionManager');
 
@@ -56,7 +57,7 @@ describe('action', function () {
           .then(() => {
             expect(response).to.eql(expectedResponse);
           });
-      });
+      }).timeout(4000);
       it('should return void action response if phase is not lifecycle phase', function () {
         const actions = ['ReserveIps'];
         const testPhase = 'PrePhase';

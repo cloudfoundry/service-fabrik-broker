@@ -4,6 +4,11 @@
 **/lerna-debug.log
 **/package-lock.json
 **/node_modules
+**/.yarn/*
+!**/.yarn/releases
+!**/.yarn/plugins
+!**/.yarn/sdks
+**/.pnp.*
 **/coverage
 **/.env
 **/npm-debug.log

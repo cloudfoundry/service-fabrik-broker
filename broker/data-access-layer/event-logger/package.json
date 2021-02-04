@@ -10,9 +10,14 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models"
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "bluebird": "3.7.2",
+    "js-yaml": "3.14.0",
+    "lodash": "4.17.20",
+    "pubsub-js": "1.8.0",
+    "riemann": "2.0.0"
   }
 }

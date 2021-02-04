@@ -12,7 +12,7 @@ const {
   }
 } = require('@sf/common-utils');
 const { catalog } = require('@sf/models');
-const BaseService = require('../../../../core/provisioner-services/src/BaseService');
+const { BaseService } = require('@sf/provisioner-services');
 const { cloudController } = require('@sf/cf');
 const { director } = require('@sf/bosh');
 const { apiServerClient } = require('@sf/eventmesh');

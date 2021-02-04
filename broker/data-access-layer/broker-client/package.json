@@ -8,9 +8,10 @@
     "eslint": "./node_modules/eslint/bin/eslint.js ."
   },
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "lodash": "4.17.20"
   },
   "repository": {},
   "license": "Apache-2.0"

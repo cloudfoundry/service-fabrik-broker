@@ -10,16 +10,22 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../app-config",
-    "@sf/bosh": "file:../../data-access-layer/bosh",
-    "@sf/broker-client": "file:../../data-access-layer/broker-client",
-    "@sf/cf": "file:../../data-access-layer/cf",
-    "@sf/common-utils": "file:../utils",
-    "@sf/event-logger": "file:../../data-access-layer/event-logger",
-    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
-    "@sf/iaas": "file:../../data-access-layer/iaas",
-    "@sf/logger": "file:../logging",
-    "@sf/metering": "file:../../data-access-layer/metering",
-    "@sf/models": "file:../models"
+    "@sf/app-config": "*",
+    "@sf/bosh": "*",
+    "@sf/broker-client": "*",
+    "@sf/cf": "*",
+    "@sf/common-utils": "*",
+    "@sf/event-logger": "*",
+    "@sf/eventmesh": "*",
+    "@sf/iaas": "*",
+    "@sf/logger": "*",
+    "@sf/metering": "*",
+    "@sf/models": "*",
+    "agenda": "0.10.0",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "moment": "2.27.0",
+    "mongoose": "5.9.24",
+    "pubsub-js": "1.8.0"
   }
 }

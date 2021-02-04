@@ -8,8 +8,11 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "uuid": "8.2.0"
   }
 }

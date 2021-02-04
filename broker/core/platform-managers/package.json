@@ -10,9 +10,11 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../app-config",
-    "@sf/cf": "file:../../data-access-layer/cf",
-    "@sf/common-utils": "file:../utils",
-    "@sf/logger": "file:../logging"
+    "@sf/app-config": "*",
+    "@sf/cf": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20"
   }
 }

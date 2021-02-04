@@ -22,7 +22,7 @@ const { catalog } = require('@sf/models');
 const { getPlatformManager } = require('@sf/platforms');
 const config = require('@sf/app-config');
 const docker = require('@sf/docker');
-const BaseService = require('../../../../core/provisioner-services/src/BaseService');
+const BaseService = require('@sf/provisioner-services').BaseService;
 const DockerImageLoaderService = require('./DockerImageLoaderService');
 const { apiServerClient } = require('@sf/eventmesh');
 

@@ -10,9 +10,21 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models"
+    "@alicloud/pop-core": "1.7.9",
+    "@google-cloud/compute": "2.1.0",
+    "@google-cloud/storage": "5.3.0",
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "ali-oss": "6.10.0",
+    "aws-sdk": "2.747.0",
+    "azure-arm-compute": "10.0.0",
+    "azure-storage": "2.10.3",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "moment": "2.27.0",
+    "pkgcloud": "1.7.0",
+    "uuid": "8.2.0"
   }
 }

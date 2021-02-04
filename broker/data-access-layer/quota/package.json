@@ -8,10 +8,14 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/cf": "file:../cf",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models"
+    "@sf/app-config": "*",
+    "@sf/cf": "*",
+    "@sf/common-utils": "*",
+    "@sf/eventmesh": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "uuid": "8.2.0"
   }
 }

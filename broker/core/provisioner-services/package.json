@@ -10,15 +10,20 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../app-config",
-    "@sf/bosh": "file:../../data-access-layer/bosh",
-    "@sf/cf": "file:../../data-access-layer/cf",
-    "@sf/common-utils": "file:../utils",
-    "@sf/eventmesh": "file:../../data-access-layer/eventmesh",
-    "@sf/iaas": "file:../../data-access-layer/iaas",
-    "@sf/jobs": "file:../scheduler-jobs",
-    "@sf/logger": "file:../logging",
-    "@sf/models": "file:../models",
-    "@sf/service-agent": "file:../../data-access-layer/service-agent"
+    "@sf/app-config": "*",
+    "@sf/bosh": "*",
+    "@sf/cf": "*",
+    "@sf/common-utils": "*",
+    "@sf/eventmesh": "*",
+    "@sf/iaas": "*",
+    "@sf/jobs": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "@sf/platforms": "*",
+    "@sf/service-agent": "*",
+    "bluebird": "3.7.2",
+    "js-yaml": "3.14.0",
+    "lodash": "4.17.20",
+    "selfsigned": "1.10.7"
   }
 }

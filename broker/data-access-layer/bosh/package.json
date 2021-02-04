@@ -10,11 +10,18 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/cf": "file:../cf",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/eventmesh": "file:../eventmesh",
-    "@sf/express-commons": "file:../../core/express-commons",
-    "@sf/logger": "file:../../core/logging"
+    "@sf/app-config": "*",
+    "@sf/cf": "*",
+    "@sf/common-utils": "*",
+    "@sf/eventmesh": "*",
+    "@sf/express-commons": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "bluebird": "3.7.2",
+    "ip": "1.1.5",
+    "js-yaml": "3.14.0",
+    "lodash": "4.17.20",
+    "ssh2": "0.8.9",
+    "uuid": "8.2.0"
   }
 }

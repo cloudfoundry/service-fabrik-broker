@@ -8,7 +8,8 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../app-config",
-    "@sf/common-utils": "file:../utils"
+    "@sf/app-config": "*",
+    "@sf/common-utils": "*",
+    "lodash": "4.17.20"
   }
 }

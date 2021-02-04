@@ -10,10 +10,14 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/bosh": "file:../bosh",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/iaas": "file:../iaas",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/service-agent": "file:../service-agent"
+    "@sf/app-config": "*",
+    "@sf/bosh": "*",
+    "@sf/common-controllers": "*",
+    "@sf/common-utils": "*",
+    "@sf/iaas": "*",
+    "@sf/logger": "*",
+    "@sf/service-agent": "*",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20"
   }
 }

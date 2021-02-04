@@ -8,6 +8,9 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../app-config"
+    "@sf/app-config": "*",
+    "lodash": "4.17.20",
+    "winston": "3.3.3",
+    "winston-syslog": "2.4.4"
   }
 }

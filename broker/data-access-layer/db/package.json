@@ -10,9 +10,17 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@sf/app-config": "file:../../core/app-config",
-    "@sf/common-utils": "file:../../core/utils",
-    "@sf/logger": "file:../../core/logging",
-    "@sf/models": "file:../../core/models"
+    "@sf/app-config": "*",
+    "@sf/bosh": "*",
+    "@sf/common-utils": "*",
+    "@sf/eventmesh": "*",
+    "@sf/logger": "*",
+    "@sf/models": "*",
+    "@sf/platforms": "*",
+    "@sf/provisioner-services": "*",
+    "bluebird": "3.7.2",
+    "lodash": "4.17.20",
+    "mongoose": "5.9.24",
+    "pubsub-js": "1.8.0"
   }
 }

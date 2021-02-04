@@ -102,8 +102,10 @@ matrix:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
-        - "npm install"
-        - "npm run -s test-coverall"
+        - npm install -g yarn
+        - yarn set version berry
+        - yarn install
+        - "npm run test-coverall"
         - popd
     - language: node_js
       node_js:
@@ -112,9 +114,12 @@ matrix:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
-        - "npm install"
-        - "npm run -s eslint"
-        - "npm run -s jsdoc"
+        - npm install -g yarn
+        - yarn set version berry
+        - yarn install
+        - "yarn run eslint"
+        - "yarn run jsdoc"
+        - "yarn constraints"
         - popd
     - language: node_js
       node_js:
