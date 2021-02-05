@@ -145,7 +145,7 @@ describe('service-broker-api-enhancement', function () {
         });
     });
 
-    it('returns 404 if status is delete', function () {
+    it('returns 422 if status is delete', function () {
       //enable service instances somehow
       const oldServices = config.services;
       // config.services = undefined;
@@ -167,7 +167,9 @@ describe('service-broker-api-enhancement', function () {
         .then(res => {
           config.services = oldServices;
           catalog.reload();
-          expect(res).to.have.status(404);
+          expect(res).to.have.status(422);
+          expect(res.body.error).to.deep.equal('ConcurrencyError');
+          expect(res.body.description).to.deep.equal('Service Instance is being deleted and therefore cannot be fetched at this time');
           mocks.verify();
         });
     });
