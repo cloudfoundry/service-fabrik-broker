@@ -306,6 +306,37 @@ describe('service-broker-api-enhancement', function () {
         });
     });
 
+    it('returns 200 if status is failed', function () {
+      const oldServices = config.services;
+      const service = _.find(config.services, ['id', service_id]);
+      if (service) {
+        _.set(service, 'instance_retrievable', true);
+        catalog.reload();
+      }
+      const testPayload2 = _.cloneDeep(payload2);
+      testPayload2.status.state = 'failed';
+      testPayload2.spec = camelcaseKeys(payload2.spec);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+      return chai.request(app)
+        .get(`${baseCFUrl}/service_instances/${instance_id}`)
+        .set('X-Broker-API-Version', '2.14')
+        .auth(config.username, config.password)
+        .then(res => {
+          config.services = oldServices;
+          catalog.reload();
+          expect(res).to.have.status(200);
+          expect(res.body).to.deep.equal({
+            service_id: service_id,
+            plan_id: plan_id,
+            parameters: {
+              foo: 'bar'
+            },
+            dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
+          })
+          mocks.verify();
+        });
+    });
+
     it('returns 412 (PreconditionFailed) error if broker api version is not atleast 2.14', function () {
       const testPayload2 = _.cloneDeep(payload2);
       testPayload2.spec = camelcaseKeys(payload2.spec);

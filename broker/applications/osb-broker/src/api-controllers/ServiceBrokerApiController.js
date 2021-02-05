@@ -582,7 +582,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
               throw new UnprocessableEntity('Service Instance deletion is in progress and therefore cannot be fetched at this time', 'ConcurrencyError');
             }
             throw new UnprocessableEntity(`Service Instance cannot be fetched:lastOperation: ${lastOperation}`, 'ConcurrencyError');
-          } else if(resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+          } else if(resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED) {
             // return response with 200
             const body = {};
             // generate dashboard client
