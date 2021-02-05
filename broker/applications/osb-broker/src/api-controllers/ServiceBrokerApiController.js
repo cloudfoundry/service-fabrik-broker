@@ -557,7 +557,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
           const isServiceInstanceRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'instance_retrievable',false);
           // if service instance is not retrievable
           if(!isServiceInstanceRetrievable) {
-            // note clarify when to throw when to call next
             throw new BadRequest('Service does not support instance retrieval');
           }
           const resourceState = _.get(resource, 'status.state');

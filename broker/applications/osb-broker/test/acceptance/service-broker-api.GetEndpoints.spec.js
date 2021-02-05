@@ -119,9 +119,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 404 if status is in_queue', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -146,9 +144,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 422 if status is delete', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -175,9 +171,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 404 if status is create in progress', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -202,9 +196,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 422 if status is update in progress', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -232,10 +224,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 422 if status is update', function () {
-
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -262,9 +251,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 200 if service instance is successfully returned', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -294,9 +281,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 200 if service instance is successfully returned (k8s)', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       if (service) {
         _.set(service, 'instance_retrievable', true);
@@ -398,9 +383,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 400 (BadRequest) error if service plan is not bindable', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       const plan = _.find(service.plans, ['id', plan_id]);
       if (service) {
@@ -444,9 +427,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 200 if service binding is successfully returned', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       const plan = _.find(service.plans, ['id', plan_id]);
       if (service) {
@@ -493,9 +474,7 @@ describe('service-broker-api-enhancement', function () {
     });
 
     it('returns 404 if service binding status is not succeeded', function () {
-      //enable service instances somehow
       const oldServices = config.services;
-      // config.services = undefined;
       const service = _.find(config.services, ['id', service_id]);
       const plan = _.find(service.plans, ['id', plan_id]);
       if (service) {
