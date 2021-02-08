@@ -61,7 +61,7 @@ main(){
                 "")
                     test_broker test-coverall || exit 1;
                     cat ./coverage/lcov_broker.info >> ./coverage/lcov.info
-                    cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+                    cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js ../
                     ;;
                 "help")         help test-coverall; exit;;
                 *)              help test-coverall;exit;;
