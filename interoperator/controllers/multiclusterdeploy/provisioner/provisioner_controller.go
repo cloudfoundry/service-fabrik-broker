@@ -198,6 +198,7 @@ func (r *ReconcileProvisioner) reconcilePrimaryClusterIDConfig() error {
 			return err
 		}
 		constants.OwnClusterID = sfClustersList.Items[0].GetName() // keep OwnClusterID up-to-date
+		log.Info("Updated primary cluster id in configmap", "primaryClusterId", sfClustersList.Items[0].GetName())
 	} else if len(sfClustersList.Items) > 1 {
 		//more than one sfcluster has primary cluster label
 		log.Info("More than one sfcluster CR with label: " + constants.PrimaryClusterKey)

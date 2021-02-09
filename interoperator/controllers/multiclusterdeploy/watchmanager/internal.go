@@ -62,7 +62,6 @@ func (wm *watchManager) addCluster(clusterID string) error {
 		return err
 	}
 
-	log.Info("In the add cluster")
 	var cfg *rest.Config
 	interoperatorCfg := wm.cfgManager.GetConfig()
 	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
