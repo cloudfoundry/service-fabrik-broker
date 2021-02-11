@@ -120,9 +120,12 @@ cd ~/workspace
   # make code changes
   git push <github_username> my-new-feature
   ```
-* Install dependencies
+* Install dependencies. Service Fabrik follows monorepo pattern and uses yarn for managing dependencies. Please follow these steps to install required dependencies.
 ```shell
-npm install
+cd service-fabrik-broker/broker
+npm install -g yarn
+yarn set version berry
+yarn install
 ```
 * Optional: To locally run all unit test
 To run all the unit tests:
