@@ -202,7 +202,7 @@ func (r *ReconcileProvisioner) reconcilePrimaryClusterIDConfig() error {
 		log.Info("Updated primary cluster id in configmap", "primaryClusterId", sfClustersList.Items[0].GetName())
 	} else if len(sfClustersList.Items) > 1 {
 		//more than one sfcluster has primary cluster label
-		log.Error(fmt.Errorf("More than one primary cluster"), "More than one sfcluster CR with label: "+constants.PrimaryClusterKey)
+		log.Error(fmt.Errorf("more than one primary cluster"), "More than one sfcluster CR with label: "+constants.PrimaryClusterKey)
 		os.Exit(1)
 	}
 	return nil
