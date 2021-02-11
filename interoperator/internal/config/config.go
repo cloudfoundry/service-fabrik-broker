@@ -111,12 +111,12 @@ func (cfg *config) GetConfig() *InteroperatorConfig {
 	interoperatorConfig := &InteroperatorConfig{}
 	err := cfg.fetchConfig()
 	if err != nil {
-		log.Info("failed to read interoperator config. using defaults.")
+		log.Error(err, "failed to read interoperator config. using defaults.")
 		return setConfigDefaults(interoperatorConfig)
 	}
 	err = yaml.Unmarshal([]byte(cfg.configMap.Data[constants.ConfigMapKey]), interoperatorConfig)
 	if err != nil {
-		log.Info("failed to decode interoperator config. using defaults.")
+		log.Error(err, "failed to decode interoperator config. using defaults.")
 		return setConfigDefaults(interoperatorConfig)
 	}
 	return setConfigDefaults(interoperatorConfig)
