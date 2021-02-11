@@ -16,8 +16,8 @@ const (
 
 	ConfigMapName         = "interoperator-config"
 	ConfigMapKey          = "config"
-	ProvisionerName       = "active-provisioner"
-	LeaderProvisionerName = "provisioner"
+	ProvisionerName       = "provisioner"
+	LeaderProvisionerName = "provisioner-template"
 
 	NamespaceEnvKey    = "POD_NAMESPACE"
 	OwnClusterIDEnvKey = "CLUSTER_ID"
