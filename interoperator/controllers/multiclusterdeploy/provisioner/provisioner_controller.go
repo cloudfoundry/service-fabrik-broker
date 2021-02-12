@@ -107,7 +107,7 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// 2. Get deploment instance for provisioner
 	deplomentInstance := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{
-		Name:      constants.LeaderProvisionerName,
+		Name:      constants.ProvisionerTemplateName,
 		Namespace: constants.InteroperatorNamespace,
 	}, deplomentInstance)
 	if err != nil {

@@ -68,7 +68,7 @@ var clusterSecret = &corev1.Secret{
 
 var deploymentInstance = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:      constants.LeaderProvisionerName,
+		Name:      constants.ProvisionerTemplateName,
 		Namespace: constants.InteroperatorNamespace,
 	},
 	Spec: appsv1.DeploymentSpec{
