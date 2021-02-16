@@ -5,7 +5,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   config: |-
-    instanceWorkerCount: "{{ .Values.interoperator.config.instanceWorkerCount }}"
-    bindingWorkerCount: "{{ .Values.interoperator.config.bindingWorkerCount }}"
-    schedulerWorkerCount: "{{ .Values.interoperator.config.schedulerWorkerCount }}"
-    provisionerWorkerCount: "{{ .Values.interoperator.config.provisionerWorkerCount }}"
+    instanceWorkerCount: {{ .Values.interoperator.config.instanceWorkerCount }}
+    bindingWorkerCount: {{ .Values.interoperator.config.bindingWorkerCount }}
+    schedulerWorkerCount: {{ .Values.interoperator.config.schedulerWorkerCount }}
+    provisionerWorkerCount: {{ .Values.interoperator.config.provisionerWorkerCount }}
+    primaryClusterId: "1"

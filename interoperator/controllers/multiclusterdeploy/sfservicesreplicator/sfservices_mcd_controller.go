@@ -21,6 +21,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
@@ -41,6 +42,7 @@ type ReconcileSFServices struct {
 	Log             logr.Logger
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
+	cfgManager      config.Config
 }
 
 // Reconcile is called for a SFCluster. It replicates all SFServices and all SFPlans to
@@ -63,6 +65,16 @@ func (r *ReconcileSFServices) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	clusterID := clusterInstance.GetName()
+	// Fetch current primary cluster id from configmap
+	interoperatorCfg := r.cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
+	if clusterID == currPrimaryClusterID {
+		// Target cluster is mastercluster itself
+		// Replication not needed
+		return ctrl.Result{}, nil
+	}
+
 	log.Info("Reconcile started for cluster", "clusterID", clusterID)
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
@@ -230,6 +242,12 @@ func (r *ReconcileSFServices) SetupWithManager(mgr ctrl.Manager) error {
 		}
 		r.clusterRegistry = clusterRegistry
 	}
+
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+	r.cfgManager = cfgManager
 
 	// Define a mapping from the object in the event(sfservice/sfplan) to
 	// list of sfclusters to reconcile

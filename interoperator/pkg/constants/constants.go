@@ -11,6 +11,7 @@ const (
 	SFServiceInstanceCounterFinalizerName = "sfserviceinstancecounter.servicefabrik.io"
 	ErrorCountKey                         = "interoperator.servicefabrik.io/error"
 	LastOperationKey                      = "interoperator.servicefabrik.io/lastoperation"
+	PrimaryClusterKey                     = "interoperator.servicefabrik.io/primarycluster"
 	ErrorThreshold                        = 10
 
 	ConfigMapName   = "interoperator-config"
@@ -28,6 +29,7 @@ const (
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
 	DefaultProvisionerWorkerCount = 10
+	DefaultPrimaryClusterID       = "1"
 
 	GoTemplateType = "gotemplate"
 

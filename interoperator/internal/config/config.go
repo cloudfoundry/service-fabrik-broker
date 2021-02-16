@@ -23,10 +23,11 @@ var log = logf.Log.WithName("config.manager")
 
 // InteroperatorConfig contains tuneable configs used by interoperator
 type InteroperatorConfig struct {
-	InstanceWorkerCount    int `yaml:"instanceWorkerCount,omitempty"`
-	BindingWorkerCount     int `yaml:"bindingWorkerCount,omitempty"`
-	SchedulerWorkerCount   int `yaml:"schedulerWorkerCount,omitempty"`
-	ProvisionerWorkerCount int `yaml:"provisionerWorkerCount,omitempty"`
+	InstanceWorkerCount    int    `yaml:"instanceWorkerCount,omitempty"`
+	BindingWorkerCount     int    `yaml:"bindingWorkerCount,omitempty"`
+	SchedulerWorkerCount   int    `yaml:"schedulerWorkerCount,omitempty"`
+	ProvisionerWorkerCount int    `yaml:"provisionerWorkerCount,omitempty"`
+	PrimaryClusterID       string `yaml:"primaryClusterId,omitempty"`
 
 	InstanceContollerWatchList []osbv1alpha1.APIVersionKind `yaml:"instanceContollerWatchList,omitempty"`
 	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
@@ -45,6 +46,9 @@ func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorC
 	}
 	if interoperatorConfig.ProvisionerWorkerCount == 0 {
 		interoperatorConfig.ProvisionerWorkerCount = constants.DefaultProvisionerWorkerCount
+	}
+	if interoperatorConfig.PrimaryClusterID == "" {
+		interoperatorConfig.PrimaryClusterID = constants.DefaultPrimaryClusterID
 	}
 
 	return interoperatorConfig
@@ -107,12 +111,12 @@ func (cfg *config) GetConfig() *InteroperatorConfig {
 	interoperatorConfig := &InteroperatorConfig{}
 	err := cfg.fetchConfig()
 	if err != nil {
-		log.Info("failed to read interoperator config. using defaults.")
+		log.Error(err, "failed to read interoperator config. using defaults.")
 		return setConfigDefaults(interoperatorConfig)
 	}
 	err = yaml.Unmarshal([]byte(cfg.configMap.Data[constants.ConfigMapKey]), interoperatorConfig)
 	if err != nil {
-		log.Info("failed to decode interoperator config. using defaults.")
+		log.Error(err, "failed to decode interoperator config. using defaults.")
 		return setConfigDefaults(interoperatorConfig)
 	}
 	return setConfigDefaults(interoperatorConfig)

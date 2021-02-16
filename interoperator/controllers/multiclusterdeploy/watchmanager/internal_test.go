@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	mock_v1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1/mock_sfcluster"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 
 	gomock "github.com/golang/mock/gomock"
@@ -130,11 +132,13 @@ func Test_watchManager_addCluster(t *testing.T) {
 	var ctrl *gomock.Controller
 
 	setupClients(g)
+	setupCfgManager(g)
 
 	type fields struct {
 		defaultCluster  kubernetes.Client
 		clusterRegistry registry.ClusterRegistry
 		clusterWatchers []*clusterWatcher
+		cfgManager      config.Config
 	}
 	type args struct {
 		clusterID string
@@ -189,6 +193,7 @@ func Test_watchManager_addCluster(t *testing.T) {
 			fields: fields{
 				defaultCluster:  c1,
 				clusterWatchers: []*clusterWatcher{},
+				cfgManager:      cfgManager,
 			},
 			args: args{
 				clusterID: "bar",
@@ -211,6 +216,7 @@ func Test_watchManager_addCluster(t *testing.T) {
 			fields: fields{
 				defaultCluster:  c1,
 				clusterWatchers: []*clusterWatcher{},
+				cfgManager:      cfgManager,
 			},
 			args: args{
 				clusterID: "bar",
@@ -236,6 +242,7 @@ func Test_watchManager_addCluster(t *testing.T) {
 				defaultCluster:  tt.fields.defaultCluster,
 				clusterRegistry: tt.fields.clusterRegistry,
 				clusterWatchers: tt.fields.clusterWatchers,
+				cfgManager:      tt.fields.cfgManager,
 			}
 			if tt.setup != nil {
 				tt.setup(wm)

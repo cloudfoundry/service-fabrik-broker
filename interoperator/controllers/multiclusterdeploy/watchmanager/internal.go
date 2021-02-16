@@ -3,8 +3,8 @@ package watchmanager
 import (
 	"sync"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
 	"k8s.io/client-go/rest"
@@ -16,6 +16,7 @@ import (
 type watchManager struct {
 	defaultCluster  kubernetes.Client
 	clusterRegistry registry.ClusterRegistry
+	cfgManager      config.Config
 
 	clusterWatchers []*clusterWatcher
 	mux             sync.Mutex // Locking clusterWatchers array
@@ -62,7 +63,10 @@ func (wm *watchManager) addCluster(clusterID string) error {
 	}
 
 	var cfg *rest.Config
-	if clusterID == constants.OwnClusterID {
+	interoperatorCfg := wm.cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
+	if clusterID == currPrimaryClusterID {
 		// Use in cluster config
 		cfg, err = ctrl.GetConfig()
 	} else {

@@ -21,6 +21,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
@@ -46,6 +47,7 @@ type BindingReplicator struct {
 	Log             logr.Logger
 	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
+	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFServiceInstanceReplicator object and makes changes based on the state read
@@ -77,7 +79,11 @@ func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	if clusterID == constants.OwnClusterID {
+	// Fetch current primary cluster id from configmap
+	interoperatorCfg := r.cfgManager.GetConfig()
+	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+
+	if clusterID == currPrimaryClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
 		log.Info("Target cluster is master cluster itself, replication not needed..")
@@ -336,6 +342,11 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 		r.clusterRegistry = clusterRegistry
 	}
 
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+	r.cfgManager = cfgManager
 	// Watch for changes to SFServiceBinding in sister clusters
 	watchEvents, err := getWatchChannel("sfservicebindings")
 	if err != nil {

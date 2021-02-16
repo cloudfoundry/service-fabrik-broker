@@ -23,6 +23,7 @@ import (
 	"time"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
@@ -302,6 +303,76 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 			}, timeout).Should(gomega.Succeed())
 		}
 	}
+}
+
+func TestReconcileProvisioner_reconcilePrimaryClusterIDConfig(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: "0",
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
+	data := make(map[string]string)
+	configData := `
+instanceWorkerCount: 2
+instanceContollerWatchList:
+- apiVersion: kubedb.com/v1alpha1
+  kind: Postgres
+- apiVersion: kubernetes.sapcloud.io/v1alpha1
+  kind: Postgresql
+- apiVersion: deployment.servicefabrik.io/v1alpha1
+  kind: Director`
+	data[constants.ConfigMapKey] = configData
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.ConfigMapName,
+			Namespace: constants.InteroperatorNamespace,
+		},
+		Data: data,
+	}
+	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	r := &ReconcileProvisioner{
+		Client:          c,
+		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
+		scheme:          mgr.GetScheme(),
+		clusterRegistry: mockClusterRegistry,
+		cfgManager:      cfgManager,
+	}
+	// Set primaryClusterId to a dummy value in config and verify it gets reconciled
+	interoperatorCfg := cfgManager.GetConfig()
+	interoperatorCfg.PrimaryClusterID = "dummy"
+	g.Expect(r.cfgManager.UpdateConfig(interoperatorCfg)).NotTo(gomega.HaveOccurred())
+	var primaryClusterInstance = &resourcev1alpha1.SFCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "primary",
+			Namespace: constants.InteroperatorNamespace,
+		},
+		Spec: resourcev1alpha1.SFClusterSpec{
+			SecretRef: "my-secret",
+		},
+	}
+	labels := make(map[string]string)
+	labels[constants.PrimaryClusterKey] = "true"
+	primaryClusterInstance.SetLabels(labels)
+	g.Expect(c.Create(context.TODO(), primaryClusterInstance)).NotTo(gomega.HaveOccurred())
+	err = r.reconcilePrimaryClusterIDConfig()
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	interoperatorCfg = cfgManager.GetConfig()
+	g.Expect(interoperatorCfg.PrimaryClusterID).To(gomega.Equal("primary"))
 }
 
 func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
