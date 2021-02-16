@@ -68,7 +68,7 @@ var clusterSecret = &corev1.Secret{
 
 var deploymentInstance = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:      "provisioner",
+		Name:      constants.ProvisionerTemplateName,
 		Namespace: constants.InteroperatorNamespace,
 	},
 	Spec: appsv1.DeploymentSpec{
@@ -168,7 +168,7 @@ func TestReconcile(t *testing.T) {
 	provisionerInstance := &appsv1.Deployment{}
 	g.Eventually(func() error {
 		err := targetReconciler.Get(context.TODO(), types.NamespacedName{
-			Name:      deploymentInstance.GetName(),
+			Name:      constants.ProvisionerName,
 			Namespace: deploymentInstance.GetNamespace(),
 		}, provisionerInstance)
 		if err != nil {
