@@ -350,6 +350,54 @@ describe('service-broker-api-enhancement', function () {
           expect(res).to.have.status(412);
         });
     });
+    
+    it('should return X-Broker-API-Request-Identity in response if set in request', function () {
+      const oldServices = config.services;
+      const service = _.find(config.services, ['id', service_id]);
+      if (service) {
+        _.set(service, 'instance_retrievable', true);
+        catalog.reload();
+      }
+      const testPayload2 = _.cloneDeep(payload2);
+      testPayload2.spec = camelcaseKeys(payload2.spec);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+      return chai.request(app)
+        .get(`${baseCFUrl}/service_instances/${instance_id}`)
+        .set('X-Broker-API-Version', '2.14')
+        .set('X-Broker-API-Request-Identity', 'someid')
+        .auth(config.username, config.password)
+        .then(res => {
+          config.services = oldServices;
+          catalog.reload();
+          expect(res).to.have.status(200);
+          expect(res).to.have.header('X-Broker-API-Request-Identity', 'someid');
+          expect(res.body).to.deep.equal({
+            service_id: service_id,
+            plan_id: plan_id,
+            parameters: {
+              foo: 'bar'
+            },
+            dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
+          })
+          mocks.verify();
+        });
+    });
+
+    it('should return X-Broker-API-Request-Identity in response if set in request (with precondition failure)', function () {
+      const testPayload2 = _.cloneDeep(payload2);
+      testPayload2.spec = camelcaseKeys(payload2.spec);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+      return chai.request(app)
+        .get(`${baseCFUrl}/service_instances/${instance_id}`)
+        .set('X-Broker-API-Version', '2.12')
+        .set('X-Broker-API-Request-Identity', 'someid')
+        .auth(config.username, config.password)
+        .catch(err => err.response)
+        .then(res => {
+          expect(res).to.have.status(412);
+          expect(res).to.have.header('X-Broker-API-Request-Identity', 'someid');
+        });
+    });
 
   });
 

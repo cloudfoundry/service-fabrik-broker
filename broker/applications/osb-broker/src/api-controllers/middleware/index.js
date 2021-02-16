@@ -216,4 +216,14 @@ exports.minApiVersion = function (minVersion) {
   };
 };
 
+exports.addRequestIdentity = function () {
+  return function (req, res, next) {
+    const requestIdentity = _.get(req.headers, 'x-broker-api-request-identity');
+    if(requestIdentity) {
+      res.set('X-Broker-API-Request-Identity', requestIdentity);
+    }
+    next()
+  };
+};
+
 Object.assign(module.exports, require('@sf/express-commons').middleware);
