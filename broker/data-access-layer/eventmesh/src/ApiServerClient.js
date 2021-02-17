@@ -198,7 +198,8 @@ class ApiServerClient {
         resourceGroup: opts.resourceGroup,
         resourceType: opts.resourceType,
         resourceId: opts.resourceId,
-        namespaceId: opts.namespaceId
+        namespaceId: opts.namespaceId,
+        requestIdentity: opts.requestIdentity
       }))
       .then(resource => {
         const state = _.get(resource, 'status.state');

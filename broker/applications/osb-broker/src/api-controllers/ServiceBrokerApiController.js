@@ -144,7 +144,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         spec: params,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
-        }
+        },
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       }))
       .then(() => {
         if (!plan.manager.async) {
@@ -154,7 +155,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
             resourceId: getKubernetesName(req.params.instance_id),
             namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            started_at: new Date()
+            started_at: new Date(),
+            requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
           });
         }
       })
@@ -217,7 +219,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       resourceId: getKubernetesName(req.params.instance_id),
       namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
       start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-      started_at: new Date()
+      started_at: new Date(),
+      requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
     };
     return Promise
       .try(() => {
@@ -246,7 +249,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
               response: {}
-            }
+            },
+            requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
           });
         } else {
           _.set(params, 'instance_id', req.params.instance_id);
@@ -259,7 +263,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
               description: ''
-            }
+            },
+            requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
           });
         }
       })
@@ -307,7 +312,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return eventmesh.apiServerClient.deleteResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-      resourceId: getKubernetesName(req.params.instance_id)
+      resourceId: getKubernetesName(req.params.instance_id),
+      requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
     })
       .then(() => eventmesh.apiServerClient.patchOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -316,7 +322,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.DELETE,
           description: ''
-        }
+        },
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       }))
       .then(() => {
         if (!plan.manager.async) {
@@ -326,7 +333,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
             resourceId: getKubernetesName(req.params.instance_id),
             namespaceId: eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
             start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-            started_at: new Date()
+            started_at: new Date(),
+            requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
           });
         }
       })
@@ -383,7 +391,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       resourceGroup: resourceGroup,
       resourceType: resourceType,
       resourceId: resourceId,
-      namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
+      namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined,
+      requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
     })
       .tap(() => logger.debug(`Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done.bind(this))
@@ -436,7 +445,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
-          }
+          },
+          requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
         });
       })
       .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
@@ -446,7 +456,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date(),
-        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
+        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       }))
       .then(operationStatus => {
         const secretName = operationStatus.response.secretRef;
@@ -485,7 +496,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
       resourceId: params.binding_id,
-      namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
+      namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+      requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
     })
       .then(() => eventmesh.apiServerClient.updateOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -494,7 +506,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.DELETE
-        }
+        },
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       }))
       .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -503,7 +516,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date(),
-        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
+        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       }))
       .then(done.bind(this))
       .catch(NotFound, gone)
@@ -551,7 +565,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-        resourceId: getKubernetesName(req.params.instance_id)
+        resourceId: getKubernetesName(req.params.instance_id),
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       })
         .then(resource => {
           const isServiceInstanceRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'instance_retrievable',false);
@@ -627,7 +642,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: req.params.binding_id,
-        namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id)
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
+        requestIdentity: _.get(req.headers, 'x-broker-api-request-identity')
       })
         .then(resource => {
           const isServiceBindingRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'bindings_retrievable',false);
