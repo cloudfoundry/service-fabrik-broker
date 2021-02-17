@@ -660,14 +660,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
           if(!isPlanBindable) {
             throw new BadRequest('Service plan is not bindable');
           }
-          const resourceStatus = _.get(resource, 'status');
-          const resourceState = resourceStatus.state;
+          const resourceState = _.get(resource, 'status.state');
           if(resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
             // return response with 200
             const body = {};
             _.set(body,'parameters',_.get(resource, 'spec.parameters'));
 
-            const secretName = resourceStatus.response.secretRef;
+            const secretName = _.get(resource, 'status.response.secretRef');
             return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(req.params.instance_id))
               .then(secret => done(secret.data.response, body));
           } else {
