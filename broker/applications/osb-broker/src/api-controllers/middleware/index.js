@@ -218,7 +218,7 @@ exports.minApiVersion = function (minVersion) {
 
 exports.addRequestIdentity = function () {
   return function (req, res, next) {
-    const requestIdentity = _.get(req.headers, 'x-broker-api-request-identity');
+    const requestIdentity = _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY);
     if(requestIdentity) {
       res.set('X-Broker-API-Request-Identity', requestIdentity);
     }

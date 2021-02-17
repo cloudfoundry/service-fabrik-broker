@@ -83,6 +83,9 @@ module.exports = Object.freeze({
     ABORTING: 'aborting'
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
+  SF_BROKER_API_HEADERS: {
+    REQUEST_IDENTITY: 'x-broker-api-request-identity'
+  },
   OPERATION_TYPE: {
     LIFECYCLE: ['create', 'update', 'delete'],
     BACKUP: 'backup',
