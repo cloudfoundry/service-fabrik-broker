@@ -222,7 +222,7 @@ exports.addRequestIdentity = function () {
     if(requestIdentity) {
       res.set('X-Broker-API-Request-Identity', requestIdentity);
     }
-    next()
+    next();
   };
 };
 
