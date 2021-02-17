@@ -590,8 +590,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             throw new UnprocessableEntity('Service Instance is being deleted and therefore cannot be fetched at this time', 'ConcurrencyError');
           } else if(resourceState === CONST.OPERATION.IN_PROGRESS || resourceState === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
             // check the last operation and send 422 accordingly.
-            const labels = _.get(resource, 'metadata.labels', false);
-            const lastOperation = labels ? labels['interoperator.servicefabrik.io/lastoperation'] : '';
+            const lastOperation = _.get(resource, ['metadata','labels', CONST.APISERVER.LASTOPERATION_LABEL_KEY], '');
 
             if(lastOperation === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
               throw new NotFound('Service Instance not found');

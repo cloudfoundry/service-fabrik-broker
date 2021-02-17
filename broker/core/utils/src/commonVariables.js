@@ -328,6 +328,7 @@ module.exports = Object.freeze({
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.10',
     NAMESPACE_LABEL_KEY: 'OWNER_INTEROPERATOR_NAMESPACE',
+    LASTOPERATION_LABEL_KEY: 'interoperator.servicefabrik.io/lastoperation',
     DEFAULT_NAMESPACE: 'default',
     NAMESPACE_OBJECT: 'Namespace',
     NAMESPACE_API_VERSION: 'v1',
