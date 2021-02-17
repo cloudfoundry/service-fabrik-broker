@@ -35,13 +35,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
     super();
   }
 
-  removeFinalizersFromOSBResource(resourceType, resourceId, namespaceId) {
+  removeFinalizersFromOSBResource(resourceType, resourceId, namespaceId, requestIdentity) {
     return eventmesh.apiServerClient.removeFinalizers({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: resourceType,
       resourceId: resourceId,
       namespaceId: namespaceId,
-      finalizer: CONST.APISERVER.FINALIZERS.BROKER
+      finalizer: CONST.APISERVER.FINALIZERS.BROKER,
+      requestIdentity: requestIdentity
     });
   }
 
@@ -295,7 +296,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return this.removeFinalizersFromOSBResource(
             CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             getKubernetesName(req.params.instance_id),
-            eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id))
+            eventmesh.apiServerClient.getNamespaceId(getKubernetesName(req.params.instance_id)),
+            _.get(req.headers, 'x-broker-api-request-identity')
           );
         }
       })
@@ -360,7 +362,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return this.removeFinalizersFromOSBResource(
             resourceType,
             resourceId,
-            eventmesh.apiServerClient.getNamespaceId(resourceId)
+            eventmesh.apiServerClient.getNamespaceId(resourceId),
+            _.get(req.headers, 'x-broker-api-request-identity')
           );
         }
       })
@@ -481,7 +484,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return this.removeFinalizersFromOSBResource(
         CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         params.binding_id,
-        eventmesh.apiServerClient.getNamespaceId(params.instance_id)
+        eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+        _.get(req.headers, 'x-broker-api-request-identity')
       )
         .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));
     }
