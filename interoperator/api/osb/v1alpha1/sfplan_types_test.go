@@ -81,11 +81,11 @@ func TestStorageSfPlan(t *testing.T) {
 	}
 	schemas := &ServiceSchemas{
 		Instance: ServiceInstanceSchema{
-			Create: schema,
-			Update: schema,
+			Create: &schema,
+			Update: &schema,
 		},
 		Binding: ServiceBindingSchema{
-			Create: schema,
+			Create: &schema,
 		},
 	}
 	created := &SFPlan{
