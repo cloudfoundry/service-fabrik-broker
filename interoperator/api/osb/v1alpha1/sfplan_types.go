@@ -54,14 +54,14 @@ type Schema struct {
 // ServiceInstanceSchema is the schema definitions for creating
 // and updating a Service Instance.
 type ServiceInstanceSchema struct {
-	Create Schema `json:"create,omitempty"`
-	Update Schema `json:"update,omitempty"`
+	Create *Schema `json:"create,omitempty"`
+	Update *Schema `json:"update,omitempty"`
 }
 
 // ServiceBindingSchema is the  schema definition for creating a
 // Service Binding. Used only if the Service Plan is bindable.
 type ServiceBindingSchema struct {
-	Create Schema `json:"create,omitempty"`
+	Create *Schema `json:"create,omitempty"`
 }
 
 // ServiceSchemas is definitions for Service Instances and
