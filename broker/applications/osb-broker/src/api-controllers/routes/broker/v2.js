@@ -16,7 +16,7 @@ const instanceRouter = express.Router({
 
 /* Service Broker API Router */
 router.use(middleware.basicAuth(config.username, config.password));
-router.use(middleware.addRequestIdentity());
+router.use(middleware.addRequestIdentityToResponse());
 
 if (_.includes(['production', 'test'], process.env.NODE_ENV)) {
   router.use(controller.handler('apiVersion'));
