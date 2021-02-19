@@ -2,7 +2,7 @@
 
 If no special handling is required, to upgrade to a newer version use
 ```shell
-helm --namespace interoperator upgrade -i --force --wait --set cluster.host=sf.ingress.< clusterdomain > --version < version > interoperator interoperator-charts/interoperator
+helm --namespace interoperator upgrade -i --wait --set cluster.host=sf.ingress.< clusterdomain > --version < version > interoperator interoperator-charts/interoperator
 ```
 This assumes interoperator is deployed in namespace `interoperator` with release name `interoperator` and the interoperator helm repo is added as `interoperator-charts`.
 
