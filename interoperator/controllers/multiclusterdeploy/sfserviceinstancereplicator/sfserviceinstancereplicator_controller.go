@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
@@ -143,6 +144,8 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID)
+
 	if !instance.GetDeletionTimestamp().IsZero() && state == "delete" {
 		replica.SetName(instance.GetName())
 		replica.SetNamespace(instance.GetNamespace())
@@ -251,6 +254,11 @@ func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 	}
 
+	if lastErr != nil {
+		// re que if service/plan replication failed
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -322,6 +330,101 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 	return nil
 }
 
+func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, clusterID string) error {
+	ctx := context.Background()
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+	log := r.Log.WithValues("clusterID", clusterID, "serviceID", serviceID, "planID", planID)
+
+	var lastErr error
+
+	service, serviceReplica := &osbv1alpha1.SFService{}, &osbv1alpha1.SFService{}
+	serviceKey := types.NamespacedName{
+		Name:      serviceID,
+		Namespace: constants.InteroperatorNamespace,
+	}
+
+	plan, planReplica := &osbv1alpha1.SFPlan{}, &osbv1alpha1.SFPlan{}
+	planKey := types.NamespacedName{
+		Name:      planID,
+		Namespace: constants.InteroperatorNamespace,
+	}
+
+	err := r.Get(ctx, serviceKey, service)
+	if err != nil {
+		log.Error(err, "Failed to get SFService from leader")
+		lastErr = err
+	}
+
+	err = targetClient.Get(ctx, serviceKey, serviceReplica)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			replicateSFServiceResourceData(service, serviceReplica)
+			err = targetClient.Create(ctx, serviceReplica)
+			if err != nil {
+				log.Error(err, "Error occurred while replicating SFService to cluster ")
+				lastErr = err
+			} else {
+				log.Info("SFService not found in target cluster. created as copy from leader")
+			}
+		} else if !apiErrors.IsNotFound(err) {
+			log.Error(err, "Failed to fetch SFService from target cluster")
+			lastErr = err
+		}
+	} else {
+		replicateSFServiceResourceData(service, serviceReplica)
+		err = targetClient.Update(ctx, serviceReplica)
+		if err != nil {
+			log.Error(err, "Error occurred while replicating SFService to cluster")
+			lastErr = err
+		} else {
+			log.Info("updated SFService in target cluster")
+		}
+	}
+
+	err = r.Get(ctx, planKey, plan)
+	if err != nil {
+		log.Error(err, "Failed to get SFPlan from leader")
+		lastErr = err
+	}
+
+	err = targetClient.Get(ctx, planKey, planReplica)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			replicateSFPlanResourceData(plan, planReplica)
+			err = utils.SetOwnerReference(serviceReplica, planReplica, r.scheme)
+			if err != nil {
+				lastErr = err
+			}
+			err = targetClient.Create(ctx, planReplica)
+			if err != nil {
+				log.Error(err, "Error occurred while replicating SFPlan to cluster ")
+				lastErr = err
+			} else {
+				log.Info("SFPlan not found in target cluster. created as copy from leader")
+			}
+		} else if !apiErrors.IsNotFound(err) {
+			log.Error(err, "Failed to fetch SFPlan from target cluster")
+			lastErr = err
+		}
+	} else {
+		replicateSFPlanResourceData(plan, planReplica)
+		err = utils.SetOwnerReference(serviceReplica, planReplica, r.scheme)
+		if err != nil {
+			return err
+		}
+		err = targetClient.Update(ctx, planReplica)
+		if err != nil {
+			log.Error(err, "Error occurred while replicating SFPlan to cluster")
+			lastErr = err
+		} else {
+			log.Info("updated SFPlan in target cluster")
+		}
+	}
+
+	return lastErr
+}
+
 func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance, state string) error {
 	instanceID := instance.GetName()
 	clusterID, _ := instance.GetClusterID()
@@ -388,6 +491,20 @@ func copyObject(source, destination *osbv1alpha1.SFServiceInstance, preserveReso
 	} else {
 		source.Status.DeepCopyInto(&destination.Status)
 	}
+}
+
+func replicateSFServiceResourceData(source *osbv1alpha1.SFService, dest *osbv1alpha1.SFService) {
+	source.Spec.DeepCopyInto(&dest.Spec)
+	dest.SetName(source.GetName())
+	dest.SetNamespace(source.GetNamespace())
+	dest.SetLabels(source.GetLabels())
+}
+
+func replicateSFPlanResourceData(source *osbv1alpha1.SFPlan, dest *osbv1alpha1.SFPlan) {
+	source.Spec.DeepCopyInto(&dest.Spec)
+	dest.SetName(source.GetName())
+	dest.SetNamespace(source.GetNamespace())
+	dest.SetLabels(source.GetLabels())
 }
 
 // SetupWithManager registers the MCD Instance replicator with manager
