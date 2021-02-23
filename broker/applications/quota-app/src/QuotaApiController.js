@@ -24,9 +24,10 @@ class QuotaApiController extends FabrikBaseController {
       case 4 : K8S + SM (CF + K8S) => subaccount based API and apiserver
     */
     try {
+      const region = _.get(req, 'query.region');
       const quotaManager = commonFunctions.isBrokerBoshDeployment() ?
-        quota.getQuotaManagerInstance(CONST.PLATFORM.CF) : 
-        quota.getQuotaManagerInstance(CONST.PLATFORM.K8S);
+        quota.getQuotaManagerInstance(CONST.PLATFORM.CF, region) :
+        quota.getQuotaManagerInstance(CONST.PLATFORM.K8S, region);
       const subaccountId = req.params.accountId;
       const planId = _.get(req, 'query.planId');
       const previousPlanId = _.get(req, 'query.previousPlanId');

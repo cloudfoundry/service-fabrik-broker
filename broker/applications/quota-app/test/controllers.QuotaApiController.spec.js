@@ -35,22 +35,27 @@ describe('#getQuotaValidStatus', () => {
   const invalidQuotaPlanId = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
   const cfQuotaManager = getQuotaManagerInstance(CONST.PLATFORM.CF);
   const k8squotaManager = getQuotaManagerInstance(CONST.PLATFORM.K8S);
-  let checkCFQuotaStub, checkK8SQuotaStub;
+  const k8squotaManagerEU10 = getQuotaManagerInstance(CONST.PLATFORM.K8S,'eu10');
+  let checkCFQuotaStub, checkK8SQuotaStub, checkK8SQuotaStubEU10;
   const quotaApiController = new QuotaApiController();
   const res = new Response();
   beforeEach(function () {
     checkCFQuotaStub = sinon.stub(cfQuotaManager, 'checkQuota');
     checkK8SQuotaStub = sinon.stub(k8squotaManager, 'checkQuota');
+    checkK8SQuotaStubEU10 = sinon.stub(k8squotaManagerEU10, 'checkQuota');
     checkCFQuotaStub.withArgs(subaccount_id, organization_guid, notEntitledPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED));
     checkCFQuotaStub.withArgs(subaccount_id, organization_guid, invalidQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA));
     checkCFQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
     checkK8SQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
     checkK8SQuotaStub.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStubEU10.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH').returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
+    checkK8SQuotaStubEU10.withArgs(subaccount_id, organization_guid, validQuotaPlanId, previous_plan_id, 'PATCH', true).returns(Promise.resolve(CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA));
   });
   afterEach(function () {
     res.reset();
     checkCFQuotaStub.restore();
     checkK8SQuotaStub.restore();
+    checkK8SQuotaStubEU10.restore();
   });
   it('K8S deployment, subaccount based check, should return valid', async () => {
     const req = {
@@ -69,6 +74,28 @@ describe('#getQuotaValidStatus', () => {
     await quotaApiController.getQuotaValidStatus(req, res);
     delete process.env.POD_NAMESPACE;
     expect(checkK8SQuotaStub).to.have.been.called;
+    expect(res.status).to.have.been.calledOnce;
+    expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.OK);
+    expect(res.send).to.have.been.calledWith({quotaValidStatus: 0});
+  });
+  it('K8S deployment, subaccount based check, should return valid (EU10 region based)', async () => {
+    const req = {
+      params: {
+        accountId: subaccount_id
+      },
+      query: {
+        planId: validQuotaPlanId,
+        previousPlanId: previous_plan_id,
+        reqMethod: 'PATCH',
+        useAPIServerForConsumedQuotaCheck: 'true',
+        region: 'eu10',
+        orgId: organization_guid
+      }
+    };
+    process.env.POD_NAMESPACE = 'default';
+    await quotaApiController.getQuotaValidStatus(req, res);
+    delete process.env.POD_NAMESPACE;
+    expect(checkK8SQuotaStubEU10).to.have.been.called;
     expect(res.status).to.have.been.calledOnce;
     expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.OK);
     expect(res.send).to.have.been.calledWith({quotaValidStatus: 0});

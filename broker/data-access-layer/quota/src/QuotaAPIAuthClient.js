@@ -13,11 +13,11 @@ class QuotaAPIAuthClient extends HttpClient {
       },
       maxRedirects: 0,
       auth: {
-        username: config.quota.username,
-        password: config.quota.password
+        username: (options == undefined || options.region == undefined) ? config.quota.username : config.quota.regions[options.region].username,
+        password: (options == undefined || options.region == undefined) ? config.quota.password : config.quota.regions[options.region].password
       }
     }, options, {
-      baseURL: config.quota.oauthDomain,
+      baseURL: (options == undefined || options.region == undefined) ? config.quota.oauthDomain : config.quota.regions[options.region].oauthDomain,
       rejectUnauthorized: !config.skip_ssl_validation
     }));
   }

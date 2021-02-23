@@ -5,9 +5,9 @@ const config = require('@sf/app-config');
 const { HttpClient } = require('@sf/common-utils');
 
 class QuotaAPIClient extends HttpClient {
-  constructor(tokenIssuer) {
+  constructor(tokenIssuer, region) {
     super({
-      baseURL: config.quota.serviceDomain,
+      baseURL: (region == undefined) ? config.quota.serviceDomain : config.quota.regions[region].serviceDomain,
       maxRedirects: 0,
       rejectUnauthorized: !config.skip_ssl_validation
     });
