@@ -71,6 +71,12 @@ type ServiceSchemas struct {
 	Binding  ServiceBindingSchema  `json:"service_binding,omitempty"`
 }
 
+// MaintenanceInfo captures any maintainance related information for give plan
+type MaintenanceInfo struct {
+	Version     string `json:"version"`
+	Description string `json:"description,omitempty"`
+}
+
 // SFPlanSpec defines the desired state of SFPlan
 type SFPlanSpec struct {
 	Name        string `json:"name"`
@@ -79,6 +85,7 @@ type SFPlanSpec struct {
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
+	MaintenanceInfo     MaintenanceInfo       `json:"maintenance_info,omitempty"`
 	Free                bool                  `json:"free"`
 	Bindable            bool                  `json:"bindable"`
 	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
