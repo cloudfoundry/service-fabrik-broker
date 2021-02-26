@@ -107,7 +107,7 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// 2. Get deploment instance for provisioner
 	deplomentInstance := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{
-		Name:      constants.ProvisionerTemplateName,
+		Name:      constants.ProvisionerName,
 		Namespace: constants.InteroperatorNamespace,
 	}, deplomentInstance)
 	if err != nil {
@@ -414,11 +414,11 @@ func (r *ReconcileProvisioner) reconcileDeployment(deploymentInstance *appsv1.De
 
 	log.Info("Updating provisioner", "Cluster", clusterID)
 	getDeploymentErr := targetClient.Get(ctx, types.NamespacedName{
-		Name:      constants.ProvisionerName,
+		Name:      deploymentInstance.GetName(),
 		Namespace: deploymentInstance.GetNamespace(),
 	}, provisionerInstance)
 
-	provisionerInstance.SetName(constants.ProvisionerName)
+	provisionerInstance.SetName(deploymentInstance.GetName())
 	provisionerInstance.SetNamespace(deploymentInstance.GetNamespace())
 	provisionerInstance.SetLabels(deploymentInstance.GetLabels())
 	// copy spec

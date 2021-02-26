@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   labels:
     control-plane: {{ .Release.Name }}-controller-manager
-  name: provisioner-template
+  name: provisioner
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 0
