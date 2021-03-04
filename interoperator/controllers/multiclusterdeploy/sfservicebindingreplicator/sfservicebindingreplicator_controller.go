@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -346,6 +347,7 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+	interoperatorCfg := cfgManager.GetConfig()
 	r.cfgManager = cfgManager
 	// Watch for changes to SFServiceBinding in sister clusters
 	watchEvents, err := getWatchChannel("sfservicebindings")
@@ -355,6 +357,9 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_binding").
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: interoperatorCfg.BindingWorkerCount,
+		}).
 		For(&osbv1alpha1.SFServiceBinding{}).
 		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(watches.NamespaceLabelFilter())

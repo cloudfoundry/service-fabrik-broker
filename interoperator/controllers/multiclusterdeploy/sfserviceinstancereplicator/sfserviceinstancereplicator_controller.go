@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -409,6 +410,7 @@ func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+	interoperatorCfg := cfgManager.GetConfig()
 	r.cfgManager = cfgManager
 
 	// Watch for changes to SFServiceInstance in sister clusters
@@ -421,6 +423,9 @@ func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_instance").
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
+		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
 		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(watches.NamespaceLabelFilter())
