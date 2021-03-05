@@ -241,7 +241,6 @@ describe('#checkQuota', () => {
   });
   it('K8S platform, should call next', () => {
     req.body = k8sContextBody;
-    req.region= undefined;
     process.env.POD_NAMESPACE = 'default';
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
@@ -254,7 +253,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: true,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -266,7 +264,6 @@ describe('#checkQuota', () => {
   });
   it('Quota not entitled, should call next with Forbidden', () => {
     req.body = notEntitledBody;
-    req.region= undefined;
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
@@ -278,7 +275,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -290,7 +286,6 @@ describe('#checkQuota', () => {
   });
   it('Quota invalid, should call next with Forbidden', () => {
     req.body = invalidQuotaBody;
-    req.region= undefined;
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
@@ -302,7 +297,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -314,7 +308,6 @@ describe('#checkQuota', () => {
   });
   it('Quota invalid, should call next with Forbidden and keep message', () => {
     req.body = invalidQuotaBody;
-    req.region= undefined;
     checkQuotaValidityStub.resolves({
       quotaValid: CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA,
       message: 'Custom error message',
@@ -329,7 +322,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -342,7 +334,6 @@ describe('#checkQuota', () => {
   });
   it('Quota valid, should call next', () => {
     req.body = validQuotaBody;
-    req.region= undefined;
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
@@ -354,7 +345,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -363,7 +353,6 @@ describe('#checkQuota', () => {
   });
   it('Non instance based quota, Quota valid, should call next', () => {
     req.body = validQuotaBody;
-    req.region= undefined;
     let getServiceStub = sinon.stub(catalog, 'getService');
     getServiceStub.returns({quota_check_type: 'composite'});
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
@@ -377,7 +366,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       },
       data: req.body
@@ -390,7 +378,6 @@ describe('#checkQuota', () => {
   });
   it('SMCF platform, Quota valid, should call next', () => {
     req.body = SMCFContextBody;
-    req.region= undefined;
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
@@ -402,7 +389,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -412,7 +398,6 @@ describe('#checkQuota', () => {
 
   it('SMK8S platform, Quota valid, should call next', () => {
     req.body = SMK8SContextBody;
-    req.region= undefined;
     process.env.POD_NAMESPACE = 'default';
     checkQuotaValidityStub.resolves({ quotaValid: CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA });
     checkQuota(req, res, next);
@@ -425,7 +410,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: true,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
@@ -439,7 +423,6 @@ describe('#checkQuota', () => {
   it('Quota funtion throws error, should call next with error', () => {
     checkQuotaValidityStub.returns(Promise.reject(err));
     req.body = errQuotaBody;
-    req.region= undefined;
     checkQuota(req, res, next);
     expect(isServiceFabrikOperationStub).to.have.been.calledOnce;
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
@@ -449,7 +432,6 @@ describe('#checkQuota', () => {
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
         reqMethod: 'PATCH',
-        region: undefined,
         orgId: organization_guid
       }
     }, true);
