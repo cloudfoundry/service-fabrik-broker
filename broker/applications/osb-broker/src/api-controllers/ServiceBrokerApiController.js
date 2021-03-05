@@ -120,6 +120,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       service_id: serviceId
     }, contextLabels, namespaceLabel),
     value => _.trim(value));
+    
+    if(req.params.region) {
+      _.set(labels,'region', req.params.region);
+    }
 
     _.forIn(labels, function(value, key) {
       if (!isValidKubernetesLabelValue(value)) {
@@ -195,6 +199,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(statusCode).send(body);
     }
 
+    const labels = req.params.region ? { 'region':req.params.region } : undefined;
+    
+    _.forIn(labels, function(value, key) {
+      if (!isValidKubernetesLabelValue(value)) {
+        throw new BadRequest(`Parameter ${key} value "${value}" must be a valid label value`);
+      }
+    });
+
     function isUpdatePossible(previousPlanId) {
       const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
@@ -242,6 +254,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: getKubernetesName(req.params.instance_id),
+            labels: labels,
             spec: params,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.UPDATE,

@@ -10,8 +10,8 @@ class K8SPlatformQuotaManager extends BaseQuotaManager {
     super(quotaAPIClient, CONST.PLATFORM.K8S);
   }
   
-  async getInstanceCountonPlatform(subaccountId, planIds) {
-    const labelString = `subaccount_id in (${subaccountId}),plan_id in (${planIds.toString()})`;
+  async getInstanceCountonPlatform(subaccountId, planIds, region) {
+    const labelString = (region == undefined) ? `subaccount_id in (${subaccountId}),plan_id in (${planIds.toString()})` : `subaccount_id in (${subaccountId}),plan_id in (${planIds.toString()}), region in (${region})`;
     const instances = await apiServerClient.getResources({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,

@@ -36,7 +36,7 @@ class QuotaApiController extends FabrikBaseController {
       const useAPIServerForConsumedQuotaCheck = _.get(req, 'query.useAPIServerForConsumedQuotaCheck');
       const useAPIServerForConsumedQuotaCheckFlag = (useAPIServerForConsumedQuotaCheck === 'true');
       logger.info(`[Quota APP] subaccountId: ${subaccountId}, orgId: ${orgId}, planId: ${planId}, previousPlanId: ${previousPlanId}, reqMethod: ${reqMethod}, useAPIServerForConsumedQuotaCheckFlag: ${useAPIServerForConsumedQuotaCheckFlag}`);
-      const validStatus = await quotaManager.checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheckFlag);
+      const validStatus = await quotaManager.checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheckFlag, region);
       await res.status(CONST.HTTP_STATUS_CODE.OK).send({ quotaValidStatus: validStatus });
     } catch (err) {
       logger.error(`[Quota APP] Quota check could not be completed due to following error: ${err}`);

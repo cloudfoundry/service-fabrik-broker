@@ -13,7 +13,7 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
     super(quotaAPIClient, CONST.PLATFORM.CF);
   }
 
-  async getInstanceCountonPlatform(orgId, planIds) {
+  async getInstanceCountonPlatform(orgId, planIds, region) {
     const planGuids = await this.getAllPlanGuidsFromPlanIDs(planIds);
     logger.debug('planguids are ', planGuids);
     const instances = await cloudController.getServiceInstancesInOrgWithPlansGuids(orgId, planGuids);
