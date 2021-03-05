@@ -18,7 +18,7 @@ const regionalQuotaAPIClients = {};
 for (let reg in config.quota.regions) {
   let quotaAPIAuthClientRegional = new QuotaAPIAuthClient({ region:reg });
   let tokenIssuerRegional = new TokenIssuer(quotaAPIAuthClientRegional);
-  let regionalQuotaAPIClient = new QuotaAPIClient(tokenIssuerRegional, reg);
+  let regionalQuotaAPIClient = new QuotaAPIClient(tokenIssuerRegional, { region:reg });
   regionalQuotaAPIClients[reg] = regionalQuotaAPIClient;
 }
 
