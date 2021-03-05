@@ -74,10 +74,12 @@ exports.checkQuota = function () {
             previousPlanId: _.get(req, 'body.previous_values.plan_id'),
             useAPIServerForConsumedQuotaCheck: useAPIServerForConsumedQuotaCheck,
             orgId: orgId,
-            region: req.params.region,
             reqMethod: req.method
           }
         };
+        if(_.get(req.params, 'region') !== undefined) {
+          _.set(quotaClientOptions.queryParams, 'region', req.params.region);
+        }
         const instanceBasedQuota = supportsInstanceBasedQuota(req.body.service_id);
         if(!instanceBasedQuota) {
           quotaClientOptions.data = _.cloneDeep(req.body);
