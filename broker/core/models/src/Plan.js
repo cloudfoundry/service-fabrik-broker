@@ -92,7 +92,8 @@ class Plan {
       'metadata',
       'maintenance_info',
       'schemas',
-      'free'
+      'free',
+      'maximum_polling_duration'
     ];
   }
 }
