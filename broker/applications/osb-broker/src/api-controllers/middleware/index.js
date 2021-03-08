@@ -187,7 +187,7 @@ exports.validateConcurrentOperations = function() {
   return function (req, res, next) {
     return Promise.try(() => {
       if(_.get(config, 'allowConcurrentOperations', false) === true) {
-        next();
+        return next();
       } else {
         // Get sfserviceinstance resource
         // if the state is in_progress/in_queue/create/update/delete return 422
@@ -198,20 +198,20 @@ exports.validateConcurrentOperations = function() {
         })
         .then(resource => {
           const state = _.get(resource, 'status.state');
-          logger.info(`Current state of the resource ${resource.metadata.name} is ${state}`);
+          logger.info(`Current state of the resource ${_.get(resource, 'metadata.name')} is ${state}`);
           if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
             || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS 
             || state === CONST.OPERATION.IN_PROGRESS
             || state === CONST.APISERVER.RESOURCE_STATE.UPDATE
             || state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-            next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
+            return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
           } else {
-            next();
+            return next();
           }  
         })
         .catch(err => {
           logger.error('Error while validating concurrent operations ', err);
-          next(err);
+          return next(err);
         });
       }      
     });
@@ -223,7 +223,7 @@ exports.validateConcurrentBindingOperations = function() {
     return Promise.try(() => {
       // check if non blocking config is set
       if(_.get(config, 'allowConcurrentBindingOperations', false) === true) {
-        next();
+        return next();
       } else {
         return apiServerClient.getResources({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -239,15 +239,15 @@ exports.validateConcurrentBindingOperations = function() {
             if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
             || state === CONST.OPERATION.IN_PROGRESS
             || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
-              logger.info(`Current state of the binding resource ${resourcesList[i].metadata.name} is ${state}`);
+              logger.warn(`Current state of the binding resource ${_.get(resourcesList[i], 'metadata.name')} is ${state}`);
               return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
             }
           }
-          next();
+          return next();
         })
         .catch(err => {
           logger.error('Error while validating concurrent operations ', err);
-          next(err);
+          return next(err);
         });
       }  
     });

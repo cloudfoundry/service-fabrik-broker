@@ -1122,7 +1122,7 @@ describe('service-broker-api-2.0', function () {
               }
             }]
           },{
-            labelSelector: `instance_guid in (${instance_id})`
+            labelSelector: `instance_guid=${instance_id}`
           },
             {});
           return chai.request(app)
@@ -1160,7 +1160,7 @@ describe('service-broker-api-2.0', function () {
               }
             }]
           },{
-            labelSelector: `instance_guid in (${instance_id})`
+            labelSelector: `instance_guid=${instance_id}`
           },
             {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
