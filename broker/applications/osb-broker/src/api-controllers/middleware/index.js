@@ -238,7 +238,8 @@ exports.validateConcurrentBindingOperations = function() {
             const state = _.get(resourcesList[i], 'status.state');
             if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
             || state === CONST.OPERATION.IN_PROGRESS
-            || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+            || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            || state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
               logger.warn(`Current state of the binding resource ${_.get(resourcesList[i], 'metadata.name')} is ${state}`);
               return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
             }
