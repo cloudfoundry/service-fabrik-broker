@@ -56,6 +56,13 @@ spec:
                 type: boolean
               id:
                 type: string
+              maintenance_info:
+                properties:
+                  description:
+                    type: string
+                  version:
+                    type: string
+                type: object
               manager:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
