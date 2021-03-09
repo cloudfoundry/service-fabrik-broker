@@ -356,6 +356,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
         body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
+      if(_.get(operation, 'type') === 'update' && body.state === CONST.OPERATION.FAILED) {
+        body.instance_usable = _.get(result, 'instanceUsable') === 'false' ||
+        _.get(result, 'instanceUsable') === false ? false : true;
+
+        body.update_repeatable = _.get(result, 'updateRepeatable') === 'false' ||
+        _.get(result, 'updateRepeatable') === false ? false : true;
+
+      }
+      if(_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.FAILED) {
+        body.instance_usable = _.get(result, 'instanceUsable') === 'false' ||
+        _.get(result, 'instanceUsable') === false ? false : true;
+      }
       logger.debug('RequestIdentity:', _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent'), ',returning ..', body);
       return Promise.try(() => {
         if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
