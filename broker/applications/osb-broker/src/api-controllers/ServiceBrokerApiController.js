@@ -424,6 +424,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done(bindResponse, state) {
       const response = decodeBase64(bindResponse);
       const statusCode = (state === CONST.APISERVER.RESOURCE_STATE.FAILED) ? CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR : CONST.HTTP_STATUS_CODE.CREATED;
+      if(_.get(config, 'sendBindingMetadata', true) === false) {
+        _.omit(response, 'metadata');
+      }
       res.status(statusCode).send(response);
     }
 
