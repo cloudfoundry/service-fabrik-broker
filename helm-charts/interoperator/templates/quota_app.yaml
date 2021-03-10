@@ -71,16 +71,20 @@ spec:
             secretKeyRef:
               name: {{ .Release.Name }}-creds
               key: quota_app_password
+        {{- if .Values.broker.quota.username }}
         - name: QUOTA_USERNAME
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-creds
               key: quota_username
+        {{- end }}
+        {{- if .Values.broker.quota.password }}
         - name: QUOTA_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-creds
               key: quota_password
+        {{- end }}
         volumeMounts:
         - name: settings
           mountPath: /opt/sf-config

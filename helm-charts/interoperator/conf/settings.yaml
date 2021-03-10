@@ -94,17 +94,10 @@ defaults: &defaults
     enabled: {{ .Values.broker.quota.enabled }}
     oauthDomain: {{ .Values.broker.quota.oauthDomain }}
     serviceDomain: {{ .Values.broker.quota.serviceDomain }}
+    {{- with .Values.broker.quota.regions }}
     regions:
-      eu10:
-        oauthDomain: {{ .Values.broker.quota.regions.eu10.oauthDomain }}
-        serviceDomain: {{ .Values.broker.quota.regions.eu10.serviceDomain }}
-        username: {{ .Values.broker.quota.regions.eu10.username }}
-        password: {{ .Values.broker.quota.regions.eu10.password }}
-      eu20:
-        oauthDomain: {{ .Values.broker.quota.regions.eu20.oauthDomain }}
-        serviceDomain: {{ .Values.broker.quota.regions.eu20.serviceDomain }}
-        username: {{ .Values.broker.quota.regions.eu20.username }}
-        password: {{ .Values.broker.quota.regions.eu20.password }}
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
 
 development: &development
   <<: *defaults
