@@ -25,17 +25,19 @@ for (let reg in config.quota.regions) {
 const getQuotaManagerInstance = function(platform, region) {
   assert.ok(platform === CONST.PLATFORM.CF || platform === CONST.PLATFORM.K8S, `Platform can be only ${CONST.PLATFORM.CF} or ${CONST.PLATFORM.K8S}`);
   if(platform === CONST.PLATFORM.CF) {
-    if(region == undefined || require('./cf-platform-quota-manager').cfPlatformQuotaManagersRegional[region] == undefined) {
+    if(region == undefined) {
       const cfQuotaPlatformManager = require('./cf-platform-quota-manager').cfPlatformQuotaManager;
       return cfQuotaPlatformManager;
     }
+    assert.ok(require('./cf-platform-quota-manager').cfPlatformQuotaManagersRegional[region] !== undefined, `No LPS service credentials found for region: ${region}`);
     const cfQuotaPlatformManager = require('./cf-platform-quota-manager').cfPlatformQuotaManagersRegional[region];
     return cfQuotaPlatformManager;
   } else{
-    if(region == undefined || require('./k8s-platform-quota-manager').k8sPlatformQuotaManagersRegional[region] == undefined) {
+    if(region == undefined) {
       const k8sQuotaPlatformManager = require('./k8s-platform-quota-manager').k8sPlatformQuotaManager;
       return k8sQuotaPlatformManager;
     }
+    assert.ok(require('./k8s-platform-quota-manager').k8sPlatformQuotaManagersRegional[region] !== undefined, `No LPS service credentials found for region: ${region}`);
     const k8sQuotaPlatformManager = require('./k8s-platform-quota-manager').k8sPlatformQuotaManagersRegional[region];
     return k8sQuotaPlatformManager;
   }

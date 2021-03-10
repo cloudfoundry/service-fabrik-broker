@@ -310,7 +310,7 @@ describe('#getQuotaValidStatus', () => {
     expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR);
     expect(res.send).to.have.been.calledWith({ error: err });
   });
-  it('Quota valid, should return valid status using default quota, when region not found', async () => {
+  it('Quota assertion error, when region mapping is not found', async () => {
     const req = {
       params: {
         accountId: subaccount_id
@@ -325,9 +325,7 @@ describe('#getQuotaValidStatus', () => {
       }
     };
     await quotaApiController.getQuotaValidStatus(req, res);
-    expect(checkCFQuotaStub).to.have.been.called;
-    expect(res.status).to.have.been.calledOnce;
-    expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.OK);
-    expect(res.send).to.have.been.calledWith({quotaValidStatus: 0});
+    expect(checkCFQuotaStub).to.have.been.not.called;
+    expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR);
   });
 });
