@@ -44,6 +44,8 @@ var c, c2 client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
+var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
+var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
 
 const timeout = time.Second * 5
 
@@ -69,6 +71,60 @@ var instance = &osbv1alpha1.SFServiceInstance{
 		State: "in_queue",
 	},
 }
+
+var service = &osbv1alpha1.SFService{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "service-id",
+		Namespace: constants.InteroperatorNamespace,
+	},
+	Spec: osbv1alpha1.SFServiceSpec{
+		ID: "service-id",
+	},
+}
+var templateSpec = []osbv1alpha1.TemplateSpec{
+	{
+		Action:  "provision",
+		Type:    "gotemplate",
+		Content: "provisioncontent",
+	},
+	{
+		Action:  "bind",
+		Type:    "gotemplate",
+		Content: "bindcontent",
+	},
+	{
+		Action:  "status",
+		Type:    "gotemplate",
+		Content: "statuscontent",
+	},
+	{
+		Action:  "sources",
+		Type:    "gotemplate",
+		Content: "sourcescontent",
+	},
+}
+var plan = &osbv1alpha1.SFPlan{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "plan-id",
+		Namespace: constants.InteroperatorNamespace,
+		Labels: map[string]string{
+			"serviceId": "service-id",
+		},
+	},
+	Spec: osbv1alpha1.SFPlanSpec{
+		Name:          "plan-name",
+		ID:            "plan-id",
+		Description:   "description",
+		Metadata:      nil,
+		Free:          false,
+		Bindable:      true,
+		PlanUpdatable: true,
+		Schemas:       nil,
+		Templates:     templateSpec,
+		ServiceID:     "service-id",
+		RawContext:    nil,
+		Manager:       nil,
+	}}
 
 func TestReconcile(t *testing.T) {
 	instance2 := &osbv1alpha1.SFServiceInstance{}
@@ -121,6 +177,9 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
+	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
+
 	// Create a new namespace
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -156,6 +215,20 @@ func TestReconcile(t *testing.T) {
 		return c.Update(context.TODO(), instance)
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	// Plan and servive should be replicated in follower cluster
+	g.Eventually(func() error {
+		err = c2.Get(context.TODO(), serviceKey, service)
+		if err != nil {
+			return err
+		}
+		err = c2.Get(context.TODO(), planKey, plan)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}, timeout).Should(gomega.Succeed())
 
 	// State should be updated in master cluster
 	g.Eventually(func() error {

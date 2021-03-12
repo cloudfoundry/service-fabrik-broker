@@ -23,7 +23,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicesreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,14 +66,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("instance"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create instance replicator", "controller", "InstanceReplicator")
-		return err
-	}
-
-	if err = (&sfservicesreplicator.ReconcileSFServices{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("service"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create service replicator", "controller", "ReconcileSFServices")
 		return err
 	}
 
