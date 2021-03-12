@@ -196,23 +196,23 @@ exports.validateConcurrentOperations = function() {
           resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: commonFunctions.getKubernetesName(req.params.instance_id)
         })
-        .then(resource => {
-          const state = _.get(resource, 'status.state');
-          logger.info(`Current state of the resource ${_.get(resource, 'metadata.name')} is ${state}`);
-          if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
+          .then(resource => {
+            const state = _.get(resource, 'status.state');
+            logger.info(`Current state of the resource ${_.get(resource, 'metadata.name')} is ${state}`);
+            if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
             || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS 
             || state === CONST.OPERATION.IN_PROGRESS
             || state === CONST.APISERVER.RESOURCE_STATE.UPDATE
             || state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-            return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
-          } else {
-            return next();
-          }  
-        })
-        .catch(err => {
-          logger.error('Error while validating concurrent operations ', err);
-          return next(err);
-        });
+              return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
+            } else {
+              return next();
+            }  
+          })
+          .catch(err => {
+            logger.error('Error while validating concurrent operations ', err);
+            return next(err);
+          });
       }      
     });
   };  
@@ -233,23 +233,23 @@ exports.validateConcurrentBindingOperations = function() {
             labelSelector: `instance_guid=${commonFunctions.getKubernetesName(req.params.instance_id)}`
           }
         })
-        .then(resourcesList => {
-          for(let i = 0; i < resourcesList.length; i++) {
-            const state = _.get(resourcesList[i], 'status.state');
-            if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
+          .then(resourcesList => {
+            for(let i = 0; i < resourcesList.length; i++) {
+              const state = _.get(resourcesList[i], 'status.state');
+              if(state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE 
             || state === CONST.OPERATION.IN_PROGRESS
             || state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
             || state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-              logger.warn(`Current state of the binding resource ${_.get(resourcesList[i], 'metadata.name')} is ${state}`);
-              return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
+                logger.warn(`Current state of the binding resource ${_.get(resourcesList[i], 'metadata.name')} is ${state}`);
+                return next(new UnprocessableEntity('Another operation for this Service Instance is in progress.', 'ConcurrencyError'));
+              }
             }
-          }
-          return next();
-        })
-        .catch(err => {
-          logger.error('Error while validating concurrent operations ', err);
-          return next(err);
-        });
+            return next();
+          })
+          .catch(err => {
+            logger.error('Error while validating concurrent operations ', err);
+            return next(err);
+          });
       }  
     });
   };
