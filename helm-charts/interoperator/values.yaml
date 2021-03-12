@@ -41,7 +41,7 @@ broker:
     #     password: quota_password
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
-    tag: 0.12.3
+    tag: 0.13.0
     pullPolicy: Always
   service:
     type: LoadBalancer
@@ -63,7 +63,7 @@ quota_app:
 interoperator:
   image:
     repository: servicefabrikjenkins/service-fabrik-interoperator
-    tag: 0.12.3
+    tag: 0.13.0
     pullPolicy: Always
   resources:
     limits:
@@ -85,7 +85,7 @@ operator_apis:
   #host: op.ingress.sf21-intop.interop.shoot.canary.k8s-hana.ondemand.com
   image:
     repository: servicefabrikjenkins/operatorapis
-    tag: 0.12.3
+    tag: 0.13.0
     pullPolicy: Always
   resources:
     limits:
