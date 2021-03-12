@@ -394,6 +394,17 @@ defaults: &defaults
     serviceDomain: https://my-tenant-onboarding.com
     username: sb-service-client!t1
     password: quota_password
+    regions:
+      eu10:
+        oauthDomain: https://myauth-domain.com
+        serviceDomain: https://my-tenant-onboarding.com
+        username: sb-service-client!t1
+        password: quota_password
+      eu20:
+        oauthDomain: https://myauth-domain.com
+        serviceDomain: https://my-tenant-onboarding.com
+        username: sb-service-client!t1
+        password: quota_password
   #####################
   # METERING SETTINGS #
   #####################

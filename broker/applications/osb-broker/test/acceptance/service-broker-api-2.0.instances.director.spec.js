@@ -206,6 +206,59 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+
+        it('returns 202 Accepted -- fetching correct region value in labels', function () {
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec.plan_id = plan_id_custom_dashboard;
+          const testContext = {
+            platform: 'sapcp',
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            organization_name: 'test',
+            space_name: 'service-fabrik',
+            instance_name: 'bp-monitor',
+            landscape_label: 'cf-eu10-canary',
+            origin: 'cloudfoundry',
+            zone_id: 'service-fabrik',
+            global_account_id: '9808a7d5-5c36-4149-b62d-1095373bdfaa',
+            license_type: 'LSS script',
+            subaccount_id: 'service-fabrik',
+            subdomain: 'service-fabrik'
+          };
+          testPayload.spec.context = testContext;
+          testPayload.metadata.labels.region = 'eu10';
+          testPayload.spec = camelcaseKeys(testPayload.spec);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            metadata:{
+              name:  instance_id
+            },
+            spec: {
+              clusterId: 1,
+              planId: plan_id_custom_dashboard,
+              serviceId: service_id,
+            }
+          });
+          return chai.request(app)
+            .put(`/cf/region/eu10/v2/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_custom_dashboard,
+              context: testContext,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url === dashboard_url_with_template);
+              mocks.verify();
+            });
+        });
         
         it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
           const oldTemp = config.services[0].plans[4].manager.settings.dashboard_url_template;
@@ -734,6 +787,54 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, testPayload);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .then(res => {
+              mocks.verify();
+              expect(res).to.have.status(202);
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
+                'type': 'update'
+              }));
+            });
+        });
+
+        it('returns 202 Accepted if resource is already present- fetching correct region too', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockedResourceDetails: {
+                  operation: 'update'
+                }
+              })
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            metadata: {
+              resourceVersion: 10
+            }
+          });
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec = camelcaseKeys(payload.spec);
+          testPayload.metadata.labels.region = 'eu10';
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, testPayload);
+          return chai.request(app)
+            .patch(`/cf/region/eu10/v2/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
               service_id: service_id,
               plan_id: plan_id_update,

@@ -28,6 +28,17 @@ broker:
     serviceDomain: https://my-tenant-onboarding.com
     username: quota_user
     password: quota_password
+    # regions:
+    #   eu10:
+    #     oauthDomain: https://myauth-domain.com
+    #     serviceDomain: https://my-tenant-onboarding.com
+    #     username: quota_user
+    #     password: quota_password
+    #   eu20:
+    #     oauthDomain: https://myauth-domain.com
+    #     serviceDomain: https://my-tenant-onboarding.com
+    #     username: quota_user
+    #     password: quota_password
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
     tag: 0.12.3

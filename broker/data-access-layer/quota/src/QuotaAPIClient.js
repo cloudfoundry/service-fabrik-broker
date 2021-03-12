@@ -1,13 +1,14 @@
 'use strict';
 
+const _ = require('lodash');
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
 const { HttpClient } = require('@sf/common-utils');
 
 class QuotaAPIClient extends HttpClient {
-  constructor(tokenIssuer) {
+  constructor(tokenIssuer, options) {
     super({
-      baseURL: config.quota.serviceDomain,
+      baseURL: (_.get(options, 'region')) ? (_.get(config.quota, ['regions', options.region, 'serviceDomain'])) : config.quota.serviceDomain,
       maxRedirects: 0,
       rejectUnauthorized: !config.skip_ssl_validation
     });

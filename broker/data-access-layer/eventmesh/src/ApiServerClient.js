@@ -1062,6 +1062,11 @@ class ApiServerClient {
         });
         patchBody.status = opts.status;
       }
+      if (opts.labels) {
+        patchBody.metadata = _.merge(patchBody.metadata, {
+          labels: opts.labels
+        });
+      }
       logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
 
       const client = this._getApiClient(group, version);
@@ -1100,7 +1105,7 @@ class ApiServerClient {
     return Promise.try(() => {
       if (_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
         // set parameters field to null
-        const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId']);
+        const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId', 'labels']);
         return this.updateOSBResource(_.extend(clearParamsReqOpts, {
           'spec': {
             'parameters': null

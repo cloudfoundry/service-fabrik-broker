@@ -14,7 +14,7 @@ class BaseQuotaManager {
     this.platform = platform;
   }
 
-  async checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheck) {
+  async checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheck, region) {
     if (CONST.HTTP_METHOD.PATCH === reqMethod && this.isSamePlanOrSkuUpdate(planId, previousPlanId)) {
       logger.debug('Quota check skipped as it is a normal instance update or plan update with same sku.');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
@@ -45,14 +45,14 @@ class BaseQuotaManager {
           return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         } else {
           const planIdsWithSameSKU = this.getAllPlanIdsWithSameSKU(planName, serviceName, catalog);
-          const instanceCount = await this.getInstanceCountonPlatform(useAPIServerForConsumedQuotaCheck ? subaccountId : orgId, planIdsWithSameSKU);
+          const instanceCount = await this.getInstanceCountonPlatform(useAPIServerForConsumedQuotaCheck ? subaccountId : orgId, planIdsWithSameSKU, region);
           logger.debug(`Number of instances are ${instanceCount} & Quota number for current org space and service_plan is ${quota}`);
           return instanceCount >= quota ? CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA : CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         }
       }
     }
   }
-  async getInstanceCountonPlatform(orgOrSubaccountId, planGuids) {
+  async getInstanceCountonPlatform(orgOrSubaccountId, planGuids, region) {
     throw new NotImplementedBySubclass(`getInstanceCountonPlatform - ${orgOrSubaccountId}, ${planGuids}`);
   }
   getAllPlanIdsWithSameSKU(planName, serviceName, serviceCatalog) {

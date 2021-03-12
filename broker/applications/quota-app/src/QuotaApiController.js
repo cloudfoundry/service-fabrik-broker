@@ -24,9 +24,10 @@ class QuotaApiController extends FabrikBaseController {
       case 4 : K8S + SM (CF + K8S) => subaccount based API and apiserver
     */
     try {
+      const region = _.get(req, 'query.region');
       const quotaManager = commonFunctions.isBrokerBoshDeployment() ?
-        quota.getQuotaManagerInstance(CONST.PLATFORM.CF) : 
-        quota.getQuotaManagerInstance(CONST.PLATFORM.K8S);
+        quota.getQuotaManagerInstance(CONST.PLATFORM.CF, region) :
+        quota.getQuotaManagerInstance(CONST.PLATFORM.K8S, region);
       const subaccountId = req.params.accountId;
       const planId = _.get(req, 'query.planId');
       const previousPlanId = _.get(req, 'query.previousPlanId');
@@ -35,7 +36,7 @@ class QuotaApiController extends FabrikBaseController {
       const useAPIServerForConsumedQuotaCheck = _.get(req, 'query.useAPIServerForConsumedQuotaCheck');
       const useAPIServerForConsumedQuotaCheckFlag = (useAPIServerForConsumedQuotaCheck === 'true');
       logger.info(`[Quota APP] subaccountId: ${subaccountId}, orgId: ${orgId}, planId: ${planId}, previousPlanId: ${previousPlanId}, reqMethod: ${reqMethod}, useAPIServerForConsumedQuotaCheckFlag: ${useAPIServerForConsumedQuotaCheckFlag}`);
-      const validStatus = await quotaManager.checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheckFlag);
+      const validStatus = await quotaManager.checkQuota(subaccountId, orgId, planId, previousPlanId, reqMethod, useAPIServerForConsumedQuotaCheckFlag, region);
       await res.status(CONST.HTTP_STATUS_CODE.OK).send({ quotaValidStatus: validStatus });
     } catch (err) {
       logger.error(`[Quota APP] Quota check could not be completed due to following error: ${err}`);

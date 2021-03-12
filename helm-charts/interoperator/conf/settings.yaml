@@ -94,6 +94,10 @@ defaults: &defaults
     enabled: {{ .Values.broker.quota.enabled }}
     oauthDomain: {{ .Values.broker.quota.oauthDomain }}
     serviceDomain: {{ .Values.broker.quota.serviceDomain }}
+    {{- with .Values.broker.quota.regions }}
+    regions:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
 
 development: &development
   <<: *defaults
