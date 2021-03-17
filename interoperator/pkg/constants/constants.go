@@ -34,7 +34,8 @@ const (
 
 	GoTemplateType = "gotemplate"
 
-	PlanWatchDrainTimeout = time.Second * 2
+	PlanWatchDrainTimeout           = time.Second * 2
+	DefaultClusterReconcileInterval = "20m"
 
 	ListPaginationLimit = 50
 )
