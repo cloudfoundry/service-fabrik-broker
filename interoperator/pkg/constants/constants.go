@@ -14,9 +14,10 @@ const (
 	PrimaryClusterKey                     = "interoperator.servicefabrik.io/primarycluster"
 	ErrorThreshold                        = 10
 
-	ConfigMapName   = "interoperator-config"
-	ConfigMapKey    = "config"
-	ProvisionerName = "provisioner"
+	ConfigMapName           = "interoperator-config"
+	ConfigMapKey            = "config"
+	ProvisionerName         = "provisioner"
+	ProvisionerTemplateName = "provisioner-template"
 
 	NamespaceEnvKey    = "POD_NAMESPACE"
 	OwnClusterIDEnvKey = "CLUSTER_ID"
