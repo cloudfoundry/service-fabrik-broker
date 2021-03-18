@@ -198,7 +198,8 @@ class ApiServerClient {
         resourceGroup: opts.resourceGroup,
         resourceType: opts.resourceType,
         resourceId: opts.resourceId,
-        namespaceId: opts.namespaceId
+        namespaceId: opts.namespaceId,
+        requestIdentity: opts.requestIdentity
       }))
       .then(resource => {
         const state = _.get(resource, 'status.state');
@@ -211,14 +212,14 @@ class ApiServerClient {
           finalState = state;
           if (_.get(resource, 'status.error')) {
             const errorResponse = _.get(resource, 'status.error');
-            logger.info('Operation manager reported error', errorResponse);
+            logger.info('RequestIdentity:', opts.requestIdentity, ',Operation manager reported error', errorResponse);
             return convertToHttpErrorAndThrow(errorResponse);
           }
         } else {
           const duration = (new Date() - opts.started_at) / 1000;
-          logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
+          logger.debug(`RequestIdentity: ${opts.requestIdentity} , Polling for ${opts.start_state} duration: ${duration} `);
           if (duration > _.get(opts, 'timeout_in_sec', CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
-            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
+            logger.error(`RequestIdentity: ${opts.requestIdentity} , ${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
             throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
           }
           return this.getOSBResourceOperationStatus(opts);
@@ -1067,7 +1068,7 @@ class ApiServerClient {
           labels: opts.labels
         });
       }
-      logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+      logger.info(`RequestIdentity: ${opts.requestIdentity} , Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
 
       const client = this._getApiClient(group, version);
       // Create Namespace if not default

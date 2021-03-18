@@ -5,6 +5,7 @@ const Ajv = require('ajv');
 const {
   CONST,
   errors: {
+    PreconditionFailed,
     BadRequest,
     Forbidden,
     DeploymentAlreadyLocked,
@@ -200,6 +201,26 @@ exports.checkBlockingOperationInProgress = function () {
           logger.error('[LOCK]: exception occurred --', err);
           next(err);
         });
+    }
+    next();
+  };
+};
+
+exports.minApiVersion = function (minVersion) {
+  return function (req, res, next) {
+    const version = _.get(req.headers, 'x-broker-api-version', '1.0');
+    if(commonFunctions.compareVersions(version, minVersion) < 0) {
+      return next(new PreconditionFailed(`At least Broker API version ${minVersion} is required.`));
+    }
+    next();
+  };
+};
+
+exports.addRequestIdentityToResponse = function () {
+  return function (req, res, next) {
+    const requestIdentity = _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY);
+    if(requestIdentity) {
+      res.set('X-Broker-API-Request-Identity', requestIdentity);
     }
     next();
   };

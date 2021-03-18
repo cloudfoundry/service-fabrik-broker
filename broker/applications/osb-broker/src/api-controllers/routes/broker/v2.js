@@ -16,6 +16,8 @@ const instanceRouter = express.Router({
 
 /* Service Broker API Router */
 router.use(middleware.basicAuth(config.username, config.password));
+router.use(middleware.addRequestIdentityToResponse());
+
 if (_.includes(['production', 'test'], process.env.NODE_ENV)) {
   router.use(controller.handler('apiVersion'));
 }
@@ -33,11 +35,13 @@ instanceRouter.route('/')
   .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
   .patch([middleware.injectPlanInRequest(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
   .delete([middleware.validateRequest(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
-  .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE']));
+  .get([middleware.minApiVersion('2.14'), controller.handler('getServiceInstance')])
+  .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE', 'GET']));
 instanceRouter.route('/last_operation')
   .get(controller.handler('getLastInstanceOperation'))
   .all(middleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
   .put([middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), controller.handler('putBinding')])
   .delete(middleware.checkBlockingOperationInProgress(), controller.handler('deleteBinding'))
-  .all(middleware.methodNotAllowed(['PUT', 'DELETE']));
+  .get([middleware.minApiVersion('2.14'), controller.handler('getServiceBinding')])
+  .all(middleware.methodNotAllowed(['PUT', 'DELETE', 'GET']));
