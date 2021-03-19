@@ -14,8 +14,8 @@ defaults: &defaults
   sys_log_level: info
   enable_circuit_breaker: true
   http_timeout: 175000
-  allowConcurrentOperations: false
-  allowConcurrentBindingOperations: false
+  allowConcurrentOperations: {{ .Values.broker.allow_concurrent_operations }}
+  allowConcurrentBindingOperations: {{ .Values.broker.allow_concurrent_binding_operations }}
   
   ##############################
   # INTERNAL ENDPOINT SETTINGS #

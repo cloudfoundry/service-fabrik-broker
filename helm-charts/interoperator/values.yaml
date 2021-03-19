@@ -15,6 +15,8 @@ broker:
   password: secret
   enable_namespaced_separation: true
   services_namespace: "services"
+  allow_concurrent_operations: true
+  allow_concurrent_binding_operations: true
   resources:
     limits:
       cpu: 400m
