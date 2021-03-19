@@ -58,7 +58,7 @@ exports.error = function (options) {
   if (env !== 'production') {
     properties.push('stack');
   }
-  const formats = options.formats || ['text', 'html', 'json'];
+  const formats = options.formats || ['json', 'text', 'html'];
   const defaultFormat = options.defaultFormat;
   return function (err, req, res, next) {
     /* jshint unused:false */
