@@ -24,6 +24,16 @@ function disableServiceFabrikV2() {
   config.enable_service_fabrik_v2 = false;
 }
 
+function enableConcurrentOps() {
+  config.allowConcurrentOperations = true;
+  config.allowConcurrentBindingOperations = true;
+}
+
+function disableConcurrentOps() {
+  config.allowConcurrentOperations = false;
+  config.allowConcurrentBindingOperations = false;
+}
+
 describe('service-broker-api-2.0', function () {
   describe('instances', function () {
     /* jshint expr:true */
@@ -62,6 +72,7 @@ describe('service-broker-api-2.0', function () {
 
       before(function () {
         enableServiceFabrikV2();
+        enableConcurrentOps();
         backupStore.cloudProvider = new CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
@@ -77,6 +88,7 @@ describe('service-broker-api-2.0', function () {
       afterEach(function () {
         mocks.reset();
         getScheduleStub.resetHistory();
+        enableConcurrentOps();
       });
 
       after(function () {
@@ -1068,6 +1080,125 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
+        it('returns 422 concurrency error for concurrent operations when allowConcurrentOperations config is not set', function() {
+          disableConcurrentOps();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              state: 'in_progress'
+            }
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => {
+              return err.response;
+            })
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('ConcurrencyError');
+              expect(res.body.description).to.be.eql('Another operation for this Service Instance is in progress.');
+              mocks.verify();
+            });
+        });
+
+        it('returns 422 concurrency error for concurrent binding operations when allowConcurrentBindingOperations config is not set', function() {
+          disableConcurrentOps();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              state: 'succeeded'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {
+            items: [{
+              status: {
+                state: 'in_progress'
+              }
+            }]
+          },{
+            labelSelector: `instance_guid=${instance_id}`
+          },
+            {});
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => {
+              return err.response;
+            })
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('ConcurrencyError');
+              expect(res.body.description).to.be.eql('Another operation for this Service Instance is in progress.');
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 accepted when allowConcurrentBindingOperations/allowConcurrentOperations config is not set and concurrent operations are not ongoing ', function() {
+          disableConcurrentOps();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              state: 'succeeded'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {
+            items: [{
+              status: {
+                state: 'succeeded'
+              }
+            }]
+          },{
+            labelSelector: `instance_guid=${instance_id}`
+          },
+            {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockedResourceDetails: {
+                  operation: 'update'
+                }
+              })
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            metadata: {
+              resourceVersion: 10
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => {
+              return err.response;
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.operation).to.deep.equal(commonFunctions.encodeBase64({
+                'type': 'delete'
+              }));
+              mocks.verify();
+            });
+        });
       });
 
 
