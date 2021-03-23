@@ -123,6 +123,7 @@ func Test_config_GetConfig(t *testing.T) {
 	data := make(map[string]string)
 	config := `
 instanceWorkerCount: 2
+clusterReconcileInterval: 17m
 instanceContollerWatchList:
 - apiVersion: kubedb.com/v1alpha1
   kind: Postgres
@@ -143,21 +144,22 @@ instanceContollerWatchList:
 		Namespace: constants.InteroperatorNamespace,
 	}
 	interoperatorConfig := &InteroperatorConfig{
-		BindingWorkerCount:     constants.DefaultBindingWorkerCount,
-		InstanceWorkerCount:    constants.DefaultInstanceWorkerCount,
-		SchedulerWorkerCount:   constants.DefaultSchedulerWorkerCount,
-		ProvisionerWorkerCount: constants.DefaultProvisionerWorkerCount,
-		PrimaryClusterID:       "1",
+		BindingWorkerCount:       constants.DefaultBindingWorkerCount,
+		InstanceWorkerCount:      constants.DefaultInstanceWorkerCount,
+		SchedulerWorkerCount:     constants.DefaultSchedulerWorkerCount,
+		ProvisionerWorkerCount:   constants.DefaultProvisionerWorkerCount,
+		PrimaryClusterID:         "1",
+		ClusterReconcileInterval: "17m",
 		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "kubedb.com/v1alpha1",
 				Kind:       "Postgres",
 			},
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "kubernetes.sapcloud.io/v1alpha1",
 				Kind:       "Postgresql",
 			},
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "deployment.servicefabrik.io/v1alpha1",
 				Kind:       "Director",
 			},
@@ -180,6 +182,7 @@ instanceContollerWatchList:
 					return err
 				}, timeout).Should(gomega.Succeed())
 				interoperatorConfig.InstanceWorkerCount = 2
+				interoperatorConfig.ClusterReconcileInterval = "17m"
 			},
 			want: interoperatorConfig,
 		},
@@ -199,6 +202,7 @@ instanceContollerWatchList:
 				data[constants.ConfigMapKey] = config
 				g.Expect(c.Update(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 				interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+				interoperatorConfig.ClusterReconcileInterval = constants.DefaultClusterReconcileInterval
 			},
 			want: interoperatorConfig,
 		},
@@ -218,6 +222,7 @@ instanceContollerWatchList:
 					return fmt.Errorf("not deleted")
 				}, timeout).Should(gomega.Succeed())
 				interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+				interoperatorConfig.ClusterReconcileInterval = constants.DefaultClusterReconcileInterval
 				interoperatorConfig.InstanceContollerWatchList = nil
 			},
 			want: interoperatorConfig,
@@ -246,15 +251,15 @@ func Test_config_UpdateConfig(t *testing.T) {
 		BindingWorkerCount:  constants.DefaultBindingWorkerCount,
 		InstanceWorkerCount: constants.DefaultInstanceWorkerCount,
 		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "kubedb.com/v1alpha1",
 				Kind:       "Postgres",
 			},
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "kubernetes.sapcloud.io/v1alpha1",
 				Kind:       "Postgresql",
 			},
-			osbv1alpha1.APIVersionKind{
+			{
 				APIVersion: "deployment.servicefabrik.io/v1alpha1",
 				Kind:       "Director",
 			},

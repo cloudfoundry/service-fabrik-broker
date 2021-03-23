@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
@@ -177,7 +178,15 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	requeueAfter, err := time.ParseDuration(interoperatorCfg.ClusterReconcileInterval)
+	if err != nil {
+		log.Error(err, "Failed to parse ClusterReconcileInterval",
+			"ClusterReconcileInterval", interoperatorCfg.ClusterReconcileInterval)
+		requeueAfter, _ = time.ParseDuration(constants.DefaultClusterReconcileInterval)
+	}
+	return ctrl.Result{
+		RequeueAfter: requeueAfter,
+	}, nil
 }
 
 func (r *ReconcileProvisioner) reconcilePrimaryClusterIDConfig() error {

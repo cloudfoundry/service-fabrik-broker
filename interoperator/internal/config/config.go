@@ -23,11 +23,12 @@ var log = logf.Log.WithName("config.manager")
 
 // InteroperatorConfig contains tuneable configs used by interoperator
 type InteroperatorConfig struct {
-	InstanceWorkerCount    int    `yaml:"instanceWorkerCount,omitempty"`
-	BindingWorkerCount     int    `yaml:"bindingWorkerCount,omitempty"`
-	SchedulerWorkerCount   int    `yaml:"schedulerWorkerCount,omitempty"`
-	ProvisionerWorkerCount int    `yaml:"provisionerWorkerCount,omitempty"`
-	PrimaryClusterID       string `yaml:"primaryClusterId,omitempty"`
+	InstanceWorkerCount      int    `yaml:"instanceWorkerCount,omitempty"`
+	BindingWorkerCount       int    `yaml:"bindingWorkerCount,omitempty"`
+	SchedulerWorkerCount     int    `yaml:"schedulerWorkerCount,omitempty"`
+	ProvisionerWorkerCount   int    `yaml:"provisionerWorkerCount,omitempty"`
+	PrimaryClusterID         string `yaml:"primaryClusterId,omitempty"`
+	ClusterReconcileInterval string `yaml:"clusterReconcileInterval,omitempty"`
 
 	InstanceContollerWatchList []osbv1alpha1.APIVersionKind `yaml:"instanceContollerWatchList,omitempty"`
 	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
@@ -49,6 +50,9 @@ func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorC
 	}
 	if interoperatorConfig.PrimaryClusterID == "" {
 		interoperatorConfig.PrimaryClusterID = constants.DefaultPrimaryClusterID
+	}
+	if interoperatorConfig.ClusterReconcileInterval == "" {
+		interoperatorConfig.ClusterReconcileInterval = constants.DefaultClusterReconcileInterval
 	}
 
 	return interoperatorConfig

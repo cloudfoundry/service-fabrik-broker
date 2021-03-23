@@ -17,13 +17,16 @@ broker:
   services_namespace: "services"
   allow_concurrent_operations: true
   allow_concurrent_binding_operations: true
+
+  # override the global replicaCount just for broker
+  replicaCount: 4
   resources:
     limits:
-      cpu: 400m
-      memory: 512Mi
-    requests:
-      cpu: 100m
+      cpu: 800m
       memory: 256Mi
+    requests:
+      cpu: 400m
+      memory: 128Mi
   quota:
     enabled: false
     oauthDomain: https://myauth-domain.com
@@ -52,13 +55,16 @@ quota_app:
   port: 9296
   username: quota
   password: secret
+
+  # override the global replicaCount just for quota_app
+  #replicaCount: 1
   resources:
     limits:
       cpu: 400m
-      memory: 512Mi
+      memory: 256Mi
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 128Mi
   service:
     type: ClusterIP
 
@@ -67,20 +73,51 @@ interoperator:
     repository: servicefabrikjenkins/service-fabrik-interoperator
     tag: 0.13.0
     pullPolicy: Always
+
+  # override the global replicaCount just for interoperator components
+  #replicaCount: 2
   resources:
     limits:
       cpu: 400m
-      memory: 512Mi
+      memory: 256Mi
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 128Mi
   config:
     instanceWorkerCount: 2
     bindingWorkerCount: 4
     schedulerWorkerCount: 2
     provisionerWorkerCount: 2
 
+  provisioner:
+    resources:
+      limits:
+        cpu: 1800m
+        memory: 512Mi
+      requests:
+        cpu: 600m
+        memory: 256Mi
+
+  scheduler:
+    resources:
+      limits:
+        cpu: 400m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
+
+  multiclusterdeployer:
+    resources:
+      limits:
+        cpu: 1200m
+        memory: 128Mi
+      requests:
+        cpu: 400m
+        memory: 64Mi
+
 operator_apis:
+  enabled: true
   port: 9297
   username: admin
   password: secret
@@ -89,6 +126,9 @@ operator_apis:
     repository: servicefabrikjenkins/operatorapis
     tag: 0.13.0
     pullPolicy: Always
+
+  # override the global replicaCount just for operator apis
+  #replicaCount: 2
   resources:
     limits:
       cpu: 400m
