@@ -19,7 +19,7 @@
     "@sf/platforms": "*",
     "@sf/provisioner-services": "*",
     "bluebird": "3.7.2",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "mongoose": "5.9.24",
     "pubsub-js": "1.8.0"
   }

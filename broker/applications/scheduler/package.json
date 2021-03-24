@@ -17,10 +17,9 @@
     "@sf/logger": "*",
     "bluebird": "3.7.2",
     "express-jwt": "6.0.0",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "moment": "2.27.0",
     "pubsub-js": "1.8.0",
-    "pug": "3.0.0",
     "rxjs": "5.0.0"
   }
 }

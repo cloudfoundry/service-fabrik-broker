@@ -16,7 +16,7 @@
     "@sf/models": "*",
     "bluebird": "3.7.2",
     "js-yaml": "3.14.0",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "pubsub-js": "1.8.0",
     "riemann": "2.0.0"
   }
