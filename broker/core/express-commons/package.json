@@ -19,7 +19,7 @@
     "express-interceptor": "1.2.0",
     "helmet": "4.1.0",
     "js-yaml": "3.14.0",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "moment": "2.27.0",
     "morgan": "1.10.0",
     "pubsub-js": "1.8.0"

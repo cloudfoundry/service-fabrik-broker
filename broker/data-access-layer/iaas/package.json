@@ -22,7 +22,7 @@
     "azure-arm-compute": "10.0.0",
     "azure-storage": "2.10.3",
     "bluebird": "3.7.2",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "moment": "2.27.0",
     "pkgcloud": "1.7.0",
     "uuid": "8.2.0"

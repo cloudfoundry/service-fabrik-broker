@@ -29,7 +29,7 @@
     "express-jwt": "6.0.0",
     "express-session": "1.17.1",
     "js-yaml": "3.14.0",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "moment": "2.27.0",
     "pug": "3.0.0",
     "rxjs": "5.0.0",

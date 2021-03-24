@@ -1408,7 +1408,7 @@ __metadata:
     bluebird: 3.7.2
     express: 4.17.1
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
@@ -1421,7 +1421,7 @@ __metadata:
     bluebird: 3.7.2
     hystrixjs: 0.2.0
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1439,7 +1439,7 @@ __metadata:
     bluebird: 3.7.2
     ip: 1.1.5
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     ssh2: 0.8.9
     uuid: 8.2.0
   languageName: unknown
@@ -1452,7 +1452,7 @@ __metadata:
     "@sf/app-config": "*"
     "@sf/common-utils": "*"
     "@sf/logger": "*"
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1464,7 +1464,7 @@ __metadata:
     "@sf/common-utils": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
     uuid: 8.2.0
   languageName: unknown
   linkType: soft
@@ -1478,7 +1478,7 @@ __metadata:
     "@sf/eventmesh": "*"
     "@sf/models": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1492,7 +1492,7 @@ __metadata:
     bluebird: 3.7.2
     hystrixjs: 0.2.0
     jsonwebtoken: 8.5.1
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     mongoose: 5.9.24
     uuid: 8.2.0
@@ -1512,7 +1512,7 @@ __metadata:
     "@sf/platforms": "*"
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
     mongoose: 5.9.24
     pubsub-js: 1.8.0
   languageName: unknown
@@ -1530,7 +1530,7 @@ __metadata:
     bluebird: 3.7.2
     express: 4.17.1
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
@@ -1545,7 +1545,7 @@ __metadata:
     "@sf/logger": "*"
     bluebird: 3.7.2
     dockerode: 3.2.1
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1559,7 +1559,7 @@ __metadata:
     "@sf/models": "*"
     bluebird: 3.7.2
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pubsub-js: 1.8.0
     riemann: 2.0.0
   languageName: unknown
@@ -1579,7 +1579,7 @@ __metadata:
     decamelize-keys-deep: 0.1.1
     js-yaml: 3.14.0
     json-stream: ^1.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pubsub-js: 1.8.0
   languageName: unknown
   linkType: soft
@@ -1599,7 +1599,7 @@ __metadata:
     express-interceptor: 1.2.0
     helmet: 4.1.0
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     morgan: 1.10.0
     pubsub-js: 1.8.0
@@ -1629,7 +1629,7 @@ __metadata:
     express-jwt: 6.0.0
     express-session: 1.17.1
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     pug: 3.0.0
     rxjs: 5.0.0
@@ -1653,7 +1653,7 @@ __metadata:
     azure-arm-compute: 10.0.0
     azure-storage: 2.10.3
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     pkgcloud: 1.7.0
     uuid: 8.2.0
@@ -1677,7 +1677,7 @@ __metadata:
     "@sf/models": "*"
     agenda: 0.10.0
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     mongoose: 5.9.24
     pubsub-js: 1.8.0
@@ -1689,7 +1689,7 @@ __metadata:
   resolution: "@sf/logger@workspace:core/logging"
   dependencies:
     "@sf/app-config": "*"
-    lodash: 4.17.20
+    lodash: 4.17.21
     winston: 3.3.3
     winston-syslog: 2.4.4
   languageName: unknown
@@ -1703,7 +1703,7 @@ __metadata:
     "@sf/common-utils": "*"
     "@sf/logger": "*"
     "@sf/quota": "*"
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1713,7 +1713,7 @@ __metadata:
   dependencies:
     "@sf/app-config": "*"
     "@sf/common-utils": "*"
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1729,7 +1729,7 @@ __metadata:
     "@sf/logger": "*"
     "@sf/service-agent": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1756,7 +1756,7 @@ __metadata:
     express-jwt: 6.0.0
     js-yaml: 3.14.0
     json-stream: ^1.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     pug: 3.0.0
     rxjs: 5.0.0
@@ -1779,7 +1779,7 @@ __metadata:
     camelcase-keys: 6.2.2
     express: 4.17.1
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
@@ -1794,7 +1794,7 @@ __metadata:
     "@sf/common-utils": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -1815,7 +1815,7 @@ __metadata:
     "@sf/service-agent": "*"
     bluebird: 3.7.2
     js-yaml: 3.14.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     selfsigned: 1.10.7
   languageName: unknown
   linkType: soft
@@ -1833,7 +1833,7 @@ __metadata:
     "@sf/quota": "*"
     express: 4.17.1
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
@@ -1850,7 +1850,7 @@ __metadata:
     "@sf/logger": "*"
     "@sf/models": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
     uuid: 8.2.0
   languageName: unknown
   linkType: soft
@@ -1867,7 +1867,7 @@ __metadata:
     bluebird: 3.7.2
     express: 4.17.1
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
@@ -1884,7 +1884,7 @@ __metadata:
     "@sf/logger": "*"
     bluebird: 3.7.2
     express-jwt: 6.0.0
-    lodash: 4.17.20
+    lodash: 4.17.21
     moment: 2.27.0
     pubsub-js: 1.8.0
     pug: 3.0.0
@@ -1899,7 +1899,7 @@ __metadata:
     "@sf/common-utils": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    lodash: 4.17.20
+    lodash: 4.17.21
   languageName: unknown
   linkType: soft
 
@@ -9048,7 +9048,14 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"lodash@npm:4.17.20, lodash@npm:^4.14.0, lodash@npm:^4.17.10, lodash@npm:^4.17.11, lodash@npm:^4.17.12, lodash@npm:^4.17.14, lodash@npm:^4.17.15, lodash@npm:^4.17.19, lodash@npm:^4.17.4, lodash@npm:^4.2.1":
+"lodash@npm:4.17.21":
+  version: 4.17.21
+  resolution: "lodash@npm:4.17.21"
+  checksum: 4983720b9abca930a4a46f18db163d7dad8dd00dbed6db0cc7b499b33b717cce69f80928b27bbb1ff2cbd3b19d251ee90669a8b5ea466072ca81c2ebe91e7468
+  languageName: node
+  linkType: hard
+
+"lodash@npm:^4.14.0, lodash@npm:^4.17.10, lodash@npm:^4.17.11, lodash@npm:^4.17.12, lodash@npm:^4.17.14, lodash@npm:^4.17.15, lodash@npm:^4.17.19, lodash@npm:^4.17.4, lodash@npm:^4.2.1":
   version: 4.17.20
   resolution: "lodash@npm:4.17.20"
   checksum: c62101d2500c383b5f174a7e9e6fe8098149ddd6e9ccfa85f36d4789446195f5c4afd3cfba433026bcaf3da271256566b04a2bf2618e5a39f6e67f8c12030cb6

@@ -14,7 +14,7 @@
     "bluebird": "3.7.2",
     "hystrixjs": "0.2.0",
     "jsonwebtoken": "8.5.1",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "moment": "2.27.0",
     "mongoose": "5.9.24",
     "uuid": "8.2.0"
