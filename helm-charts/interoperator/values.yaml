@@ -17,7 +17,8 @@ broker:
   services_namespace: "services"
   allow_concurrent_operations: true
   allow_concurrent_binding_operations: true
-
+  send_binding_metadata: true
+  
   # override the global replicaCount just for broker
   replicaCount: 4
   resources:

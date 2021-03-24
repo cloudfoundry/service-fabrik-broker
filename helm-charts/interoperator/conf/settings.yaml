@@ -16,6 +16,7 @@ defaults: &defaults
   http_timeout: 175000
   allowConcurrentOperations: {{ .Values.broker.allow_concurrent_operations }}
   allowConcurrentBindingOperations: {{ .Values.broker.allow_concurrent_binding_operations }}
+  sendBindingMetadata: {{ .Values.broker.send_binding_metadata }}
   
   ##############################
   # INTERNAL ENDPOINT SETTINGS #
