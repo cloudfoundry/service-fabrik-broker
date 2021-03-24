@@ -85,12 +85,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/parser@npm:^7.12.11, @babel/parser@npm:^7.12.7, @babel/parser@npm:^7.6.0, @babel/parser@npm:^7.7.0, @babel/parser@npm:^7.9.4, @babel/parser@npm:^7.9.6":
+"@babel/parser@npm:^7.12.11, @babel/parser@npm:^7.12.7, @babel/parser@npm:^7.7.0, @babel/parser@npm:^7.9.4":
   version: 7.12.11
   resolution: "@babel/parser@npm:7.12.11"
   bin:
     parser: ./bin/babel-parser.js
   checksum: 2f650e8e57342bdd1b624ba89d6df2332ee8e6ec0287316aa47d49a7bee8a6d9bab4581e753a4b72a2ddd8f272a2f9947f6c7f1ca191a0006a297789226f4b55
+  languageName: node
+  linkType: hard
+
+"@babel/parser@npm:^7.6.0, @babel/parser@npm:^7.9.6":
+  version: 7.13.12
+  resolution: "@babel/parser@npm:7.13.12"
+  bin:
+    parser: ./bin/babel-parser.js
+  checksum: d73d8fa55627697501e3f86b84a6f91edd93695347bb7aa02e7466ddc7e39fc79dc1b43a496c6a253d7a8608f8cfcf420692d2f88ff2ca668f8273742b804430
   languageName: node
   linkType: hard
 
@@ -122,7 +131,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/types@npm:^7.12.10, @babel/types@npm:^7.12.11, @babel/types@npm:^7.12.12, @babel/types@npm:^7.12.7, @babel/types@npm:^7.6.1, @babel/types@npm:^7.7.0, @babel/types@npm:^7.8.3, @babel/types@npm:^7.9.6":
+"@babel/types@npm:^7.12.10, @babel/types@npm:^7.12.11, @babel/types@npm:^7.12.12, @babel/types@npm:^7.12.7, @babel/types@npm:^7.7.0, @babel/types@npm:^7.8.3":
   version: 7.12.12
   resolution: "@babel/types@npm:7.12.12"
   dependencies:
@@ -130,6 +139,17 @@ __metadata:
     lodash: ^4.17.19
     to-fast-properties: ^2.0.0
   checksum: 928554396cb6b367e00cb6d41aee4ea0228872e8cda221d81abe786462799ecc63993f3c16845b30cd68e673269704f8007f4edc105a32c6d7e03e68a670a676
+  languageName: node
+  linkType: hard
+
+"@babel/types@npm:^7.6.1, @babel/types@npm:^7.9.6":
+  version: 7.13.12
+  resolution: "@babel/types@npm:7.13.12"
+  dependencies:
+    "@babel/helper-validator-identifier": ^7.12.11
+    lodash: ^4.17.19
+    to-fast-properties: ^2.0.0
+  checksum: 154392625ea7b7c550be1ebf624b9cfed394d11bf8b7cb39b0ec874a84313d26dc708cca62b18de9901bce19a9a187f0d4834e8cf365ad2fc9357c96c13923f7
   languageName: node
   linkType: hard
 
@@ -1409,7 +1429,6 @@ __metadata:
     express: 4.17.1
     express-jwt: 6.0.0
     lodash: 4.17.21
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1531,7 +1550,6 @@ __metadata:
     express: 4.17.1
     express-jwt: 6.0.0
     lodash: 4.17.21
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1603,6 +1621,7 @@ __metadata:
     moment: 2.27.0
     morgan: 1.10.0
     pubsub-js: 1.8.0
+    pug: 3.0.2
   languageName: unknown
   linkType: soft
 
@@ -1631,7 +1650,6 @@ __metadata:
     js-yaml: 3.14.0
     lodash: 4.17.21
     moment: 2.27.0
-    pug: 3.0.0
     rxjs: 5.0.0
     session-file-store: 1.4.0
   languageName: unknown
@@ -1758,7 +1776,6 @@ __metadata:
     json-stream: ^1.0.0
     lodash: 4.17.21
     moment: 2.27.0
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1780,7 +1797,6 @@ __metadata:
     express: 4.17.1
     express-jwt: 6.0.0
     lodash: 4.17.21
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1834,7 +1850,6 @@ __metadata:
     express: 4.17.1
     express-jwt: 6.0.0
     lodash: 4.17.21
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1868,7 +1883,6 @@ __metadata:
     express: 4.17.1
     express-jwt: 6.0.0
     lodash: 4.17.21
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -1887,7 +1901,6 @@ __metadata:
     lodash: 4.17.21
     moment: 2.27.0
     pubsub-js: 1.8.0
-    pug: 3.0.0
     rxjs: 5.0.0
   languageName: unknown
   linkType: soft
@@ -7791,7 +7804,7 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"is-core-module@npm:^2.1.0":
+"is-core-module@npm:^2.1.0, is-core-module@npm:^2.2.0":
   version: 2.2.0
   resolution: "is-core-module@npm:2.2.0"
   dependencies:
@@ -8073,7 +8086,17 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"is-regex@npm:^1.0.3, is-regex@npm:^1.1.1":
+"is-regex@npm:^1.0.3":
+  version: 1.1.2
+  resolution: "is-regex@npm:1.1.2"
+  dependencies:
+    call-bind: ^1.0.2
+    has-symbols: ^1.0.1
+  checksum: 5e2f80f495f5297d1295730820a4be31f3848ca92357cfef1b2a61c09fe0fcd3f68c34f3042a5b81885e249cd50eac8efac472ad6da7ecb497bb2d7bad402a9a
+  languageName: node
+  linkType: hard
+
+"is-regex@npm:^1.1.1":
   version: 1.1.1
   resolution: "is-regex@npm:1.1.1"
   dependencies:
@@ -11701,9 +11724,9 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"pug-code-gen@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "pug-code-gen@npm:3.0.1"
+"pug-code-gen@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "pug-code-gen@npm:3.0.2"
   dependencies:
     constantinople: ^4.0.1
     doctypes: ^1.1.0
@@ -11713,7 +11736,7 @@ fsevents@^1.0.0:
     pug-runtime: ^3.0.0
     void-elements: ^3.1.0
     with: ^7.0.0
-  checksum: 1cd42d5b7d142153f29d6d4393dc0e605325d1b72ee5512f1278644d24c47122077b7c426fc88362ef310641e00a1f52966359e52f98a4a580b53d94ad7d643e
+  checksum: bc122082d1b054c9c206ec5f87ef9dc3c8657c50378b0badaf2cd29e3bec80fe2ca52a7f334f6a657982394dd31db8f16e9e978625aee4979f8c9bc5c4f0e01d
   languageName: node
   linkType: hard
 
@@ -11737,14 +11760,14 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"pug-lexer@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "pug-lexer@npm:5.0.0"
+"pug-lexer@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "pug-lexer@npm:5.0.1"
   dependencies:
     character-parser: ^2.2.0
     is-expression: ^4.0.0
     pug-error: ^2.0.0
-  checksum: 23bbabdb8de8314695ea198d5739df322fc22a63f1fae73f6f268fcbbffaa457ca6dfa9415962b3e2e800d46df0dd30f3f6db94532899a0e60a984558828db71
+  checksum: 899c780e4145dc299d01301268eaa3113f01b03d088513f96c391d6dc661511e8fe7e05e8fad3471d8155d84c004d4cc858c3aa8cfb882afc98781e568a63ff1
   languageName: node
   linkType: hard
 
@@ -11778,10 +11801,10 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"pug-runtime@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "pug-runtime@npm:3.0.0"
-  checksum: 9069763e1b0710ef4d24cf47790ca378334e690b18cfc9c5d061a399f2ef30d81b0aa13f3137b3d454122092d611e8d56c86958598f6dc4b13c9ae085a5a1bec
+"pug-runtime@npm:^3.0.0, pug-runtime@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "pug-runtime@npm:3.0.1"
+  checksum: b0c47beede81d37cfcb9065578e91af51637a89ff757c53924ff261b1e80f4a06d7667e0bcd381fa823394a9e5e8572c52c9336df9eaf1a84bfe196ea62e4460
   languageName: node
   linkType: hard
 
@@ -11801,19 +11824,19 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"pug@npm:3.0.0":
-  version: 3.0.0
-  resolution: "pug@npm:3.0.0"
+"pug@npm:3.0.2":
+  version: 3.0.2
+  resolution: "pug@npm:3.0.2"
   dependencies:
-    pug-code-gen: ^3.0.0
+    pug-code-gen: ^3.0.2
     pug-filters: ^4.0.0
-    pug-lexer: ^5.0.0
+    pug-lexer: ^5.0.1
     pug-linker: ^4.0.0
     pug-load: ^3.0.0
     pug-parser: ^6.0.0
-    pug-runtime: ^3.0.0
+    pug-runtime: ^3.0.1
     pug-strip-comments: ^2.0.0
-  checksum: bc45c78181f32ff0651347de008ce667b62f5106a94c2f7ddc009b29cd60fac9d9f2b1e09025ba8106f094ef984a45aada94e2c82efc1788a15a9746a7b2b0b1
+  checksum: ba2cfc68c4fef649da2344d73d326ad289158a39a73293c98d50974f48e255f09063e3201c25ff9500c2af519b88e6c7456f638f51df99d2c95dd30b8527b3b5
   languageName: node
   linkType: hard
 
@@ -12497,13 +12520,23 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"resolve@^1.1.5, resolve@^1.1.6, resolve@^1.10.0, resolve@^1.12.0, resolve@^1.15.1, resolve@^1.17.0":
+"resolve@^1.1.5, resolve@^1.1.6, resolve@^1.10.0, resolve@^1.12.0, resolve@^1.17.0":
   version: 1.19.0
   resolution: "resolve@npm:1.19.0"
   dependencies:
     is-core-module: ^2.1.0
     path-parse: ^1.0.6
   checksum: 8b23c7fde1224898ffb9fec2a2295a44d1564981343bdbf5fd3769465658f6a6f6647bb7ea66dfb3c1291ca86046b0233be2edfcd8ca05b38886521e8869677c
+  languageName: node
+  linkType: hard
+
+resolve@^1.15.1:
+  version: 1.20.0
+  resolution: "resolve@npm:1.20.0"
+  dependencies:
+    is-core-module: ^2.2.0
+    path-parse: ^1.0.6
+  checksum: 0f5206d454b30e74d9b2d575b5f8aedf443c4d8b90b84cdf79474ade29bb459075220da3127b682896872a16022ed65cc4db09e0f23849654144d3d75c65cd1b
   languageName: node
   linkType: hard
 
@@ -12514,13 +12547,23 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"resolve@patch:resolve@^1.1.5#builtin<compat/resolve>, resolve@patch:resolve@^1.1.6#builtin<compat/resolve>, resolve@patch:resolve@^1.10.0#builtin<compat/resolve>, resolve@patch:resolve@^1.12.0#builtin<compat/resolve>, resolve@patch:resolve@^1.15.1#builtin<compat/resolve>, resolve@patch:resolve@^1.17.0#builtin<compat/resolve>":
+"resolve@patch:resolve@^1.1.5#builtin<compat/resolve>, resolve@patch:resolve@^1.1.6#builtin<compat/resolve>, resolve@patch:resolve@^1.10.0#builtin<compat/resolve>, resolve@patch:resolve@^1.12.0#builtin<compat/resolve>, resolve@patch:resolve@^1.17.0#builtin<compat/resolve>":
   version: 1.19.0
   resolution: "resolve@patch:resolve@npm%3A1.19.0#builtin<compat/resolve>::version=1.19.0&hash=3388aa"
   dependencies:
     is-core-module: ^2.1.0
     path-parse: ^1.0.6
   checksum: 188d5167e8578a9af8d194faf382b8f3526aad5145391c24ecdc6246c6fc82c10fc66d6352267f8e93c5977c503d61803169c91b9e2ee36dd2de759915c9b673
+  languageName: node
+  linkType: hard
+
+"resolve@patch:resolve@^1.15.1#builtin<compat/resolve>":
+  version: 1.20.0
+  resolution: "resolve@patch:resolve@npm%3A1.20.0#builtin<compat/resolve>::version=1.20.0&hash=3388aa"
+  dependencies:
+    is-core-module: ^2.2.0
+    path-parse: ^1.0.6
+  checksum: c4a515b76026806b5b26513fc7bdb80458c532bc91c02ef45ac928d1025585f93bec0b904be39c02131118a37ff7e3f9258f1526850b025d2ec0948bb5fd03d0
   languageName: node
   linkType: hard
 
