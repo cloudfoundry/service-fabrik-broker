@@ -140,7 +140,7 @@ func TestReconcile(t *testing.T) {
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
 		},
-		Deprovision: properties.GenericStatus{
+		Deprovision: properties.InstanceStatus{
 			State: "succeeded",
 		},
 	}, nil).AnyTimes()

@@ -1796,7 +1796,7 @@ describe('service-broker-api-2.0', function () {
               done();
             });
         });
-        it('returns 201 Created', function (done) {
+        it('returns 201 Created - returns additional fields from secret', function (done) {
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -1818,7 +1818,73 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: commonFunctions.encodeBase64({ credentials: mocks.agent.credentials })
+              response: commonFunctions.encodeBase64({ 
+                "credentials": mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              })
+            }
+          });
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              app_guid: app_guid,
+              bind_resource: {
+                app_guid: app_guid
+              },
+              context: context
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql({
+                credentials: mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              });
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('returns 201 Created - metadata omitted if sendBindingMetadata config is off', function (done) {
+          config.sendBindingMetadata = false;
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              state: 'succeeded',
+              response: {
+                secretRef: 'secret-name'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
+            data: {
+              response: commonFunctions.encodeBase64({ 
+                "credentials": mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              })
             }
           });
           return chai.request(app)
@@ -1841,9 +1907,11 @@ describe('service-broker-api-2.0', function () {
                 credentials: mocks.agent.credentials
               });
               mocks.verify();
+              _.unset(config, 'sendBindingMetadata')
               done();
             });
         });
+
         it('returns 201 Created: In K8S platform', function (done) {
           const context = {
             platform: 'kubernetes',
