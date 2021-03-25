@@ -399,7 +399,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(binding *osbv1alpha1.SFServ
 	computedBindingStatus := computedStatus.Bind
 
 	// Create secret if not exist
-	if computedBindingStatus.State == "succeeded" {
+	if computedBindingStatus.State == "succeeded" || computedBindingStatus.State == "failed" {
 		secretName := "sf-" + bindingID
 
 		data := make(map[string]string)

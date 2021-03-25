@@ -215,6 +215,7 @@ class ApiServerClient {
             logger.info('RequestIdentity:', opts.requestIdentity, ',Operation manager reported error', errorResponse);
             return convertToHttpErrorAndThrow(errorResponse);
           }
+          return _.get(resource, 'status.response');
         } else {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`RequestIdentity: ${opts.requestIdentity} , Polling for ${opts.start_state} duration: ${duration} `);
