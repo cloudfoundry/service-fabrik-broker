@@ -46,7 +46,7 @@ spec:
               fieldPath: metadata.namespace
         image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
         imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
-        name: manager
+        name: provisioner
         {{- $resourceSpec := dict }}
         {{- with .Values.interoperator.provisioner.resources }}
           {{- $resourceSpec = deepCopy . }}

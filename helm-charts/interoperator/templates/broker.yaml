@@ -74,7 +74,7 @@ spec:
             app: {{ .Release.Name }}-broker
             rollme: {{ $randomString }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: broker
         image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
         imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
         ports:

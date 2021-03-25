@@ -74,7 +74,7 @@ spec:
             app: {{ .Release.Name }}-op-apis-app
             rollme: {{ $randomString }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: operator-api
         image: "{{ .Values.operator_apis.image.repository }}:{{ .Values.operator_apis.image.tag }}"
         imagePullPolicy: {{ .Values.operator_apis.image.pullPolicy }}
         ports:

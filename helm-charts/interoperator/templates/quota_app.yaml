@@ -46,7 +46,7 @@ spec:
             app: {{ .Release.Name }}-quota-app
             rollme: {{ $randomString }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: quota-app
         image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
         imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
         ports:
