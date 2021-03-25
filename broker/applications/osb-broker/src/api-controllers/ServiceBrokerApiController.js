@@ -409,9 +409,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('instance_id', getKubernetesName(req.params.instance_id))
       .value();
 
-    function done(bindResponse) {
+    function done(bindResponse, state) {
       const response = decodeBase64(bindResponse);
-      res.status(CONST.HTTP_STATUS_CODE.CREATED).send(response);
+      const statusCode = (state === CONST.APISERVER.RESOURCE_STATE.FAILED) ? CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR : CONST.HTTP_STATUS_CODE.CREATED;
+      res.status(statusCode).send(response);
     }
 
     function conflict(err) {
@@ -463,9 +464,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
       }))
       .then(operationStatus => {
-        const secretName = operationStatus.response.secretRef;
+        const secretName = _.get(operationStatus, 'response.secretRef');
+        const state = _.get(operationStatus, 'state');
         return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
-          .then(secret => done(secret.data.response));
+          .then(secret => done(secret.data.response, state));
       })
       .catch(Conflict, conflict)
       .catch(Timeout, err => {
