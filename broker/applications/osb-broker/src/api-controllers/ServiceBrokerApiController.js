@@ -631,8 +631,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
             _.set(body,'service_id',_.get(resource, 'spec.serviceId'));
             _.set(body,'plan_id',_.get(resource, 'spec.planId'));
-            _.set(body,'parameters',_.get(resource, 'spec.parameters'));
-
+            if(!_.isEmpty(_.get(plan, 'metadata.retrievableParametersList', []))) {
+              let paramList = _.get(plan, 'metadata.retrievableParametersList');
+              if(_.isArray(paramList)) {
+                let parameters = _.get(resource, 'spec.parameters');
+                _.set(body,'parameters', _.pick(parameters, paramList));  
+              }
+            } else {
+              _.set(body,'parameters',_.get(resource, 'spec.parameters'));
+            }
             return res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
           }
         })
