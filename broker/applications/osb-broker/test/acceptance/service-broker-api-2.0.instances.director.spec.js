@@ -1554,6 +1554,39 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+
+        it('update-sf20: returns 200 OK (state = failed) contains instance_usable and update_repeatable if provided', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              description: `Update deployment ${deployment_name} failed at 2016-07-04T10:58:24.000Z`,
+              state: 'failed',
+              instanceUsable: 'false',
+              updateRepeatable: 'true'
+            }
+          });
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'update'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Update deployment ${deployment_name} failed at 2016-07-04T10:58:24.000Z`,
+                state: 'failed',
+                instance_usable: false,
+                update_repeatable: true
+              });
+              mocks.verify();
+            });
+        });
         it('update-sf20: returns 200 OK (state = in progress): In K8S platform', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
             status: {
@@ -1604,6 +1637,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+        
         it('delete-sf20: returns 200 OK (state = in progress)', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
             status: {
@@ -1665,7 +1699,37 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
+        it('delete-sf20: returns 200 OK (state = failed) contains instance_usable if provided', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              description: `Delete deployment ${deployment_name} failed at 2016-07-04T10:58:24.000Z`,
+              state: 'failed',
+              instanceUsable: 'true'
+            }
+          });
+          
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Delete deployment ${deployment_name} failed at 2016-07-04T10:58:24.000Z`,
+                state: 'failed',
+                instance_usable: true
+              });
+              mocks.verify();
+            });
+        });
         it('delete-sf20: returns 410 GONE', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, 404);
           return chai.request(app)
@@ -1732,7 +1796,7 @@ describe('service-broker-api-2.0', function () {
               done();
             });
         });
-        it('returns 201 Created', function (done) {
+        it('returns 201 Created - returns additional fields from secret', function (done) {
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -1754,7 +1818,73 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: commonFunctions.encodeBase64({ credentials: mocks.agent.credentials })
+              response: commonFunctions.encodeBase64({ 
+                "credentials": mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              })
+            }
+          });
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              app_guid: app_guid,
+              bind_resource: {
+                app_guid: app_guid
+              },
+              context: context
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql({
+                credentials: mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              });
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('returns 201 Created - metadata omitted if sendBindingMetadata config is off', function (done) {
+          config.sendBindingMetadata = false;
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              state: 'succeeded',
+              response: {
+                secretRef: 'secret-name'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
+            data: {
+              response: commonFunctions.encodeBase64({ 
+                "credentials": mocks.agent.credentials,
+                "metadata": {
+                  "expires_at": "2022-03-24T17:18:20Z",
+                  "renew_before": "2021-12-23T11:18:20Z"
+                } 
+              })
             }
           });
           return chai.request(app)
@@ -1777,9 +1907,11 @@ describe('service-broker-api-2.0', function () {
                 credentials: mocks.agent.credentials
               });
               mocks.verify();
+              _.unset(config, 'sendBindingMetadata')
               done();
             });
         });
+
         it('returns 201 Created: In K8S platform', function (done) {
           const context = {
             platform: 'kubernetes',

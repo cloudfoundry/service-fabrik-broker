@@ -356,6 +356,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
         body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
+      if(_.get(operation, 'type') === 'update' && body.state === CONST.OPERATION.FAILED) {
+        body.instance_usable = _.get(result, 'instanceUsable') === 'false' ||
+        _.get(result, 'instanceUsable') === false ? false : true;
+
+        body.update_repeatable = _.get(result, 'updateRepeatable') === 'false' ||
+        _.get(result, 'updateRepeatable') === false ? false : true;
+
+      }
+      if(_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.FAILED) {
+        body.instance_usable = _.get(result, 'instanceUsable') === 'false' ||
+        _.get(result, 'instanceUsable') === false ? false : true;
+      }
       logger.debug('RequestIdentity:', _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent'), ',returning ..', body);
       return Promise.try(() => {
         if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
@@ -410,8 +422,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(bindResponse, state) {
-      const response = decodeBase64(bindResponse);
+      let response = decodeBase64(bindResponse);
       const statusCode = (state === CONST.APISERVER.RESOURCE_STATE.FAILED) ? CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR : CONST.HTTP_STATUS_CODE.CREATED;
+      if(statusCode === CONST.HTTP_STATUS_CODE.CREATED && _.get(config, 'sendBindingMetadata', true) === false) {
+        response = _.omit(response, 'metadata');
+      }
       res.status(statusCode).send(response);
     }
 
@@ -616,8 +631,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
             _.set(body,'service_id',_.get(resource, 'spec.serviceId'));
             _.set(body,'plan_id',_.get(resource, 'spec.planId'));
-            _.set(body,'parameters',_.get(resource, 'spec.parameters'));
-
+            if(!_.isEmpty(_.get(plan, 'metadata.retrievableParametersList', []))) {
+              let paramList = _.get(plan, 'metadata.retrievableParametersList');
+              if(_.isArray(paramList)) {
+                let parameters = _.get(resource, 'spec.parameters');
+                _.set(body,'parameters', _.pick(parameters, paramList));  
+              }
+            } else {
+              _.set(body,'parameters',_.get(resource, 'spec.parameters'));
+            }
             return res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
           }
         })

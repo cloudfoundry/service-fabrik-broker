@@ -90,6 +90,7 @@ class Plan {
       'name',
       'description',
       'metadata',
+      'maintenance_info',
       'schemas',
       'free'
     ];

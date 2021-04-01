@@ -96,9 +96,11 @@ deprovision:
 				Provision: InstanceStatus{
 					State: "state",
 				},
-				Bind:        status,
-				Unbind:      status,
-				Deprovision: status,
+				Bind:   status,
+				Unbind: status,
+				Deprovision: InstanceStatus{
+					State: "state",
+				},
 			},
 			wantErr: false,
 		},

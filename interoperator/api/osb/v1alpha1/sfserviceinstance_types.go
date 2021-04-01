@@ -45,12 +45,14 @@ type SFServiceInstanceSpec struct {
 
 // SFServiceInstanceStatus defines the observed state of SFServiceInstance
 type SFServiceInstanceStatus struct {
-	DashboardURL string                `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
-	State        string                `yaml:"state" json:"state"`
-	Error        string                `yaml:"error,omitempty" json:"error,omitempty"`
-	Description  string                `yaml:"description,omitempty" json:"description,omitempty"`
-	AppliedSpec  SFServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
-	Resources    []Source              `yaml:"resources,omitempty" json:"resources,omitempty"`
+	DashboardURL     string                `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
+	State            string                `yaml:"state" json:"state"`
+	Error            string                `yaml:"error,omitempty" json:"error,omitempty"`
+	Description      string                `yaml:"description,omitempty" json:"description,omitempty"`
+	InstanceUsable   string                `yaml:"instanceUsable,omitempty" json:"instanceUsable,omitempty"`
+	UpdateRepeatable string                `yaml:"updateRepeatable,omitempty" json:"updateRepeatable,omitempty"`
+	AppliedSpec      SFServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
+	Resources        []Source              `yaml:"resources,omitempty" json:"resources,omitempty"`
 }
 
 // +kubebuilder:object:root=true

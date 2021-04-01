@@ -19,10 +19,12 @@ type GenericStatus struct {
 
 // InstanceStatus defines template provided by the service for provision response
 type InstanceStatus struct {
-	State        string `yaml:"state" json:"state"`
-	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
-	Response     string `yaml:"response,omitempty" json:"response,omitempty"`
-	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
+	State            string `yaml:"state" json:"state"`
+	Error            string `yaml:"error,omitempty" json:"error,omitempty"`
+	Response         string `yaml:"response,omitempty" json:"response,omitempty"`
+	DashboardURL     string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
+	InstanceUsable   string `yaml:"instanceUsable,omitempty" json:"instanceUsable,omitempty"`
+	UpdateRepeatable string `yaml:"updateRepeatable,omitempty" json:"updateRepeatable,omitempty"`
 }
 
 // Status is all the data to be read by interoperator from
@@ -31,7 +33,7 @@ type Status struct {
 	Provision   InstanceStatus `yaml:"provision" json:"provision"`
 	Bind        GenericStatus  `yaml:"bind" json:"bind"`
 	Unbind      GenericStatus  `yaml:"unbind" json:"unbind"`
-	Deprovision GenericStatus  `yaml:"deprovision" json:"deprovision"`
+	Deprovision InstanceStatus `yaml:"deprovision" json:"deprovision"`
 }
 
 // ParseSources decodes sources yaml into a map

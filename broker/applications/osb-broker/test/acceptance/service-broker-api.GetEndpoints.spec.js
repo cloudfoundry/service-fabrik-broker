@@ -90,7 +90,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 400 (BadRequest) error if service does not support instance retrieval', function () {
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -105,7 +105,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 404 if service instance not found', function () {
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, 404);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -128,7 +128,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'in_queue';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -153,7 +153,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'delete';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -180,7 +180,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'in progress';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -205,7 +205,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'in progress';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         testPayload2.metadata.labels['interoperator.servicefabrik.io/lastoperation'] = 'update'
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
@@ -233,7 +233,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'update';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -258,7 +258,7 @@ describe('service-broker-api-2.0', function () {
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -280,6 +280,47 @@ describe('service-broker-api-2.0', function () {
           });
       });
 
+      it('returns 200 if service instance is successfully returned - returns specified list of parameters', function () {
+        const oldServices = config.services;
+        const service = _.find(config.services, ['id', service_id]);
+        let plan;
+        if (service) {
+          _.set(service, 'instance_retrievable', true);
+          plan = _.find(service.plans, ['id', plan_id]);
+          if(plan) {
+            _.set(plan, 'metadata.retrievableParametersList', ['foo1', 'foo', 'foo3']);
+          }
+          catalog.reload();
+        }
+        const testPayload2 = _.cloneDeep(payload2);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
+        testPayload2.spec.parameters.foo1 = "bar1";
+        testPayload2.spec.parameters.foo2 = "bar2";
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+        return chai.request(app)
+          .get(`${baseCFUrl}/service_instances/${instance_id}`)
+          .set('X-Broker-API-Version', '2.14')
+          .auth(config.username, config.password)
+          .then(res => {
+            config.services = oldServices;
+            if(plan) {
+              _.unset(plan, 'metadata.retrievableParametersList');
+            }
+            catalog.reload();
+            expect(res).to.have.status(200);
+            expect(res.body).to.deep.equal({
+              service_id: service_id,
+              plan_id: plan_id,
+              parameters: {
+                foo: 'bar',
+                foo1: 'bar1'
+              },
+              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
+            })
+            mocks.verify();
+          });
+      });
+
       it('returns 200 if service instance is successfully returned (k8s)', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
@@ -288,7 +329,7 @@ describe('service-broker-api-2.0', function () {
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2K8s);
-        testPayload2.spec = camelcaseKeys(payload2K8s.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -315,7 +356,7 @@ describe('service-broker-api-2.0', function () {
         }
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.status.state = 'failed';
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -339,7 +380,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 412 (PreconditionFailed) error if broker api version is not atleast 2.14', function () {
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -359,7 +400,7 @@ describe('service-broker-api-2.0', function () {
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -385,7 +426,7 @@ describe('service-broker-api-2.0', function () {
 
       it('should return X-Broker-API-Request-Identity in response if set in request (with precondition failure)', function () {
         const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(payload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}`)
@@ -446,7 +487,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 400 (BadRequest) error if service does not support binding retrieval', function () {
         const testPayload2 = _.cloneDeep(bindPayload2);
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -473,7 +514,7 @@ describe('service-broker-api-2.0', function () {
         catalog.reload();
 
         const testPayload2 = _.cloneDeep(bindPayload2);
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -490,7 +531,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 404 if binding not found', function () {
         const testPayload2 = _.cloneDeep(bindPayload2);
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {}, 1, 404);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -517,7 +558,7 @@ describe('service-broker-api-2.0', function () {
         catalog.reload();
 
         const testPayload2 = _.cloneDeep(bindPayload2);
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
         mocks.apiServerEventMesh.nockGetSecret(binding_id, _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE), {
           data: {
@@ -562,7 +603,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(bindPayload2);
         testPayload2.status.state = 'failed';
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -579,7 +620,7 @@ describe('service-broker-api-2.0', function () {
 
       it('returns 412 (PreconditionFailed) error if broker api version is not atleast 2.14', function () {
         const testPayload2 = _.cloneDeep(bindPayload2);
-        testPayload2.spec = camelcaseKeys(bindPayload2.spec);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
           return chai.request(app)
             .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)

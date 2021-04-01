@@ -346,6 +346,8 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(instance *osbv1alph
 	updatedStatus.State = computedStatus.Deprovision.State
 	updatedStatus.Error = computedStatus.Deprovision.Error
 	updatedStatus.Description = computedStatus.Deprovision.Response
+	updatedStatus.InstanceUsable = computedStatus.Deprovision.InstanceUsable
+	updatedStatus.UpdateRepeatable = computedStatus.Deprovision.UpdateRepeatable
 
 	remainingResource := []osbv1alpha1.Source{}
 	for _, subResource := range instance.Status.Resources {
@@ -439,6 +441,8 @@ func (r *ReconcileSFServiceInstance) updateStatus(instance *osbv1alpha1.SFServic
 	updatedStatus.Error = computedStatus.Provision.Error
 	updatedStatus.Description = computedStatus.Provision.Response
 	updatedStatus.DashboardURL = computedStatus.Provision.DashboardURL
+	updatedStatus.InstanceUsable = computedStatus.Provision.InstanceUsable
+	updatedStatus.UpdateRepeatable = computedStatus.Provision.UpdateRepeatable
 
 	if !reflect.DeepEqual(&instance.Status, updatedStatus) {
 		updatedStatus.DeepCopyInto(&instance.Status)

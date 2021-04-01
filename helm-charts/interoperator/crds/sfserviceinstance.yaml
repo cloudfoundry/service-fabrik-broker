@@ -130,6 +130,10 @@ spec:
                 type: array
               state:
                 type: string
+              instanceUsable:
+                type: string
+              updateRepeatable:
+                type: string
             required:
             - state
             type: object
