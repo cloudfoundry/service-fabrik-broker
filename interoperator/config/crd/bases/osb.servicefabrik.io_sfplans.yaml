@@ -57,11 +57,15 @@ spec:
               id:
                 type: string
               maintenance_info:
+                description: MaintenanceInfo captures any maintainance related information
+                  for give plan
                 properties:
                   description:
                     type: string
                   version:
                     type: string
+                required:
+                - version
                 type: object
               manager:
                 type: object
