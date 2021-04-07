@@ -84,15 +84,16 @@ type SFPlanSpec struct {
 	Description string `json:"description"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
-	MaintenanceInfo     MaintenanceInfo       `json:"maintenance_info,omitempty"`
-	Free                bool                  `json:"free"`
-	Bindable            bool                  `json:"bindable"`
-	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
-	AutoUpdateInstances bool                  `json:"autoUpdateInstances,omitempty"`
-	Schemas             *ServiceSchemas       `json:"schemas,omitempty"`
-	Templates           []TemplateSpec        `json:"templates"`
-	ServiceID           string                `json:"serviceId"`
+	Metadata               *runtime.RawExtension `json:"metadata,omitempty"`
+	MaintenanceInfo        MaintenanceInfo       `json:"maintenance_info,omitempty"`
+	MaximumPollingDuration int                   `json:"maximum_polling_duration,omitempty"`
+	Free                   bool                  `json:"free"`
+	Bindable               bool                  `json:"bindable"`
+	PlanUpdatable          bool                  `json:"planUpdatable,omitempty"`
+	AutoUpdateInstances    bool                  `json:"autoUpdateInstances,omitempty"`
+	Schemas                *ServiceSchemas       `json:"schemas,omitempty"`
+	Templates              []TemplateSpec        `json:"templates"`
+	ServiceID              string                `json:"serviceId"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	RawContext *runtime.RawExtension `json:"context,omitempty"`

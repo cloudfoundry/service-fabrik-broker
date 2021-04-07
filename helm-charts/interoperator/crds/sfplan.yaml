@@ -70,6 +70,8 @@ spec:
               manager:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              maximum_polling_duration:
+                type: integer
               metadata:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
