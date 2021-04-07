@@ -108,6 +108,8 @@ spec:
                 type: string
               error:
                 type: string
+              instanceUsable:
+                type: string
               resources:
                 items:
                   description: Source is the details for identifying each resource
@@ -129,8 +131,6 @@ spec:
                   type: object
                 type: array
               state:
-                type: string
-              instanceUsable:
                 type: string
               updateRepeatable:
                 type: string

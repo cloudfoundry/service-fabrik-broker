@@ -167,6 +167,62 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
+        it('returns 202 Accepted -- when the maintenance_info version matches', function () {
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec.plan_id = plan_id_custom_dashboard;
+          testPayload.spec = camelcaseKeys(testPayload.spec);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            metadata:{
+              name:  instance_id
+            },
+            spec: {
+              clusterId: 1,
+              planId: plan_id_custom_dashboard,
+              serviceId: service_id,
+            }
+          });
+          const oldServices = config.services;
+          const service = _.find(config.services, ['id', service_id]);
+          let plan;
+          if (service) {
+            plan = _.find(service.plans, ['id', plan_id_custom_dashboard]);
+            if(plan) {
+              plan.maintenance_info = {
+                version: "2.1.1+abcdef",
+              };            }
+            catalog.reload();
+          }
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_custom_dashboard,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters,
+              maintenance_info: {
+                version: "2.1.1+abcdef",
+              }
+            })
+            .then(res => {
+              config.services = oldServices;
+              catalog.reload();
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url === dashboard_url_with_template);
+              mocks.verify();
+            });
+        });
+
         it('returns 202 Accepted -- fetching correct values for labels from context', function () {
           const testPayload = _.cloneDeep(payload);
           testPayload.spec.plan_id = plan_id_custom_dashboard;
@@ -602,6 +658,50 @@ describe('service-broker-api-2.0', function () {
               expect(res).to.have.status(400);
               expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when maintainance_info version does not match', function () {
+          const oldServices = config.services;
+          const service = _.find(config.services, ['id', service_id]);
+          let plan;
+          if (service) {
+            plan = _.find(service.plans, ['id', plan_id]);
+            if(plan) {
+              plan.maintenance_info = {
+                version: "2.1.1+abcdef",
+              };            }
+            catalog.reload();
+          }
+          
+          catalog.reload();
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters,
+              maintenance_info: {
+                version: "2.1.1+abcdefg",
+              }
+            })
+            .catch(err => err.response)
+            .then(res => {
+              config.services = oldServices;
+              catalog.reload();
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('MaintenanceInfoConflict');
+              expect(res.body.description).to.be.eql('The maintenance information for the requested Service Plan has changed.');
             });
         });
 

@@ -57,12 +57,16 @@ spec:
               id:
                 type: string
               maintenance_info:
+                description: MaintenanceInfo captures any maintainance related information
+                  for give plan
                 properties:
                   description:
                     type: string
                   version:
                     type: string
-                type: object                
+                required:
+                - version
+                type: object
               manager:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true

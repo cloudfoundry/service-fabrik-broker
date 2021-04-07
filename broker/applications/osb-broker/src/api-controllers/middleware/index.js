@@ -31,6 +31,23 @@ exports.validateCreateRequest = function () {
   };
 };
 
+exports.validateMaintenanceInfoInRequest = function () {
+  return function (req, res, next) {
+    const reqMaintenanceInfoVersion = _.get(req, 'body.maintenance_info.version', '');
+    if(reqMaintenanceInfoVersion === '') {
+      return next();
+    }
+    const plan = getPlanFromRequest(req);
+    if(!_.isEmpty(_.get(plan, 'maintenance_info', {}))) {
+      const planMaintenanceInfoVersion = _.get(plan, 'maintenance_info.version');
+      logger.info(`validating maintenance_info.version in request: ${reqMaintenanceInfoVersion} and in plan ${planMaintenanceInfoVersion}`);
+      if(reqMaintenanceInfoVersion != planMaintenanceInfoVersion) {
+        return next(new UnprocessableEntity('The maintenance information for the requested Service Plan has changed.', 'MaintenanceInfoConflict'));
+      }
+    }
+    return next();
+  };
+};
   
 function checkIfPlanDeprecated(plan_id) {
   const plan_state = _.get(catalog.getPlan(plan_id), 'metadata.state', CONST.STATE.ACTIVE);
