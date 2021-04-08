@@ -122,7 +122,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
 
@@ -147,7 +147,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
 
@@ -174,7 +174,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
 
@@ -199,7 +199,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
 
@@ -227,7 +227,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
 
@@ -254,7 +254,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2);
@@ -285,7 +285,7 @@ describe('service-broker-api-2.0', function () {
         const service = _.find(config.services, ['id', service_id]);
         let plan;
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           plan = _.find(service.plans, ['id', plan_id]);
           if(plan) {
             _.set(plan, 'metadata.retrievableParametersList', ['foo1', 'foo', 'foo3']);
@@ -325,7 +325,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2K8s);
@@ -351,7 +351,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2);
@@ -396,7 +396,7 @@ describe('service-broker-api-2.0', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         if (service) {
-          _.set(service, 'instance_retrievable', true);
+          _.set(service, 'instances_retrievable', true);
           catalog.reload();
         }
         const testPayload2 = _.cloneDeep(payload2);
