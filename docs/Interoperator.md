@@ -68,6 +68,8 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   - [Context](#context-1)
   - [Solution](#solution)
 - [High Availability and Multi AZ Deployment](#high-availability-and-multi-az-deployment)
+- [Customizing Interoperator Deployment](#customizing-interoperator-deployment)
+  - [For large landscapes](#for-large-landscapes)
 
 
 ## Context
@@ -227,7 +229,7 @@ The following custom resources are introduced as part of the Service Fabrik inte
 
 ### SFService
 
-The [`SFService`](/config/crds/osb.servicefabrik.io_v1alpha1_sfservices.yaml) captures the catalog/manifest details of an [`OSB Service`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-offering-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
+The [`SFService`](/helm-charts/interoperator/crds/sfservice.yaml) captures the catalog/manifest details of an [`OSB Service`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-offering-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
 
 For example,
 ```yaml
@@ -284,7 +286,7 @@ Deregistration of `sfservices` is handled using Kubernetes [finalizers](https://
 
 ### SFPlan
 
-The [`SFPlan`](/config/crds/osb.servicefabrik.io_v1alpha1_sfplans.yaml) captures the catalog/manifest details of an [`OSB Service Plan`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
+The [`SFPlan`](/helm-charts/interoperator/crds/sfplan.yaml) captures the catalog/manifest details of an [`OSB Service Plan`](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object) according to what is required to be served as part of the response for the `/v2/catalog` request.
 
 For example,
 ```yaml
@@ -630,7 +632,7 @@ templates:
 
 ### SFServiceInstance
 
-The [`SFServiceInstance`](/config/crds/osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml) captures all the details from an OSB `provision` request.
+The [`SFServiceInstance`](/helm-charts/interoperator/crds/sfserviceinstance.yaml) captures all the details from an OSB `provision` request.
 
 For example,
 ```yaml
@@ -685,7 +687,7 @@ In such a scenario, it makes sense to leverage the first resource on the Service
 
 ### SFServiceBinding
 
-The [`SFServiceBinding`](/config/crds/osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml) captures all the details from an OSB `bind` request.
+The [`SFServiceBinding`](/helm-charts/interoperator/crds/sfservicebinding.yaml) captures all the details from an OSB `bind` request.
 
 For example,
 ```yaml
@@ -739,7 +741,7 @@ Regarding the type of scheduling algorithms which are supported, we currently su
 ## New Custom Resources Introduced
 Along with the custom resources like `SFService`, `SFPlan`, `SFServiceInstance` and `SFServiceBinding` which are discussed earlier, we also introduce `SFCluster` as a new CRD.
 ### SFCluster
-`SFCluster` is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The name "1" for `SFCluster` is reserved to be used when the master cluster also acts as a sister cluster(it is used for service provisioning). For a sister cluster which is not also the master, some other name should be used. The structure of a sample resource look like the following.
+[`SFCluster`](/helm-charts/interoperator/crds/sfcluster.yaml) is the CRD which stores the details of the cluster where service instances are to be provisioned. One `SFCluster` CRD instance must be maintained for each cluster that is onboarded for provisioning service instances. The name "1" for `SFCluster` is reserved to be used when the master cluster also acts as a sister cluster(it is used for service provisioning). For a sister cluster which is not also the master, some other name should be used. The structure of a sample resource look like the following.
 
 ```yaml
 apiVersion: resource.servicefabrik.io/v1alpha1
@@ -832,3 +834,54 @@ Interoperator being a generic broker, it should not trigger update blindly as we
 All the interoperator components (`broker`, `quota app`, `operator apis`, `multicluster deployer`, `scheduler` and `provisioner`) are by default deployed with replica count `2`. The replica count is configurable during deployment. For the components which exposes REST endpoints namely `broker`, `quota app` and `operator apis`, both the instances of the respective component functions in an `active-active` configuration and the requests are load balanced to the instances. For the components which are kubernetes controllers namely `multicluster deployer`, `scheduler` and `provisioner`, the replicas functions in an `active-passive` configuration. For these components at a time only one replica is `leader` and processes all the requests, while the other replicas is in a `subordinate` state and is just waiting for the `leader` to go down. When the `leader` goes down, one of the `subordinates` becomes the leader and starts processing the requests.
 
 Interoperator uses [Pod Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints) to distribute the pods to multiple availability zones. The pods are spread based on [topology.kubernetes.io/zone](https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/#topologykubernetesiozone) label on the nodes. For the interoperator deployment to be multi az, the cluster should have nodes in multiple availability zones. Note: [Pod Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints) is available only from kubernetes version 1.19 onwards. On cluster with older versions kubernetes, the pods may not be spread across different availability zones.
+
+# Customizing Interoperator Deployment
+
+Interoperator deployment using [helm](https://helm.sh/) can be customized by configuring the [values](/helm-charts/interoperator/values.yaml) provided to the interoperator helm release. 
+
+## For large landscapes
+The resources allocated to interoperator components can also be customized using the [values](/helm-charts/interoperator/values.yaml) provided to the interoperator helm release. For landscapes where a lot of service instances (in thousands) and service bindings (in tens of thousands) are created the default resource allocation provided in the [interoperator helm chart](/helm-charts/interoperator) will not be sufficient. In such cases the resource allocations must be increased like
+```
+# Recommended resource configurations to be used for
+# landscapes with large load.
+
+broker: 
+  # override the global replicaCount just for broker
+  replicaCount: 4
+  resources:
+    limits:
+      cpu: 1200m
+      memory: 256Mi
+    requests:
+      cpu: 600m
+      memory: 128Mi
+
+quota_app:
+  replicaCount: 4
+
+interoperator:
+  config:
+    instanceWorkerCount: 10
+    bindingWorkerCount: 20
+    schedulerWorkerCount: 4
+    provisionerWorkerCount: 2
+
+  provisioner:
+    resources:
+      limits:
+        cpu: 3000m
+        memory: 1024Mi
+      requests:
+        cpu: 1500m
+        memory: 512Mi
+
+  multiclusterdeployer:
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 512Mi
+      requests:
+        cpu: 1000m
+        memory: 256Mi
+```
+These values may further be customized by monitoring the resource utilization of interoperator components in the landscape.
