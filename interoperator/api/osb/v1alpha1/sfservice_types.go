@@ -30,14 +30,14 @@ type DashboardClient struct {
 
 // SFServiceSpec defines the desired state of SFService
 type SFServiceSpec struct {
-	Name                string   `json:"name"`
-	ID                  string   `json:"id"`
-	Description         string   `json:"description"`
-	Tags                []string `json:"tags,omitempty"`
-	Requires            []string `json:"requires,omitempty"`
-	Bindable            bool     `json:"bindable"`
-	InstanceRetrievable bool     `json:"instanceRetrievable,omitempty"`
-	BindingRetrievable  bool     `json:"bindingRetrievable,omitempty"`
+	Name                 string   `json:"name"`
+	ID                   string   `json:"id"`
+	Description          string   `json:"description"`
+	Tags                 []string `json:"tags,omitempty"`
+	Requires             []string `json:"requires,omitempty"`
+	Bindable             bool     `json:"bindable"`
+	InstancesRetrievable bool     `json:"instancesRetrievable,omitempty"`
+	BindingsRetrievable  bool     `json:"bindingsRetrievable,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata        *runtime.RawExtension `json:"metadata,omitempty"`
