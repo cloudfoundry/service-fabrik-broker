@@ -43,6 +43,8 @@ class Service {
       'metadata',
       'requires',
       'plan_updateable',
+      'instances_retrievable',
+      'bindings_retrievable',
       'dashboard_client',
       'application_access_ports',
       'service_tags'
