@@ -36,8 +36,8 @@ type SFServiceSpec struct {
 	Tags                 []string `json:"tags,omitempty"`
 	Requires             []string `json:"requires,omitempty"`
 	Bindable             bool     `json:"bindable"`
-	InstancesRetrievable bool     `json:"InstancesRetrievable,omitempty"`
-	BindingsRetrievable  bool     `json:"BindingsRetrievable,omitempty"`
+	InstancesRetrievable bool     `json:"instancesRetrievable,omitempty"`
+	BindingsRetrievable  bool     `json:"bindingsRetrievable,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata        *runtime.RawExtension `json:"metadata,omitempty"`
