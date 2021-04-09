@@ -590,7 +590,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
       })
         .then(resource => {
-          const isServiceInstanceRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'instance_retrievable',false);
+          const isServiceInstanceRetrievable = _.get(catalog.getService(_.get(resource, 'spec.serviceId')), 'instances_retrievable',false);
           // if service instance is not retrievable
           if(!isServiceInstanceRetrievable) {
             throw new BadRequest('Service does not support instance retrieval');
