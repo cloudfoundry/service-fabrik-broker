@@ -420,6 +420,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('id', req.params.binding_id)
       .set('instance_id', getKubernetesName(req.params.instance_id))
       .value();
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
 
     function done(bindResponse, state) {
       let response = decodeBase64(bindResponse);
@@ -468,21 +470,35 @@ class ServiceBrokerApiController extends FabrikBaseController {
           requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
         });
       })
-      .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-        resourceId: params.binding_id,
-        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
-        start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-        started_at: new Date(),
-        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
-        requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
-      }))
+      .then(() => {
+        if (!plan.manager.async) {
+          return eventmesh.apiServerClient.getOSBResourceOperationStatus({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            resourceId: params.binding_id,
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            started_at: new Date(),
+            timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
+            requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
+          });
+        }
+      })
       .then(operationStatus => {
-        const secretName = _.get(operationStatus, 'response.secretRef');
-        const state = _.get(operationStatus, 'state');
-        return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
-          .then(secret => done(secret.data.response, state));
+        if (plan.manager.async) {
+          const response = {};
+          const statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+          response.operation = encodeBase64({
+            'type': 'create'
+          });
+          res.status(statusCode).send(response);
+        }
+        else {
+          const secretName = _.get(operationStatus, 'response.secretRef');
+          const state = _.get(operationStatus, 'state');
+          return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
+            .then(secret => done(secret.data.response, state));
+        }
       })
       .catch(Conflict, conflict)
       .catch(Timeout, err => {
