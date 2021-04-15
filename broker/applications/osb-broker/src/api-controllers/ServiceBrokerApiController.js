@@ -90,6 +90,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
     ]);
     _.set(params, 'instance_id', req.params.instance_id);
 
+    const instanceMetadata = {
+      'labels': {
+        'brokerName' : _.get(config, 'broker_name', 'service-fabrik-broker')
+      }
+    };
+    _.set(params, 'metadata', instanceMetadata);
+
     function done(sfserviceinstance) {
       _.set(context, 'instance', sfserviceinstance);
       const dashboardUrl = this.getDashboardUrl(context);
@@ -104,6 +111,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           'type': 'create'
         });
       }
+      _.set(body, 'metadata', instanceMetadata);
       res.status(statusCode).send(body);
     }
 
@@ -182,7 +190,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(sfserviceinstance) {
-      _.set(context, 'instance', sfserviceinstance);
+      if(_.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined) {
+        _.set(context, 'instance', sfserviceinstance);
+      }
       const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {
@@ -198,6 +208,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
           operation.serviceflow_id = serviceFlow.id;
         }
         body.operation = encodeBase64(operation);
+      }
+      if(_.has(sfserviceinstance, 'spec.metadata')) {
+        _.set(body, 'metadata', _.get(sfserviceinstance, 'spec.metadata'));
       }
       res.status(statusCode).send(body);
     }
@@ -274,7 +287,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus(lastOperationState);
         }
       })
-      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)) : {})
+      .then(() => eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)))
       .then(done.bind(this));
   }
 
