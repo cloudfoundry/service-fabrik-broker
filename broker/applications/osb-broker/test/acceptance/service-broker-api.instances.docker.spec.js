@@ -204,12 +204,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`,
-                "metadata": {
-                  "labels": {
-                    "brokerName": "service-fabrik-broker"
-                  }
-                }
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -242,12 +237,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`,
-                "metadata": {
-                  "labels": {
-                    "brokerName": "service-fabrik-broker"
-                  }
-                }
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -279,12 +269,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`,
-                "metadata": {
-                  "labels": {
-                    "brokerName": "service-fabrik-broker"
-                  }
-                }
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -299,10 +284,9 @@ describe('service-broker-api', function () {
 
           const testPayload2 = _.cloneDeep(payload2);
           testPayload2.spec = camelcaseKeys(payload2.spec);
-          testPayload2.spec.clusterId = "1"
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2 , 2);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2 , 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -336,11 +320,10 @@ describe('service-broker-api', function () {
 
           const testPayload2 = _.cloneDeep(payload2K8s);
           testPayload2.spec = camelcaseKeys(payload2K8s.spec);
-          testPayload2.spec.clusterId = "1"
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, { spec: { parameters: null } });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload, 1);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {});
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 2);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({

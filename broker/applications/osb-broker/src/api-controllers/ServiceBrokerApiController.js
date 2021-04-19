@@ -90,13 +90,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     ]);
     _.set(params, 'instance_id', req.params.instance_id);
 
-    const instanceMetadata = {
-      'labels': {
-        'brokerName' : _.get(config, 'broker_name', 'service-fabrik-broker')
-      }
-    };
-    _.set(params, 'metadata', instanceMetadata);
-
     function done(sfserviceinstance) {
       _.set(context, 'instance', sfserviceinstance);
       const dashboardUrl = this.getDashboardUrl(context);
@@ -111,7 +104,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
           'type': 'create'
         });
       }
-      _.set(body, 'metadata', instanceMetadata);
       res.status(statusCode).send(body);
     }
 
@@ -190,9 +182,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(sfserviceinstance) {
-      if(_.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined) {
-        _.set(context, 'instance', sfserviceinstance);
-      }
+      _.set(context, 'instance', sfserviceinstance);
       const dashboardUrl = this.getDashboardUrl(context);
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {
@@ -208,9 +198,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
           operation.serviceflow_id = serviceFlow.id;
         }
         body.operation = encodeBase64(operation);
-      }
-      if(_.has(sfserviceinstance, 'spec.metadata')) {
-        _.set(body, 'metadata', _.get(sfserviceinstance, 'spec.metadata'));
       }
       res.status(statusCode).send(body);
     }
@@ -287,7 +274,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus(lastOperationState);
         }
       })
-      .then(() => eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)))
+      .then(() => _.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined ? eventmesh.apiServerClient.waitTillInstanceIsScheduled(getKubernetesName(req.params.instance_id)) : {})
       .then(done.bind(this));
   }
 
@@ -644,6 +631,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
             _.set(body,'service_id',_.get(resource, 'spec.serviceId'));
             _.set(body,'plan_id',_.get(resource, 'spec.planId'));
+            
+            if(_.has(resource, 'spec.metadata')) {
+              _.set(body, 'matadata', _.get(resource, 'spec.metadata'));
+            }
+
             if(!_.isEmpty(_.get(plan, 'metadata.retrievableParametersList', []))) {
               let paramList = _.get(plan, 'metadata.retrievableParametersList');
               if(_.isArray(paramList)) {
