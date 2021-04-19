@@ -438,7 +438,11 @@ func (in *SFServiceInstanceSpec) DeepCopyInto(out *SFServiceInstanceSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Metadata.DeepCopyInto(&out.Metadata)
+	if in.Metadata != nil {
+		in, out := &in.Metadata, &out.Metadata
+		*out = new(MetadataSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.PreviousValues != nil {
 		in, out := &in.PreviousValues, &out.PreviousValues
 		*out = new(runtime.RawExtension)

@@ -53,7 +53,7 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               instanceId:
                 type: string
-              matadata:
+              metadata:
                 properties:
                   attributes:
                     additionalProperties:
@@ -95,7 +95,7 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
                   instanceId:
                     type: string
-                  matadata:
+                  metadata:
                     properties:
                       attributes:
                         additionalProperties:

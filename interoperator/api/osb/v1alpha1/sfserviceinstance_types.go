@@ -37,7 +37,7 @@ type SFServiceInstanceSpec struct {
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	RawParameters *runtime.RawExtension `json:"parameters,omitempty"`
-	Metadata      MetadataSpec          `json:"matadata,omitempty"`
+	Metadata      *MetadataSpec         `json:"metadata,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	PreviousValues *runtime.RawExtension `json:"previousValues,omitempty"`
