@@ -45,3 +45,6 @@ instanceRouter.route('/service_bindings/:binding_id')
   .delete(middleware.checkBlockingOperationInProgress(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(),controller.handler('deleteBinding'))
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceBinding')])
   .all(middleware.methodNotAllowed(['PUT', 'DELETE', 'GET']));
+instanceRouter.route('/service_bindings/:binding_id/last_operation')
+  .get(controller.handler('getLastBindingOperation'))
+  .all(middleware.methodNotAllowed(['GET']));

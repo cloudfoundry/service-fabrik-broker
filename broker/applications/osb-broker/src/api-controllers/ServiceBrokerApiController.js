@@ -414,6 +414,66 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(NotFound, notFound);
   }
 
+  getLastBindingOperation(req, res) {
+    const encodedOp = _.get(req, 'query.operation', undefined);
+    const operation = encodedOp === undefined ? {} : decodeBase64(encodedOp);
+    const guid = req.params.binding_id;
+    const namespaceId = eventmesh.apiServerClient.getNamespaceId(req.params.instance_id);
+    let action, instanceType;
+
+    function done(result) {
+      const body = _.pick(result, 'state', 'description');
+      if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS ||
+        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        body.state = CONST.OPERATION.IN_PROGRESS;
+      }
+
+      logger.debug('RequestIdentity:', _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent'), ',returning ..', body);
+      return Promise.try(() => {
+        if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
+          return this.removeFinalizersFromOSBResource(
+            resourceType,
+            resourceId,
+            namespaceId,
+            _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
+          );
+        }
+      })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
+    }
+
+    function failed(err) {
+      res.status(CONST.HTTP_STATUS_CODE.OK).send({
+        state: CONST.OPERATION.FAILED,
+        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+      });
+    }
+
+    function gone() {
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
+    }
+
+    function notFound(err) {
+      if (_.get(operation, 'type') === 'delete') {
+        return gone();
+      }
+      failed(err);
+    }
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS;
+    const resourceId = getKubernetesName(operation.serviceflow_id ? operation.serviceflow_id : req.params.binding_id);
+    return eventmesh.apiServerClient.getLastOperation({
+      resourceGroup: resourceGroup,
+      resourceType: resourceType,
+      resourceId: resourceId,
+      namespaceId: namespaceId,
+      requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
+    })
+      .tap(() => logger.debug(`RequestIdentity: ${_.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')} , Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
+      .then(done.bind(this))
+      .catch(NotFound, notFound);
+  }
+
   putBinding(req, res) {
     const params = _(req.body)
       .set('binding_id', getKubernetesName(req.params.binding_id))
