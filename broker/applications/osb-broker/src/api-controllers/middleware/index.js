@@ -158,12 +158,23 @@ function getPlanFromRequest(req) {
 }
 
   
-exports.validateRequest = function () {
+exports.validateInstanceRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
     const plan = getPlanFromRequest(req);
     if (plan.manager.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
       return next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
+    }
+    next();
+  };
+};
+
+exports.validateBindingRequest = function () {
+  return function (req, res, next) {
+    /* jshint unused:false */
+    const plan = getPlanFromRequest(req);
+    if (plan.manager.asyncBinding && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
+      return next(new UnprocessableEntity('This Service Instance requires client support for asynchronous binding operations.', 'AsyncRequired'));
     }
     next();
   };

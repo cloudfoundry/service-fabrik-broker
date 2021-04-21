@@ -531,7 +531,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .then(() => {
-        if (!plan.manager.async) {
+        if (!plan.manager.asyncBinding) {
           return eventmesh.apiServerClient.getOSBResourceOperationStatus({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
@@ -545,15 +545,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(operationStatus => {
-        if (plan.manager.async) {
+        if (plan.manager.asyncBinding) {
           const response = {};
           const statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
           response.operation = encodeBase64({
             'type': 'create'
           });
           res.status(statusCode).send(response);
-        }
-        else {
+        } else {
           const secretName = _.get(operationStatus, 'response.secretRef');
           const state = _.get(operationStatus, 'state');
           return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
@@ -572,15 +571,28 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('id', req.params.binding_id)
       .set('instance_id', getKubernetesName(req.params.instance_id))
       .value();
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
 
     function done() {
-      return this.removeFinalizersFromOSBResource(
-        CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-        params.binding_id,
-        eventmesh.apiServerClient.getNamespaceId(params.instance_id),
-        _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
-      )
-        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));
+      let statusCode = CONST.HTTP_STATUS_CODE.OK;
+      const body = {};
+      return Promise.try(() => {
+        if (plan.manager.asyncBinding) {
+          statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+          body.operation = encodeBase64({
+            'type': 'delete'
+          });
+        } else {
+          return this.removeFinalizersFromOSBResource(
+            CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            params.binding_id,
+            eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
+          );
+        }
+      })
+        .then(() => res.status(statusCode).send(body));
     }
 
     function gone(err) {
@@ -606,16 +618,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
         },
         requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
       }))
-      .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-        resourceId: params.binding_id,
-        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
-        start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-        started_at: new Date(),
-        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
-        requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
-      }))
+      .then(() => {
+        if (!plan.manager.asyncBinding) {
+          return eventmesh.apiServerClient.getOSBResourceOperationStatus({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            resourceId: params.binding_id,
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            started_at: new Date(),
+            timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
+            requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
+          });
+        }
+      })
       .then(done.bind(this))
       .catch(NotFound, gone)
       .catch(Timeout, err => {
