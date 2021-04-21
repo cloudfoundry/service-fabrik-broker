@@ -321,6 +321,57 @@ describe('service-broker-api-2.0', function () {
           });
       });
 
+      it('returns 200 if service instance is successfully returned - returns service instance metadata', function () {
+        const oldServices = config.services;
+        const service = _.find(config.services, ['id', service_id]);
+        let plan;
+        if (service) {
+          _.set(service, 'instances_retrievable', true);
+          plan = _.find(service.plans, ['id', plan_id]);
+          if(plan) {
+            _.set(plan, 'metadata.retrievableParametersList', ['foo1', 'foo', 'foo3']);
+          }
+          catalog.reload();
+        }
+        const testPayload2 = _.cloneDeep(payload2);
+        testPayload2.spec = camelcaseKeys(testPayload2.spec);
+        testPayload2.spec.parameters.foo1 = "bar1";
+        testPayload2.spec.parameters.foo2 = "bar2";
+        testPayload2.spec.metadata = {
+          "labels": {
+            "brokerName": "service-fabrik-broker"
+          }
+        };
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
+        return chai.request(app)
+          .get(`${baseCFUrl}/service_instances/${instance_id}`)
+          .set('X-Broker-API-Version', '2.14')
+          .auth(config.username, config.password)
+          .then(res => {
+            config.services = oldServices;
+            if(plan) {
+              _.unset(plan, 'metadata.retrievableParametersList');
+            }
+            catalog.reload();
+            expect(res).to.have.status(200);
+            expect(res.body).to.deep.equal({
+              service_id: service_id,
+              plan_id: plan_id,
+              parameters: {
+                foo: 'bar',
+                foo1: 'bar1'
+              },
+              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`,
+              metadata: {
+                "labels": {
+                  "brokerName": "service-fabrik-broker"
+                }
+              }
+            })
+            mocks.verify();
+          });
+      });
+
       it('returns 200 if service instance is successfully returned (k8s)', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
