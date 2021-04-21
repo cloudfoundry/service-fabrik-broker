@@ -32,17 +32,17 @@ router.use(middleware.error({
 
 /* Service Instance Router */
 instanceRouter.route('/')
-  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), middleware.validateMaintenanceInfoInRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
-  .patch([middleware.injectPlanInRequest(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), middleware.validateMaintenanceInfoInRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
-  .delete([middleware.validateRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
+  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateInstanceRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), middleware.validateMaintenanceInfoInRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
+  .patch([middleware.injectPlanInRequest(), middleware.checkQuota(), middleware.validateInstanceRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), middleware.validateMaintenanceInfoInRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
+  .delete([middleware.validateInstanceRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceInstance')])
   .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE', 'GET']));
 instanceRouter.route('/last_operation')
   .get(controller.handler('getLastInstanceOperation'))
   .all(middleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
-  .put([middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handler('putBinding')])
-  .delete(middleware.checkBlockingOperationInProgress(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(),controller.handler('deleteBinding'))
+  .put([middleware.validateBindingRequest(), middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handler('putBinding')])
+  .delete(middleware.validateBindingRequest(), middleware.checkBlockingOperationInProgress(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handler('deleteBinding'))
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceBinding')])
   .all(middleware.methodNotAllowed(['PUT', 'DELETE', 'GET']));
 instanceRouter.route('/service_bindings/:binding_id/last_operation')
