@@ -19,6 +19,7 @@ limitations under the License.
 package multiclusterdeploy
 
 import (
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/offboarding"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
@@ -75,6 +76,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create cluster replicator", "controller", "SFClusterReplicator")
+		return err
+	}
+
+	if err = (&offboarding.SFClusterOffboarding{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("offboarding").WithName("cluster"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create cluster offboarding controller", "controller", "SFClusterOffboarding")
 		return err
 	}
 
