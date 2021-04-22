@@ -1853,6 +1853,7 @@ describe('service-broker-api-2.0', function () {
 
       });
 
+
       describe('#lastOperationBinding', function () {
         it('deleteBinding: returns 200 OK (state = succeeded)', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
@@ -2173,6 +2174,91 @@ describe('service-broker-api-2.0', function () {
 
       });
 
+      describe('#asyncBind', function () {
+        // plan with manager.asyncBinding = true
+        const plan_id_async = 'gd158c9a-7934-401e-94ab-057082a5073e';
+        const body = {
+          service_id: service_id,
+          plan_id: plan_id_async,
+          app_guid: app_guid,
+          bind_resource: {
+            app_guid: app_guid
+          }
+        }
+
+        it('returns 202 Accepted', function () {
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {});
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send(body)
+            .then(res => {
+              expect(res).to.have.status(202);
+              mocks.verify();
+            });
+        });
+
+        it('returns 409 failed if resource already exists', function () {
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, {}, 1, {}, 409);
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send(body)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(409);
+              expect(res.body).to.deep.equal({});
+              mocks.verify();
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not passed in query', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .send(body)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This Service Instance requires client support for asynchronous binding operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete undefined', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}?accepts_incomplete=`)
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .send(body)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This Service Instance requires client support for asynchronous binding operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not true', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}?accepts_incomplete=false`)
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .send(body)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This Service Instance requires client support for asynchronous binding operations.');
+            });
+        });
+      });
 
 
       describe('#unbind', function () {
@@ -2263,6 +2349,53 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+      });
+
+
+      describe('#asyncUnbind', function () {
+        // plan with manager.asyncBinding = true
+        const plan_id_async = 'gd158c9a-7934-401e-94ab-057082a5073e';
+        const expected_res_body = {
+          operation: commonFunctions.encodeBase64({
+            'type': 'delete'
+          })
+        }
+
+        it('returns 202 Accepted', function () {
+          // Verify patching of state to delete
+          const patchBody = {
+            metadata: {
+              labels: {
+                state: "delete",
+              },
+            },
+            status: {
+              state: "delete",
+            },
+          }
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {}, 1, patchBody);
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {});
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}?accepts_incomplete=true`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id_async
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.eql(expected_res_body);
+              mocks.verify();
+            });
+        });
+
       });
 
     });
