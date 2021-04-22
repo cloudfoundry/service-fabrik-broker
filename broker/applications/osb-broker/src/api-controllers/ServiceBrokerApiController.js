@@ -460,9 +460,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       failed(err);
     }
-    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
-    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS;
-    const resourceId = getKubernetesName(operation.serviceflow_id ? operation.serviceflow_id : req.params.binding_id);
+    const resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
+    const resourceType = CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS;
+    const resourceId = getKubernetesName(req.params.binding_id);
     return eventmesh.apiServerClient.getLastOperation({
       resourceGroup: resourceGroup,
       resourceType: resourceType,
