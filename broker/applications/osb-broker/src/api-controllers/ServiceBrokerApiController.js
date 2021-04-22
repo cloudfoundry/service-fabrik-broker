@@ -431,6 +431,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       logger.debug('RequestIdentity:', _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent'), ',returning ..', body);
       return Promise.try(() => {
         if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
+          logger.debug(`Remove broker finalizer from ${resourceId}`);
           return this.removeFinalizersFromOSBResource(
             resourceType,
             resourceId,
@@ -469,7 +470,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       namespaceId: namespaceId,
       requestIdentity: _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')
     })
-      .tap(() => logger.debug(`RequestIdentity: ${_.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')} , Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
+      .tap(() => logger.debug(`RequestIdentity: ${_.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent')} , Returning state of operation: ${resourceGroup}, ${resourceType}`))
       .then(done.bind(this))
       .catch(NotFound, notFound);
   }
