@@ -1853,6 +1853,46 @@ describe('service-broker-api-2.0', function () {
 
       });
 
+      describe('#lastOperationBinding', function () {
+        it('deleteBinding: returns 200 OK (state = succeeded)', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+              state: 'succeeded'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            metadata: {
+              resourceVersion: 10,
+              finalizers: ['broker.servicefabrik.io']
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {}, 1);
+
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+
+      });
+
       describe('#bind', function () {
         it('no context : returns 201 Created', function (done) {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
