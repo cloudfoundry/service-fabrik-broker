@@ -899,7 +899,10 @@ defaults: &defaults
       free: false
       manager: &manager_plan7
         name: 'director'
+        # sets service instance provisioning operation to asynchronous
         async: true
+        # sets service binding operation to asynchronous
+        asyncBinding: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan7
           prefix: 'blueprint'
