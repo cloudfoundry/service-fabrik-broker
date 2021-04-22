@@ -37,10 +37,16 @@ type SFServiceInstanceSpec struct {
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	RawParameters *runtime.RawExtension `json:"parameters,omitempty"`
+	Metadata      *MetadataSpec         `json:"metadata,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	PreviousValues *runtime.RawExtension `json:"previousValues,omitempty"`
 	ClusterID      string                `json:"clusterId,omitempty"`
+}
+
+type MetadataSpec struct {
+	Labels     map[string]string `json:"labels,omitempty"`
+	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
 // SFServiceInstanceStatus defines the observed state of SFServiceInstance

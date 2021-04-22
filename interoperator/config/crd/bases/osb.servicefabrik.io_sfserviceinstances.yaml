@@ -53,6 +53,17 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               instanceId:
                 type: string
+              metadata:
+                properties:
+                  attributes:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               organizationGuid:
                 type: string
               parameters:
@@ -84,6 +95,17 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
                   instanceId:
                     type: string
+                  metadata:
+                    properties:
+                      attributes:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   organizationGuid:
                     type: string
                   parameters:

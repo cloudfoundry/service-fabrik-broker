@@ -631,6 +631,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
             _.set(body,'service_id',_.get(resource, 'spec.serviceId'));
             _.set(body,'plan_id',_.get(resource, 'spec.planId'));
+            
+            if(_.has(resource, 'spec.metadata')) {
+              _.set(body, 'metadata', _.get(resource, 'spec.metadata'));
+            }
+
             if(!_.isEmpty(_.get(plan, 'metadata.retrievableParametersList', []))) {
               let paramList = _.get(plan, 'metadata.retrievableParametersList');
               if(_.isArray(paramList)) {
