@@ -253,6 +253,24 @@ Supported types | Required | Template Variables
 --- | --- | ---
 `gotemplate` | Yes | `.service`, `.plan`, `.instance`, `.binding` (when rendered in the context of binding) and objects specified in the `sources` template
 
+The `status` template should render and generate a valid yaml. Rendered yaml should have following distinct fields:`.provision`, `.bind`, `.unbind` and `.deprovision`. Note that only relevant fields from the rendered template will be used while updating the status and other fields will be ignored. For example, while updating status during `provision` operation, only the `.provision` field from the rendered template is used. Following are the various fields supported in the rendered status template.
+### Supported status template fields under `.provision` and `.deprovision` field
+Field | Type | Required | Description
+--- | --- | --- | ---
+`state` | string | Yes | It should indicate current state of the operation, e.g., `in progress`, `failed`, `succeeded` etc.
+`response` | string | No | It can be used to indicate more details about the operation.
+`error` | string | No | It can be used to provide error details for failure scenario.
+`dashboardUrl` | string | No | If the service supports dashboards, this field can be used to provide dashboardUrl for the given service instance.
+`instanceUsable` | string | No | This field can be used to indicate usability of the instance in case of failed update and delete operations. This is interpreted as per [OSB Specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-broker-errors). Value should be either "true" or "false." 
+`updateRepeatable` | string | No | This field can be used to indicate if the failed update operation is repeatable. This is interpreted as per [OSB Specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-broker-errors). Value should be either "true" or "false."
+
+### Supported status template fields for `.bind` and `.unbind` field
+Field | Type | Required | Description
+--- | --- | --- | ---
+`state` | string | Yes | It should indicate current state of the operation, e.g., `in progress`, `failed`, `succeeded` etc.
+`response` | string | No | It can be used to indicate more details about the operation. In case of binding operation, content of this field is treated as binding credentials.
+`error` | string | No | It can be used to provide error details for failure scenario.
+
 ## Cluster Selector
 The `clusterSelector` template must render and generate a valid kubernetes [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors). This template is used for [Label Selector based Scheduler](./Interoperator.md#label-selector-based-scheduler).
 
