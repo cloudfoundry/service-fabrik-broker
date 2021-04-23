@@ -1855,11 +1855,119 @@ describe('service-broker-api-2.0', function () {
 
 
       describe('#lastOperationBinding', function () {
-        it('deleteBinding: returns 200 OK (state = succeeded)', function () {
+
+        it('createBinding: returns 200 OK (state = in progress)', function () {
+          const description = `Create deployment ${deployment_name} is still in progress`;
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
             status: {
-              description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-              state: 'succeeded'
+              description: description,
+              state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            }
+          });
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: description,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('createBinding: returns 200 OK (state = succeeded)', function () {
+          const description = `Create deployment ${deployment_name} succeeded at 2020-04-04T10:58:24.000Z`;
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              description: description,
+              state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+            }
+          });
+
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: description,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('createBinding: returns 200 OK (state = failed)', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {}, 1, 404);
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.eql(CONST.OPERATION.FAILED);
+              mocks.verify();
+            });
+        });
+
+        it('deleteBinding: returns 200 OK (state = in progress)', function () {
+          const description = `Delete deployment ${deployment_name} is still in progress`;
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              description: description,
+              state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            }
+          });
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: description,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('deleteBinding: returns 200 OK (state = succeeded)', function () {
+          const description = `Delete deployment ${deployment_name} succeeded at 2020-04-04T10:58:24.000Z`;
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              description: description,
+              state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
             }
           });
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
@@ -1885,9 +1993,62 @@ describe('service-broker-api-2.0', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({
-                description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                description: description,
                 state: 'succeeded'
               });
+              mocks.verify();
+            });
+        });
+
+        it('deleteBinding: returns 200 OK (state = failed)', function () {
+          const description = `Delete deployment ${deployment_name} failed at 2020-04-04T10:58:24.000Z`;
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
+            status: {
+              description: description,
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            }
+          });
+
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: description,
+                state: 'failed',
+
+              });
+              mocks.verify();
+            });
+        });
+
+        it('deleteBinding: returns 410 GONE', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {}, 1, 404);
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(410);
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });
