@@ -1517,7 +1517,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1542,7 +1545,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1567,7 +1573,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1592,7 +1601,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'create'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1617,7 +1629,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'update'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1642,7 +1657,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'update'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1700,7 +1718,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'update'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1725,7 +1746,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'update'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1751,7 +1775,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: commonFunctions.encodeBase64({
+                'type': 'delete'
+              })
             })
             .catch(err => err.response)
             .then(res => {
@@ -1847,6 +1874,24 @@ describe('service-broker-api-2.0', function () {
             .then(res => {
               expect(res).to.have.status(410);
               expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('delete-sf20: returns 400 BAD REQUEST when operation missing', function () {
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body.error).to.be.eql('Bad Request');
+              expect(res.body.description).to.be.eql('This request is missing mandatory operation parameter.');
               mocks.verify();
             });
         });
