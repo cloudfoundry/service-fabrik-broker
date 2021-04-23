@@ -38,7 +38,7 @@ instanceRouter.route('/')
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceInstance')])
   .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE', 'GET']));
 instanceRouter.route('/last_operation')
-  .get(controller.handler('getLastInstanceOperation'))
+  .get(middleware.validateLastOperationRequest(), controller.handler('getLastInstanceOperation'))
   .all(middleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
   .put([middleware.validateBindingRequest(), middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handler('putBinding')])
