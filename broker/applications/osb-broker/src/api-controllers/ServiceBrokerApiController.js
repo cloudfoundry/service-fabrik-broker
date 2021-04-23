@@ -348,12 +348,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const encodedOp = _.get(req, 'query.operation', undefined);
     const operation = encodedOp === undefined ? {} : decodeBase64(encodedOp);
     const guid = req.params.instance_id;
-    let action, instanceType;
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
       if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS ||
-        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE ||
+        body.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
       if(_.get(operation, 'type') === 'update' && body.state === CONST.OPERATION.FAILED) {
@@ -385,7 +385,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function failed(err) {
       res.status(CONST.HTTP_STATUS_CODE.OK).send({
         state: CONST.OPERATION.FAILED,
-        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+        description: `'${guid}' failed because "${err.message}"`
       });
     }
 
@@ -423,7 +423,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done(result) {
       const body = _.pick(result, 'state', 'description');
       if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS ||
-        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE ||
+        body.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
 

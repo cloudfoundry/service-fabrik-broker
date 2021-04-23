@@ -46,5 +46,5 @@ instanceRouter.route('/service_bindings/:binding_id')
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceBinding')])
   .all(middleware.methodNotAllowed(['PUT', 'DELETE', 'GET']));
 instanceRouter.route('/service_bindings/:binding_id/last_operation')
-  .get(controller.handler('getLastBindingOperation'))
+  .get(middleware.validateLastOperationRequest(), controller.handler('getLastBindingOperation'))
   .all(middleware.methodNotAllowed(['GET']));
