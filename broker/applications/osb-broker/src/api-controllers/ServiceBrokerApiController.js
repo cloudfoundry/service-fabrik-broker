@@ -419,7 +419,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const operation = encodedOp === undefined ? {} : decodeBase64(encodedOp);
     const guid = req.params.binding_id;
     const namespaceId = eventmesh.apiServerClient.getNamespaceId(req.params.instance_id);
-    let action, instanceType;
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
@@ -446,7 +445,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function failed(err) {
       res.status(CONST.HTTP_STATUS_CODE.OK).send({
         state: CONST.OPERATION.FAILED,
-        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+        description: `'${guid}' failed because "${err.message}"`
       });
     }
 
