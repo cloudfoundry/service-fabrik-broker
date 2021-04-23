@@ -180,6 +180,15 @@ exports.validateBindingRequest = function () {
   };
 };
 
+exports.validateLastOperationRequest = function () {
+  return function (req, res, next) {
+    if (_.isEmpty(_.get(req, 'query.operation', ''))) {
+      return next(new BadRequest('This request is missing mandatory operation parameter.'));
+    }
+    next();
+  };
+};
+
 exports.validateSchemaForRequest = function (target, operation) {
   return function (req, res, next) {
     const plan = getPlanFromRequest(req);
