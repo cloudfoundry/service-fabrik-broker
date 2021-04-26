@@ -562,6 +562,54 @@ class ServiceBrokerApiController extends FabrikBaseController {
       })
       .catch(Conflict, conflict)
       .catch(Timeout, err => {
+        // Trigger delete of the timed out binding
+        const requestIdentity = _.get(req.headers, CONST.SF_BROKER_API_HEADERS.REQUEST_IDENTITY, 'Absent');
+        const deleteOpts = {
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+          resourceId: params.binding_id,
+          namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+          requestIdentity: requestIdentity
+        };
+        const updateOpts = {
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+          resourceId: params.binding_id,
+          namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.DELETE
+          },
+          requestIdentity: requestIdentity
+        };
+        // Not returning the promise so that the deletion happens async.
+        // Using getResourceOperationStatus instead of getOSBResourceOperationStatus
+        // as we just want to wait till the state changes from delete
+        Promise.try(() => eventmesh.apiServerClient.deleteResource(deleteOpts))
+          .then(() => eventmesh.apiServerClient.updateOSBResource(updateOpts))
+          .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            resourceId: params.binding_id,
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            started_at: new Date(),
+            timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC,
+            requestIdentity: requestIdentity
+          }))
+          .then(() => this.removeFinalizersFromOSBResource(
+            CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            params.binding_id,
+            eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            requestIdentity
+          ))
+          .tap(() => {
+            logger.debug('RequestIdentity:', requestIdentity, 'instance_id:',params.instance_id,
+              'binding_id:', params.binding_id, 'Binding orphaned');
+          }).catch(err => {
+            logger.error('RequestIdentity:', requestIdentity, 'instance_id:',params.instance_id,
+              'binding_id:', params.binding_id, 'Failed to orphan binding', err);
+          });
+
         res.status(CONST.HTTP_STATUS_CODE.TOO_MANY_REQUESTS).send({});
       });
   }
