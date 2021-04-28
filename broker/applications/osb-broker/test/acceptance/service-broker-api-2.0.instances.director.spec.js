@@ -366,7 +366,7 @@ describe('service-broker-api-2.0', function () {
             .then(res => {
               config.services[0].plans[4].manager.settings.dashboard_url_template = oldTemp;
               expect(res).to.have.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
-              expect(res.body).to.eql({});
+              expect(res.body.description).to.include("Unable to generate valid dashboard URL with the template");
               mocks.verify();
             });
         });

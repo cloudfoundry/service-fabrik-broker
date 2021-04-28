@@ -411,6 +411,11 @@ describe('service-fabrik-api-2.0', function () {
         });
         it('should return 410 Gone - when not found in both blobstore and apiserver', function () {
           const backupPrefix = `${space_guid}/backup`;
+          const expectedResponse = {
+            "description": "Backup does not exist or has already been deleted",
+            "error": "Gone",
+            "status": 410
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -425,7 +430,7 @@ describe('service-fabrik-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(410);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
