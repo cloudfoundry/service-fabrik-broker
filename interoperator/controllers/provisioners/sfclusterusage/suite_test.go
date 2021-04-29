@@ -84,7 +84,7 @@ var _ = BeforeSuite(func(done Done) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	controller := &SFClusterUsageReconciler{
+	controller := &Reconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
 		Scheme: scheme.Scheme,

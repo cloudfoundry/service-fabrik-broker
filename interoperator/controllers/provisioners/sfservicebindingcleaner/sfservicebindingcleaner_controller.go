@@ -39,6 +39,7 @@ type ReconcileSFServiceBindingCleaner struct {
 	Scheme *runtime.Scheme
 }
 
+// Reconcile triggers delete of orphaned sfservicebindings
 func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfservicebindingcleaner", req.NamespacedName)
@@ -89,6 +90,8 @@ func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Res
 	return ctrl.Result{}, nil
 }
 
+// SetupWithManager registers the Binding Cleaner with manager
+// and setups the watches.
 func (r *ReconcileSFServiceBindingCleaner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("binding_cleaner").

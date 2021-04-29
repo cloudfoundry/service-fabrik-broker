@@ -44,6 +44,7 @@ type SFServiceInstanceSpec struct {
 	ClusterID      string                `json:"clusterId,omitempty"`
 }
 
+// MetadataSpec defines an optional object containing metadata for the Service Instance.
 type MetadataSpec struct {
 	Labels     map[string]string `json:"labels,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`

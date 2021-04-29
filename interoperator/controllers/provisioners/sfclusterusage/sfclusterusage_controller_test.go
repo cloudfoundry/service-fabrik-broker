@@ -36,7 +36,7 @@ import (
 
 const timeout = time.Second * 5
 
-var _ = Describe("SFClusterUsageReconciler", func() {
+var _ = Describe("Reconciler", func() {
 
 	Describe("Reconcile", func() {
 		var (
@@ -174,10 +174,10 @@ var _ = Describe("SFClusterUsageReconciler", func() {
 	})
 
 	Describe("SetupWithManager", func() {
-		var r *SFClusterUsageReconciler
+		var r *Reconciler
 
 		BeforeEach(func() {
-			r = &SFClusterUsageReconciler{
+			r = &Reconciler{
 				Client: k8sClient,
 				Scheme: scheme.Scheme,
 			}
