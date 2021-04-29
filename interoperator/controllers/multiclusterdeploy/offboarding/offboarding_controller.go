@@ -39,6 +39,13 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 )
 
+// The key type is unexported to prevent collisions with context keys defined in
+// other packages.
+type contextKey string
+
+// logKey is the context key for the logger.
+const logKey contextKey = "log"
+
 // SFClusterOffboarding protects SFCluster from accidental deletion
 type SFClusterOffboarding struct {
 	client.Client
@@ -47,8 +54,7 @@ type SFClusterOffboarding struct {
 }
 
 func (r *SFClusterOffboarding) getLog(ctx context.Context) logr.Logger {
-	val := ctx.Value("log")
-	log, ok := val.(logr.Logger)
+	log, ok := ctx.Value(logKey).(logr.Logger)
 	if ok {
 		return log
 	}
@@ -59,7 +65,7 @@ func (r *SFClusterOffboarding) getLog(ctx context.Context) logr.Logger {
 // It also sets the owner reference for the secrets as SFCluster
 func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfcluster", req.NamespacedName)
-	ctx := context.WithValue(context.Background(), "log", log)
+	ctx := context.WithValue(context.Background(), logKey, log)
 
 	// Fetch the SFCluster
 	clusterInstance := &resourcev1alpha1.SFCluster{}
@@ -71,12 +77,16 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		// Delete triggered for SFCluster
 		if !clusterInstance.GetDeletionTimestamp().IsZero() && clusterInstance.Status.ServiceInstanceCount <= 0 {
 			log.Info("Removing finalizer for SFCluster", "ServiceInstanceCount", clusterInstance.Status.ServiceInstanceCount)
-			controllerutil.RemoveFinalizer(clusterInstance, constants.FinalizerName)
+			controllerutil.RemoveFinalizer(clusterInstance, constants.InteroperatorFinalizerName)
 		}
 		return nil
 	}
 	err := r.reconcileFinalizers(ctx, clusterInstance, mutateFn)
 	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// Object not found, return.
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -91,12 +101,16 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		} else if clusterInstance.Status.ServiceInstanceCount <= 0 {
 			log.Info("Removing finalizer for Secret", "ServiceInstanceCount",
 				clusterInstance.Status.ServiceInstanceCount, "secretName", secret.GetName())
-			controllerutil.RemoveFinalizer(secret, constants.FinalizerName)
+			controllerutil.RemoveFinalizer(secret, constants.InteroperatorFinalizerName)
 		}
 		return nil
 	}
 	err = r.reconcileFinalizers(ctx, secret, mutateFn)
 	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// Object not found, return.
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -118,7 +132,7 @@ func (r *SFClusterOffboarding) reconcileFinalizers(ctx context.Context, obj cont
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		mutateFn := func() error {
 			if obj.GetDeletionTimestamp().IsZero() {
-				controllerutil.AddFinalizer(obj, constants.FinalizerName)
+				controllerutil.AddFinalizer(obj, constants.InteroperatorFinalizerName)
 			}
 			if obj.GetCreationTimestamp().Time.IsZero() {
 				return apiErrors.NewNotFound(gr, obj.GetName())

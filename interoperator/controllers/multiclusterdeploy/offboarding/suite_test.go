@@ -18,12 +18,14 @@ package offboarding
 
 import (
 	"path/filepath"
+	"sync"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -37,9 +39,14 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg        *rest.Config
+	k8sManager ctrl.Manager
+	k8sClient  client.Client
+	testEnv    *envtest.Environment
+	stopMgr    chan struct{}
+	mgrStopped *sync.WaitGroup
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -50,11 +57,11 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 	}
 
 	var err error
@@ -67,15 +74,46 @@ var _ = BeforeSuite(func(done Done) {
 
 	// +kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: "0",
+	})
 	Expect(err).ToNot(HaveOccurred())
+
+	err = (&SFClusterOffboarding{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("offboarding").WithName("cluster"),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	stopMgr, mgrStopped = startTestManager(k8sManager)
+
+	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
 	close(done)
 }, 60)
 
-var _ = AfterSuite(func() {
+var _ = AfterSuite(func(done Done) {
 	By("tearing down the test environment")
+
+	close(stopMgr)
+	mgrStopped.Wait()
+
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
+	close(done)
 })
+
+// startTestManager starts the manager and returns the stop channel
+func startTestManager(k8sManager ctrl.Manager) (chan struct{}, *sync.WaitGroup) {
+	stop := make(chan struct{})
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		Expect(k8sManager.Start(stop)).NotTo(HaveOccurred())
+	}()
+	return stop, wg
+}

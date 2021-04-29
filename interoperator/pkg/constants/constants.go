@@ -7,7 +7,10 @@ import (
 
 // Constants used by interoperator
 const (
-	FinalizerName                         = "interoperator.servicefabrik.io"
+	FinalizerName = "interoperator.servicefabrik.io"
+	// Core objects need finalizer to be in specific format.
+	// So introducing additional finalizer
+	InteroperatorFinalizerName            = "interoperator.servicefabrik.io/finalizer"
 	SFServiceInstanceCounterFinalizerName = "sfserviceinstancecounter.servicefabrik.io"
 	ErrorCountKey                         = "interoperator.servicefabrik.io/error"
 	LastOperationKey                      = "interoperator.servicefabrik.io/lastoperation"
