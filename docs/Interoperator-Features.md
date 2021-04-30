@@ -87,12 +87,11 @@ If the service supports, it is possible to perform service binding operations as
 ```
 spec
   manager:
-  async: true
-  asyncBinding: false
-
+    async: true
+    asyncBinding: false
 ```
 
-If `asyncBinding` is set to `true` for the plan, the service binding operation will be asynchronous. The default value is `false` if omitted from the plan and the default behavior is synchronous. The `async` flag is used to control the behavior of service provisioning operations.
+If `asyncBinding` is set to `true` for the plan, the service binding operation will be asynchronous. The default value is `false` if omitted from the plan and the default behavior is synchronous. The `async` flag is used to control the behavior of service provisioning operations. The platform must include the query parameter `accepts_incomplete=true` in the request of [asynchronous operations](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#asynchronous-operations).
 
 One can use the [last operation endpoint for service bindings](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#polling-last-operation-for-service-bindings) to poll the state of the service binding operation.
 Refer [this documentation](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#binding) to know more.
