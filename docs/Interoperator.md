@@ -327,7 +327,9 @@ spec:
 
   # This section is configuration for to the operator and Service Fabrik.
   manager:
-    async: true
+    async: true   # enables async provisioning
+    asyncBinding: false   # enables async binding
+
   context:
     namePrefix: sapcp
     cpuCount: 1
