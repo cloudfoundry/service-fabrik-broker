@@ -95,3 +95,21 @@ If `asyncBinding` is set to `true` for the plan, the service binding operation w
 
 One can use the [last operation endpoint for service bindings](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#polling-last-operation-for-service-bindings) to poll the state of the service binding operation.
 Refer [this documentation](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#binding) to know more.
+
+## GET Endpoints for Service Instance and Service Binding
+
+One can fetch a [service instance](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#fetching-a-service-instance), if `instances_retrievable :true` is declared for the service in the Catalog.
+The GET endpoint for a service instance is `/v2/service_instances/{instance_id}`.
+
+To fetch a [service binding](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#fetching-a-service-binding), `bindings_retrievable :true` must be declared for the service in the Catalog.
+The GET endpoint for a service binding is `/v2/service_instances/{instance_id}/service_bindings/{binding_id}`.
+```
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SFService
+spec:
+  instancesRetrievable: true
+  bindingsRetrievable: true
+  ...
+  ...
+```
+A minimum `X-Broker-API-Version` of 2.14 is required for the GET endpoints.

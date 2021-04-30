@@ -251,8 +251,8 @@ spec:
   - 'postgresql'
   requires: []
   bindable: true
-  instanceRetrievable: true
-  bindingRetrievable: true
+  instancesRetrievable: true
+  bindingsRetrievable: true
   metadata:
     displayName: 'PostgreSQL'
     longDescription: *description
