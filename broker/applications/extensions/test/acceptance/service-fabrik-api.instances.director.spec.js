@@ -267,6 +267,11 @@ describe('service-fabrik-api', function () {
         });
 
         it('should return 400 - Bad request on skipping mandatory params', function () {
+          const expectedResponse = {
+            "description": "repeatInterval | type are mandatory",
+            "status": 400,
+            "error": "Bad Request"
+          };
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
@@ -277,7 +282,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
@@ -427,6 +432,11 @@ describe('service-fabrik-api', function () {
         });
 
         it('should return 400 - Badrequest on skipping mandatory params', function () {
+          const expectedResponse = {
+            "description": "repeatInterval is mandatory",
+            "status": 400,
+            "error": "Bad Request"
+          };
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
@@ -437,7 +447,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });

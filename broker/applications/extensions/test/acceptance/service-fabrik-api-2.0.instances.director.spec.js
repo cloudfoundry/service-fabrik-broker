@@ -764,6 +764,11 @@ describe('service-fabrik-api-sf2.0', function () {
         });
 
         it('should return 404  - if last backup label is not set in deployment resource', function () {
+          const expectedResponse = {
+            "description": `No backup found for service instance \'${instance_id}\'`,
+            "error": "Not Found",
+            "status": 404
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
@@ -787,12 +792,17 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
 
         it('should return 404 if Not Found in apiserver', function () {
+          const expectedResponse = {
+            "description": `No backup found for service instance \'${instance_id}\'`,
+            "error": "Not Found",
+            "status": 404
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource, 2);
@@ -810,7 +820,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
@@ -1648,6 +1658,11 @@ describe('service-fabrik-api-sf2.0', function () {
         });
 
         it('should return 404 Not Found', function () {
+          const expectedResponse = {
+            "description": `No restore found for service instance \'${instance_id}\'`,
+            "error": "Not Found",
+            "status": 404
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource, 2);
@@ -1658,7 +1673,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
@@ -1961,6 +1976,11 @@ describe('service-fabrik-api-sf2.0', function () {
         });
 
         it('should return 400 - Bad request on skipping mandatory params', function () {
+          const expectedResponse = {
+            "description": "repeatInterval | type are mandatory",
+            "error": "Bad Request",
+            "status": 400
+          };
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
@@ -1971,7 +1991,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
@@ -2155,6 +2175,11 @@ describe('service-fabrik-api-sf2.0', function () {
         });
 
         it('should return 400 - Badrequest on skipping mandatory params', function () {
+          const expectedResponse = {
+            "description": "repeatInterval is mandatory",
+            "error": "Bad Request",
+            "status": 400
+          };
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
@@ -2165,7 +2190,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body).to.eql({});
+              expect(_.omit(res.body, 'stack')).to.eql(expectedResponse);
               mocks.verify();
             });
         });
