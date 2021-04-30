@@ -37,8 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// SFClusterUsageReconciler reconciles a Node objects and computes the capacity of cluster
-type SFClusterUsageReconciler struct {
+// Reconciler reconciles a Node objects and computes the capacity of cluster
+type Reconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -46,7 +46,7 @@ type SFClusterUsageReconciler struct {
 
 // Reconcile iterates through all nodes and computes requested resources
 // and update it in sfcluster status
-func (r *SFClusterUsageReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("SFCluster", req.NamespacedName)
 
@@ -128,7 +128,7 @@ func (r *SFClusterUsageReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 // SetupWithManager registers the SFCluster Usage controller with manager
 // and setups the watches.
-func (r *SFClusterUsageReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Do not start the controller if it is not a k8s deployment
 	// When it is a k8s deploymen, POD_NAMESPACE env is set
 	_, ok := os.LookupEnv(constants.NamespaceEnvKey)

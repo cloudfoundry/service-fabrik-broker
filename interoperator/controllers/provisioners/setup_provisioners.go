@@ -84,7 +84,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if err = (&sfclusterusage.SFClusterUsageReconciler{
+	if err = (&sfclusterusage.Reconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
 		Scheme: mgr.GetScheme(),

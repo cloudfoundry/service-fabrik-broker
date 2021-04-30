@@ -14,16 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sfclusterusage
+package offboarding
 
 import (
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
-
-	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -43,9 +41,9 @@ import (
 
 var (
 	cfg        *rest.Config
+	k8sManager ctrl.Manager
 	k8sClient  client.Client
 	testEnv    *envtest.Environment
-	k8sManager ctrl.Manager
 	stopMgr    chan struct{}
 	mgrStopped *sync.WaitGroup
 )
@@ -54,7 +52,7 @@ func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"Cluster Usage Suite",
+		"Controller Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
 
@@ -74,9 +72,7 @@ var _ = BeforeSuite(func(done Done) {
 	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).ToNot(HaveOccurred())
-	Expect(k8sClient).ToNot(BeNil())
+	// +kubebuilder:scaffold:scheme
 
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:             scheme.Scheme,
@@ -84,20 +80,22 @@ var _ = BeforeSuite(func(done Done) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	controller := &Reconciler{
-		Client: k8sClient,
-		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
-		Scheme: scheme.Scheme,
-	}
+	err = (&SFClusterOffboarding{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("offboarding").WithName("cluster"),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
-	os.Setenv(constants.NamespaceEnvKey, constants.InteroperatorNamespace)
-	Expect(controller.SetupWithManager(k8sManager)).Should(Succeed())
-	stopMgr, mgrStopped = StartTestManager()
+	stopMgr, mgrStopped = startTestManager(k8sManager)
+
+	k8sClient = k8sManager.GetClient()
+	Expect(k8sClient).ToNot(BeNil())
 
 	close(done)
 }, 60)
 
-var _ = AfterSuite(func() {
+var _ = AfterSuite(func(done Done) {
 	By("tearing down the test environment")
 
 	close(stopMgr)
@@ -105,10 +103,11 @@ var _ = AfterSuite(func() {
 
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
+	close(done)
 })
 
-// StartTestManager starts the manager and returns the stop channel
-func StartTestManager() (chan struct{}, *sync.WaitGroup) {
+// startTestManager starts the manager and returns the stop channel
+func startTestManager(k8sManager ctrl.Manager) (chan struct{}, *sync.WaitGroup) {
 	stop := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
