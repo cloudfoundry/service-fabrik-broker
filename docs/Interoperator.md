@@ -251,8 +251,8 @@ spec:
   - 'postgresql'
   requires: []
   bindable: true
-  instanceRetrievable: true
-  bindingRetrievable: true
+  instancesRetrievable: true
+  bindingsRetrievable: true
   metadata:
     displayName: 'PostgreSQL'
     longDescription: *description
@@ -327,7 +327,9 @@ spec:
 
   # This section is configuration for to the operator and Service Fabrik.
   manager:
-    async: true
+    async: true   # enables async provisioning
+    asyncBinding: false   # enables async binding
+
   context:
     namePrefix: sapcp
     cpuCount: 1
