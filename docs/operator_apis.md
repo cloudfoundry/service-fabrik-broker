@@ -1,6 +1,14 @@
 # Operator APIs
 These APIs are provided to perform various operations tasks like getting summary of deployments or trigger updates of deployments etc.
 
+## Fetching Hostname for Operator API calls
+For executing the REST APIs mentioned below, hostname is needed.
+To fetch the hostname of the operator-api app, execute the following commmand:
+```shell
+kubectl get ingress -n interoperator
+```
+And pick the hostname corresponding to "interoperator-op-apis-service-ingress" resource
+
 ## Contents
 1. [/operator/deployments/{deployment-id}](#operatordeploymentsdeployment-id)
 
