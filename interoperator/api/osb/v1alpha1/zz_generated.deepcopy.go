@@ -180,7 +180,11 @@ func (in *SFPlanSpec) DeepCopyInto(out *SFPlanSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	out.MaintenanceInfo = in.MaintenanceInfo
+	if in.MaintenanceInfo != nil {
+		in, out := &in.MaintenanceInfo, &out.MaintenanceInfo
+		*out = new(MaintenanceInfo)
+		**out = **in
+	}
 	if in.Schemas != nil {
 		in, out := &in.Schemas, &out.Schemas
 		*out = new(ServiceSchemas)
