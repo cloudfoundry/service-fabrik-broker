@@ -96,6 +96,8 @@ If `asyncBinding` is set to `true` for the plan, the service binding operation w
 One can use the [last operation endpoint for service bindings](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#polling-last-operation-for-service-bindings) to poll the state of the service binding operation.
 Refer [this documentation](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#binding) to know more.
 
+Please note that `cf create-service-key` operation does not support asynchronous service binding. So `cf create-service-key` will not work with asynchronous plans. 
+
 ## GET Endpoints for Service Instance and Service Binding
 
 One can fetch a [service instance](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#fetching-a-service-instance), if `instances_retrievable :true` is declared for the service in the Catalog.
