@@ -1595,6 +1595,47 @@ describe('#DirectorService', function () {
               mocks.verify();
             });
         });
+        it('returns 200 OK: credentials do not exist for binding', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+          expectedRequestBody.context = _.chain(expectedRequestBody.context)
+            .set('id', binding_id)
+            .omit('params')
+            .omit('sf_operations_args')
+            .value();
+          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
+          let dummyBindResource = {
+            status: {
+              state: 'failed'
+            }
+          };
+          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+          mocks.cloudController.findSecurityGroupByName(binding_id, []);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, undefined, undefined, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
+          const options = {
+            binding_id: binding_id,
+            service_id: service_id,
+            plan_id: plan_id,
+            app_guid: app_guid,
+            context: context,
+            bind_resource: {
+              app_guid: app_guid,
+              space_guid: space_guid
+            }
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.unbind(options))
+            .then(() => {
+              mocks.verify();
+            });
+        });
         it('returns 200 OK: shared instance unbinding', function () {
           const context = {
             platform: 'cloudfoundry',

@@ -868,15 +868,20 @@ class DirectorService extends BaseDirectorService {
             this.getDeploymentIps(deploymentName),
             this.getCredentials(id)
           ]))
-      .spread((preUnbindResponse, ips, credentials) => retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
-        operation: 'Delete Credentials by Service Agent',
-        maxAttempts: 2,
-        timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-      })
-        .catch(Timeout, err => {
-          throw err;
+      .spread((preUnbindResponse, ips, credentials) => {
+        if(_.isEmpty(credentials)) {
+          logger.warn(`Credentials are empty for binding ${id}, Not forwarding to agent`);
+          return;
+        }
+        return retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
+          operation: 'Delete Credentials by Service Agent',
+          maxAttempts: 2,
+          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
-      )
+          .catch(Timeout, err => {
+            throw err;
+          });
+      })
       .tap(() => logger.info('+-> Deleted service credentials'))
       .catch(err => {
         logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
