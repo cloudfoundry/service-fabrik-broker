@@ -19,7 +19,7 @@ class BaseQuotaManager {
       logger.debug('Quota check skipped as it is a normal instance update or plan update with same sku.');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
     } else if (await this.isOrgWhitelisted(orgId)) {
-      logger.debug('Org whitelisted, Quota check skipped');
+      logger.info('Org whitelisted, Quota check skipped');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
     } else {
       logger.debug(`Platform is ${this.platform}`);
@@ -29,9 +29,7 @@ class BaseQuotaManager {
       let planName = _.find(catalog.plans, ['id', planId]).name;
       let serviceName = _.find(catalog.plans, ['id', planId]).service.name;
       let skipQuotaCheck = _.find(catalog.plans, ['id', planId]).metadata ? _.find(catalog.plans, ['id', planId]).metadata.skip_quota_check : undefined;
-      logger.debug(`Plan Name is ${planName}`);
-      logger.debug(`Service Name is ${serviceName}`);
-      logger.debug(`Skip Quota check: ${skipQuotaCheck}`);
+      logger.info(`Plan name: ${planName}, Service Name: ${serviceName}, skipQuotaCheck: ${skipQuotaCheck}`);
       if (skipQuotaCheck && skipQuotaCheck === true) {
         return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
       } else {
@@ -46,7 +44,7 @@ class BaseQuotaManager {
         } else {
           const planIdsWithSameSKU = this.getAllPlanIdsWithSameSKU(planName, serviceName, catalog);
           const instanceCount = await this.getInstanceCountonPlatform(useAPIServerForConsumedQuotaCheck ? subaccountId : orgId, planIdsWithSameSKU, region);
-          logger.debug(`Number of instances are ${instanceCount} & Quota number for current org space and service_plan is ${quota}`);
+          logger.info(`Number of instances are ${instanceCount} & Quota number for current org space and service_plan is ${quota}`);
           return instanceCount >= quota ? CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA : CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
         }
       }
