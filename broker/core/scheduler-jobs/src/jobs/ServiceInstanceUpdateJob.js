@@ -114,6 +114,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
     const plan = catalog.getPlan(planId);
     logger.info(`Instance Id: ${instanceDetails.instance_id} - manager : ${plan.manager.name} - Force Update: ${plan.service.force_update}`);
     const tenantInfo = _.pick(resourceDetails, ['context', 'organization_guid', 'space_guid']);
+    _.set(tenantInfo, 'service_id', _.get(resourceDetails, 'service_id'));
     return this
       .getOutdatedDiff(instanceDetails, tenantInfo, plan)
       .then(diffResults => {
