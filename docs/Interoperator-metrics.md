@@ -8,6 +8,7 @@ In addition the to the metrics provided by kubebuilder, the some additional cust
 ### Multiclusterdeployer
 Metric | Labels | Description
 --- | --- | ---
+interoperator_cluster_up| cluster | State of the clusters.<br> 0 - down <br> 1 - up
 interoperator_service_instances_state | instance_id | State of the service instance.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete <br> 4 - gone
 interoperator_cluster_service_instances | cluster | Number of service instances partitioned by cluster
 interoperator_cluster_allocatable | cluster <br> type | Allocatable resources partitioned by cluster and resource type
