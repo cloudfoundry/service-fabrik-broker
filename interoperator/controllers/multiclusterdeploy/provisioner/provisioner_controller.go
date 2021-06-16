@@ -28,6 +28,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,6 +42,21 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
+)
+
+var (
+	clusterMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name:      "up",
+			Namespace: "interoperator",
+			Subsystem: "cluster",
+			Help:      "State of the cluster. 0 - down, 1 - up",
+		},
+		[]string{
+			"cluster",
+		},
+	)
 )
 
 var addClusterToWatch = watchmanager.AddCluster
@@ -92,6 +108,10 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 	clusterID := clusterInstance.GetName()
 	log.Info("reconciling cluster", "clusterID", clusterID)
+
+	// Setting the cluster state metric as Down.
+	// The cluster is ready when the reconcile completes.
+	clusterMetric.WithLabelValues(clusterID).Set(0)
 
 	//reconcile primaryClusterID in the configmap
 	err = r.reconcilePrimaryClusterIDConfig()
@@ -178,6 +198,9 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
+	// Reconcile completed. Mark cluster as up
+	clusterMetric.WithLabelValues(clusterID).Set(1)
+
 	requeueAfter, err := time.ParseDuration(interoperatorCfg.ClusterReconcileInterval)
 	if err != nil {
 		log.Error(err, "Failed to parse ClusterReconcileInterval",
@@ -235,7 +258,7 @@ func (r *ReconcileProvisioner) registerSFCrds(clusterID string, targetClient cli
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			err := r.Get(ctx, types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 			if err != nil {
-				log.Error(err, "Error occurred geeting CRD in master cluster", "CRD", sfcrdname)
+				log.Error(err, "Error occurred getting CRD in master cluster", "CRD", sfcrdname)
 				return err
 			}
 			// Create/Update CRD in target cluster
@@ -546,6 +569,8 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	interoperatorCfg := cfgManager.GetConfig()
 	r.cfgManager = cfgManager
+
+	metrics.Registry.MustRegister(clusterMetric)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_provisioner").
