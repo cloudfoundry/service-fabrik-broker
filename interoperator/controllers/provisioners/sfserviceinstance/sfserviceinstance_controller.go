@@ -519,7 +519,11 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 		log.Error(inputErr, "Retry threshold reached. Ignoring error")
 		object.Status.State = "failed"
 		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", objectID, inputErr.Error())
-		object.Status.Description = "Service Broker Error, status code: ETIMEDOUT, error code: 10008"
+		if inputErr.Error() != "" {
+		    object.Status.Description = inputErr.Error()
+		} else {
+		    object.Status.Description = "Service Broker Error, status code: ETIMEDOUT, error code: 10008"
+		}
 		if lastOperation != "" {
 			labels[constants.LastOperationKey] = lastOperation
 			object.SetLabels(labels)
