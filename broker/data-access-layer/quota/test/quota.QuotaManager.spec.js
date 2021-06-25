@@ -385,7 +385,7 @@ describe('quota', () => {
 
       it('returns quota valid when org is whitelisted', () => {
         isOrgWhitelistedStub.withArgs(orgId).returns(Promise.resolve(true));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(undefined, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(0);
           });

@@ -249,6 +249,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: validQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: true,
@@ -271,6 +272,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: notEntitledPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -293,6 +295,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: invalidQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -318,6 +321,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: invalidQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -341,6 +345,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: validQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -362,6 +367,7 @@ describe('#checkQuota', () => {
     let expectedQuotaValidityArgs = {
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: validQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -385,6 +391,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: validQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,
@@ -406,6 +413,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: validQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: true,
@@ -428,6 +436,7 @@ describe('#checkQuota', () => {
     expect(checkQuotaValidityStub).to.have.been.calledWithExactly({
       subaccountId: subaccount_id,
       queryParams: {
+        instanceId: req.params.instance_id,
         planId: errQuotaPlanId,
         previousPlanId: undefined,
         useAPIServerForConsumedQuotaCheck: false,

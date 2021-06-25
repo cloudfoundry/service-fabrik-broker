@@ -92,7 +92,8 @@ exports.checkQuota = function () {
             previousPlanId: _.get(req, 'body.previous_values.plan_id'),
             useAPIServerForConsumedQuotaCheck: useAPIServerForConsumedQuotaCheck,
             orgId: orgId,
-            reqMethod: req.method
+            reqMethod: req.method,
+            instanceId: req.params.instance_id
           }
         };
         if(_.get(req.params, 'region') !== undefined) {

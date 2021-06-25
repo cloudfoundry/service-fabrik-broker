@@ -81,6 +81,13 @@ if (process.env.QUOTA_PASSWORD) {
   config.quota.password = process.env.QUOTA_PASSWORD;
 }
 
+if(!_.isEmpty(_.get(config, 'quota.whitelist', []))) {
+  // convert org names in whitelist to lowercase, for case insensitive matching
+  config.quota.whitelist = _.map(config.quota.whitelist, org => {
+    return _.toLower(org);
+  });
+}
+
 function updateLogFileConfig(logPath) {
   const logSuffix = `-worker-${process.env.worker}.log`;
   config.log_path = logPath.indexOf('.log') !== -1 ? logPath.replace('.log', logSuffix) : `${logPath}-${logSuffix}`;
