@@ -18,7 +18,7 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
     logger.info('planguids to be checked are ', planGuids);
     logger.info('quota check for instance ', instanceId);
     let instances = await cloudController.getServiceInstancesInOrgWithPlansGuids(orgId, planGuids);
-    if(instanceId) {
+    if(instanceId && !_.isEmpty(instances)) {
       instances = _.filter(instances, instance => {
         return instance.metadata.guid !== instanceId;
       });  
@@ -30,12 +30,12 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
     const org = await cloudController.getOrganization(orgId);
     const orgLower = _.toLower(org.entity.name);
     logger.debug('current org details are ', org);
-    logger.debug('current org name is ', org.entity.name);
+    logger.debug('current org name is ', orgLower);
     logger.debug('Whitelisted orgs are ', config.quota.whitelist);
     const whitelistEntry = _.find(config.quota.whitelist, o => {
-      return o == orgLower;
+      return o === orgLower;
     });
-    return whitelistEntry != undefined ? true : false;
+    return whitelistEntry !== undefined ? true : false;
   }
 
   async getAllPlanGuidsFromPlanIDs(planIds) {

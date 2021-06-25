@@ -448,7 +448,7 @@ describe('quota', () => {
           'guid': '63125bbc-81fe-46c3-9437-e5a8a6594774'
         },
         'entity': {
-          'name': 'dev'
+          'name': 'Dev'
         }
       };
       before(function () {
