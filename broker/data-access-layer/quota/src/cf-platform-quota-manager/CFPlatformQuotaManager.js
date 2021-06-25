@@ -16,10 +16,11 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
   async getInstanceCountonPlatform(orgId, planIds, region, instanceId) {
     const planGuids = await this.getAllPlanGuidsFromPlanIDs(planIds);
     logger.info('planguids to be checked are ', planGuids);
+    logger.info('quota check for instance ', instanceId);
     let instances = await cloudController.getServiceInstancesInOrgWithPlansGuids(orgId, planGuids);
     if(instanceId) {
-      instances = _.remove(instances, instance => {
-        return instance.metadata.guid == instanceId;
+      instances = _.filter(instances, instance => {
+        return instance.metadata.guid !== instanceId;
       });  
     }
     return _.size(instances);
