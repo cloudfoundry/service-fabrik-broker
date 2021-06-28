@@ -18,7 +18,7 @@ class BaseQuotaManager {
     if (CONST.HTTP_METHOD.PATCH === reqMethod && this.isSamePlanOrSkuUpdate(planId, previousPlanId)) {
       logger.debug('Quota check skipped as it is a normal instance update or plan update with same sku.');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
-    } else if (subaccountId === undefined && await this.isOrgWhitelisted(orgId)) {
+    } else if ((subaccountId === null || subaccountId === 'undefined') && await this.isOrgWhitelisted(orgId)) {
       logger.info('Org whitelisted, Quota check skipped');
       return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
     } else {
