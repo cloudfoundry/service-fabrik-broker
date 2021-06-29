@@ -12,6 +12,7 @@ interoperator_cluster_up| cluster | State of the clusters.<br> 0 - down <br> 1 -
 interoperator_service_instances_state | instance_id | State of the service instance.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete <br> 4 - gone
 interoperator_cluster_service_instances | cluster | Number of service instances partitioned by cluster
 interoperator_cluster_allocatable | cluster <br> type | Allocatable resources partitioned by cluster and resource type
+interoperator_service_bindings_state | binding_id <br> instance_id | State of the service binding.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete
 
 ## Liveness and Readiness Probe
 The metrics endpoints are exposed regardless of the status of leader election. So the metrics endpoint is used as liveness and readiness probe for the pods. If the metric endpoint is not up, liveness probe will fail and kubernetes will restart the pod.
@@ -23,6 +24,14 @@ An example for adding custom metric can be found in pull request [#983](https://
 * Declare a prometheus [Collector](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector) as a global variable in the controller. The list of supported collectors can be found in [prometheus client docs](https://godoc.org/github.com/prometheus/client_golang/prometheus).
 * In `SetupWithManager` section of the controller, register the `collector` with the prometheus [Registry](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/metrics) using the `metrics.Registry.MustRegister()` function. `MustRegister()` accepts variable number of arguments and all the `collectors` can be registered together. Import the `"sigs.k8s.io/controller-runtime/pkg/metrics"` package to access the global `Registry`.
 * Anywhere in the reconcile loop, update the metric.
+
+### Sample PromQL queries:
+Query | Output | Comment
+--- | ---- | --- |
+interoperator_service_bindings_state | interoperator_service_bindings_state{binding_id="0abc2107-de86-408d-8617-800935b84028", instance_id="80ca2362b-6561-4673-ad24-111d7ac86cfd"} 1 <br> interoperator_service_bindings_state{binding_id="0abc2107-de86-408d-8617-800935b84038", instance_id="80ca2362b-6561-4673-ad24-111d7ac86cfd"} 1 <br> interoperator_service_bindings_state{binding_id="0ceb2107-de86-408d-8617-800935b84108", instance_id="65ca2362b-6561-4673-ad24-111d7ac86cfd"} 0 <br> interoperator_service_bindings_state{binding_id="1abc2107-de86-408d-8617-800935b84038", instance_id="81ca2362b-6561-4673-ad24-111d7ac86cfd"} 0 | List all the bindings present in the cluster
+sum by (instance_id) (interoperator_service_bindings_state) | {instance_id="81ca2362b-6561-4673-ad24-111d7ac86cfd"} 0 <br> {instance_id="80ca2362b-6561-4673-ad24-111d7ac86cfd"} 2 <br> {instance_id="65ca2362b-6561-4673-ad24-111d7ac86cfd"} 0 | List all the bindings grouped by the instance id
+count(count by (binding_id) (interoperator_service_bindings_state)) | 	4 | List the count of all the bindings in the cluster
+count(count by (binding_id) (interoperator_service_bindings_state == 1)) | 4 | List all the failed bindings in the cluster
 
 
 ## Grafana Dashboard

@@ -28,6 +28,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,7 +38,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+var (
+	bindingsMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name:      "state",
+			Namespace: "interoperator",
+			Subsystem: "service_bindings",
+			Help:      "State of service binding. 0 - succeeded, 1 - failed, 2 - in progress, 3 - in_queue/update/delete",
+		},
+		[]string{
+			// What was the state of the binding
+			"binding_id",
+			// the instance this binding belongs to
+			"instance_id",
+		},
+	)
 )
 
 var getWatchChannel = watchmanager.GetWatchChannel
@@ -65,6 +84,7 @@ func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
+			bindingsMetric.WithLabelValues(req.NamespacedName.Name, "").Set(4)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -73,6 +93,19 @@ func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	bindingID := binding.GetName()
 	state := binding.GetState()
+	instanceID := binding.Spec.InstanceID
+	switch state {
+	case "succeeded":
+		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(0)
+	case "failed":
+		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(1)
+	case "in progress":
+		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(2)
+	case "in_queue":
+	case "update":
+	case "delete":
+		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(3)
+	}
 
 	clusterID, err := binding.GetClusterID(r)
 	if err != nil {
@@ -354,6 +387,8 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+
+	metrics.Registry.MustRegister(bindingsMetric)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_binding").
