@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 var c, c2 client.Client
@@ -219,6 +220,7 @@ func TestReconcileMultiClusterBind(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("replicator").WithName("binding"),
 		clusterRegistry: mockClusterRegistry,
 	}
+	metrics.Registry.Unregister(bindingsMetric)
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -359,6 +361,7 @@ func TestReconcileMultiClusterUnbind(t *testing.T) {
 		Log:             ctrlrun.Log.WithName("mcd").WithName("replicator").WithName("binding"),
 		clusterRegistry: mockClusterRegistry,
 	}
+	metrics.Registry.Unregister(bindingsMetric)
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
