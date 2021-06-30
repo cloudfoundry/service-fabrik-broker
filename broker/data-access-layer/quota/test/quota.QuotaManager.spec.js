@@ -145,6 +145,7 @@ describe('quota', () => {
       const orgId = '63125bbc-81fe-46c3-9437-e5a8a6594774';
       const planName = 'v1.0-small';
       const serviceName = 'blueprint';
+      const instanceId = '0a87367b-e53a-4d63-9826-1e46f3468206';
 
       const org = {
         'metadata': {
@@ -338,7 +339,7 @@ describe('quota', () => {
 
       it('returns quota does not exist when quota value is 3 and service instances created in the org is 3', () => {
         getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(3));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
           .then(value => {
             expect(value).to.eql(1);
           });
@@ -353,7 +354,7 @@ describe('quota', () => {
 
       it('returns quota does not exist when quota value is 2 and service instances created in the org is 3', () => {
         getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(2));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
           .then(value => {
             expect(value).to.eql(1);
           });
@@ -361,7 +362,47 @@ describe('quota', () => {
 
       it('returns quota exists when quota value is 4 and service instances created in the org is 3', () => {
         getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(4));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
+          .then(value => {
+            expect(value).to.eql(0);
+          });
+      });
+
+      it('returns quota exists when quota value is 4 and service instances created in the org is 4, but result contain current instanceId', () => {
+        getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(4));
+        serviceInstances.push({
+          'metadata': {
+            'guid': '0a87367b-e53a-4d63-9826-1e46f3468206',
+            'url': '/v2/service_instances/0a87367b-e53a-4d63-9826-1e46f3468206',
+            'created_at': '2017-03-21T04:15:49Z',
+            'updated_at': '2017-03-21T04:15:49Z'
+          },
+          'entity': {
+            'name': 'bp04',
+            'credentials': {},
+            'service_plan_guid': 'cb862bfe-3a50-4d12-a8e2-156d6e11bed4',
+            'space_guid': '6b48f3ea-0ef1-44eb-9de4-942d89779d37',
+            'gateway_data': null,
+            'dashboard_url': 'https://service-fabrik-broker.bosh-lite.com/manage/instances/24731fb8-7b84-4f57-914f-c3d55d793dd4/d616b00a-5949-4b1c-bc73-0d3c59f3954a/0a87367b-e53a-4d63-9826-1e46f3468206',
+            'type': 'managed_service_instance',
+            'last_operation': {
+              'type': 'create',
+              'state': 'in progress',
+              'description': 'Create deployment service-fabrik-0002-0a87367b-e53a-4d63-9826-1e46f3468206 in progress',
+              'updated_at': '2017-03-21T04:16:54Z',
+              'created_at': '2017-03-21T04:15:49Z'
+            },
+            'tags': [],
+            'service_guid': 'fe503379-832b-4d56-ad12-3a6ef68dcb34',
+            'space_url': '/v2/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
+            'service_plan_url': '/v2/service_plans/cb862bfe-3a50-4d12-a8e2-156d6e11bed4',
+            'service_bindings_url': '/v2/service_instances/0a87367b-e53a-4d63-9826-1e46f3468206/service_bindings',
+            'service_keys_url': '/v2/service_instances/0a87367b-e53a-4d63-9826-1e46f3468206/service_keys',
+            'routes_url': '/v2/service_instances/0a87367b-e53a-4d63-9826-1e46f3468206/routes',
+            'service_url': '/v2/services/fe503379-832b-4d56-ad12-3a6ef68dcb34'
+          }
+        });
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
           .then(value => {
             expect(value).to.eql(0);
           });
@@ -369,7 +410,7 @@ describe('quota', () => {
 
       it('returns quota valid when quota value returned is -1 (i.e. org is whitelisted) and service instances created in the org is 3', () => {
         getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(-1));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
           .then(value => {
             expect(value).to.eql(0);
           });
@@ -377,15 +418,15 @@ describe('quota', () => {
 
       it('returns quota invalid when quota value returned is 0 (i.e. not entitled) for the given org, service, plan', () => {
         getQuotaStub.withArgs(subaccountId, serviceName, planName).returns(Promise.resolve(0));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId, undefined, 'PUT', false, undefined, instanceId)
           .then(value => {
             expect(value).to.eql(2);
           });
       });
 
-      it('returns quota valid when org is whitelisted', () => {
+      it('returns quota valid when org is whitelisted and subaccountId is undefined', () => {
         isOrgWhitelistedStub.withArgs(orgId).returns(Promise.resolve(true));
-        return quotaManager.checkQuota(subaccountId, orgId, smallPlanId)
+        return quotaManager.checkQuota(undefined, orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(0);
           });
@@ -407,7 +448,7 @@ describe('quota', () => {
           'guid': '63125bbc-81fe-46c3-9437-e5a8a6594774'
         },
         'entity': {
-          'name': 'dev'
+          'name': 'Dev'
         }
       };
       before(function () {
