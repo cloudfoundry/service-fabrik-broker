@@ -26,6 +26,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
@@ -176,6 +177,11 @@ func TestReconcile(t *testing.T) {
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
+
+	// Check if the interoperator_cluster_up metric reports UP after reconcile.
+	clusterID := clusterInstance.GetName()
+	interoperatorClusterUp := testutil.ToFloat64(clusterMetric.WithLabelValues(clusterID))
+	g.Expect(interoperatorClusterUp).To(gomega.Equal(float64(1)))
 
 	// Delete SFCluster
 	g.Expect(c.Delete(context.TODO(), clusterInstance)).NotTo(gomega.HaveOccurred())
