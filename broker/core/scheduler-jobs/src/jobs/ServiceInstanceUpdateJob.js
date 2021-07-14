@@ -9,7 +9,8 @@ const {
   errors: {
     BadRequest,
     ServiceUnavailable,
-    NotFound
+    NotFound,
+    InternalServerError
   },
   commonFunctions: {
     unifyDiffResult,
@@ -113,6 +114,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
     const plan = catalog.getPlan(planId);
     logger.info(`Instance Id: ${instanceDetails.instance_id} - manager : ${plan.manager.name} - Force Update: ${plan.service.force_update}`);
     const tenantInfo = _.pick(resourceDetails, ['context', 'organization_guid', 'space_guid']);
+    _.set(tenantInfo, 'service_id', _.get(resourceDetails, 'service_id'));
     return this
       .getOutdatedDiff(instanceDetails, tenantInfo, plan)
       .then(diffResults => {
@@ -125,6 +127,13 @@ class ServiceInstanceUpdateJob extends BaseJob {
           return operationResponse;
         }
         let trackAttempts = true;
+        // If job was triggered successfully during the last attempt, and still deployment is outdated and max_attempt is reached, then throw the error
+        const MAX_ATTEMPTS = _.get(instanceDetails, 'max_attempts', config.scheduler.jobs.service_instance_update.max_attempts);
+        if(_.get(instanceDetails, 'prevAttemptTracked', false) == true && _.get(instanceDetails, 'attempt', 0) >= MAX_ATTEMPTS) {
+          logger.error(`Max attempts reached for ${instanceDetails.instance_id}. Attempts : ${_.get(instanceDetails, 'attempt', 0)}, maxAttempts: ${MAX_ATTEMPTS}}`);
+          operationResponse.update_init = CONST.OPERATION.FAILED;
+          throw new InternalServerError(`Max attempts reached. Attempts: ${_.get(instanceDetails, 'attempt', 0)}, maxAttempts: ${MAX_ATTEMPTS}`);
+        }
         return this
           .updateServiceInstance(
             instanceDetails.instance_id,
@@ -218,8 +227,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
     return Promise.try(() => {
       const jobData = _.cloneDeep(instanceDetails);
       jobData.attempt = jobData.attempt + 1;
+      jobData.prevAttemptTracked = false;
       if (trackAttempts) {
         const MAX_ATTEMPTS = _.get(instanceDetails, 'max_attempts', config.scheduler.jobs.service_instance_update.max_attempts);
+        jobData.prevAttemptTracked = true;
         if (jobData.attempt > MAX_ATTEMPTS) {
           logger.error(`Auto udpate for instance ${instanceDetails.instance_id}  has exceeded max configured attempts : ${MAX_ATTEMPTS}}`);
           return;
