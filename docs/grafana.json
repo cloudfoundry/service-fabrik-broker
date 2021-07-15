@@ -739,6 +739,336 @@
             "type": "stat"
         },
         {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "${DS_DS_PROMETHEUS}",
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 33
+            },
+            "hiddenSeries": false,
+            "id": 21,
+            "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "dataLinks": []
+            },
+            "percentage": false,
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [{
+                "expr": "interoperator_service_bindings_state",
+                "legendFormat": "{{instance_id}}",
+                "refId": "A"
+            }],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Total Bindings",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [{
+                "decimals": 0,
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+            },
+                {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
+            "cacheTimeout": null,
+            "datasource": "${DS_DS_PROMETHEUS}",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 33
+            },
+            "id": 22,
+            "links": [],
+            "options": {
+                "colorMode": "value",
+                "fieldOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "defaults": {
+                        "mappings": [{
+                            "id": 0,
+                            "op": "=",
+                            "text": "0",
+                            "type": 1,
+                            "value": "null"
+                        }],
+                        "nullValueMode": "connected",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [{
+                                "color": "green",
+                                "value": null
+                            },
+                                {
+                                    "color": "red",
+                                    "value": 1
+                                }
+                            ]
+                        },
+                        "unit": "none"
+                    },
+                    "overrides": [],
+                    "values": false
+                },
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "horizontal"
+            },
+            "pluginVersion": "6.6.1",
+            "targets": [{
+                "expr": "count(count by (binding_id) (interoperator_service_bindings_state == 1))",
+                "refId": "A"
+            }],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Failed Bindings Count",
+            "type": "stat"
+        },
+        {
+            "cacheTimeout": null,
+            "datasource": "${DS_DS_PROMETHEUS}",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 41
+            },
+            "id": 23,
+            "links": [],
+            "options": {
+                "colorMode": "value",
+                "fieldOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "defaults": {
+                        "mappings": [{
+                            "id": 0,
+                            "op": "=",
+                            "text": "0",
+                            "type": 1,
+                            "value": "null"
+                        }],
+                        "nullValueMode": "connected",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [{
+                                "color": "green",
+                                "value": null
+                            },
+                                {
+                                    "color": "red",
+                                    "value": 1
+                                }
+                            ]
+                        },
+                        "unit": "none"
+                    },
+                    "overrides": [],
+                    "values": false
+                },
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "horizontal"
+            },
+            "pluginVersion": "6.6.1",
+            "targets": [{
+                "expr": "count(count by (binding_id) (interoperator_service_bindings_state==0))",
+                "format": "heatmap",
+                "legendFormat": "succeeded",
+                "refId": "A"
+            },
+                {"expr": "count(count by (binding_id) (interoperator_service_bindings_state==1))",
+                    "legendFormat": "Failed",
+                    "refId": "B"
+                },
+                {"expr": "count(count by (binding_id) (interoperator_service_bindings_state==2))",
+                    "format": "heatmap",
+                    "legendFormat": "in progress",
+                    "refId": "C"},
+                {"expr": "count(count by (binding_id) (interoperator_service_bindings_state==3))",
+                    "format": "heatmap",
+                    "legendFormat": "in_queue/update/delete",
+                    "refId": "D"}
+            ],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Binding Count By State",
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [{
+                "decimals": 0,
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+            },
+                {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
+            "cacheTimeout": null,
+            "datasource": "${DS_DS_PROMETHEUS}",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 41
+            },
+            "id": 24,
+            "links": [],
+            "options": {
+                "colorMode": "value",
+                "fieldOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "defaults": {
+                        "mappings": [{
+                            "id": 0,
+                            "op": "=",
+                            "text": "0",
+                            "type": 1,
+                            "value": "null"
+                        }],
+                        "nullValueMode": "connected",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [{
+                                "color": "green",
+                                "value": null
+                            },
+                                {
+                                    "color": "red",
+                                    "value": 1
+                                }
+                            ]
+                        },
+                        "unit": "none"
+                    },
+                    "overrides": [],
+                    "values": false
+                },
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "horizontal"
+            },
+            "pluginVersion": "6.6.1",
+            "targets": [{
+                "expr": "sum by (instance_id) (interoperator_service_bindings_state)",
+                "legendFormat": "{{instance_id}}",
+                "refId": "A"
+            }],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Bindings Grouped By Service Instance",
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [{
+                "decimals": 0,
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+            },
+                {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
             "dashboardFilter": "",
             "dashboardTags": [],
             "datasource": "${DS_DS_PROMETHEUS}",
@@ -747,7 +1077,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 5,
-                "y": 33
+                "y": 49
             },
             "id": 20,
             "limit": 10,
