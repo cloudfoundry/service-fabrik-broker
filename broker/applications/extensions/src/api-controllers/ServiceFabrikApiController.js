@@ -1072,8 +1072,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceType: req.plan.resourceType,
             resourceId: req.params.instance_id
           })
-            .tap(options => {context = options.context;
-                            service_id = options.service_id})
+            .tap(options => {
+              context = options.context;
+              service_id = options.service_id;
+            })
             .then(options => DirectorService.createInstance(req.params.instance_id, {
               plan_id: req.plan.id,
               context: options.context
