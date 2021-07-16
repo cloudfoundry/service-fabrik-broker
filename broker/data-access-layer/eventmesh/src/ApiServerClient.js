@@ -964,15 +964,6 @@ class ApiServerClient {
       .then(resource => _.get(resource, 'spec.options.context'));
   }
 
-  getPlatformOptions(opts) {
-    return this.getResource({
-      resourceGroup: opts.resourceGroup,
-      resourceType: opts.resourceType,
-      resourceId: opts.resourceId
-    })
-      .then(resource => _.get(resource, 'spec.options'));
-  }
-
   /**
    * @description Create OSB Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Name of resource group 

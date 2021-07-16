@@ -1067,7 +1067,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const checkUpdateRequired = _.get(req.query, 'check_update_required');
         logger.info(`Instance Id: ${req.params.instance_id} - check outdated status - ${checkUpdateRequired}`);
         if (checkUpdateRequired) {
-          return apiServerClient.getPlatformOptions({
+          return apiServerClient.getOptions({
             resourceGroup: req.plan.resourceGroup,
             resourceType: req.plan.resourceType,
             resourceId: req.params.instance_id
