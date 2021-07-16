@@ -1059,6 +1059,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getUpdateSchedule(req, res) {
     let context;
+    let service_id;
     return Promise.try(() => this.setPlan(req))
       .then(() => ScheduleManager
         .getSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE))
@@ -1066,21 +1067,25 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const checkUpdateRequired = _.get(req.query, 'check_update_required');
         logger.info(`Instance Id: ${req.params.instance_id} - check outdated status - ${checkUpdateRequired}`);
         if (checkUpdateRequired) {
-          return apiServerClient.getPlatformContext({
+          return apiServerClient.getOptions({
             resourceGroup: req.plan.resourceGroup,
             resourceType: req.plan.resourceType,
             resourceId: req.params.instance_id
           })
-            .tap(ctxt => context = ctxt)
-            .then(platformContext => DirectorService.createInstance(req.params.instance_id, {
+            .tap(options => {
+              context = options.context;
+              service_id = options.service_id;
+            })
+            .then(options => DirectorService.createInstance(req.params.instance_id, {
               plan_id: req.plan.id,
-              context: platformContext
+              context: options.context
             }))
             .then(directorService => {
               return directorService
                 .findDeploymentNameByInstanceId(req.params.instance_id)
                 .then(deploymentName => directorService.diffManifest(deploymentName, {
-                  context: context
+                  context: context,
+                  service_id: service_id
                 }))
                 .then(result => unifyDiffResult(result))
                 .then(result => {
