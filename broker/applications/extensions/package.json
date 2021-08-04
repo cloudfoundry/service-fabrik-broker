@@ -27,7 +27,7 @@
     "bluebird": "3.7.2",
     "express": "4.17.1",
     "express-jwt": "6.0.0",
-    "express-session": "1.17.1",
+    "express-session": "1.17.2",
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
     "moment": "2.27.0",
