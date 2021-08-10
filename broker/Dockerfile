@@ -15,9 +15,7 @@ RUN npm i npm@latest -g
 WORKDIR /opt/service-fabrik-broker/broker
 
 COPY broker/package.json package.json
-COPY broker/.yarn .yarn
 COPY broker/yarn.lock yarn.lock
-COPY broker/.yarnrc.yml .yarnrc.yml
 COPY broker/applications/osb-broker applications/osb-broker
 COPY broker/applications/quota-app applications/quota-app
 COPY broker/core core
@@ -25,6 +23,8 @@ COPY broker/data-access-layer data-access-layer
 RUN mkdir logs
 
 RUN yarn set version berry
+RUN yarn plugin import workspace-tools
+RUN yarn plugin import constraints
 RUN yarn cache clean
 RUN yarn workspaces focus @sf/osb-broker --production
 RUN yarn workspaces focus @sf/quota-app --production
