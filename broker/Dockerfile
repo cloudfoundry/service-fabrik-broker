@@ -24,7 +24,7 @@ COPY broker/core core
 COPY broker/data-access-layer data-access-layer
 RUN mkdir logs
 
-RUN yarn set version berry
+RUN yarn set version 2.4.1
 RUN yarn cache clean
 RUN yarn workspaces focus @sf/osb-broker --production
 RUN yarn workspaces focus @sf/quota-app --production
