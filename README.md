@@ -124,7 +124,7 @@ cd ~/workspace
 ```shell
 cd service-fabrik-broker/broker
 npm install -g yarn
-yarn set version berry
+yarn set version 2.4.1
 yarn install
 ```
 * Optional: To locally run all unit test
