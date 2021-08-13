@@ -43,7 +43,7 @@ class QuotaApiController extends FabrikBaseController {
       logger.error(`[Quota APP] Quota check could not be completed due to following error: ${err}`);
       await res.status(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({ error: err });
     }
-  }  
+  }
 }
 
 module.exports = QuotaApiController;

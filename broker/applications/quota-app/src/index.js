@@ -21,6 +21,9 @@ async function init() {
         res.render('index', {
           title: app.get('title')
         });
+        if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
+          utils.loadCatalogFromAPIServer();
+        }
       });
       app.use('/v1', routes.v1);
     });
