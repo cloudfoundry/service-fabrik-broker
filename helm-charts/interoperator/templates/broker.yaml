@@ -163,3 +163,42 @@ spec:
           configMap:
             name: sf-settings-config
       restartPolicy: Always
+---
+{{- if .Values.broker.hpa.enabled }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-broker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-broker
+  minReplicas: {{ default .Values.replicaCount .Values.broker.replicaCount }}
+  maxReplicas: {{ .Values.broker.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.broker.hpa.cpu_threshold }}
+  behavior:
+    scaleUp:
+      selectPolicy: {{ .Values.broker.hpa.scaleUp.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.broker.hpa.scaleUp.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.broker.hpa.scaleUp.policies.percent.value }}
+          periodSeconds: {{ .Values.broker.hpa.scaleUp.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.broker.hpa.scaleUp.policies.pods.value }}
+          periodSeconds: {{ .Values.broker.hpa.scaleUp.policies.pods.periodSeconds }}
+    scaleDown:
+      selectPolicy: {{ .Values.broker.hpa.scaleDown.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.broker.hpa.scaleDown.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.broker.hpa.scaleDown.policies.percent.value }}
+          periodSeconds: {{ .Values.broker.hpa.scaleDown.policies.percent.periodSeconds }}
+{{- end }}
