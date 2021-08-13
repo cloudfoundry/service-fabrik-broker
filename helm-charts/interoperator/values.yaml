@@ -80,6 +80,7 @@ quota_app:
   password: secret
 
   # override the global replicaCount just for quota_app
+  # this value is used to set minReplica if hpa is enabled
   #replicaCount: 1
   resources:
     limits:
@@ -90,6 +91,27 @@ quota_app:
       memory: 128Mi
   service:
     type: ClusterIP
+  hpa:
+    enabled: false
+    scaleUp:
+      selectPolicy: Max
+      stabilizationWindowSeconds: 0
+      policies:
+        percent:
+          value: 100
+          periodSeconds: 15
+        pods:
+          value: 4
+          periodSeconds: 15
+    scaleDown:
+      selectPolicy: Min
+      stabilizationWindowSeconds: 300
+      policies:
+        percent:
+          value: 100
+          periodSeconds: 15
+    maxReplicas: 6
+    cpu_threshold: 70
 
 interoperator:
   image:
