@@ -3,7 +3,10 @@
 const _ = require('lodash');
 const {
   CONST,
-  errors: { NotImplementedBySubclass }
+  errors: {
+    NotImplementedBySubclass,
+    ServicePlanNotFound
+  }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const { catalog } = require('@sf/models');
@@ -27,9 +30,14 @@ class BaseQuotaManager {
       logger.debug(`Org ID is ${orgId}`);
       logger.debug(`Plan id is ${planId}`);
       logger.debug(`Instance ID is ${instanceId}`);
-      let planName = _.find(catalog.plans, ['id', planId]).name;
-      let serviceName = _.find(catalog.plans, ['id', planId]).service.name;
-      let skipQuotaCheck = _.find(catalog.plans, ['id', planId]).metadata ? _.find(catalog.plans, ['id', planId]).metadata.skip_quota_check : undefined;
+      let plan = _.find(catalog.plans, ['id', planId]);
+      if (!plan) {
+        logger.error(`Could not find Service Plan with ID ${planId} in quota catalog cache`);
+        throw new ServicePlanNotFound(planId);
+      }
+      let planName = plan.name;
+      let serviceName = plan.service ? plan.service.name : undefined;
+      let skipQuotaCheck = plan.metadata ? plan.metadata.skip_quota_check : undefined;
       logger.info(`Plan name: ${planName}, Service Name: ${serviceName}, skipQuotaCheck: ${skipQuotaCheck}`);
       if (skipQuotaCheck && skipQuotaCheck === true) {
         return CONST.QUOTA_API_RESPONSE_CODES.VALID_QUOTA;
