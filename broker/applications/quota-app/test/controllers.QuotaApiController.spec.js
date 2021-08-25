@@ -4,7 +4,10 @@ const {
   getQuotaManagerInstance
 } = require('@sf/quota');
 const {
-  CONST
+  CONST,
+  errors: {
+    ServicePlanNotFound
+  }
 } = require('@sf/common-utils');
 const QuotaApiController = require('../src/QuotaApiController');
 
@@ -33,6 +36,7 @@ describe('#getQuotaValidStatus', () => {
   const notEntitledPlanId = 'bc158c9a-7934-401e-94ab-057082a5073e';
   const validQuotaPlanId = 'bc158c9a-7934-401e-94ab-057082a5073f';
   const invalidQuotaPlanId = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
+  const newPlanId = 'b8cbbac8-6a20-42bc-b7db-47c205fccf20a';
   const cfQuotaManager = getQuotaManagerInstance(CONST.PLATFORM.CF);
   const cfQuotaManagerEU10 = getQuotaManagerInstance(CONST.PLATFORM.CF,'eu10');
   const k8squotaManager = getQuotaManagerInstance(CONST.PLATFORM.K8S);
@@ -328,4 +332,25 @@ describe('#getQuotaValidStatus', () => {
     expect(checkCFQuotaStub).to.have.been.not.called;
     expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR);
   });
+  it('Quota funtion throws error, should return NotFound error', async () => {
+      const err = new ServicePlanNotFound(newPlanId);
+      const req = {
+        params: {
+          accountId: organization_guid
+        },
+        query: {
+          planId: newPlanId,
+          previousPlanId: previous_plan_id,
+          reqMethod: 'PATCH',
+          isSubaccountFlag: 'false'
+        }
+      };
+      checkCFQuotaStub.reset();
+      checkCFQuotaStub.returns(Promise.reject(err));
+      await quotaApiController.getQuotaValidStatus(req, res);
+      expect(checkCFQuotaStub).to.have.been.called;
+      expect(res.status).to.have.been.calledOnce;
+      expect(res.status).to.have.been.calledWith(CONST.HTTP_STATUS_CODE.NOT_FOUND);
+      expect(res.send).to.have.been.calledWith({ error: err });
+    });
 });

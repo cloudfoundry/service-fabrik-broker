@@ -8,7 +8,10 @@ const {
 } = require('@sf/common-controllers');
 const {
   CONST,
-  commonFunctions
+  commonFunctions,
+  errors: {
+    ServicePlanNotFound
+  }
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 
@@ -41,9 +44,13 @@ class QuotaApiController extends FabrikBaseController {
       await res.status(CONST.HTTP_STATUS_CODE.OK).send({ quotaValidStatus: validStatus });
     } catch (err) {
       logger.error(`[Quota APP] Quota check could not be completed due to following error: ${err}`);
-      await res.status(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({ error: err });
+      if(err instanceof ServicePlanNotFound) {
+        await res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({ error: err });
+      } else {
+        await res.status(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({ error: err });
+      }
     }
-  }  
+  }
 }
 
 module.exports = QuotaApiController;
