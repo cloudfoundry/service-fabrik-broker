@@ -70,11 +70,12 @@ Architects, Developers, Product Owners, Development Managers who are interested 
 - [High Availability and Multi AZ Deployment](#high-availability-and-multi-az-deployment)
 - [Customizing Interoperator Deployment](#customizing-interoperator-deployment)
   - [For large landscapes](#for-large-landscapes)
-- [Interoperator HorizontalPodAutoscaler(HPA)](#Interoperator HorizontalPodAutoscaler(HPA))
-  - [Create a Horizontal Pod Autoscaler](#Create a Horizontal Pod Autoscaler)
-  - [Deploy the Horizontal Pod Autoscaler](#Deploy the Horizontal Pod Autoscaler)
-  - [Scaling Policies](#Scaling Policies)
-  - [Stabilization Window](#Stabilization Window)
+- [Interoperator HorizontalPodAutoscaler(HPA)](#interoperator-horizontalpodautoscalerhpa)
+  - [Create a Horizontal Pod Autoscaler](#create-a-horizontal-pod-autoscaler)
+  - [Deploy the Horizontal Pod Autoscaler](#deploy-the-horizontal-pod-autoscaler)
+  - [Default behavior for interoperator HPA](#default-behavior-for-interoperator-hpa)
+  - [Scaling Policies](#scaling-policies)
+  - [Stabilization Window](#stabilization-window)
 
 
 ## Context
@@ -891,11 +892,11 @@ interoperator:
 ```
 These values may further be customized by monitoring the resource utilization of interoperator components in the landscape.
 
-# Interoperator HorizontalPodAutoscaler(HPA))
+# Interoperator HorizontalPodAutoscaler(HPA)
 
 ## Create a Horizontal Pod Autoscaler
 
-To create the Horizontal Pod Autoscaler, paste the following code into the file templates/broker.yaml:
+To create the Horizontal Pod Autoscaler, paste the following code into the file [templates/broker.yaml](/helm-charts/interoperator/templates/broker.yaml):
 
 ```
 {{- if .Values.broker.hpa.enabled -}}
@@ -948,10 +949,10 @@ helm  upgrade -i --wait --set cluster.host=sf.ingress.pooja-dev.interop.shoot.ca
 
 ## Default behavior for interoperator HPA
 
-values.yaml file holds the default values. The same can be modified based on the requirement.
+[values.yaml](/helm-charts/interoperator/values.yaml) file holds the default values. The same can be modified based on the requirement.
 selectPolicy: Specify Max to use the policy that allows the highest amount of change, Min to use the policy that allows the lowest amount of change, or Disabled to prevent the HPA from scaling in that policy direction.
 
-** The default values are picked up from the kubernetes doc. Any changes may require a change in the values.yaml file.
+** The default values are picked up from the [kubernetes doc](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough). Any changes may require a change in the values.yaml file.
 
 ## Scaling Policies
 Scaling policies allow you to configure for how long a certain value has to be reached until scaling happens. This could be for example, only scale-out if the CPU utilization is higher than 70% for more than 30 seconds and only scale in if the CPU utilization is below 30% for 30 seconds. The code for this looks as follows:

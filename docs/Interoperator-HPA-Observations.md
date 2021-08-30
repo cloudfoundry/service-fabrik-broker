@@ -5,7 +5,7 @@
 This document describes HPA, it's implementation details for 'interoperator-broker' and the various tests that were performed to derive the desired recommendations. 
 
 ## Table of Content
-- [Interoperator HPA Observations](#Interoperator HPA Observations)
+- [Interoperator HPA Observations](#interoperator-hpa-observations)
   - [Abstract](#abstract)
   - [Table of Content](#table-of-content)
   - [Context](#context)
