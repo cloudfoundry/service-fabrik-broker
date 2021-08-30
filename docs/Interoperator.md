@@ -70,6 +70,12 @@ Architects, Developers, Product Owners, Development Managers who are interested 
 - [High Availability and Multi AZ Deployment](#high-availability-and-multi-az-deployment)
 - [Customizing Interoperator Deployment](#customizing-interoperator-deployment)
   - [For large landscapes](#for-large-landscapes)
+- [Interoperator HorizontalPodAutoscaler(HPA)](#interoperator-horizontalpodautoscalerhpa)
+  - [Create a Horizontal Pod Autoscaler](#create-a-horizontal-pod-autoscaler)
+  - [Deploy the Horizontal Pod Autoscaler](#deploy-the-horizontal-pod-autoscaler)
+  - [Default behavior for interoperator HPA](#default-behavior-for-interoperator-hpa)
+  - [Scaling Policies](#scaling-policies)
+  - [Stabilization Window](#stabilization-window)
 
 
 ## Context
@@ -885,3 +891,95 @@ interoperator:
         memory: 256Mi
 ```
 These values may further be customized by monitoring the resource utilization of interoperator components in the landscape.
+
+# Interoperator HorizontalPodAutoscaler(HPA)
+
+## Create a Horizontal Pod Autoscaler
+
+To create the Horizontal Pod Autoscaler, paste the following code into the file [templates/broker.yaml](/helm-charts/interoperator/templates/broker.yaml):
+
+```
+{{- if .Values.broker.hpa.enabled -}}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-broker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-broker
+  minReplicas: {{ .Values.broker.hpa.minReplicas }}
+  maxReplicas: {{ .Values.broker.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.broker.hpa.cpu_threshold }}
+```
+
+This config creates a Horizontal Pod Autoscaler if the hpa.enabled flag is set to true. Then it configures the specification with the maximum and minimum amount of replicas and at the end the target metric.
+In this example, the target metric is CPU utilization. All values starting with .Values are provided by the values.yaml file.
+
+Add the following code in values.yaml file under broker section:
+```
+broker:
+  hpa:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    cpu_threshold: 50
+```
+
+The horizontal-pod-autoscaler-downscale-stabilization defaults to 5 minutes, allowing scaledowns to occur gradually. The same can be configured using horizontal-pod-autoscaler-downscale-stabilization flag.
+
+
+## Deploy the Horizontal Pod Autoscaler
+
+By default, HPA will be disabled. It can be enabled using the helm install/upgrade command. Sample helm upgrade command to enable HPA, with the defaults:
+```
+helm  upgrade -i --wait --set cluster.host=sf.ingress.pooja-dev.interop.shoot.canary.k8s-hana.ondemand.com --set broker.hpa.enabled=true --namespace interoperator --version 0.15.0 interoperator helm-charts/interoperator
+```
+Sample command to disable HPA:
+```
+helm  upgrade -i --wait --set cluster.host=sf.ingress.pooja-dev.interop.shoot.canary.k8s-hana.ondemand.com --set broker.hpa.enabled=false --namespace interoperator --version 0.15.0 interoperator helm-charts/interoperator
+```
+
+## Default behavior for interoperator HPA
+
+[values.yaml](/helm-charts/interoperator/values.yaml) file holds the default values. The same can be modified based on the requirement.
+selectPolicy: Specify Max to use the policy that allows the highest amount of change, Min to use the policy that allows the lowest amount of change, or Disabled to prevent the HPA from scaling in that policy direction.
+
+** The default values are picked up from the [kubernetes doc](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough). Any changes may require a change in the values.yaml file.
+
+## Scaling Policies
+Scaling policies allow you to configure for how long a certain value has to be reached until scaling happens. This could be for example, only scale-out if the CPU utilization is higher than 70% for more than 30 seconds and only scale in if the CPU utilization is below 30% for 30 seconds. The code for this looks as follows:
+
+```
+behavior:
+  scaleDown:
+    policies:
+    - type: Percent
+      value: 30
+      periodSeconds: 30
+  scaleUp:    
+    policies:
+    - type: Percent
+      value: 70
+      periodSeconds: 30
+```
+We are not using any customized scaling policy for the interoperator-broker. It can be added based on the requirement of the user.
+
+## Stabilization Window
+The stabilization window restricts the hpa from scaling out or in too frequently. For example, if you set the stabilization window to 3 minutes (180 seconds) the timespan between scaling operations is at least 180 minutes. You can configure the stabilization window for scaling out and in independently. The following code shows a stabilization window for scaling down:
+```
+behavior:
+  stabilizationWindowSeconds: 180
+  scaleDown:
+    policies:
+    - type: Percent
+      value: 30
+      periodSeconds: 30
+```

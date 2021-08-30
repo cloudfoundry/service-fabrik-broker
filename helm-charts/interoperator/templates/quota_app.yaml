@@ -125,4 +125,43 @@ spec:
           configMap:
             name: sf-settings-config
       restartPolicy: Always
+---
+{{- if .Values.quota_app.hpa.enabled }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-quota-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-quota-app
+  minReplicas: {{ default .Values.replicaCount .Values.quota_app.replicaCount }}
+  maxReplicas: {{ .Values.quota_app.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.quota_app.hpa.cpu_threshold }}
+  behavior:
+    scaleUp:
+      selectPolicy: {{ .Values.quota_app.hpa.scaleUp.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.quota_app.hpa.scaleUp.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.quota_app.hpa.scaleUp.policies.percent.value }}
+          periodSeconds: {{ .Values.quota_app.hpa.scaleUp.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.quota_app.hpa.scaleUp.policies.pods.value }}
+          periodSeconds: {{ .Values.quota_app.hpa.scaleUp.policies.pods.periodSeconds }}
+    scaleDown:
+      selectPolicy: {{ .Values.quota_app.hpa.scaleDown.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.quota_app.hpa.scaleDown.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.quota_app.hpa.scaleDown.policies.percent.value }}
+          periodSeconds: {{ .Values.quota_app.hpa.scaleDown.policies.percent.periodSeconds }}
+{{- end }}
 {{- end }}
