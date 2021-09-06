@@ -38,6 +38,7 @@ type SFServiceSpec struct {
 	Bindable             bool     `json:"bindable"`
 	InstancesRetrievable bool     `json:"instancesRetrievable,omitempty"`
 	BindingsRetrievable  bool     `json:"bindingsRetrievable,omitempty"`
+	AllowContextUpdates  bool     `json:"allowContextUpdates,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata        *runtime.RawExtension `json:"metadata,omitempty"`
