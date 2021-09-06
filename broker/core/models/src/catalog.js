@@ -41,6 +41,16 @@ class Catalog {
     return this.getService(id).name;
   }
 
+  getServiceFromPlan(planId) {
+    for(const service of this.services) {
+      let plan = _.find(service.plans, plan => plan.id === planId);
+      if (plan) {
+        return service;
+      }
+    }
+    throw new ServicePlanNotFound(planId);
+  }
+
   toJSON() {
     return {
       services: _.filter(this.services, service => service.name.indexOf('-fabrik-internal') === -1)
