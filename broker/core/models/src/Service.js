@@ -47,7 +47,8 @@ class Service {
       'bindings_retrievable',
       'dashboard_client',
       'application_access_ports',
-      'service_tags'
+      'service_tags',
+      'allow_context_updates'
     ];
   }
 }
