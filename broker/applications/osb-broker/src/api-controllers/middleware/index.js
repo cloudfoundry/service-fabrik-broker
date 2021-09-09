@@ -170,6 +170,23 @@ exports.validateInstanceRequest = function () {
   };
 };
 
+exports.validateContextUpdateFlag = function () {
+  return function (req, res, next) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const prev_plan_id = req.body.previous_values.plan_id;
+    if (req.body.context && !req.body.parameters && plan_id == prev_plan_id) {
+      logger.debug(`req.params is ${JSON.stringify(req.params)} and req.body is ${JSON.stringify(req.body)}`);
+      const allowContextUpdate = catalog.getServiceFromPlan(plan_id).allow_context_updates;
+      logger.info(`request contains only context data ${allowContextUpdate}`);
+      let allowUpdate = (allowContextUpdate == undefined) ? true : allowContextUpdate;
+      if (!allowUpdate) {
+        return next(new BadRequest('Update is not possible since allow_context_update is set to false.'));
+      }
+    }
+    next();
+  };
+};
+
 exports.validateBindingRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */

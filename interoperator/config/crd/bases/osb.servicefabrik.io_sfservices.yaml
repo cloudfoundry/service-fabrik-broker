@@ -43,6 +43,8 @@ spec:
           spec:
             description: SFServiceSpec defines the desired state of SFService
             properties:
+              allowContextUpdates:
+                type: boolean
               bindable:
                 type: boolean
               bindingsRetrievable:

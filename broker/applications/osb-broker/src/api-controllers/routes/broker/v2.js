@@ -33,7 +33,7 @@ router.use(middleware.error({
 /* Service Instance Router */
 instanceRouter.route('/')
   .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateInstanceRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), middleware.validateMaintenanceInfoInRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
-  .patch([middleware.injectPlanInRequest(), middleware.checkQuota(), middleware.validateInstanceRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), middleware.validateMaintenanceInfoInRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
+  .patch([middleware.injectPlanInRequest(), middleware.validateContextUpdateFlag(), middleware.validateInstanceRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), middleware.validateMaintenanceInfoInRequest(), middleware.checkQuota(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
   .delete([middleware.validateInstanceRequest(), middleware.validateConcurrentOperations(), middleware.validateConcurrentBindingOperations(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .get([middleware.minApiVersion('2.14'), controller.handler('getServiceInstance')])
   .all(middleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE', 'GET']));
