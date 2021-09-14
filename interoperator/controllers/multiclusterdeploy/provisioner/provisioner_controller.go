@@ -411,11 +411,11 @@ func (r *ReconcileProvisioner) reconcileSecret(namespace string, secretName stri
 		targetSFClusterSecret.Data[key] = val
 	}
 
-	log.Info("Updating secret in target cluster", "targetType", targetSFClusterSecret.Type, "sourceType", clusterInstanceSecret.Type)
+	log.Info("Replicating secret to target cluster", "targetType", targetSFClusterSecret.Type, "sourceType", clusterInstanceSecret.Type)
 	err = targetClient.Get(ctx, types.NamespacedName{
 		Name:      targetSFClusterSecret.GetName(),
 		Namespace: targetSFClusterSecret.GetNamespace(),
-	}, targetSFClusterSecret)
+	}, &corev1.Secret{})
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("secret not found in target cluster, Creating")
@@ -429,6 +429,7 @@ func (r *ReconcileProvisioner) reconcileSecret(namespace string, secretName stri
 			return err
 		}
 	} else {
+		log.Info("Secret exist in the target cluster. Updating")
 		err = targetClient.Update(ctx, targetSFClusterSecret)
 		if err != nil {
 			log.Error(err, "Error occurred while updating secret in target cluster")
