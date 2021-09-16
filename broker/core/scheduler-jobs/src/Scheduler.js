@@ -5,8 +5,8 @@ const pubsub = require('pubsub-js');
 const os = require('os');
 var moment = require('moment-timezone'); // eslint-disable-line no-var
 Promise.promisifyAll([
-  require('agenda/lib/agenda'),
-  require('agenda/lib/job')
+  require('agenda/dist/agenda'),
+  require('agenda/dist/job')
 ]);
 const Agenda = require('agenda');
 const CronTime = require('cron').CronTime;
