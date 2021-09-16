@@ -22,6 +22,15 @@ Here is a Fluent Bit configuration to support multi line,
 ```yaml
   parsers.conf: |
     [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On  
+        # Command      |  Decoder | Field | Optional Action
+        # =============|==================|=================
+        Decode_Field_As   escaped    log 
+    [PARSER]
         Name multi_line
         Format regex
         Regex (?<log>^{"log":"\d{4}-\d{2}-\d{2}.*)
