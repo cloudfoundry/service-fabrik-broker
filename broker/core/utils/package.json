@@ -16,7 +16,7 @@
     "jsonwebtoken": "8.5.1",
     "lodash": "4.17.21",
     "moment": "2.27.0",
-    "mongoose": "5.9.24",
+    "mongoose": "5.13.9",
     "uuid": "8.2.0"
   }
 }
