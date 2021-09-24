@@ -139,9 +139,12 @@ func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedRe
 		var updatedResource interface{}
 		log.V(2).Info("reconcile - expectedResource resource", "foundResource", foundResource.Object, "expectedResource", expectedResource.Object)
 		if !force {
-			updatedResource, toBeUpdated = dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
+			updatedResource, toBeUpdated, err = dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
+			if err != nil {
+			    log.Error(err, "reconcile- failed to update resource ", "kind ", kind, "namespacedName ", namespacedName)
+			    return nil, err
+			}
 		}
-
 		if toBeUpdated || force {
 			log.Info("reconcile - updating resource", "kind", kind, "namespacedName", namespacedName)
 			if force {
