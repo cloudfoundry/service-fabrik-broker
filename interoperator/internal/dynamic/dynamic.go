@@ -89,31 +89,46 @@ func ObjectToMapInterface(obj interface{}) (map[string]interface{}, error) {
 }
 
 // DeepUpdate copies the different fields from new to old
-func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
+func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool, error) {
 	toBeUpdated := false
+	err := fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newObj, currentObj, newObj)
 	switch new := newObj.(type) {
 	case map[string]interface{}:
-		current := currentObj.(map[string]interface{})
+		current, ok := currentObj.(map[string]interface{})
+		if !ok {
+		    log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj ", newObj)
+		    return currentObj, toBeUpdated, err
+		}
 		for updateKey, value := range new {
 			//If the existing resource doesnot have the field add it
 			if foundField, ok := current[updateKey]; !ok {
 				current[updateKey] = value
 				toBeUpdated = true
 			} else {
-				updatedVal, ok := DeepUpdate(foundField, value)
+				updatedVal, ok, err := DeepUpdate(foundField, value)
+				if err!= nil {
+				    return currentObj, toBeUpdated, err
+				}
 				if ok {
 					current[updateKey] = updatedVal
 					toBeUpdated = true
 				}
 			}
 		}
-		return current, toBeUpdated
+		return current, toBeUpdated, nil
 	case []interface{}:
-		current := currentObj.([]interface{})
+		current, ok := currentObj.([]interface{})
+		if !ok {
+		    log.Error(err, "Error updating ", "currentObj ", currentObj, " to newObj ", newObj)
+		    return currentObj, toBeUpdated, err
+		}
 		currentLen := len(current)
 		for i, val := range new {
 			if i < currentLen {
-				updatedVal, ok := DeepUpdate(current[i], val)
+				updatedVal, ok, err := DeepUpdate(current[i], val)
+				if err!= nil {
+				    return currentObj, toBeUpdated, err
+				}
 				if ok {
 					current[i] = updatedVal
 					toBeUpdated = true
@@ -121,16 +136,23 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
 			} else {
 				current = append(current, new[i:]...)
 				toBeUpdated = true
-				return current, toBeUpdated
+				return current, toBeUpdated, nil
 			}
 		}
-		return current, toBeUpdated
+		return current, toBeUpdated, nil
 	case []map[string]interface{}:
-		current := currentObj.([]map[string]interface{})
+		current, ok := currentObj.([]map[string]interface{})
+		if !ok {
+		    log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj type ", newObj)
+		    return currentObj, toBeUpdated, err
+		}
 		currentLen := len(current)
 		for i, val := range new {
 			if i < currentLen {
-				updatedVal, ok := DeepUpdate(current[i], val)
+				updatedVal, ok, err := DeepUpdate(current[i], val)
+				if err!= nil {
+				    return currentObj, toBeUpdated, err
+				}
 				if ok {
 					current[i] = updatedVal.(map[string]interface{})
 					toBeUpdated = true
@@ -138,15 +160,15 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
 			} else {
 				current = append(current, new[i:]...)
 				toBeUpdated = true
-				return current, toBeUpdated
+				return current, toBeUpdated, nil
 			}
 		}
-		return current, toBeUpdated
+		return current, toBeUpdated, nil
 	default:
 		if !reflect.DeepEqual(currentObj, newObj) {
 			currentObj = newObj
 			toBeUpdated = true
 		}
-		return currentObj, toBeUpdated
+		return currentObj, toBeUpdated, nil
 	}
 }
