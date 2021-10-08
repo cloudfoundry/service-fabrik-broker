@@ -12,7 +12,7 @@ interoperator_cluster_up| cluster | State of the clusters.<br> 0 - down <br> 1 -
 interoperator_service_instances_state | instance_id | State of the service instance.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete <br> 4 - gone
 interoperator_cluster_service_instances | cluster | Number of service instances partitioned by cluster
 interoperator_cluster_allocatable | cluster <br> type | Allocatable resources partitioned by cluster and resource type
-interoperator_service_bindings_state | binding_id <br> instance_id | State of the service binding.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete
+interoperator_service_bindings_state | binding_id <br> instance_id | State of the service binding.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete <br> 4 - gone
 
 ## Liveness and Readiness Probe
 The metrics endpoints are exposed regardless of the status of leader election. So the metrics endpoint is used as liveness and readiness probe for the pods. If the metric endpoint is not up, liveness probe will fail and kubernetes will restart the pod.
