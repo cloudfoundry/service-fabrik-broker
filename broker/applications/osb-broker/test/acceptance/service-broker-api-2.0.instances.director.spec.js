@@ -2400,7 +2400,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC = timeout;
-              expect(res).to.have.status(429);
+              expect(res).to.have.status(504);
               mocks.verify();
               done();
             });
@@ -2443,7 +2443,7 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(409);
-              expect(res.body).to.deep.equal({});
+              expect(res.body).to.deep.equal({"description": "HTTP request failed", "error": "Conflict"});
               mocks.verify();
             });
         });
