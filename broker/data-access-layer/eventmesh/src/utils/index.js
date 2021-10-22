@@ -4,7 +4,7 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const config = require('@sf/app-config');
-const decamelizeKeysDeep = require('decamelize-keys-deep');
+const decamelizeKeys = require('decamelize-keys');
 const logger = require('@sf/logger');
 const { catalog } = require('@sf/models');
 const { apiServerClient } = require('../');
@@ -27,7 +27,7 @@ function getAllServices() {
     .then(serviceList => {
       let services = [];
       _.forEach(serviceList, service => {
-        services = _.concat(services, [decamelizeKeysDeep(service.spec)]);
+        services = _.concat(services, [decamelizeKeys(service.spec)]);
       });
       return services;
     });

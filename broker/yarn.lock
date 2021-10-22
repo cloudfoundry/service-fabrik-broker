@@ -1594,7 +1594,7 @@ __metadata:
     "@sf/models": "*"
     bluebird: 3.7.2
     camelcase-keys: 6.2.2
-    decamelize-keys-deep: 0.1.1
+    decamelize-keys: 1.1.0
     js-yaml: 3.14.0
     json-stream: ^1.0.0
     lodash: 4.17.21
