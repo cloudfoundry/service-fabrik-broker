@@ -495,7 +495,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function conflict(err) {
       /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({
+        error: err.reason,
+        description: err.message
+      });
     }
 
     let namespaceLabel = {};
@@ -610,7 +613,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
               'binding_id:', params.binding_id, 'Failed to orphan binding', err);
           });
 
-        res.status(CONST.HTTP_STATUS_CODE.TOO_MANY_REQUESTS).send({});
+        res.status(CONST.HTTP_STATUS_CODE.TIMEOUT).send({
+          error: err.reason,
+          description: err.message
+        });
       });
   }
 
@@ -646,7 +652,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({
+        error: err.reason,
+        description: err.message
+      });
     }
     // Delete resource before patching state to delete
     // As interoperator reacts on state change and deletionTimeStamp
@@ -684,7 +693,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done.bind(this))
       .catch(NotFound, gone)
       .catch(Timeout, err => {
-        res.status(CONST.HTTP_STATUS_CODE.TOO_MANY_REQUESTS).send({});
+        res.status(CONST.HTTP_STATUS_CODE.TIMEOUT).send({
+          error: err.reason,
+          description: err.message
+        });
       });
   }
 
@@ -711,10 +723,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getServiceInstance(req, res) {
     function badRequest(err) {
-      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({});
+      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({
+        error: err.reason,
+        description: err.message
+      });
     }
     function notFound(err) {
-      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({});
+      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({
+        error: err.reason,
+        description: err.message
+      });
     }
     function unprocessableEntity(err) {
       res.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY).send({
@@ -799,10 +817,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getServiceBinding(req, res) {
     function badRequest(err) {
-      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({});
+      res.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST).send({
+        error: err.reason,
+        description: err.message
+      });
     }
     function notFound(err) {
-      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({});
+      res.status(CONST.HTTP_STATUS_CODE.NOT_FOUND).send({
+        error: err.reason,
+        description: err.message
+      });
     }
     function done(bindResponse, body) {
       const response = decodeBase64(bindResponse);
