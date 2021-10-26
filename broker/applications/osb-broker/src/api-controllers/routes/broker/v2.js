@@ -6,6 +6,7 @@ const config = require('@sf/app-config');
 const middleware = require('../../middleware');
 const { CONST } = require('@sf/common-utils');
 const controller = require('../../').serviceBrokerApi;
+const logger = require('@sf/logger');
 
 const router = module.exports = express.Router({
   mergeParams: true
@@ -15,7 +16,14 @@ const instanceRouter = express.Router({
 });
 
 /* Service Broker API Router */
-router.use(middleware.basicAuth(config.username, config.password));
+
+if (_.get(config, 'smConnectionSettings.secureIncomingConnections')) {
+  logger.debug('certificate verification is on, using mtls auth');
+  router.use(middleware.tlsAuth());
+} else {
+  router.use(middleware.basicAuth(config.username, config.password));
+}
+
 router.use(middleware.addRequestIdentityToResponse());
 
 if (_.includes(['production', 'test'], process.env.NODE_ENV)) {
