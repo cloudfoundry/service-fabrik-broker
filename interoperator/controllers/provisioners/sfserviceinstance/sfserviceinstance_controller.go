@@ -607,7 +607,7 @@ func (r *ReconcileSFServiceInstance) restartOnWatchUpdate() {
 // This annotation is used by the autoUpdateInstances scheduler
 func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.NamespacedName, retryCount int) error {
 	ctx := context.Background()
-	log := r.Log.WithValues("sfserviceinstance", namespacedName, "function", "updatePlanHash")
+	log := r.Log.WithValues("sfserviceinstance", namespacedName.String(), "function", "updatePlanHash")
 
 
 	instance := &osbv1alpha1.SFServiceInstance{}
@@ -617,7 +617,7 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 			log.Info("Retrying", "retryCount", retryCount+1)
 			return r.updatePlanHash(namespacedName, retryCount+1)
 		}
-		log.Error(err, "Updating sfplan hash to annotation failed for instance", namespacedName)
+		log.Error(err, "Updating sfplan hash to annotation failed")
 		return err
 	}
 
