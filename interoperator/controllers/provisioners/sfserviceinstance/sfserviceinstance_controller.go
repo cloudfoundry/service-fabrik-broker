@@ -160,7 +160,9 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		}
 		err = r.updatePlanHash(req.NamespacedName, 0)
 		if err != nil {
-			return r.handleError(instance, ctrl.Result{}, err, state, 0)
+			// Not throwing error
+			// Annotation is only required if plan.Spec.AutoUpdateInstances is enabled
+			log.Error(err, "Failed to update hash of sfplan on annotation.")
 		}
 		err = r.setInProgress(req.NamespacedName, state, resourceRefs, 0)
 		if err != nil {
@@ -623,9 +625,9 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 	planID := instance.Spec.PlanID
 
 	serviceNamespace := constants.InteroperatorNamespace
-	_, plan, err := services.FindServiceInfo(r, serviceID, planID, serviceNamespace)
+	plan, err := services.FindPlanInfo(r, serviceID, planID, serviceNamespace)
 	if err != nil {
-		log.Error(err, "failed finding service and plan info when updating plan hash", "serviceID", serviceID, "planID", planID)
+		log.Error(err, "Failed finding plan info when updating plan hash", "serviceID", serviceID, "planID", planID)
 		return err
 	}
 
