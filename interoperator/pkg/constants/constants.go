@@ -15,6 +15,7 @@ const (
 	ErrorCountKey                         = "interoperator.servicefabrik.io/error"
 	LastOperationKey                      = "interoperator.servicefabrik.io/lastoperation"
 	PrimaryClusterKey                     = "interoperator.servicefabrik.io/primarycluster"
+	PlanHashKey                           = "interoperator.servicefabrik.io/planhash"
 	ErrorThreshold                        = 10
 
 	ConfigMapName           = "interoperator-config"
