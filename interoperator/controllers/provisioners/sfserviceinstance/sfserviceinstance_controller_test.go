@@ -25,16 +25,20 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/resources"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/resources/mock_resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrlrun "sigs.k8s.io/controller-runtime"
@@ -672,4 +676,159 @@ func TestReconcileSFServiceInstance_setInProgress(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: "0",
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	c, err = client.New(cfg, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	plan := &osbv1alpha1.SFPlan{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SFPlan",
+			APIVersion: "osb.servicefabrik.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "plan-id",
+			Namespace: constants.InteroperatorNamespace,
+			Labels:    map[string]string{"serviceId": "service-id", "planId": "plan-id"},
+		},
+		Spec: osbv1alpha1.SFPlanSpec{
+			Name:          "plan-name",
+			ID:            "plan-id",
+			Description:   "description",
+			Metadata:      nil,
+			Free:          false,
+			Bindable:      true,
+			PlanUpdatable: true,
+			Schemas:       nil,
+			Templates:     []osbv1alpha1.TemplateSpec{},
+			ServiceID:     "service-id",
+			RawContext:    nil,
+			Manager:       nil,
+		},
+		Status: osbv1alpha1.SFPlanStatus{},
+	}
+	instance := &osbv1alpha1.SFServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "instance-id",
+			Namespace: constants.InteroperatorNamespace,
+			Labels: map[string]string{
+				"state":                 "in_queue",
+				constants.ErrorCountKey: "10",
+			},
+		},
+		Spec: osbv1alpha1.SFServiceInstanceSpec{
+			ServiceID:        "service-id",
+			PlanID:           "plan-id",
+			RawContext:       nil,
+			OrganizationGUID: "organization-guid",
+			SpaceGUID:        "space-guid",
+			RawParameters:    nil,
+			PreviousValues:   nil,
+		},
+		Status: osbv1alpha1.SFServiceInstanceStatus{
+			State: "in_queue",
+		},
+	}
+
+	err = c.Create(context.TODO(), plan)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	err = c.Create(context.TODO(), instance)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	serviceInstance := &osbv1alpha1.SFServiceInstance{}
+	g.Eventually(func() error {
+		return c.Get(context.TODO(), instanceKey, serviceInstance)
+	}, timeout).Should(gomega.Succeed())
+
+	type fields struct {
+		Client          client.Client
+		Log             logr.Logger
+		scheme          *runtime.Scheme
+		clusterRegistry registry.ClusterRegistry
+		resourceManager resources.ResourceManager
+	}
+	type args struct {
+		namespacedName types.NamespacedName
+		retryCount     int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "create new plan hash annotation",
+			fields: fields{
+				Client:          c,
+				Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
+				scheme:          mgr.GetScheme(),
+				clusterRegistry: mockClusterRegistry,
+				resourceManager: mockResourceManager,
+			},
+			args: args{
+				namespacedName: types.NamespacedName{
+					Name:      "instance-id",
+					Namespace: constants.InteroperatorNamespace,
+				},
+				retryCount: 0,
+			},
+			wantErr: false,
+		},
+		{
+			name: "throw error if instance is not found",
+			fields: fields{
+				Client:          c,
+				Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
+				scheme:          mgr.GetScheme(),
+				clusterRegistry: mockClusterRegistry,
+				resourceManager: mockResourceManager,
+			},
+			args: args{
+				namespacedName: types.NamespacedName{
+					Name:      "notfound-instance",
+					Namespace: constants.InteroperatorNamespace,
+				},
+				retryCount: constants.ErrorThreshold - 1, // to retry only once
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &ReconcileSFServiceInstance{
+				Client:          tt.fields.Client,
+				Log:             tt.fields.Log,
+				scheme:          tt.fields.scheme,
+				clusterRegistry: tt.fields.clusterRegistry,
+				resourceManager: tt.fields.resourceManager,
+			}
+			if err := r.updatePlanHash(tt.args.namespacedName, tt.args.retryCount); (err != nil) != tt.wantErr {
+				t.Errorf("ReconcileSFServiceInstance.updatePlanHash() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
 }

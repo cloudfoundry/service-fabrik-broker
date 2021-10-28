@@ -28,6 +28,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/services"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
@@ -156,6 +157,12 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 		if err != nil {
 			log.Error(err, "ReconcileResources failed")
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
+		}
+		err = r.updatePlanHash(req.NamespacedName, 0)
+		if err != nil {
+			// Not throwing error
+			// Annotation is only required if plan.Spec.AutoUpdateInstances is enabled
+			log.Error(err, "Failed to update hash of sfplan on annotation.")
 		}
 		err = r.setInProgress(req.NamespacedName, state, resourceRefs, 0)
 		if err != nil {
@@ -594,6 +601,60 @@ func (r *ReconcileSFServiceInstance) restartOnWatchUpdate() {
 		r.Log.Info("Instance watch list changed. Restarting interoperator")
 		os.Exit(1)
 	}
+}
+
+// Add the sfplan spec hash in the instance annotation
+// This annotation is used by the autoUpdateInstances scheduler
+func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.NamespacedName, retryCount int) error {
+	ctx := context.Background()
+	log := r.Log.WithValues("sfserviceinstance", namespacedName.String(), "function", "updatePlanHash")
+
+
+	instance := &osbv1alpha1.SFServiceInstance{}
+	err := r.Get(ctx, namespacedName, instance)
+	if err != nil {
+		if retryCount < constants.ErrorThreshold {
+			log.Info("Retrying", "retryCount", retryCount+1)
+			return r.updatePlanHash(namespacedName, retryCount+1)
+		}
+		log.Error(err, "Updating sfplan hash to annotation failed")
+		return err
+	}
+
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+
+	serviceNamespace := constants.InteroperatorNamespace
+	plan, err := services.FindPlanInfo(r, serviceID, planID, serviceNamespace)
+	if err != nil {
+		log.Error(err, "Failed finding plan info when updating plan hash", "serviceID", serviceID, "planID", planID)
+		return err
+	}
+
+	annotations := instance.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	currentPlanHash := utils.CalculateHash(plan.Spec)
+	if planHash, ok := annotations[constants.PlanHashKey]; !ok || currentPlanHash != planHash {
+		
+		annotations[constants.PlanHashKey] = utils.CalculateHash(plan.Spec)
+		instance.SetAnnotations(annotations)
+
+		err = r.Update(ctx, instance)
+		if err != nil {
+			if retryCount < constants.ErrorThreshold {
+				log.Info("Retrying", "retryCount", retryCount+1)
+				return r.updatePlanHash(namespacedName, retryCount+1)
+			}
+			log.Error(err, "Updating sfplan hash to annotation failed")
+			return err
+		}
+		log.Info("Updated sfplan hash to annotation")
+	}
+
+	return nil
 }
 
 // SetupWithManager registers the SFServiceInstance Controller with manager

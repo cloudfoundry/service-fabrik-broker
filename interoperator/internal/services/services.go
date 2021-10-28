@@ -33,24 +33,34 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 		return nil, nil, errors.NewSFServiceNotFound(serviceID, nil)
 	}
 
-	plans := &osbv1alpha1.SFPlanList{}
-	options = &kubernetes.ListOptions{
-		Namespace: namespace,
-	}
-	labels = make(kubernetes.MatchingLabels)
-	labels["serviceId"] = serviceID
-	labels["planId"] = planID
-	labels.ApplyToList(options)
-
-	err = client.List(context.TODO(), plans, options)
+	plan, err := FindPlanInfo(client, serviceID, planID, namespace)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	return service, plan, nil
+}
+
+// FindPlanInfo fetches the details of a plan
+func FindPlanInfo(client kubernetes.Client, serviceID string, planID string, namespace string) (*osbv1alpha1.SFPlan, error) {
+	plans := &osbv1alpha1.SFPlanList{}
+	options := &kubernetes.ListOptions{
+		Namespace: namespace,
+	}
+	labels := make(kubernetes.MatchingLabels)
+	labels["serviceId"] = serviceID
+	labels["planId"] = planID
+	labels.ApplyToList(options)
+
+	err := client.List(context.TODO(), plans, options)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, plan := range plans.Items {
 		if plan.Spec.ID == planID {
-			return service, &plan, nil
+			return &plan, nil
 		}
 	}
-	return nil, nil, errors.NewSFPlanNotFound(planID, nil)
+	return nil, errors.NewSFPlanNotFound(planID, nil)
 }

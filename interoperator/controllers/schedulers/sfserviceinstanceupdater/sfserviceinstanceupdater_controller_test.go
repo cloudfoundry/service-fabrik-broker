@@ -27,6 +27,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfdefaultscheduler"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -88,11 +89,14 @@ func TestReconcile(t *testing.T) {
 	plan1 := _getDummyPlan("provisioncontent")
 	g.Expect(c.Create(context.TODO(), plan1)).NotTo(gomega.HaveOccurred())
 
-	instance1 := _getDummySFServiceInstance("foo1", "plan-id")
+	instance1 := _getDummySFServiceInstance("foo1", "plan-id", "in_queue")
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(gomega.HaveOccurred())
 
-	instance2 := _getDummySFServiceInstance("foo2", "plan-id")
+	instance2 := _getDummySFServiceInstance("foo2", "plan-id", "update")
 	g.Expect(c.Create(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+
+	instance3 := _getDummySFServiceInstance("foo3", "plan-id", "delete")
+	g.Expect(c.Create(context.TODO(), instance3)).NotTo(gomega.HaveOccurred())
 
 	plan2 := &osbv1alpha1.SFPlan{}
 	g.Eventually(func() error {
@@ -110,6 +114,18 @@ func TestReconcile(t *testing.T) {
 	}, timeout).Should(gomega.Succeed())
 
 	plan2.Spec.Templates[0].Content = "modifiedContent"
+
+	// creating an instance with this new spec hash
+	// this instance should not be updated after applying plan
+	// since annotation has this plan hash
+	instance4 := _getDummySFServiceInstance("foo4", "plan-id", "in_queue")
+	annotations := map[string]string{
+				constants.PlanHashKey: utils.CalculateHash(plan2.Spec),
+			}
+	instance4.SetAnnotations(annotations)
+	g.Expect(c.Create(context.TODO(), instance4)).NotTo(gomega.HaveOccurred())
+
+	// apply after creating instance4
 	g.Expect(c.Update(context.TODO(), plan2)).NotTo(gomega.HaveOccurred())
 
 	plan3 := &osbv1alpha1.SFPlan{}
@@ -149,12 +165,40 @@ func TestReconcile(t *testing.T) {
 		if instance2State != "update" {
 			return errors.New("service intance 2 state is not update")
 		}
+
+		// instance3 with lastOperation as delete should not be update
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Name:      "foo3",
+			Namespace: constants.InteroperatorNamespace,
+		}, instance3)
+		if err != nil {
+			return err
+		}
+		instance3State := instance3.Status.State
+		if instance3State == "update" {
+			return errors.New("instance with lastoperation as delete should not be updated")
+		}
+
+		// instance4 with latest planhash in annotation should not be update
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Name:      "foo4",
+			Namespace: constants.InteroperatorNamespace,
+		}, instance4)
+		if err != nil {
+			return err
+		}
+		instance4State := instance4.Status.State
+		if instance4State == "update" {
+			return errors.New("instance with latest planhash in annotation should not be updated")
+		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(instance1.Status.State).To(gomega.Equal("update"))
 
 	g.Expect(c.Delete(context.TODO(), instance1)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Delete(context.TODO(), instance2)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), instance3)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), instance4)).NotTo(gomega.HaveOccurred())
 
 }
 
@@ -171,13 +215,14 @@ func _getDummyConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func _getDummySFServiceInstance(name string, planID string) *osbv1alpha1.SFServiceInstance {
+func _getDummySFServiceInstance(name string, planID string, lastOperation string) *osbv1alpha1.SFServiceInstance {
 	return &osbv1alpha1.SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
 				"state": "in_queue",
+				constants.LastOperationKey: lastOperation,
 			},
 		},
 		Spec: osbv1alpha1.SFServiceInstanceSpec{

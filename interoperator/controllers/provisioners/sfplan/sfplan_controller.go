@@ -176,7 +176,32 @@ func (r *ReconcileSFPlan) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		log.Info("Plan labels updated", "plan", instance.GetName())
 	}
+	r.updatePlanHash(instance, ctx)
 	return ctrl.Result{}, nil
+}
+
+// Keeping the plan hash for versioning
+func (r *ReconcileSFPlan) updatePlanHash(plan *osbv1alpha1.SFPlan, ctx context.Context) error {
+
+	log := r.Log.WithValues("sfplan", plan.GetName(), "function", "updatePlanHash")
+	annotations := plan.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	currentPlanHash := utils.CalculateHash(plan.Spec)
+	if planHash, ok := annotations[constants.PlanHashKey]; !ok || currentPlanHash != planHash {
+		
+		annotations[constants.PlanHashKey] = utils.CalculateHash(plan.Spec)
+		plan.SetAnnotations(annotations)
+
+		err := r.Update(ctx, plan)
+		if err != nil {
+			log.Error(err, "Updating sfplan spec hash to its annotation failed")
+		}
+		log.Info("Plan annotation updated")
+	}
+	return nil
 }
 
 // Returns true if a and b point to the same object
