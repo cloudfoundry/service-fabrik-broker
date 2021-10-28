@@ -39,9 +39,15 @@ type SFServiceInstanceUpdater struct {
 	Log logr.Logger
 }
 
-// Reconcile schedules the SFServiceInstance to one SFCluster and sets the ClusterID in
-// SFServiceInstance.Spec.ClusterID. It chooses the destination cluster based on clusterSelector
-// template provided in the plan.
+// Reconcile triggers updation of the SFServiceInstances for changes in
+// SFPlan.spec. It filters out already updated SFServiceInstance by matching the
+// planhash stored in the annotation of the SFServiceInstance.
+//
+// After triggering update on all the selected SFServiceInstance, the 
+// SFPlan.Status.SpecHash is upated with the new checksum of SFPlan.spec.
+// If update failed for any of the SFServiceInstance, the SFPlan.Status.SpecHash
+// is not updated. Thus failure can be identified by the difference in SFPlan.annotations.planhash
+// and SFPlan.Status.SpecHash. The failed ones are reconciled again after some time.
 func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstance-updater", req.NamespacedName)

@@ -797,7 +797,7 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Throws error if instance is not found",
+			name: "throw error if instance is not found",
 			fields: fields{
 				Client:          c,
 				Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
@@ -829,4 +829,6 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 			}
 		})
 	}
+	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
 }
