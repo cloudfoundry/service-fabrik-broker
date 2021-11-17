@@ -202,7 +202,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(statusCode).send(body);
     }
 
-    const labels = req.params.region ? { 'region':req.params.region } : undefined;
+    let labels = req.params.region ? { 'region':req.params.region } : undefined;
+    labels = _.merge(labels, {
+      plan_id : planId
+    });
     
     _.forIn(labels, function(value, key) {
       if (!isValidKubernetesLabelValue(value)) {
