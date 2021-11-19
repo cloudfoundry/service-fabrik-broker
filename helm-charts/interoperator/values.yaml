@@ -18,6 +18,12 @@ broker:
   allow_concurrent_operations: true
   allow_concurrent_binding_operations: true
   send_binding_metadata: true
+  smConnectionSettings:
+    auth_tls_verify_client: "off"
+    auth_tls_secret: ""
+    auth_tls_pass_certificate_to_upstream: "true"
+    secureIncomingConnections: false
+    sm_certificate_subject_pattern: ""
   
   # override the global replicaCount just for broker
   # this value is used to set minReplica if hpa is enabled
