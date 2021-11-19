@@ -16,6 +16,7 @@ const {
 } = require('@sf/common-utils');
 const logger = require('@sf/logger');
 const { initializeEventListener } = require('@sf/event-logger');
+const config = require('@sf/app-config');
 
 exports.methodNotAllowed = function (allow) {
   return function (req, res, next) {
@@ -33,6 +34,36 @@ exports.basicAuth = function (username, password) {
     res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
     next(new Unauthorized());
   };
+};
+
+exports.tlsAuth = function () {
+  return function (req, res, next) {
+    const clientCertificate = req.headers['ssl-client-cert'];
+    if (!clientCertificate) {
+      logger.error('clientCertificate not found in the request headers: ', req.headers);
+      next(new Unauthorized('Client certificate not found in the request headers'));
+    } else {
+      const smCertSubjectPattern = _.get(config, 'smConnectionSettings.sm_certificate_subject_pattern');
+      if (smCertSubjectPattern) {
+        let subjectDN = req.headers['ssl-client-subject-dn'];
+        if (!subjectDN || !verifySubjectDN(subjectDN, smCertSubjectPattern)) {
+          logger.error('subject DN does not match the sm_certificate_subject_pattern, subjectDN: ', subjectDN, ' sm_certificate_subject_pattern: ', smCertSubjectPattern);
+          return next(new Unauthorized('Subject DN in the request header doesnt match the configured sm_certificate_subject_pattern'));
+        }
+        next();
+      } else {
+        logger.error('sm_certificate_subject_pattern is either not defined or value is not set.');
+        return next(new Unauthorized('sm_certificate_subject_pattern is either not defined or value is not set.'));
+      }
+    }
+  };
+
+  function verifySubjectDN(subjectDN,smCertSubjectPattern) {
+    let splitSubjectDN = subjectDN.split(',');
+    let splitSubjPattern = smCertSubjectPattern.split('/');
+    splitSubjPattern.shift();
+    return _.isEmpty(_.xor(splitSubjectDN, splitSubjPattern));
+  }
 };
 
 exports.requireHttps = function (options) {

@@ -17,6 +17,9 @@ defaults: &defaults
   allowConcurrentOperations: {{ .Values.broker.allow_concurrent_operations }}
   allowConcurrentBindingOperations: {{ .Values.broker.allow_concurrent_binding_operations }}
   sendBindingMetadata: {{ .Values.broker.send_binding_metadata }}
+  smConnectionSettings:
+    secureIncomingConnections: {{ .Values.broker.smConnectionSettings.secureIncomingConnections }}
+    sm_certificate_subject_pattern: {{ .Values.broker.smConnectionSettings.sm_certificate_subject_pattern }}
   
   ##############################
   # INTERNAL ENDPOINT SETTINGS #
