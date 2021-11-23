@@ -42,7 +42,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -579,6 +581,11 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.ProvisionerWorkerCount,
 		}).
 		For(&resourcev1alpha1.SFCluster{}).
+		Watches(&source.Kind{Type: &corev1.Secret{}},
+			&handler.EnqueueRequestForOwner{
+				IsController: false,
+				OwnerType:    &resourcev1alpha1.SFCluster{},
+			}).
 		WithEventFilter(watches.NamespaceFilter())
 
 	return builder.Complete(r)

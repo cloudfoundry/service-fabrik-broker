@@ -166,6 +166,7 @@ func (r *SFClusterOffboarding) reconcileFinalizers(ctx context.Context, obj cont
 func (r *SFClusterOffboarding) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&resourcev1alpha1.SFCluster{}).
+		Named("mcd_offboarding").
 		Watches(&source.Kind{Type: &corev1.Secret{}},
 			&handler.EnqueueRequestForOwner{
 				IsController: false,
