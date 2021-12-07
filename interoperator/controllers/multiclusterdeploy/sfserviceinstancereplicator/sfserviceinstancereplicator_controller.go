@@ -375,7 +375,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 		replicateSFServiceResourceData(service, serviceReplica)
 		err = targetClient.Update(ctx, serviceReplica)
 		if err != nil {
-			log.Error(err, "Error occurred while replicating SFService to cluster")
+			log.Error(err, "Error occurred while updating SFService to cluster")
 			lastErr = err
 		} else {
 			log.Info("updated SFService in target cluster")

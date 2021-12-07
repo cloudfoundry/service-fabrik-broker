@@ -1,12 +1,16 @@
 package watchmanager
 
 import (
+	"context"
 	"sync"
 
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,6 +23,7 @@ type watchManager struct {
 	cfgManager      config.Config
 
 	clusterWatchers []*clusterWatcher
+	sfcrRequeue     []*clusterWatcher
 	mux             sync.Mutex // Locking clusterWatchers array
 
 	instanceEvents chan event.GenericEvent
@@ -101,9 +106,92 @@ func (wm *watchManager) addCluster(clusterID string) error {
 	return nil
 }
 
+// Add instances/bindings with state "in progress" and label {"state" : "delete"} in the primary cluster
+// if watch manager have watching on the given cluster
+func (wm *watchManager) requeueSFCRs(cachedClient kubernetes.Client, clusterID string) error {
+	ctx := context.TODO()
+	if wm.isWatchingOnSfcrRequeue(clusterID) {
+		log.Info("Already watching on instances in ", "clusterID", clusterID)
+		return nil
+	}
+	cw := wm.getClusterWatch(clusterID)
+	if cw == nil {
+		err := errors.NewPreconditionError("requeueSFCRs", "cluster not found", nil)
+		log.Error(err, "Watch manager not watching on cluster", "clusterID", clusterID)
+		return err
+	}
+
+	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
+	instance_options := &kubernetes.ListOptions{}
+	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(instance_options)
+	kubernetes.MatchingFields{"spec.clusterId": "clusterID"}.ApplyToList(instance_options)
+	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(instance_options)
+
+	for more := true; more; more = (sfserviceinstances.Continue != "") {
+		err := cachedClient.List(ctx, sfserviceinstances, instance_options, kubernetes.Limit(constants.ListPaginationLimit),
+			kubernetes.Continue(sfserviceinstances.Continue))
+		if err != nil {
+			log.Error(err, "error while fetching sfserviceinstances")
+			return err
+		}
+		for _, sfserviceinstance := range sfserviceinstances.Items {
+			instance := sfserviceinstance.DeepCopy()
+			metaObject, err := meta.Accessor(instance)
+			if err != nil {
+				log.Error(err, "failed to process watch event for sfserviceinstance", "clusterID", cw.clusterID)
+				continue
+			}
+			cw.instanceEvents <- event.GenericEvent{
+				Meta:   metaObject,
+				Object: instance,
+			}
+		}
+	}
+
+	sfservicebindings := &osbv1alpha1.SFServiceBindingList{}
+	binding_options := &kubernetes.ListOptions{}
+	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(binding_options)
+	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(binding_options)
+
+	for moreBindings := true; moreBindings; moreBindings = (sfservicebindings.Continue != "") {
+		err := cachedClient.List(ctx, sfservicebindings, binding_options, kubernetes.Limit(constants.ListPaginationLimit),
+			kubernetes.Continue(sfservicebindings.Continue))
+		if err != nil {
+			log.Error(err, "error while fetching sfservicebindings")
+			return err
+		}
+		for _, sfservicebinding := range sfservicebindings.Items {
+			if sf_clusterID, err := sfservicebinding.GetClusterID(cachedClient); err == nil && sf_clusterID == clusterID {
+				binding := sfservicebinding.DeepCopy()
+				metaBinding, err := meta.Accessor(binding)
+				if err != nil {
+					log.Error(err, "failed to process watch event for sfservicebinding", "clusterID",
+						cw.clusterID)
+					continue
+				}
+				cw.bindingEvents <- event.GenericEvent{
+					Meta:   metaBinding,
+					Object: binding,
+				}
+			}
+		}
+	}
+
+	wm.mux.Lock()
+	defer wm.mux.Unlock()
+	wm.sfcrRequeue = append(wm.sfcrRequeue, cw)
+	log.Info("Added cluster to watch requeues", "clusterID", clusterID)
+	return nil
+}
+
 func (wm *watchManager) removeCluster(clusterID string) {
 	wm.mux.Lock()
 	defer wm.mux.Unlock()
+	wm.removeClusterFromClusterWatchers(clusterID)
+	wm.removeClusterFromSfcrRequeue(clusterID)
+}
+
+func (wm *watchManager) removeClusterFromClusterWatchers(clusterID string) {
 	l := len(wm.clusterWatchers)
 	for i, cw := range wm.clusterWatchers {
 		if cw.clusterID == clusterID {
@@ -114,8 +202,24 @@ func (wm *watchManager) removeCluster(clusterID string) {
 			return
 		}
 	}
+
 	// Not found
-	log.Info("Cluster not watched by watch manager. Ignoring remove",
+	log.Info("Cluster not watched by ClusterWatchers. Ignoring remove",
+		"clusterID", clusterID)
+}
+
+func (wm *watchManager) removeClusterFromSfcrRequeue(clusterID string) {
+	l := len(wm.sfcrRequeue)
+	for i, cw := range wm.sfcrRequeue {
+		if cw.clusterID == clusterID {
+			wm.sfcrRequeue[i] = wm.sfcrRequeue[l-1]
+			wm.sfcrRequeue = wm.sfcrRequeue[:l-1]
+			log.Info("Removed cluster from sfcr requeue", "clusterID", clusterID)
+			return
+		}
+	}
+	// Not found
+	log.Info("Cluster is not added to sfcr requeue. Ignoring remove",
 		"clusterID", clusterID)
 }
 
@@ -128,4 +232,26 @@ func (wm *watchManager) isWatchingOnCluster(clusterID string) bool {
 		}
 	}
 	return false
+}
+
+func (wm *watchManager) isWatchingOnSfcrRequeue(clusterID string) bool {
+	wm.mux.Lock()
+	defer wm.mux.Unlock()
+	for _, cw := range wm.sfcrRequeue {
+		if cw.clusterID == clusterID {
+			return true
+		}
+	}
+	return false
+}
+
+func (wm *watchManager) getClusterWatch(clusterID string) *clusterWatcher {
+	wm.mux.Lock()
+	defer wm.mux.Unlock()
+	for _, cw := range wm.clusterWatchers {
+		if cw.clusterID == clusterID {
+			return cw
+		}
+	}
+	return nil
 }
