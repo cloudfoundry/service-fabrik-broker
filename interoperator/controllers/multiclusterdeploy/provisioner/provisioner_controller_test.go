@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 	defer func() {
 		addClusterToWatch = _addClusterToWatch
 	}()
-	addClusterToWatch = func(string) error {
+	addClusterToWatch = func(client.Client, string) error {
 		return nil
 	}
 
