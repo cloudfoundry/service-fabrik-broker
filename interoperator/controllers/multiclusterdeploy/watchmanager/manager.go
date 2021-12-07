@@ -24,6 +24,7 @@ type watchManagerInterface interface {
 	getWatchChannel(resource string) (<-chan event.GenericEvent, error)
 	addCluster(clusterID string) error
 	removeCluster(clusterID string)
+	requeueSFCRs(cachedClient kubernetes.Client, clusterID string) error
 }
 
 // GetWatchChannel returns the channel for a resource to watch on
@@ -79,6 +80,7 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 		clusterRegistry: clusterRegistry,
 		cfgManager:      cfgManager,
 		clusterWatchers: make([]*clusterWatcher, 0),
+		sfcrRequeue:     make([]*clusterWatcher, 0),
 		instanceEvents:  instanceEvents,
 		bindingEvents:   bindingEvents,
 		clusterEvents:   clusterEvents,
@@ -92,11 +94,17 @@ func Initialize(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RES
 
 // AddCluster add a cluster if not already exist to watch for
 // sfserviceinstance and sfservicebinding
-func AddCluster(clusterID string) error {
+func AddCluster(cachedClient kubernetes.Client, clusterID string) error {
 	if managerObject == nil {
 		return errors.NewPreconditionError("AddCluster", "watch manager not setup", nil)
 	}
-	return managerObject.addCluster(clusterID)
+	err := managerObject.addCluster(clusterID)
+	if err != nil {
+		return err
+	}
+
+	return managerObject.requeueSFCRs(cachedClient, clusterID)
+
 }
 
 // RemoveCluster stops watching on a cluster if already watching

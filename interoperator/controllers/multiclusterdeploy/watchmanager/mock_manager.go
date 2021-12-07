@@ -5,35 +5,51 @@
 package watchmanager
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 	event "sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-// MockwatchManagerInterface is a mock of watchManagerInterface interface
+// MockwatchManagerInterface is a mock of watchManagerInterface interface.
 type MockwatchManagerInterface struct {
 	ctrl     *gomock.Controller
 	recorder *MockwatchManagerInterfaceMockRecorder
 }
 
-// MockwatchManagerInterfaceMockRecorder is the mock recorder for MockwatchManagerInterface
+// MockwatchManagerInterfaceMockRecorder is the mock recorder for MockwatchManagerInterface.
 type MockwatchManagerInterfaceMockRecorder struct {
 	mock *MockwatchManagerInterface
 }
 
-// NewMockwatchManagerInterface creates a new mock instance
+// NewMockwatchManagerInterface creates a new mock instance.
 func NewMockwatchManagerInterface(ctrl *gomock.Controller) *MockwatchManagerInterface {
 	mock := &MockwatchManagerInterface{ctrl: ctrl}
 	mock.recorder = &MockwatchManagerInterfaceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockwatchManagerInterface) EXPECT() *MockwatchManagerInterfaceMockRecorder {
 	return m.recorder
 }
 
-// getWatchChannel mocks base method
+// addCluster mocks base method.
+func (m *MockwatchManagerInterface) addCluster(clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "addCluster", clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// addCluster indicates an expected call of addCluster.
+func (mr *MockwatchManagerInterfaceMockRecorder) addCluster(clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "addCluster", reflect.TypeOf((*MockwatchManagerInterface)(nil).addCluster), clusterID)
+}
+
+// getWatchChannel mocks base method.
 func (m *MockwatchManagerInterface) getWatchChannel(resource string) (<-chan event.GenericEvent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getWatchChannel", resource)
@@ -42,34 +58,34 @@ func (m *MockwatchManagerInterface) getWatchChannel(resource string) (<-chan eve
 	return ret0, ret1
 }
 
-// getWatchChannel indicates an expected call of getWatchChannel
+// getWatchChannel indicates an expected call of getWatchChannel.
 func (mr *MockwatchManagerInterfaceMockRecorder) getWatchChannel(resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getWatchChannel", reflect.TypeOf((*MockwatchManagerInterface)(nil).getWatchChannel), resource)
 }
 
-// addCluster mocks base method
-func (m *MockwatchManagerInterface) addCluster(clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "addCluster", clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// addCluster indicates an expected call of addCluster
-func (mr *MockwatchManagerInterfaceMockRecorder) addCluster(clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "addCluster", reflect.TypeOf((*MockwatchManagerInterface)(nil).addCluster), clusterID)
-}
-
-// removeCluster mocks base method
+// removeCluster mocks base method.
 func (m *MockwatchManagerInterface) removeCluster(clusterID string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "removeCluster", clusterID)
 }
 
-// removeCluster indicates an expected call of removeCluster
+// removeCluster indicates an expected call of removeCluster.
 func (mr *MockwatchManagerInterfaceMockRecorder) removeCluster(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "removeCluster", reflect.TypeOf((*MockwatchManagerInterface)(nil).removeCluster), clusterID)
+}
+
+// requeueSFCRs mocks base method.
+func (m *MockwatchManagerInterface) requeueSFCRs(cachedClient client.Client, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "requeueSFCRs", cachedClient, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// requeueSFCRs indicates an expected call of requeueSFCRs.
+func (mr *MockwatchManagerInterfaceMockRecorder) requeueSFCRs(cachedClient, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "requeueSFCRs", reflect.TypeOf((*MockwatchManagerInterface)(nil).requeueSFCRs), cachedClient, clusterID)
 }

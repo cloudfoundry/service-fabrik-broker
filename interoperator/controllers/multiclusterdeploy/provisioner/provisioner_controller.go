@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
@@ -145,7 +147,7 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// 4. Add watches on resources in target sfcluster. Must be done after
 	// registering sf crds, since we are trying to watch on sfserviceinstance
 	// and sfservicebinding.
-	err = addClusterToWatch(clusterID)
+	err = addClusterToWatch(r, clusterID)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -579,6 +581,11 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.ProvisionerWorkerCount,
 		}).
 		For(&resourcev1alpha1.SFCluster{}).
+		Watches(&source.Kind{Type: &corev1.Secret{}},
+			&handler.EnqueueRequestForOwner{
+				IsController: false,
+				OwnerType:    &resourcev1alpha1.SFCluster{},
+			}).
 		WithEventFilter(watches.NamespaceFilter())
 
 	return builder.Complete(r)

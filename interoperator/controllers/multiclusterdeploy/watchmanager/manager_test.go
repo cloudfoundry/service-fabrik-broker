@@ -2,6 +2,7 @@ package watchmanager
 
 import (
 	"reflect"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func TestGetWatchChannel(t *testing.T) {
@@ -152,10 +154,26 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestAddCluster(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
 	var ctrl *gomock.Controller
+
+	mgr, err := manager.New(cfg1, manager.Options{
+		MetricsBindAddress: "0",
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
 	type args struct {
-		clusterID string
+		clusterID    string
+		cachedClient kubernetes.Client
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -166,14 +184,16 @@ func TestAddCluster(t *testing.T) {
 		{
 			name: "should fail if manager is not setup",
 			args: args{
-				clusterID: "foo",
+				clusterID:    "foo",
+				cachedClient: mgr.GetClient(),
 			},
 			wantErr: true,
 		},
 		{
 			name: "should call manager addCluster",
 			args: args{
-				clusterID: "foo",
+				clusterID:    "foo",
+				cachedClient: mgr.GetClient(),
 			},
 			wantErr: false,
 			setup: func() {
@@ -181,6 +201,8 @@ func TestAddCluster(t *testing.T) {
 				mockwatchManager := NewMockwatchManagerInterface(ctrl)
 				managerObject = mockwatchManager
 				mockwatchManager.EXPECT().addCluster("foo").Return(nil).Times(1)
+				mockwatchManager.EXPECT().requeueSFCRs(mgr.GetClient(), "foo").Return(nil).Times(1)
+
 			},
 			cleanup: func() {
 				managerObject = nil
@@ -196,7 +218,7 @@ func TestAddCluster(t *testing.T) {
 			if tt.cleanup != nil {
 				defer tt.cleanup()
 			}
-			if err := AddCluster(tt.args.clusterID); (err != nil) != tt.wantErr {
+			if err := AddCluster(tt.args.cachedClient, tt.args.clusterID); (err != nil) != tt.wantErr {
 				t.Errorf("AddCluster() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -258,4 +280,16 @@ func TestRemoveCluster(t *testing.T) {
 			}
 		})
 	}
+}
+
+// StartTestManager adds recFn
+func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+	stop := make(chan struct{})
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
+	}()
+	return stop, wg
 }
