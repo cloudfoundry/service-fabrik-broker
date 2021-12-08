@@ -4,7 +4,7 @@ In this deployment, primary cluster is also be the sister cluster where service 
 Here we use in-cluster kubeconfig provided inside the pod by Kubernetes. As a result, kubeconfig rotation of the primary cluster doesn't affect the service fabrik operations.
 
 
-##Multi cluster Interoperator deployment
+## Multi cluster Interoperator deployment
 In this deployment, we will have a primary cluster and one or more sister clusters. Service instances are provisioned in the sister cluster(s). Kubeconfig rotation of the primary cluster doesn't affect the service fabrik operations. But kubeconfig rotation of sister cluster will affect service fabrik operations.
 To restore the service fabrik operations the new kubeconfig of the sister cluster needs to be updated in primary cluster.
 
@@ -22,6 +22,6 @@ To edit the cluster secret:
 ```
 kubectl -n interoperator edit secret $(kubectl get sfcluster <sister-cluster-name> -n interoperator -o json | jq -r '.spec.secretRef')
 ```
-####Note:
+#### Note:
 * All sync binding operations will fail once the kubeconfig rotation is started until sfcluster secret gets updated in the primary cluster with the new kubeconfig.
 * All new async operations will not progress as rotation disrupt the replication of sfserviceinstance/binding into/from the sister cluster. But the operations will be restored after the kubeconfig secret get updated.
