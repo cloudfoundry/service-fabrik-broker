@@ -270,7 +270,7 @@ spec:
   dashboardClient:
     id: postgresql-dashboard-client-id
     secret: postgresql-dashboard-client-secret
-    redirectURI: 'https://sap.com/'
+    redirectUri: 'https://sap.com/'
   planUpdatable: true
 
   # The following details are context input for Service Fabrik and the individual service operators.
