@@ -770,6 +770,11 @@ metadata:
 data:
   kubeconfig: <REDACTED_KUBECONFIG>
 ```
+
+In order to prevent accidental deletion of an `SFCluster` resource, the OffBoarding controller would prevent the removal of the cluster resource if:
+* the corresponding secret resource is available
+* the `status.serviceInstanceCount` is greater than zero
+
 ## Components within Interoperator
 Below, we discuss about the components of Service Fabrik Interoperator. Some components like the broker and the provisioner were already introduced earlier. With Multi-Cluster deploy support, we bring in two new components, `MultiClusterDeployer` and `Scheduler` which are also described below.
 ### Broker
