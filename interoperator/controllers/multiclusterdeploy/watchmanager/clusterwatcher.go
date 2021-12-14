@@ -2,11 +2,11 @@ package watchmanager
 
 import (
 	"context"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -81,15 +81,14 @@ func (cw *clusterWatcher) start() error {
 				if instanceEvent.Object == nil {
 					continue
 				}
-				metaObject, err := meta.Accessor(instanceEvent.Object)
-				if err != nil {
+				object, ok := instanceEvent.Object.(kubernetes.Object)
+				if !ok {
 					log.Error(err, "failed to process watch event for sfserviceinstance", "clusterID",
 						cw.clusterID, "instanceEvent", instanceEvent)
 					continue
 				}
 				cw.instanceEvents <- event.GenericEvent{
-					Meta:   metaObject,
-					Object: instanceEvent.Object,
+					Object: object,
 				}
 			case bindingEvent, ok := <-bindingWatch.ResultChan():
 				if !ok {
@@ -104,15 +103,14 @@ func (cw *clusterWatcher) start() error {
 				if bindingEvent.Object == nil {
 					continue
 				}
-				metaObject, err := meta.Accessor(bindingEvent.Object)
-				if err != nil {
+				object, ok := bindingEvent.Object.(kubernetes.Object)
+				if !ok {
 					log.Error(err, "failed to process watch event for sfservicebinding", "clusterID",
-						cw.clusterID, "bindingEvent", bindingEvent)
+						cw.clusterID, "sfservicebinding", bindingEvent)
 					continue
 				}
 				cw.bindingEvents <- event.GenericEvent{
-					Meta:   metaObject,
-					Object: bindingEvent.Object,
+					Object: object,
 				}
 			case clusterEvent, ok := <-clusterWatch.ResultChan():
 				if !ok {
@@ -127,15 +125,16 @@ func (cw *clusterWatcher) start() error {
 				if clusterEvent.Object == nil {
 					continue
 				}
-				metaObject, err := meta.Accessor(clusterEvent.Object)
-				if err != nil {
+
+				object, ok := clusterEvent.Object.(kubernetes.Object)
+				if !ok {
 					log.Error(err, "failed to process watch event for sfcluster", "clusterID",
 						cw.clusterID, "clusterEvent", clusterEvent)
 					continue
 				}
+
 				cw.clusterEvents <- event.GenericEvent{
-					Meta:   metaObject,
-					Object: clusterEvent.Object,
+					Object: object,
 				}
 			case _, ok := <-cw.stop:
 				if !ok {

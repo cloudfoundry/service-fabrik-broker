@@ -32,7 +32,6 @@ import (
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,7 +62,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), configMap)
 
-	_ = mgr.GetFieldIndexer().IndexField(context.TODO(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.TODO(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o client.Object) []string {
 		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
 		return []string{planID}
 	})
@@ -79,10 +78,10 @@ func TestReconcile(t *testing.T) {
 		Log:    ctrlrun.Log.WithName("schedulers").WithName("default"),
 	}).SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
 
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -120,8 +119,8 @@ func TestReconcile(t *testing.T) {
 	// since annotation has this plan hash
 	instance4 := _getDummySFServiceInstance("foo4", "plan-id", "in_queue")
 	annotations := map[string]string{
-				constants.PlanHashKey: utils.CalculateHash(plan2.Spec),
-			}
+		constants.PlanHashKey: utils.CalculateHash(plan2.Spec),
+	}
 	instance4.SetAnnotations(annotations)
 	g.Expect(c.Create(context.TODO(), instance4)).NotTo(gomega.HaveOccurred())
 
@@ -221,7 +220,7 @@ func _getDummySFServiceInstance(name string, planID string, lastOperation string
 			Name:      name,
 			Namespace: constants.InteroperatorNamespace,
 			Labels: map[string]string{
-				"state": "in_queue",
+				"state":                    "in_queue",
 				constants.LastOperationKey: lastOperation,
 			},
 		},

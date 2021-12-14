@@ -30,7 +30,6 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,7 +75,6 @@ func restartOnWatchUpdate(mgr manager.Manager, initWatches, stop <-chan struct{}
 type ReconcileSFPlan struct {
 	client.Client
 	Log         logr.Logger
-	scheme      *runtime.Scheme
 	initWatches chan struct{}
 	stopWatches chan struct{}
 }
@@ -84,13 +82,12 @@ type ReconcileSFPlan struct {
 // Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
 // and what is in the SFPlan.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-func (r *ReconcileSFPlan) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *ReconcileSFPlan) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Recompute watches
 	defer func() {
 		r.initWatches <- struct{}{}
 	}()
 
-	ctx := context.Background()
 	log := r.Log.WithValues("sfplan", req.NamespacedName)
 
 	// Fetch the SFPlan instance
@@ -149,7 +146,7 @@ func (r *ReconcileSFPlan) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		existingRefs[i] = *ownerRefs[i].DeepCopy()
 	}
 
-	err = utils.SetOwnerReference(service, instance, r.scheme)
+	err = utils.SetOwnerReference(service, instance, r.Scheme())
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -191,7 +188,7 @@ func (r *ReconcileSFPlan) updatePlanHash(plan *osbv1alpha1.SFPlan, ctx context.C
 
 	currentPlanHash := utils.CalculateHash(plan.Spec)
 	if planHash, ok := annotations[constants.PlanHashKey]; !ok || currentPlanHash != planHash {
-		
+
 		annotations[constants.PlanHashKey] = utils.CalculateHash(plan.Spec)
 		plan.SetAnnotations(annotations)
 
@@ -222,7 +219,6 @@ func referSameObject(a, b metav1.OwnerReference) bool {
 // SetupWithManager registers the SFPlan Controller with manager
 // and setups the watches.
 func (r *ReconcileSFPlan) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
 	initWatches := make(chan struct{}, 100)
 	stopWatches := make(chan struct{})
 	go restartOnWatchUpdate(mgr, initWatches, stopWatches)

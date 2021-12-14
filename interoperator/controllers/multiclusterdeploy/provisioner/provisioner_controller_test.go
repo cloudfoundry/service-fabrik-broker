@@ -114,7 +114,6 @@ func TestReconcile(t *testing.T) {
 	targetReconciler := &ReconcileProvisioner{
 		Client:          c2,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -156,10 +155,10 @@ func TestReconcile(t *testing.T) {
 	mockClusterRegistry.EXPECT().GetClient("2").Return(targetReconciler, nil).AnyTimes()
 
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -259,7 +258,6 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 	type args struct {
@@ -354,7 +352,6 @@ instanceContollerWatchList:
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		cfgManager:      cfgManager,
 	}
@@ -408,7 +405,6 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -480,7 +476,6 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -563,7 +558,6 @@ func TestReconcileProvisioner_reconcileSecret(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -654,7 +648,6 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -735,7 +728,6 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 	r := &ReconcileProvisioner{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("provisioner"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 	}
 

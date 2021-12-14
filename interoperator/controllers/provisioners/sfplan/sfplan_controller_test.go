@@ -127,10 +127,10 @@ func TestReconcile(t *testing.T) {
 		Log:    ctrl.Log.WithName("provisioners").WithName("plan"),
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 

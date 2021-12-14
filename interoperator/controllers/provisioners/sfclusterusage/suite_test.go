@@ -17,6 +17,7 @@ limitations under the License.
 package sfclusterusage
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"sync"
@@ -46,7 +47,7 @@ var (
 	k8sClient  client.Client
 	testEnv    *envtest.Environment
 	k8sManager ctrl.Manager
-	stopMgr    chan struct{}
+	cancelMgr  context.CancelFunc
 	mgrStopped *sync.WaitGroup
 )
 
@@ -87,12 +88,11 @@ var _ = BeforeSuite(func(done Done) {
 	controller := &Reconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
-		Scheme: scheme.Scheme,
 	}
 
 	os.Setenv(constants.NamespaceEnvKey, constants.InteroperatorNamespace)
 	Expect(controller.SetupWithManager(k8sManager)).Should(Succeed())
-	stopMgr, mgrStopped = StartTestManager()
+	cancelMgr, mgrStopped = StartTestManager()
 
 	close(done)
 }, 60)
@@ -100,7 +100,7 @@ var _ = BeforeSuite(func(done Done) {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 
-	close(stopMgr)
+	cancelMgr()
 	mgrStopped.Wait()
 
 	err := testEnv.Stop()
@@ -108,13 +108,13 @@ var _ = AfterSuite(func() {
 })
 
 // StartTestManager starts the manager and returns the stop channel
-func StartTestManager() (chan struct{}, *sync.WaitGroup) {
-	stop := make(chan struct{})
+func StartTestManager() (context.CancelFunc, *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		Expect(k8sManager.Start(stop)).NotTo(HaveOccurred())
+		Expect(k8sManager.Start(ctx)).NotTo(HaveOccurred())
 	}()
-	return stop, wg
+	return cancel, wg
 }

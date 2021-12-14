@@ -5,38 +5,39 @@
 package mock_v1alpha1
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	rest "k8s.io/client-go/rest"
-	reflect "reflect"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// MockSFClusterInterface is a mock of SFClusterInterface interface
+// MockSFClusterInterface is a mock of SFClusterInterface interface.
 type MockSFClusterInterface struct {
 	ctrl     *gomock.Controller
 	recorder *MockSFClusterInterfaceMockRecorder
 }
 
-// MockSFClusterInterfaceMockRecorder is the mock recorder for MockSFClusterInterface
+// MockSFClusterInterfaceMockRecorder is the mock recorder for MockSFClusterInterface.
 type MockSFClusterInterfaceMockRecorder struct {
 	mock *MockSFClusterInterface
 }
 
-// NewMockSFClusterInterface creates a new mock instance
+// NewMockSFClusterInterface creates a new mock instance.
 func NewMockSFClusterInterface(ctrl *gomock.Controller) *MockSFClusterInterface {
 	mock := &MockSFClusterInterface{ctrl: ctrl}
 	mock.recorder = &MockSFClusterInterfaceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSFClusterInterface) EXPECT() *MockSFClusterInterfaceMockRecorder {
 	return m.recorder
 }
 
-// GetAnnotations mocks base method
+// GetAnnotations mocks base method.
 func (m *MockSFClusterInterface) GetAnnotations() map[string]string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAnnotations")
@@ -44,13 +45,13 @@ func (m *MockSFClusterInterface) GetAnnotations() map[string]string {
 	return ret0
 }
 
-// GetAnnotations indicates an expected call of GetAnnotations
+// GetAnnotations indicates an expected call of GetAnnotations.
 func (mr *MockSFClusterInterfaceMockRecorder) GetAnnotations() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnotations", reflect.TypeOf((*MockSFClusterInterface)(nil).GetAnnotations))
 }
 
-// GetClusterName mocks base method
+// GetClusterName mocks base method.
 func (m *MockSFClusterInterface) GetClusterName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClusterName")
@@ -58,13 +59,13 @@ func (m *MockSFClusterInterface) GetClusterName() string {
 	return ret0
 }
 
-// GetClusterName indicates an expected call of GetClusterName
+// GetClusterName indicates an expected call of GetClusterName.
 func (mr *MockSFClusterInterfaceMockRecorder) GetClusterName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterName", reflect.TypeOf((*MockSFClusterInterface)(nil).GetClusterName))
 }
 
-// GetCreationTimestamp mocks base method
+// GetCreationTimestamp mocks base method.
 func (m *MockSFClusterInterface) GetCreationTimestamp() v1.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCreationTimestamp")
@@ -72,13 +73,13 @@ func (m *MockSFClusterInterface) GetCreationTimestamp() v1.Time {
 	return ret0
 }
 
-// GetCreationTimestamp indicates an expected call of GetCreationTimestamp
+// GetCreationTimestamp indicates an expected call of GetCreationTimestamp.
 func (mr *MockSFClusterInterfaceMockRecorder) GetCreationTimestamp() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreationTimestamp", reflect.TypeOf((*MockSFClusterInterface)(nil).GetCreationTimestamp))
 }
 
-// GetDeletionGracePeriodSeconds mocks base method
+// GetDeletionGracePeriodSeconds mocks base method.
 func (m *MockSFClusterInterface) GetDeletionGracePeriodSeconds() *int64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDeletionGracePeriodSeconds")
@@ -86,13 +87,13 @@ func (m *MockSFClusterInterface) GetDeletionGracePeriodSeconds() *int64 {
 	return ret0
 }
 
-// GetDeletionGracePeriodSeconds indicates an expected call of GetDeletionGracePeriodSeconds
+// GetDeletionGracePeriodSeconds indicates an expected call of GetDeletionGracePeriodSeconds.
 func (mr *MockSFClusterInterfaceMockRecorder) GetDeletionGracePeriodSeconds() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeletionGracePeriodSeconds", reflect.TypeOf((*MockSFClusterInterface)(nil).GetDeletionGracePeriodSeconds))
 }
 
-// GetDeletionTimestamp mocks base method
+// GetDeletionTimestamp mocks base method.
 func (m *MockSFClusterInterface) GetDeletionTimestamp() *v1.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDeletionTimestamp")
@@ -100,13 +101,13 @@ func (m *MockSFClusterInterface) GetDeletionTimestamp() *v1.Time {
 	return ret0
 }
 
-// GetDeletionTimestamp indicates an expected call of GetDeletionTimestamp
+// GetDeletionTimestamp indicates an expected call of GetDeletionTimestamp.
 func (mr *MockSFClusterInterfaceMockRecorder) GetDeletionTimestamp() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeletionTimestamp", reflect.TypeOf((*MockSFClusterInterface)(nil).GetDeletionTimestamp))
 }
 
-// GetFinalizers mocks base method
+// GetFinalizers mocks base method.
 func (m *MockSFClusterInterface) GetFinalizers() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFinalizers")
@@ -114,13 +115,13 @@ func (m *MockSFClusterInterface) GetFinalizers() []string {
 	return ret0
 }
 
-// GetFinalizers indicates an expected call of GetFinalizers
+// GetFinalizers indicates an expected call of GetFinalizers.
 func (mr *MockSFClusterInterfaceMockRecorder) GetFinalizers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalizers", reflect.TypeOf((*MockSFClusterInterface)(nil).GetFinalizers))
 }
 
-// GetGenerateName mocks base method
+// GetGenerateName mocks base method.
 func (m *MockSFClusterInterface) GetGenerateName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGenerateName")
@@ -128,13 +129,13 @@ func (m *MockSFClusterInterface) GetGenerateName() string {
 	return ret0
 }
 
-// GetGenerateName indicates an expected call of GetGenerateName
+// GetGenerateName indicates an expected call of GetGenerateName.
 func (mr *MockSFClusterInterfaceMockRecorder) GetGenerateName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenerateName", reflect.TypeOf((*MockSFClusterInterface)(nil).GetGenerateName))
 }
 
-// GetGeneration mocks base method
+// GetGeneration mocks base method.
 func (m *MockSFClusterInterface) GetGeneration() int64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGeneration")
@@ -142,13 +143,13 @@ func (m *MockSFClusterInterface) GetGeneration() int64 {
 	return ret0
 }
 
-// GetGeneration indicates an expected call of GetGeneration
+// GetGeneration indicates an expected call of GetGeneration.
 func (mr *MockSFClusterInterfaceMockRecorder) GetGeneration() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGeneration", reflect.TypeOf((*MockSFClusterInterface)(nil).GetGeneration))
 }
 
-// GetKubeConfig mocks base method
+// GetKubeConfig mocks base method.
 func (m *MockSFClusterInterface) GetKubeConfig(arg0 client.Client) (*rest.Config, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKubeConfig", arg0)
@@ -157,13 +158,13 @@ func (m *MockSFClusterInterface) GetKubeConfig(arg0 client.Client) (*rest.Config
 	return ret0, ret1
 }
 
-// GetKubeConfig indicates an expected call of GetKubeConfig
+// GetKubeConfig indicates an expected call of GetKubeConfig.
 func (mr *MockSFClusterInterfaceMockRecorder) GetKubeConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKubeConfig", reflect.TypeOf((*MockSFClusterInterface)(nil).GetKubeConfig), arg0)
 }
 
-// GetLabels mocks base method
+// GetLabels mocks base method.
 func (m *MockSFClusterInterface) GetLabels() map[string]string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLabels")
@@ -171,13 +172,13 @@ func (m *MockSFClusterInterface) GetLabels() map[string]string {
 	return ret0
 }
 
-// GetLabels indicates an expected call of GetLabels
+// GetLabels indicates an expected call of GetLabels.
 func (mr *MockSFClusterInterfaceMockRecorder) GetLabels() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabels", reflect.TypeOf((*MockSFClusterInterface)(nil).GetLabels))
 }
 
-// GetManagedFields mocks base method
+// GetManagedFields mocks base method.
 func (m *MockSFClusterInterface) GetManagedFields() []v1.ManagedFieldsEntry {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetManagedFields")
@@ -185,13 +186,13 @@ func (m *MockSFClusterInterface) GetManagedFields() []v1.ManagedFieldsEntry {
 	return ret0
 }
 
-// GetManagedFields indicates an expected call of GetManagedFields
+// GetManagedFields indicates an expected call of GetManagedFields.
 func (mr *MockSFClusterInterfaceMockRecorder) GetManagedFields() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedFields", reflect.TypeOf((*MockSFClusterInterface)(nil).GetManagedFields))
 }
 
-// GetName mocks base method
+// GetName mocks base method.
 func (m *MockSFClusterInterface) GetName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetName")
@@ -199,13 +200,13 @@ func (m *MockSFClusterInterface) GetName() string {
 	return ret0
 }
 
-// GetName indicates an expected call of GetName
+// GetName indicates an expected call of GetName.
 func (mr *MockSFClusterInterfaceMockRecorder) GetName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockSFClusterInterface)(nil).GetName))
 }
 
-// GetNamespace mocks base method
+// GetNamespace mocks base method.
 func (m *MockSFClusterInterface) GetNamespace() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNamespace")
@@ -213,13 +214,13 @@ func (m *MockSFClusterInterface) GetNamespace() string {
 	return ret0
 }
 
-// GetNamespace indicates an expected call of GetNamespace
+// GetNamespace indicates an expected call of GetNamespace.
 func (mr *MockSFClusterInterfaceMockRecorder) GetNamespace() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockSFClusterInterface)(nil).GetNamespace))
 }
 
-// GetOwnerReferences mocks base method
+// GetOwnerReferences mocks base method.
 func (m *MockSFClusterInterface) GetOwnerReferences() []v1.OwnerReference {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOwnerReferences")
@@ -227,13 +228,13 @@ func (m *MockSFClusterInterface) GetOwnerReferences() []v1.OwnerReference {
 	return ret0
 }
 
-// GetOwnerReferences indicates an expected call of GetOwnerReferences
+// GetOwnerReferences indicates an expected call of GetOwnerReferences.
 func (mr *MockSFClusterInterfaceMockRecorder) GetOwnerReferences() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwnerReferences", reflect.TypeOf((*MockSFClusterInterface)(nil).GetOwnerReferences))
 }
 
-// GetResourceVersion mocks base method
+// GetResourceVersion mocks base method.
 func (m *MockSFClusterInterface) GetResourceVersion() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResourceVersion")
@@ -241,13 +242,13 @@ func (m *MockSFClusterInterface) GetResourceVersion() string {
 	return ret0
 }
 
-// GetResourceVersion indicates an expected call of GetResourceVersion
+// GetResourceVersion indicates an expected call of GetResourceVersion.
 func (mr *MockSFClusterInterfaceMockRecorder) GetResourceVersion() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourceVersion", reflect.TypeOf((*MockSFClusterInterface)(nil).GetResourceVersion))
 }
 
-// GetSelfLink mocks base method
+// GetSelfLink mocks base method.
 func (m *MockSFClusterInterface) GetSelfLink() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSelfLink")
@@ -255,13 +256,13 @@ func (m *MockSFClusterInterface) GetSelfLink() string {
 	return ret0
 }
 
-// GetSelfLink indicates an expected call of GetSelfLink
+// GetSelfLink indicates an expected call of GetSelfLink.
 func (mr *MockSFClusterInterfaceMockRecorder) GetSelfLink() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSelfLink", reflect.TypeOf((*MockSFClusterInterface)(nil).GetSelfLink))
 }
 
-// GetUID mocks base method
+// GetUID mocks base method.
 func (m *MockSFClusterInterface) GetUID() types.UID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUID")
@@ -269,199 +270,199 @@ func (m *MockSFClusterInterface) GetUID() types.UID {
 	return ret0
 }
 
-// GetUID indicates an expected call of GetUID
+// GetUID indicates an expected call of GetUID.
 func (mr *MockSFClusterInterfaceMockRecorder) GetUID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUID", reflect.TypeOf((*MockSFClusterInterface)(nil).GetUID))
 }
 
-// SetAnnotations mocks base method
+// SetAnnotations mocks base method.
 func (m *MockSFClusterInterface) SetAnnotations(arg0 map[string]string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetAnnotations", arg0)
 }
 
-// SetAnnotations indicates an expected call of SetAnnotations
+// SetAnnotations indicates an expected call of SetAnnotations.
 func (mr *MockSFClusterInterfaceMockRecorder) SetAnnotations(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAnnotations", reflect.TypeOf((*MockSFClusterInterface)(nil).SetAnnotations), arg0)
 }
 
-// SetClusterName mocks base method
+// SetClusterName mocks base method.
 func (m *MockSFClusterInterface) SetClusterName(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetClusterName", arg0)
 }
 
-// SetClusterName indicates an expected call of SetClusterName
+// SetClusterName indicates an expected call of SetClusterName.
 func (mr *MockSFClusterInterfaceMockRecorder) SetClusterName(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetClusterName", reflect.TypeOf((*MockSFClusterInterface)(nil).SetClusterName), arg0)
 }
 
-// SetCreationTimestamp mocks base method
+// SetCreationTimestamp mocks base method.
 func (m *MockSFClusterInterface) SetCreationTimestamp(arg0 v1.Time) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetCreationTimestamp", arg0)
 }
 
-// SetCreationTimestamp indicates an expected call of SetCreationTimestamp
+// SetCreationTimestamp indicates an expected call of SetCreationTimestamp.
 func (mr *MockSFClusterInterfaceMockRecorder) SetCreationTimestamp(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCreationTimestamp", reflect.TypeOf((*MockSFClusterInterface)(nil).SetCreationTimestamp), arg0)
 }
 
-// SetDeletionGracePeriodSeconds mocks base method
+// SetDeletionGracePeriodSeconds mocks base method.
 func (m *MockSFClusterInterface) SetDeletionGracePeriodSeconds(arg0 *int64) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetDeletionGracePeriodSeconds", arg0)
 }
 
-// SetDeletionGracePeriodSeconds indicates an expected call of SetDeletionGracePeriodSeconds
+// SetDeletionGracePeriodSeconds indicates an expected call of SetDeletionGracePeriodSeconds.
 func (mr *MockSFClusterInterfaceMockRecorder) SetDeletionGracePeriodSeconds(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeletionGracePeriodSeconds", reflect.TypeOf((*MockSFClusterInterface)(nil).SetDeletionGracePeriodSeconds), arg0)
 }
 
-// SetDeletionTimestamp mocks base method
+// SetDeletionTimestamp mocks base method.
 func (m *MockSFClusterInterface) SetDeletionTimestamp(arg0 *v1.Time) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetDeletionTimestamp", arg0)
 }
 
-// SetDeletionTimestamp indicates an expected call of SetDeletionTimestamp
+// SetDeletionTimestamp indicates an expected call of SetDeletionTimestamp.
 func (mr *MockSFClusterInterfaceMockRecorder) SetDeletionTimestamp(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeletionTimestamp", reflect.TypeOf((*MockSFClusterInterface)(nil).SetDeletionTimestamp), arg0)
 }
 
-// SetFinalizers mocks base method
+// SetFinalizers mocks base method.
 func (m *MockSFClusterInterface) SetFinalizers(arg0 []string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetFinalizers", arg0)
 }
 
-// SetFinalizers indicates an expected call of SetFinalizers
+// SetFinalizers indicates an expected call of SetFinalizers.
 func (mr *MockSFClusterInterfaceMockRecorder) SetFinalizers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFinalizers", reflect.TypeOf((*MockSFClusterInterface)(nil).SetFinalizers), arg0)
 }
 
-// SetGenerateName mocks base method
+// SetGenerateName mocks base method.
 func (m *MockSFClusterInterface) SetGenerateName(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetGenerateName", arg0)
 }
 
-// SetGenerateName indicates an expected call of SetGenerateName
+// SetGenerateName indicates an expected call of SetGenerateName.
 func (mr *MockSFClusterInterfaceMockRecorder) SetGenerateName(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGenerateName", reflect.TypeOf((*MockSFClusterInterface)(nil).SetGenerateName), arg0)
 }
 
-// SetGeneration mocks base method
+// SetGeneration mocks base method.
 func (m *MockSFClusterInterface) SetGeneration(arg0 int64) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetGeneration", arg0)
 }
 
-// SetGeneration indicates an expected call of SetGeneration
+// SetGeneration indicates an expected call of SetGeneration.
 func (mr *MockSFClusterInterfaceMockRecorder) SetGeneration(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGeneration", reflect.TypeOf((*MockSFClusterInterface)(nil).SetGeneration), arg0)
 }
 
-// SetLabels mocks base method
+// SetLabels mocks base method.
 func (m *MockSFClusterInterface) SetLabels(arg0 map[string]string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetLabels", arg0)
 }
 
-// SetLabels indicates an expected call of SetLabels
+// SetLabels indicates an expected call of SetLabels.
 func (mr *MockSFClusterInterfaceMockRecorder) SetLabels(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLabels", reflect.TypeOf((*MockSFClusterInterface)(nil).SetLabels), arg0)
 }
 
-// SetManagedFields mocks base method
+// SetManagedFields mocks base method.
 func (m *MockSFClusterInterface) SetManagedFields(arg0 []v1.ManagedFieldsEntry) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetManagedFields", arg0)
 }
 
-// SetManagedFields indicates an expected call of SetManagedFields
+// SetManagedFields indicates an expected call of SetManagedFields.
 func (mr *MockSFClusterInterfaceMockRecorder) SetManagedFields(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetManagedFields", reflect.TypeOf((*MockSFClusterInterface)(nil).SetManagedFields), arg0)
 }
 
-// SetName mocks base method
+// SetName mocks base method.
 func (m *MockSFClusterInterface) SetName(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetName", arg0)
 }
 
-// SetName indicates an expected call of SetName
+// SetName indicates an expected call of SetName.
 func (mr *MockSFClusterInterfaceMockRecorder) SetName(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetName", reflect.TypeOf((*MockSFClusterInterface)(nil).SetName), arg0)
 }
 
-// SetNamespace mocks base method
+// SetNamespace mocks base method.
 func (m *MockSFClusterInterface) SetNamespace(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetNamespace", arg0)
 }
 
-// SetNamespace indicates an expected call of SetNamespace
+// SetNamespace indicates an expected call of SetNamespace.
 func (mr *MockSFClusterInterfaceMockRecorder) SetNamespace(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNamespace", reflect.TypeOf((*MockSFClusterInterface)(nil).SetNamespace), arg0)
 }
 
-// SetOwnerReferences mocks base method
+// SetOwnerReferences mocks base method.
 func (m *MockSFClusterInterface) SetOwnerReferences(arg0 []v1.OwnerReference) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetOwnerReferences", arg0)
 }
 
-// SetOwnerReferences indicates an expected call of SetOwnerReferences
+// SetOwnerReferences indicates an expected call of SetOwnerReferences.
 func (mr *MockSFClusterInterfaceMockRecorder) SetOwnerReferences(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOwnerReferences", reflect.TypeOf((*MockSFClusterInterface)(nil).SetOwnerReferences), arg0)
 }
 
-// SetResourceVersion mocks base method
+// SetResourceVersion mocks base method.
 func (m *MockSFClusterInterface) SetResourceVersion(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetResourceVersion", arg0)
 }
 
-// SetResourceVersion indicates an expected call of SetResourceVersion
+// SetResourceVersion indicates an expected call of SetResourceVersion.
 func (mr *MockSFClusterInterfaceMockRecorder) SetResourceVersion(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetResourceVersion", reflect.TypeOf((*MockSFClusterInterface)(nil).SetResourceVersion), arg0)
 }
 
-// SetSelfLink mocks base method
+// SetSelfLink mocks base method.
 func (m *MockSFClusterInterface) SetSelfLink(arg0 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetSelfLink", arg0)
 }
 
-// SetSelfLink indicates an expected call of SetSelfLink
+// SetSelfLink indicates an expected call of SetSelfLink.
 func (mr *MockSFClusterInterfaceMockRecorder) SetSelfLink(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSelfLink", reflect.TypeOf((*MockSFClusterInterface)(nil).SetSelfLink), arg0)
 }
 
-// SetUID mocks base method
+// SetUID mocks base method.
 func (m *MockSFClusterInterface) SetUID(arg0 types.UID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetUID", arg0)
 }
 
-// SetUID indicates an expected call of SetUID
+// SetUID indicates an expected call of SetUID.
 func (mr *MockSFClusterInterfaceMockRecorder) SetUID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUID", reflect.TypeOf((*MockSFClusterInterface)(nil).SetUID), arg0)

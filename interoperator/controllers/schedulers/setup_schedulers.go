@@ -1,3 +1,4 @@
+//go:build schedulers
 // +build schedulers
 
 /*
@@ -25,8 +26,8 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sflabelselectorscheduler"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstancecounter"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/schedulers/sfserviceinstanceupdater"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SetupWithManager registers the schedulers with the manager
@@ -42,7 +43,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.planId", func(o client.Object) []string {
 		planID := o.(*osbv1alpha1.SFServiceInstance).Spec.PlanID
 		return []string{planID}
 	})

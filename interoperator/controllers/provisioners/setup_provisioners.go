@@ -1,3 +1,4 @@
+//go:build provisioners || default
 // +build provisioners default
 
 /*
@@ -87,7 +88,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	if err = (&sfclusterusage.Reconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfclusterusage"),
-		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SFClusterUsageReconciler")
 		return err

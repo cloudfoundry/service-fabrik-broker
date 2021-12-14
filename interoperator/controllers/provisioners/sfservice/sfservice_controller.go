@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,15 +31,13 @@ import (
 // ReconcileSFService reconciles a SFService object
 type ReconcileSFService struct {
 	client.Client
-	Log    logr.Logger
-	scheme *runtime.Scheme
+	Log logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a SFService object and makes changes based on the state read
 // and what is in the SFService.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-func (r *ReconcileSFService) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ReconcileSFService) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfservice", req.NamespacedName)
 
 	// Fetch the SFService instance
@@ -75,8 +72,6 @@ func (r *ReconcileSFService) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 // SetupWithManager registers the SFService Controller with manager
 // and setups the watches.
 func (r *ReconcileSFService) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service").
 		For(&osbv1alpha1.SFService{}).

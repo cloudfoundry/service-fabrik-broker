@@ -38,7 +38,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrlrun "sigs.k8s.io/controller-runtime"
@@ -151,10 +150,10 @@ func TestReconcile(t *testing.T) {
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -227,9 +226,9 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -265,7 +264,6 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 	r := &ReconcileSFServiceInstance{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}
@@ -353,9 +351,9 @@ func TestReconcileSFServiceInstance_handleErrorResponse(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -417,7 +415,6 @@ func TestReconcileSFServiceInstance_handleErrorResponse(t *testing.T) {
 	r := &ReconcileSFServiceInstance{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}
@@ -544,7 +541,6 @@ func TestReconcileSFServiceInstance_setInProgress(t *testing.T) {
 	r := &ReconcileSFServiceInstance{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}
@@ -696,9 +692,9 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -764,7 +760,6 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 	type fields struct {
 		Client          client.Client
 		Log             logr.Logger
-		scheme          *runtime.Scheme
 		clusterRegistry registry.ClusterRegistry
 		resourceManager resources.ResourceManager
 	}
@@ -783,7 +778,6 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 			fields: fields{
 				Client:          c,
 				Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
-				scheme:          mgr.GetScheme(),
 				clusterRegistry: mockClusterRegistry,
 				resourceManager: mockResourceManager,
 			},
@@ -801,7 +795,6 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 			fields: fields{
 				Client:          c,
 				Log:             ctrlrun.Log.WithName("provisioners").WithName("instance"),
-				scheme:          mgr.GetScheme(),
 				clusterRegistry: mockClusterRegistry,
 				resourceManager: mockResourceManager,
 			},
@@ -820,7 +813,6 @@ func TestReconcileSFServiceInstance_updatePlanHash(t *testing.T) {
 			r := &ReconcileSFServiceInstance{
 				Client:          tt.fields.Client,
 				Log:             tt.fields.Log,
-				scheme:          tt.fields.scheme,
 				clusterRegistry: tt.fields.clusterRegistry,
 				resourceManager: tt.fields.resourceManager,
 			}

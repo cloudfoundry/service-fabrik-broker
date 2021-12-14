@@ -168,10 +168,10 @@ func TestReconcile(t *testing.T) {
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -249,9 +249,9 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -280,7 +280,6 @@ func TestReconcileSFServiceBinding_handleError(t *testing.T) {
 	r := &ReconcileSFServiceBinding{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("binding"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}
@@ -383,9 +382,9 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -423,7 +422,6 @@ func TestReconcileSFServiceBinding_updateUnbindStatus(t *testing.T) {
 	r := &ReconcileSFServiceBinding{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("provisioners").WithName("binding"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}

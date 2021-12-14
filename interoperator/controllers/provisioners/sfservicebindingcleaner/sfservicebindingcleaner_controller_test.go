@@ -62,12 +62,11 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 			controller := &ReconcileSFServiceBindingCleaner{
 				Client: mgr.GetClient(),
 				Log:    ctrl.Log.WithName("controllers").WithName("SfServiceBindingCleaner"),
-				Scheme: mgr.GetScheme(),
 			}
 			Expect(controller.SetupWithManager(mgr)).NotTo(HaveOccurred())
-			stopMgr, mgrStopped := StartTestManager(mgr)
+			cancelMgr, mgrStopped := StartTestManager(mgr)
 			defer func() {
-				close(stopMgr)
+				cancelMgr()
 				mgrStopped.Wait()
 			}()
 
