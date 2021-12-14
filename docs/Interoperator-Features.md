@@ -126,3 +126,18 @@ $ helm install --set cluster.host=xxxx \
      --set broker.services_namespace=services \
      --namespace interoperator --wait interoperator interoperator
 ```
+
+## Service instance plan upgrade
+
+This feature controls how a user request for a service instance update (typically `cf update-service mydb -p large`) is validated.
+
+In each target `SFPlan`, specify the predecessors plans from which an upgrade request is accepted. Any other plan request will be rejected with message: `Update to plan 'xx' is not possible`.
+
+```yaml
+spec
+  manager:
+    settings:
+      # List valid plan ids from which upgrade is accepted
+      update_predecessors:
+        - '39d7d4c8-6fe2-4c2a-a5ca-b826937d5a88' # default plan
+```
