@@ -100,6 +100,9 @@ defaults: &defaults
     enabled: {{ .Values.broker.quota.enabled }}
     oauthDomain: {{ .Values.broker.quota.oauthDomain }}
     serviceDomain: {{ .Values.broker.quota.serviceDomain }}
+    mtls:
+      enabled: {{ .Values.broker.quota.mtls.enabled }}
+      client_id: {{ .Values.broker.quota.mtls.client_id }}
     {{- with .Values.broker.quota.regions }}
     regions:
       {{- toYaml . | nindent 6 }}

@@ -10,6 +10,7 @@ const logger = require('@sf/logger');
 const config = require('@sf/app-config');
 const CONST = require('./commonVariables');
 const CommandsFactory = require('hystrixjs').commandFactory;
+const fs = require('fs');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const Conflict = errors.Conflict;
@@ -50,10 +51,27 @@ class HttpClient {
 
     // If options has rejectUnauthorized: false,
     // create an https agent with this option and pass to axios.
-    if (_.get(options, 'rejectUnauthorized', true) == false) {
-      const httpsAgent = new https.Agent({
+    const reject_unauthorized = _.get(options, 'rejectUnauthorized', true);
+    const mtlsEnabled = _.get(options, 'mtlsEnabled', false);
+    let httpsAgent;
+    if(mtlsEnabled) {
+      const cert = fs.readFileSync('/etc/certs/cert', 'utf8');
+      const key = fs.readFileSync('/etc/certs/key', 'utf8');
+      if (_.isEmpty(cert) || _.isEmpty(key)) {
+        logger.error('Either certificate or key required for quota app authentication, is missing');
+        throw new InternalServerError('Missing certificate or key required to authenticate quota API call');
+      }
+      httpsAgent = new https.Agent({
+        rejectUnauthorized: reject_unauthorized,
+        cert: cert,
+        key: key
+      });
+    } else if (!reject_unauthorized) {
+      httpsAgent = new https.Agent({
         rejectUnauthorized: false
       });
+    }
+    if (mtlsEnabled || !reject_unauthorized) {
       enhanced_options = _.omit(options, 'rejectUnauthorized');
       // Add the new agent to the axios options
       enhanced_options = _.extend(
