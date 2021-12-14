@@ -43,13 +43,12 @@ type SFServiceInstanceUpdater struct {
 // SFPlan.spec. It filters out already updated SFServiceInstance by matching the
 // planhash stored in the annotation of the SFServiceInstance.
 //
-// After triggering update on all the selected SFServiceInstance, the 
+// After triggering update on all the selected SFServiceInstance, the
 // SFPlan.Status.SpecHash is upated with the new checksum of SFPlan.spec.
 // If update failed for any of the SFServiceInstance, the SFPlan.Status.SpecHash
 // is not updated. Thus failure can be identified by the difference in SFPlan.annotations.planhash
 // and SFPlan.Status.SpecHash. The failed ones are reconciled again after some time.
-func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfserviceinstance-updater", req.NamespacedName)
 
 	plan := &osbv1alpha1.SFPlan{}
@@ -84,7 +83,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			
+
 			for _, instance := range instances.Items {
 				labels := instance.GetLabels()
 				lastOperation := labels[constants.LastOperationKey]
@@ -119,7 +118,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 					updateStatusSpecHash = false
 				}
 			}
-			if updateStatusSpecHash {  // update plan only when all instances are updated
+			if updateStatusSpecHash { // update plan only when all instances are updated
 				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 					err1 := r.Get(ctx, req.NamespacedName, plan)
 					if err1 != nil {
@@ -137,7 +136,6 @@ func (r *SFServiceInstanceUpdater) Reconcile(req ctrl.Request) (ctrl.Result, err
 	}
 	return ctrl.Result{}, nil
 }
-
 
 // SetupWithManager should be called if the controller is to be initialized.
 func (r *SFServiceInstanceUpdater) SetupWithManager(mgr ctrl.Manager) error {

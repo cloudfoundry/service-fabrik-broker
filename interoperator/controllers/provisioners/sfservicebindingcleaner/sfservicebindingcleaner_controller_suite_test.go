@@ -17,6 +17,7 @@ limitations under the License.
 package sfservicebindingcleaner
 
 import (
+	"context"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -66,13 +67,13 @@ var _ = AfterSuite(func() {
 })
 
 // StartTestManager adds recFn
-func StartTestManager(mgr manager.Manager) (chan struct{}, *sync.WaitGroup) {
-	stop := make(chan struct{})
+func StartTestManager(mgr manager.Manager) (context.CancelFunc, *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		Expect(mgr.Start(stop)).NotTo(HaveOccurred())
+		Expect(mgr.Start(ctx)).NotTo(HaveOccurred())
 	}()
-	return stop, wg
+	return cancel, wg
 }

@@ -200,6 +200,7 @@ instanceContollerWatchList:
 - apiVersion: deployment.servicefabrik.io/v1alpha1
   kind: Director`
 				data[constants.ConfigMapKey] = config
+				configMap.Data = data
 				g.Expect(c.Update(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 				interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
 				interoperatorConfig.ClusterReconcileInterval = constants.DefaultClusterReconcileInterval

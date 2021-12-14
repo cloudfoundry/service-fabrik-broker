@@ -78,7 +78,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	if err = (&sfclusterreplicator.SFClusterReplicator{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("cluster"),
-		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create cluster replicator", "controller", "SFClusterReplicator")
 		return err
@@ -87,7 +86,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	if err = (&offboarding.SFClusterOffboarding{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("mcd").WithName("offboarding").WithName("cluster"),
-		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create cluster offboarding controller", "controller", "SFClusterOffboarding")
 		return err

@@ -17,6 +17,7 @@ limitations under the License.
 package offboarding
 
 import (
+	"context"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -44,7 +45,7 @@ var (
 	k8sManager ctrl.Manager
 	k8sClient  client.Client
 	testEnv    *envtest.Environment
-	stopMgr    chan struct{}
+	cancelMgr  context.CancelFunc
 	mgrStopped *sync.WaitGroup
 )
 
@@ -83,11 +84,10 @@ var _ = BeforeSuite(func(done Done) {
 	err = (&SFClusterOffboarding{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("mcd").WithName("offboarding").WithName("cluster"),
-		Scheme: k8sManager.GetScheme(),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	stopMgr, mgrStopped = startTestManager(k8sManager)
+	cancelMgr, mgrStopped = startTestManager(k8sManager)
 
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
@@ -98,7 +98,7 @@ var _ = BeforeSuite(func(done Done) {
 var _ = AfterSuite(func(done Done) {
 	By("tearing down the test environment")
 
-	close(stopMgr)
+	cancelMgr()
 	mgrStopped.Wait()
 
 	err := testEnv.Stop()
@@ -107,13 +107,13 @@ var _ = AfterSuite(func(done Done) {
 })
 
 // startTestManager starts the manager and returns the stop channel
-func startTestManager(k8sManager ctrl.Manager) (chan struct{}, *sync.WaitGroup) {
-	stop := make(chan struct{})
+func startTestManager(k8sManager ctrl.Manager) (context.CancelFunc, *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		Expect(k8sManager.Start(stop)).NotTo(HaveOccurred())
+		Expect(k8sManager.Start(ctx)).NotTo(HaveOccurred())
 	}()
-	return stop, wg
+	return cancel, wg
 }

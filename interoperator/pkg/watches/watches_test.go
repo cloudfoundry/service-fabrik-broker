@@ -488,7 +488,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 			verify: func(p predicate.Predicate) {
 				evt := event.CreateEvent{
 					Object: obj1,
-					Meta:   obj1.GetObjectMeta(),
 				}
 				if got := p.Create(evt); !got {
 					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
@@ -496,7 +495,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt = event.CreateEvent{
 					Object: obj2,
-					Meta:   obj2.GetObjectMeta(),
 				}
 				if got := p.Create(evt); !got {
 					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
@@ -504,7 +502,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt = event.CreateEvent{
 					Object: obj3,
-					Meta:   obj3.GetObjectMeta(),
 				}
 				if got := p.Create(evt); got {
 					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, false)
@@ -512,7 +509,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt = event.CreateEvent{
 					Object: obj4,
-					Meta:   obj4.GetObjectMeta(),
 				}
 				if got := p.Create(evt); !got {
 					t.Errorf("NamespaceLabelFilter() on create = %v, want %v", got, true)
@@ -520,7 +516,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt2 := event.DeleteEvent{
 					Object: obj3,
-					Meta:   obj3.GetObjectMeta(),
 				}
 				if got := p.Delete(evt2); got {
 					t.Errorf("NamespaceLabelFilter() on delete = %v, want %v", got, false)
@@ -528,7 +523,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt2 = event.DeleteEvent{
 					Object: obj4,
-					Meta:   obj4.GetObjectMeta(),
 				}
 				if got := p.Delete(evt2); !got {
 					t.Errorf("NamespaceLabelFilter() on delete = %v, want %v", got, true)
@@ -536,7 +530,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt3 := event.UpdateEvent{
 					ObjectNew: obj3,
-					MetaNew:   obj3.GetObjectMeta(),
 				}
 				if got := p.Update(evt3); got {
 					t.Errorf("NamespaceLabelFilter() on update = %v, want %v", got, false)
@@ -544,7 +537,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt3 = event.UpdateEvent{
 					ObjectNew: obj4,
-					MetaNew:   obj4.GetObjectMeta(),
 				}
 				if got := p.Update(evt3); !got {
 					t.Errorf("NamespaceLabelFilter() on update = %v, want %v", got, true)
@@ -552,7 +544,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt4 := event.GenericEvent{
 					Object: obj3,
-					Meta:   obj3.GetObjectMeta(),
 				}
 				if got := p.Generic(evt4); got {
 					t.Errorf("NamespaceLabelFilter() on generic = %v, want %v", got, false)
@@ -560,7 +551,6 @@ func TestNamespaceLabelFilter(t *testing.T) {
 
 				evt4 = event.GenericEvent{
 					Object: obj4,
-					Meta:   obj4.GetObjectMeta(),
 				}
 				if got := p.Generic(evt4); !got {
 					t.Errorf("NamespaceLabelFilter() on generic = %v, want %v", got, true)
@@ -595,7 +585,6 @@ func TestNamespaceFilter(t *testing.T) {
 			verify: func(p predicate.Predicate) {
 				evt := event.CreateEvent{
 					Object: obj1,
-					Meta:   obj1.GetObjectMeta(),
 				}
 				if got := p.Create(evt); got {
 					t.Errorf("NamespaceFilter() on create = %v, want %v", got, false)
@@ -603,7 +592,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt = event.CreateEvent{
 					Object: obj2,
-					Meta:   obj2.GetObjectMeta(),
 				}
 				if got := p.Create(evt); !got {
 					t.Errorf("NamespaceFilter() on create = %v, want %v", got, true)
@@ -611,7 +599,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt2 := event.DeleteEvent{
 					Object: obj1,
-					Meta:   obj1.GetObjectMeta(),
 				}
 				if got := p.Delete(evt2); got {
 					t.Errorf("NamespaceFilter() on delete = %v, want %v", got, false)
@@ -619,7 +606,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt2 = event.DeleteEvent{
 					Object: obj2,
-					Meta:   obj2.GetObjectMeta(),
 				}
 				if got := p.Delete(evt2); !got {
 					t.Errorf("NamespaceFilter() on delete = %v, want %v", got, true)
@@ -627,7 +613,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt3 := event.UpdateEvent{
 					ObjectNew: obj1,
-					MetaNew:   obj1.GetObjectMeta(),
 				}
 				if got := p.Update(evt3); got {
 					t.Errorf("NamespaceFilter() on update = %v, want %v", got, false)
@@ -635,7 +620,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt3 = event.UpdateEvent{
 					ObjectNew: obj2,
-					MetaNew:   obj2.GetObjectMeta(),
 				}
 				if got := p.Update(evt3); !got {
 					t.Errorf("NamespaceFilter() on update = %v, want %v", got, true)
@@ -643,7 +627,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt4 := event.GenericEvent{
 					Object: obj1,
-					Meta:   obj1.GetObjectMeta(),
 				}
 				if got := p.Generic(evt4); got {
 					t.Errorf("NamespaceFilter() on generic = %v, want %v", got, false)
@@ -651,7 +634,6 @@ func TestNamespaceFilter(t *testing.T) {
 
 				evt4 = event.GenericEvent{
 					Object: obj2,
-					Meta:   obj2.GetObjectMeta(),
 				}
 				if got := p.Generic(evt4); !got {
 					t.Errorf("NamespaceFilter() on generic = %v, want %v", got, true)

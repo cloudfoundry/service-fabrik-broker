@@ -38,7 +38,6 @@ import (
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,7 +51,6 @@ type ReconcileSFServiceInstance struct {
 	client.Client
 	uncachedClient  client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	resourceManager resources.ResourceManager
 	watchList       []osbv1alpha1.APIVersionKind
@@ -69,8 +67,7 @@ type ReconcileSFServiceInstance struct {
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=*
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
 // TODO dynamically setup rbac rules
-func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ReconcileSFServiceInstance) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfserviceinstance", req.NamespacedName)
 
 	defer r.restartOnWatchUpdate()
@@ -148,7 +145,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(req ctrl.Request) (ctrl.Result, e
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
 
-		err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
+		err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.Scheme())
 		if err != nil {
 			return r.handleError(instance, ctrl.Result{}, err, state, 0)
 		}
@@ -609,7 +606,6 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 	ctx := context.Background()
 	log := r.Log.WithValues("sfserviceinstance", namespacedName.String(), "function", "updatePlanHash")
 
-
 	instance := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(ctx, namespacedName, instance)
 	if err != nil {
@@ -638,7 +634,7 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 
 	currentPlanHash := utils.CalculateHash(plan.Spec)
 	if planHash, ok := annotations[constants.PlanHashKey]; !ok || currentPlanHash != planHash {
-		
+
 		annotations[constants.PlanHashKey] = utils.CalculateHash(plan.Spec)
 		instance.SetAnnotations(annotations)
 
@@ -660,8 +656,6 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 // SetupWithManager registers the SFServiceInstance Controller with manager
 // and setups the watches.
 func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
 	if r.Log == nil {
 		r.Log = ctrl.Log.WithName("provisioners").WithName("instance")
 	}
@@ -705,7 +699,7 @@ func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
 	// TODO dynamically setup rbac rules and watches
 	r.watchList = make([]osbv1alpha1.APIVersionKind, len(interoperatorCfg.InstanceContollerWatchList))
 	copy(r.watchList, interoperatorCfg.InstanceContollerWatchList)
-	subresources := make([]runtime.Object, len(r.watchList))
+	subresources := make([]client.Object, len(r.watchList))
 	for i, gvk := range r.watchList {
 		object := &unstructured.Unstructured{}
 		object.SetKind(gvk.GetKind())

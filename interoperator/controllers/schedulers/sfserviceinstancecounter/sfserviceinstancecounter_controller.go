@@ -28,7 +28,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,15 +39,13 @@ import (
 type SFServiceInstanceCounter struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 }
 
 // Reconcile schedules the SFServiceInstance to one SFCluster and sets the ClusterID in
 // SFServiceInstance.Spec.ClusterID. It chooses the destination cluster based on clusterSelector
 // template provided in the plan.
-func (r *SFServiceInstanceCounter) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SFServiceInstanceCounter) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfserviceinstance-counter", req.NamespacedName)
 
 	instance := &osbv1alpha1.SFServiceInstance{}
@@ -147,8 +144,6 @@ func (r *SFServiceInstanceCounter) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	r.clusterRegistry = clusterRegistry
-
-	r.scheme = mgr.GetScheme()
 
 	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {

@@ -38,7 +38,6 @@ import (
 	v1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -68,7 +67,6 @@ var removeClusterFromWatch = watchmanager.RemoveCluster
 type ReconcileProvisioner struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	cfgManager      config.Config
 }
@@ -88,8 +86,7 @@ type ReconcileProvisioner struct {
 10. Deploy provisioner in target cluster (for provisioner on master, primary cluster id
 	should be injected in provisioner env)
 */
-func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ReconcileProvisioner) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfcluster", req.NamespacedName)
 
 	// Fetch the SFCluster
@@ -548,9 +545,7 @@ func (r *ReconcileProvisioner) reconcileClusterRoleBinding(namespace string, clu
 // SetupWithManager registers the MCD Provisioner with manager
 // and setups the watches.
 func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
-	err := apiextensionsv1.SchemeBuilder.AddToScheme(r.scheme)
+	err := apiextensionsv1.SchemeBuilder.AddToScheme(r.Scheme())
 	if err != nil {
 		return err
 	}

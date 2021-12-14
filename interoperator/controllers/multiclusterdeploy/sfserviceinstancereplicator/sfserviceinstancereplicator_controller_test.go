@@ -170,10 +170,10 @@ func TestReconcile(t *testing.T) {
 		clusterRegistry: mockClusterRegistry,
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 
@@ -281,7 +281,6 @@ func TestReconcile(t *testing.T) {
 
 	// Trigger watch
 	watchChannel <- event.GenericEvent{
-		Meta:   instance2,
 		Object: instance2,
 	}
 
@@ -351,7 +350,6 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	watchChannel <- event.GenericEvent{
-		Meta:   instance2,
 		Object: instance2,
 	}
 
@@ -417,7 +415,6 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 	r := &InstanceReplicator{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("replicator").WithName("instance"),
-		scheme:          mgr.GetScheme(),
 		clusterRegistry: nil,
 	}
 	type args struct {

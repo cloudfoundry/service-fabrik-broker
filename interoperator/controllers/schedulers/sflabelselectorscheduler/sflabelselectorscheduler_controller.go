@@ -35,7 +35,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,15 +47,13 @@ import (
 type SFLabelSelectorScheduler struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 }
 
 // Reconcile schedules the SFServiceInstance to one SFCluster and sets the ClusterID in
 // SFServiceInstance.Spec.ClusterID. It chooses the destination cluster based on clusterSelector
 // template provided in the plan.
-func (r *SFLabelSelectorScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SFLabelSelectorScheduler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfserviceinstance", req.NamespacedName)
 
 	instance := &osbv1alpha1.SFServiceInstance{}
@@ -327,8 +324,6 @@ func (r *SFLabelSelectorScheduler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
-
-	r.scheme = mgr.GetScheme()
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_labelselector").

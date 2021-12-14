@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -75,7 +74,6 @@ var _ = Describe("SFClusterReplicator", func() {
 			}, timeout).Should(Succeed())
 			// Trigger watch
 			watchChannel <- event.GenericEvent{
-				Meta:   replica2,
 				Object: replica2,
 			}
 
@@ -130,7 +128,6 @@ var _ = Describe("SFClusterReplicator", func() {
 
 			// Trigger watch
 			watchChannel <- event.GenericEvent{
-				Meta:   replica2,
 				Object: replica2,
 			}
 
@@ -157,7 +154,6 @@ var _ = Describe("SFClusterReplicator", func() {
 		BeforeEach(func() {
 			r = &SFClusterReplicator{
 				Client: k8sClient,
-				Scheme: scheme.Scheme,
 			}
 			getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
 				return watchChannel, nil
