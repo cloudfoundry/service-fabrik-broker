@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
@@ -136,13 +135,7 @@ func (wm *watchManager) requeueSFCRs(cachedClient kubernetes.Client, clusterID s
 		}
 		for _, sfserviceinstance := range sfserviceinstances.Items {
 			instance := sfserviceinstance.DeepCopy()
-			metaObject, err := meta.Accessor(instance)
-			if err != nil {
-				log.Error(err, "failed to process watch event for sfserviceinstance", "clusterID", cw.clusterID)
-				continue
-			}
 			cw.instanceEvents <- event.GenericEvent{
-				Meta:   metaObject,
 				Object: instance,
 			}
 		}
@@ -163,14 +156,7 @@ func (wm *watchManager) requeueSFCRs(cachedClient kubernetes.Client, clusterID s
 		for _, sfservicebinding := range sfservicebindings.Items {
 			if sf_clusterID, err := sfservicebinding.GetClusterID(cachedClient); err == nil && sf_clusterID == clusterID {
 				binding := sfservicebinding.DeepCopy()
-				metaBinding, err := meta.Accessor(binding)
-				if err != nil {
-					log.Error(err, "failed to process watch event for sfservicebinding", "clusterID",
-						cw.clusterID)
-					continue
-				}
 				cw.bindingEvents <- event.GenericEvent{
-					Meta:   metaBinding,
 					Object: binding,
 				}
 			}
