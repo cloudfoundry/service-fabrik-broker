@@ -29,9 +29,8 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SetupWithManager registers the multiclusterdeploy with the manager
@@ -91,17 +90,17 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o client.Object) []string {
 		clusterID := o.(*osbv1alpha1.SFServiceInstance).Spec.ClusterID
 		return []string{clusterID}
 	})
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o client.Object) []string {
 		instance_state := o.(*osbv1alpha1.SFServiceInstance).Status.State
 		return []string{instance_state}
 	})
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o client.Object) []string {
 		binding_state := o.(*osbv1alpha1.SFServiceBinding).Status.State
 		return []string{binding_state}
 	})
