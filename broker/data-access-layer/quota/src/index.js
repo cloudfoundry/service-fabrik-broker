@@ -3,14 +3,23 @@
 const { CONST } = require('@sf/common-utils');
 const assert = require('assert');
 
+const _ = require('lodash');
 const config = require('@sf/app-config');
 
 const QuotaAPIClient = require('./QuotaAPIClient');
 const QuotaAPIAuthClient = require('./QuotaAPIAuthClient');
+const QuotaAPIMtlsAuthClient = require('./QuotaAPIMtlsAuthClient');
 const TokenIssuer = require('./TokenIssuer');
 const TokenInfo = require('./TokenInfo');
 
-const quotaAPIAuthClient = new QuotaAPIAuthClient();
+let quotaAPIAuthClient;
+const mtlsEnabled = _.get(config.quota, 'mtls.enabled', false);
+
+if (mtlsEnabled) {
+  quotaAPIAuthClient = new QuotaAPIMtlsAuthClient();
+} else {
+  quotaAPIAuthClient = new QuotaAPIAuthClient();
+}
 const tokenIssuer = new TokenIssuer(quotaAPIAuthClient);
 const quotaAPIClient = new QuotaAPIClient(tokenIssuer);
 
