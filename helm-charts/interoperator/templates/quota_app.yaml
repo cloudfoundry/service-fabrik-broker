@@ -87,6 +87,10 @@ spec:
               key: quota_password
         {{- end }}
         volumeMounts:
+        {{- if not (empty .Values.broker.quota.mtls.cert_secret) }}
+        - name: 'cert-secret'
+          mountPath: '/etc/certs'
+        {{- end }}
         - name: settings
           mountPath: /opt/sf-config
         livenessProbe:
@@ -124,6 +128,11 @@ spec:
         - name: settings
           configMap:
             name: sf-settings-config
+        {{- if not (empty .Values.broker.quota.mtls.cert_secret) }}
+        - name: 'cert-secret'
+          secret:
+            secretName: {{ .Values.broker.quota.mtls.cert_secret }}
+        {{- end }}
       restartPolicy: Always
 ---
 {{- if .Values.quota_app.hpa.enabled }}
