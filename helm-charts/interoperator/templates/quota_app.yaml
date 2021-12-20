@@ -89,7 +89,11 @@ spec:
         volumeMounts:
         {{- if not (empty .Values.broker.quota.mtls.cert_secret) }}
         - name: 'cert-secret'
-          mountPath: '/etc/certs'
+          mountPath: '/etc/certs/default'
+        {{- end }}
+        {{- range $reg := .Values.broker.quota.regions }}
+        - name: {{ $reg.name }}
+          mountPath: /etc/certs/{{ $reg.name }}
         {{- end }}
         - name: settings
           mountPath: /opt/sf-config
@@ -132,6 +136,11 @@ spec:
         - name: 'cert-secret'
           secret:
             secretName: {{ .Values.broker.quota.mtls.cert_secret }}
+        {{- end }}
+        {{- range $reg := .Values.broker.quota.regions }}
+        - name: {{ $reg.name }}
+          secret:
+            secretName: {{ $reg.mtls.cert_secret }}
         {{- end }}
       restartPolicy: Always
 ---
