@@ -28,7 +28,7 @@ const (
 
 	NamespaceLabelKey = "OWNER_INTEROPERATOR_NAMESPACE"
 
-	MultiClusterWatchTimeout = 28800 // 8 hours in seconds
+	MultiClusterWatchTimeout = 86400 // 24 hours in seconds
 
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20
