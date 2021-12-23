@@ -20,9 +20,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
@@ -138,59 +139,61 @@ func (r *ReconcileProvisioner) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// 3. Register sf CRDs
-	err = r.registerSFCrds(clusterID, targetClient)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// 4. Add watches on resources in target sfcluster. Must be done after
-	// registering sf crds, since we are trying to watch on sfserviceinstance
-	// and sfservicebinding.
-	err = addClusterToWatch(r, clusterID)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// 5. Create/Update Namespace in target cluster for provisioner
-	namespace := deplomentInstance.GetNamespace()
-	err = r.reconcileNamespace(namespace, clusterID, targetClient)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// 6. Creating/Updating sfcluster in target cluster
-	err = r.reconcileSfClusterCrd(clusterInstance, clusterID, targetClient)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
-	// Fetch current primary cluster id from configmap
 	interoperatorCfg := r.cfgManager.GetConfig()
 	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
+	namespace := deplomentInstance.GetNamespace()
 
-	err = r.reconcileSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
-	if err != nil {
-		// Skip if secret not found for leader cluster
-		if !(apiErrors.IsNotFound(err) && clusterID == currPrimaryClusterID) {
-			return ctrl.Result{}, err
-		}
-		log.Info("Ignoring secret not found error for leader cluster", "clusterId", clusterID,
-			"secretRef", clusterInstance.Spec.SecretRef)
-	}
-
-	// 8. Deploy cluster rolebinding
-	err = r.reconcileClusterRoleBinding(namespace, clusterID, targetClient)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// 9. Creating/Updating imagepull secrets for provisioner deployment in target cluster
-	for _, secretRef := range deplomentInstance.Spec.Template.Spec.ImagePullSecrets {
-		err = r.reconcileSecret(namespace, secretRef.Name, clusterID, targetClient)
+	if clusterID != currPrimaryClusterID {
+		// 3. Register sf CRDs
+		err = r.registerSFCrds(clusterID, targetClient)
 		if err != nil {
 			return ctrl.Result{}, err
+		}
+
+		// 4. Add watches on resources in target sfcluster. Must be done after
+		// registering sf crds, since we are trying to watch on sfserviceinstance
+		// and sfservicebinding.
+
+		err = addClusterToWatch(r, clusterID)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// 5. Create/Update Namespace in target cluster for provisioner
+		err = r.reconcileNamespace(namespace, clusterID, targetClient)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		// 6. Creating/Updating sfcluster in target cluster
+		err = r.reconcileSfClusterCrd(clusterInstance, clusterID, targetClient)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// 7. Creating/Updating kubeconfig secret for sfcluster in target cluster
+		// Fetch current primary cluster id from configmap
+		err = r.reconcileSecret(namespace, clusterInstance.Spec.SecretRef, clusterID, targetClient)
+		if err != nil {
+			// Skip if secret not found for leader cluster
+			if !(apiErrors.IsNotFound(err) && clusterID == currPrimaryClusterID) {
+				return ctrl.Result{}, err
+			}
+			log.Info("Ignoring secret not found error for leader cluster", "clusterId", clusterID,
+				"secretRef", clusterInstance.Spec.SecretRef)
+		}
+
+		// 8. Deploy cluster rolebinding
+		err = r.reconcileClusterRoleBinding(namespace, clusterID, targetClient)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// 9. Creating/Updating imagepull secrets for provisioner deployment in target cluster
+		for _, secretRef := range deplomentInstance.Spec.Template.Spec.ImagePullSecrets {
+			err = r.reconcileSecret(namespace, secretRef.Name, clusterID, targetClient)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
