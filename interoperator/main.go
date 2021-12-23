@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
@@ -51,6 +52,7 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
+	syncPeriod := 24 * time.Hour
 	flag.StringVar(&metricsAddr, "metrics-addr", ":9877", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", true,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
@@ -67,6 +69,7 @@ func main() {
 		LeaderElectionID:        constants.LeaderElectionID,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		Port:                    9443,
+		SyncPeriod:              &syncPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
