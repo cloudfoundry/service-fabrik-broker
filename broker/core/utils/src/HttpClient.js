@@ -282,7 +282,11 @@ class HttpClient {
         return result;
       })
       .catch(error => {
-        logger.info(`Got error for: ${error.config.url}, HTTP Method: ${error.config.method}`);
+        if (error instanceof Promise.TimeoutError) {
+          logger.info(`Got timeout error for HTTP Method: ${error.config.method}`);
+        } else {
+          logger.info(`Got error for: ${error.config.url}, HTTP Method: ${error.config.method}`);
+        }
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the expected range.

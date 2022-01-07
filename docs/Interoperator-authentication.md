@@ -13,6 +13,7 @@ This document describes the basic and mTLS authentication supported by the Servi
   - [mTLSAuthentication](#mtls-authentication)
     - [InteroperatorBroker](#broker)
       - [CertificateIdentityVerification](#certificate-identity-verification)
+      - [XrsRegistration](#xrs-registration)
     - [CISQuotaCheck](#cis-quota-check)
 
 ## Context
@@ -36,7 +37,7 @@ Nginx ingress has been configured to support the same, by adding the following a
   - `nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"`<br>
     Must be set to "on" to enable verification of client certificates. When this annotation is set to "on", it requests a client certificate that must be signed by a certificate that is included in the secret key ca.crt of the secret specified by "nginx.ingress.kubernetes.io/auth-tls-secret"
   - `nginx.ingress.kubernetes.io/auth-tls-secret: namespace/secretName`<br>
-    This secret must have a file named ca.crt containing the full Certificate Authority chain ca.crt that is enabled to authenticate against this Ingress.
+    This secret must have a file named ca.crt containing the root Certificate Authority ca.crt that is enabled to authenticate against this Ingress.
   - `nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: true`<br>
     when set to true, passes the received certificates to the upstream server in the header ssl-client-cert. For mTLS auth, this annotation must be set to true.
 <br>Ref: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#client-certificate-authentication
@@ -50,6 +51,9 @@ If the "secureIncomingConnections" flag is set to true, mTLS authentication will
 
 Note: All the annotations and flags values can be set/updated via helm.
 <br>For registering the broker with SAP's Service Manager, please refer to the [interoperator-authentication](https://github.wdf.sap.corp/servicefabrik/interoperator-deployment-component/tree/master/docs/interoperator-authentication.md) for more details.
+
+#### XRS registration
+For details on XRS registration, please refer to the [xrs-registration](https://github.wdf.sap.corp/servicefabrik/interoperator-deployment-component/blob/master/docs/interoperator-authentication.md#xrs-registration) document.
 
 ### CIS Quota check
 For mTLS support, please refer to the [interoperator-authentication](https://github.wdf.sap.corp/servicefabrik/interoperator-deployment-component/blob/master/docs/interoperator-authentication.md#cis-quota-check) "CIS Quota check" section, for details.
