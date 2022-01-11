@@ -31,7 +31,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,15 +63,13 @@ var getWatchChannel = watchmanager.GetWatchChannel
 type InstanceReplicator struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFServiceInstance object on master and sister cluster
 // and replicates it.
-func (r *InstanceReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("instance", req.NamespacedName)
 
 	// Fetch the SFServiceInstanceReplicator instance
@@ -392,7 +389,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			replicateSFPlanResourceData(plan, planReplica)
-			err = utils.SetOwnerReference(serviceReplica, planReplica, r.scheme)
+			err = utils.SetOwnerReference(serviceReplica, planReplica, r.Scheme())
 			if err != nil {
 				lastErr = err
 			}
@@ -409,7 +406,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 		}
 	} else {
 		replicateSFPlanResourceData(plan, planReplica)
-		err = utils.SetOwnerReference(serviceReplica, planReplica, r.scheme)
+		err = utils.SetOwnerReference(serviceReplica, planReplica, r.Scheme())
 		if err != nil {
 			return err
 		}
@@ -510,8 +507,6 @@ func replicateSFPlanResourceData(source *osbv1alpha1.SFPlan, dest *osbv1alpha1.S
 // SetupWithManager registers the MCD Instance replicator with manager
 // and setups the watches.
 func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
 	if r.Log == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("replicator").WithName("instance")
 	}

@@ -38,7 +38,6 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +50,6 @@ import (
 type ReconcileSFServiceBinding struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	resourceManager resources.ResourceManager
 	watchList       []osbv1alpha1.APIVersionKind
@@ -63,8 +61,7 @@ type ReconcileSFServiceBinding struct {
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=*,verbs=*
 // TODO dynamically setup rbac rules and watches
-func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ReconcileSFServiceBinding) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfservicebinding", req.NamespacedName)
 
 	defer r.restartOnWatchUpdate()
@@ -163,7 +160,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(req ctrl.Request) (ctrl.Result, er
 		if err != nil {
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
 		}
-		err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.scheme)
+		err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.Scheme())
 		if err != nil {
 			return r.handleError(binding, ctrl.Result{}, err, state, 0)
 		}
@@ -412,7 +409,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(binding *osbv1alpha1.SFServ
 			StringData: data,
 		}
 
-		if err := utils.SetOwnerReference(binding, secret, r.scheme); err != nil {
+		if err := utils.SetOwnerReference(binding, secret, r.Scheme()); err != nil {
 			log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 			return err
 		}
@@ -569,8 +566,6 @@ func (r *ReconcileSFServiceBinding) restartOnWatchUpdate() {
 // SetupWithManager registers the SFServiceBinding Controller with manager
 // and setups the watches.
 func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
 	if r.Log == nil {
 		r.Log = ctrl.Log.WithName("provisioners").WithName("binding")
 	}
@@ -603,7 +598,7 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 	// TODO dynamically setup rbac rules and watches
 	r.watchList = make([]osbv1alpha1.APIVersionKind, len(interoperatorCfg.BindingContollerWatchList))
 	copy(r.watchList, interoperatorCfg.BindingContollerWatchList)
-	subresources := make([]runtime.Object, len(r.watchList))
+	subresources := make([]client.Object, len(r.watchList))
 	for i, gvk := range r.watchList {
 		object := &unstructured.Unstructured{}
 		object.SetKind(gvk.GetKind())

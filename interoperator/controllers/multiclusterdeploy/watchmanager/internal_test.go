@@ -5,7 +5,6 @@ import (
 	"fmt"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -563,25 +562,25 @@ func Test_watchManager_requeueSFCRs(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o kubernetes.Object) []string {
 		clusterID := o.(*osbv1alpha1.SFServiceInstance).Spec.ClusterID
 		return []string{clusterID}
 	})
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o kubernetes.Object) []string {
 		instance_state := o.(*osbv1alpha1.SFServiceInstance).Status.State
 		return []string{instance_state}
 	})
 
-	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o runtime.Object) []string {
+	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o kubernetes.Object) []string {
 		binding_state := o.(*osbv1alpha1.SFServiceBinding).Status.State
 		return []string{binding_state}
 	})
 
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	cancelMgr, mgrStopped := StartTestManager(mgr, g)
 
 	defer func() {
-		close(stopMgr)
+		cancelMgr()
 		mgrStopped.Wait()
 	}()
 

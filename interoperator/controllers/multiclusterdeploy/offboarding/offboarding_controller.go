@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -49,8 +48,7 @@ const logKey contextKey = "log"
 // SFClusterOffboarding protects SFCluster from accidental deletion
 type SFClusterOffboarding struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log logr.Logger
 }
 
 func (r *SFClusterOffboarding) getLog(ctx context.Context) logr.Logger {
@@ -63,9 +61,9 @@ func (r *SFClusterOffboarding) getLog(ctx context.Context) logr.Logger {
 
 // Reconcile adds finalizers to SFCluster and corresponding secret objects.
 // It also sets the owner reference for the secrets as SFCluster
-func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *SFClusterOffboarding) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfcluster", req.NamespacedName)
-	ctx := context.WithValue(context.Background(), logKey, log)
+	context := context.WithValue(ctx, logKey, log)
 
 	// Fetch the SFCluster
 	clusterInstance := &resourcev1alpha1.SFCluster{}
@@ -81,7 +79,7 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 		return nil
 	}
-	err := r.reconcileFinalizers(ctx, clusterInstance, mutateFn)
+	err := r.reconcileFinalizers(context, clusterInstance, mutateFn)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.
@@ -97,7 +95,7 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	mutateFn = func() error {
 		if secret.GetDeletionTimestamp().IsZero() {
-			return utils.SetOwnerReference(clusterInstance, secret, r.Scheme)
+			return utils.SetOwnerReference(clusterInstance, secret, r.Scheme())
 		} else if clusterInstance.Status.ServiceInstanceCount <= 0 {
 			log.Info("Removing finalizer for Secret", "ServiceInstanceCount",
 				clusterInstance.Status.ServiceInstanceCount, "secretName", secret.GetName())
@@ -105,7 +103,7 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 		return nil
 	}
-	err = r.reconcileFinalizers(ctx, secret, mutateFn)
+	err = r.reconcileFinalizers(context, secret, mutateFn)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.
@@ -121,7 +119,7 @@ func (r *SFClusterOffboarding) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 // If object not found return error
 // If deletion timestamp is not set - Adds finaliser
 // Executes the MutateFn before applying the changes to api server
-func (r *SFClusterOffboarding) reconcileFinalizers(ctx context.Context, obj controllerutil.Object, f controllerutil.MutateFn) error {
+func (r *SFClusterOffboarding) reconcileFinalizers(ctx context.Context, obj client.Object, f controllerutil.MutateFn) error {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	gr := schema.GroupResource{
 		Group:    gvk.Group,

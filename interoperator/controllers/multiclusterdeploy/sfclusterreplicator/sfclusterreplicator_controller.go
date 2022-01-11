@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -75,15 +74,13 @@ var getWatchChannel = watchmanager.GetWatchChannel
 type SFClusterReplicator struct {
 	client.Client
 	Log             logr.Logger
-	Scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFCluster object on master and sister clusters
 // and replicates it.
-func (r *SFClusterReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SFClusterReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfcluster", req.NamespacedName)
 
 	cluster := &resourcev1alpha1.SFCluster{}

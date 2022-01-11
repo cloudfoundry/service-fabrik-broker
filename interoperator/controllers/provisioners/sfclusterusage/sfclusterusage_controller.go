@@ -27,7 +27,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,14 +39,12 @@ import (
 // Reconciler reconciles a Node objects and computes the capacity of cluster
 type Reconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log logr.Logger
 }
 
 // Reconcile iterates through all nodes and computes requested resources
 // and update it in sfcluster status
-func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("SFCluster", req.NamespacedName)
 
 	cluster := &resourcev1alpha1.SFCluster{}
@@ -136,16 +133,14 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return nil
 	}
 
-	watchMapper := &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-			return []reconcile.Request{
-				{NamespacedName: types.NamespacedName{
-					Name:      constants.OwnClusterID,
-					Namespace: constants.InteroperatorNamespace,
-				}},
-			}
-		}),
-	}
+	watchMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				Name:      constants.OwnClusterID,
+				Namespace: constants.InteroperatorNamespace,
+			}},
+		}
+	})
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_helper_sfclusterusage").
 		For(&resourcev1alpha1.SFCluster{}).

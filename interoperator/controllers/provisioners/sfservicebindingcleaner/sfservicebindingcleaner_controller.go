@@ -22,7 +22,6 @@ import (
 
 	"github.com/go-logr/logr"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,13 +34,11 @@ import (
 // ReconcileSFServiceBindingCleaner reconciles a SfServiceBindingCleaner object
 type ReconcileSFServiceBindingCleaner struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log logr.Logger
 }
 
 // Reconcile triggers delete of orphaned sfservicebindings
-func (r *ReconcileSFServiceBindingCleaner) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ReconcileSFServiceBindingCleaner) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfservicebindingcleaner", req.NamespacedName)
 	binding := &osbv1alpha1.SFServiceBinding{}
 	err := r.Get(ctx, req.NamespacedName, binding)

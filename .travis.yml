@@ -5,7 +5,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.15"
+        - "1.17"
       git:
         depth: 3
       install:
@@ -24,7 +24,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.15"
+        - "1.17"
       git:
         depth: 3
       install:
@@ -42,7 +42,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.15"
+        - "1.17"
       git:
         depth: 3
       before_install:
@@ -62,7 +62,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.15"
+        - "1.17"
       git:
         depth: 3
       before_install:

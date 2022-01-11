@@ -25,7 +25,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,14 +32,12 @@ import (
 // SFDefaultScheduler schedules an SFServiceInstance to the default cluster
 type SFDefaultScheduler struct {
 	client.Client
-	Log    logr.Logger
-	scheme *runtime.Scheme
+	Log logr.Logger
 }
 
 // Reconcile schedules the SFServiceInstance to the default SFCluster and sets the
 // ClusterID in SFServiceInstance.Spec.ClusterID.
-func (r *SFDefaultScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SFDefaultScheduler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("sfserviceinstance", req.NamespacedName)
 
 	// Fetch the SFDefaultScheduler instance
@@ -68,9 +65,6 @@ func (r *SFDefaultScheduler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 // SetupWithManager registers the default scheduler with manager
 // add setups the watches.
 func (r *SFDefaultScheduler) SetupWithManager(mgr ctrl.Manager) error {
-
-	r.scheme = mgr.GetScheme()
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_default").
 		For(&osbv1alpha1.SFServiceInstance{}).

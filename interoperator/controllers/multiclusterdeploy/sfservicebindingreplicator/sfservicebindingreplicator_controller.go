@@ -31,7 +31,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,15 +64,13 @@ var getWatchChannel = watchmanager.GetWatchChannel
 type BindingReplicator struct {
 	client.Client
 	Log             logr.Logger
-	scheme          *runtime.Scheme
 	clusterRegistry registry.ClusterRegistry
 	cfgManager      config.Config
 }
 
 // Reconcile reads that state of the cluster for a SFServiceInstanceReplicator object and makes changes based on the state read
 // and what is in the SFServiceInstanceReplicator.Spec
-func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *BindingReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("binding", req.NamespacedName)
 
 	// Fetch the SFServiceInstanceReplicator instance
@@ -271,7 +268,7 @@ func (r *BindingReplicator) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				for k, v := range replicaSecret.Data {
 					bindingSecret.Data[k] = v
 				}
-				if err = utils.SetOwnerReference(binding, bindingSecret, r.scheme); err != nil {
+				if err = utils.SetOwnerReference(binding, bindingSecret, r.Scheme()); err != nil {
 					log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 					return ctrl.Result{}, err
 				}
@@ -363,8 +360,6 @@ func replicateSFServiceBindingResourceData(source *osbv1alpha1.SFServiceBinding,
 // SetupWithManager registers the MCD Binding replicator with manager
 // and setups the watches.
 func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
-	r.scheme = mgr.GetScheme()
-
 	if r.Log == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("replicator").WithName("binding")
 	}

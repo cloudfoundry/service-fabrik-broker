@@ -336,16 +336,16 @@ func NamespaceLabelFilter() predicate.Predicate {
 	}
 	p := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return f(e.Meta.GetLabels())
+			return f(e.Object.GetLabels())
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return f(e.Meta.GetLabels())
+			return f(e.Object.GetLabels())
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return f(e.MetaNew.GetLabels())
+			return f(e.ObjectNew.GetLabels())
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			return f(e.Meta.GetLabels())
+			return f(e.Object.GetLabels())
 		},
 	}
 	return p
@@ -358,16 +358,16 @@ func NamespaceFilter() predicate.Predicate {
 	}
 	p := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return f(e.Meta.GetNamespace())
+			return f(e.Object.GetNamespace())
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return f(e.Meta.GetNamespace())
+			return f(e.Object.GetNamespace())
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return f(e.MetaNew.GetNamespace())
+			return f(e.ObjectNew.GetNamespace())
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			return f(e.Meta.GetNamespace())
+			return f(e.Object.GetNamespace())
 		},
 	}
 	return p

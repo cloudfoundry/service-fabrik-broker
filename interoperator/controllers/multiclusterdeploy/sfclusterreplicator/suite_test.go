@@ -17,6 +17,7 @@ limitations under the License.
 package sfclusterreplicator
 
 import (
+	"context"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -50,7 +51,7 @@ var k8sManager ctrl.Manager
 var (
 	mockClusterRegistry *mock_clusterRegistry.MockClusterRegistry
 	watchChannel        chan event.GenericEvent
-	stopMgr             chan struct{}
+	cancelMgr           context.CancelFunc
 	mgrStopped          *sync.WaitGroup
 	_getWatchChannel    func(string) (<-chan event.GenericEvent, error)
 )
@@ -105,7 +106,6 @@ var _ = BeforeSuite(func(done Done) {
 	mockClusterRegistry = mock_clusterRegistry.NewMockClusterRegistry(mockCtrl)
 	controller := &SFClusterReplicator{
 		Client:          k8sClient,
-		Scheme:          scheme.Scheme,
 		clusterRegistry: mockClusterRegistry,
 	}
 
@@ -115,7 +115,7 @@ var _ = BeforeSuite(func(done Done) {
 	}
 
 	Expect(controller.SetupWithManager(k8sManager)).Should(Succeed())
-	stopMgr, mgrStopped = StartTestManager()
+	cancelMgr, mgrStopped = StartTestManager()
 
 	close(done)
 }, 60)
@@ -123,7 +123,7 @@ var _ = BeforeSuite(func(done Done) {
 var _ = AfterSuite(func(done Done) {
 	By("tearing down the test environment")
 
-	close(stopMgr)
+	cancelMgr()
 	mgrStopped.Wait()
 
 	getWatchChannel = _getWatchChannel
@@ -138,13 +138,13 @@ var _ = AfterSuite(func(done Done) {
 })
 
 // StartTestManager starts the manager and returns the stop channel
-func StartTestManager() (chan struct{}, *sync.WaitGroup) {
-	stop := make(chan struct{})
+func StartTestManager() (context.CancelFunc, *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		Expect(k8sManager.Start(stop)).NotTo(HaveOccurred())
+		Expect(k8sManager.Start(ctx)).NotTo(HaveOccurred())
 	}()
-	return stop, wg
+	return cancel, wg
 }
