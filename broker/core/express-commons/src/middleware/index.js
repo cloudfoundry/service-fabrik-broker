@@ -8,7 +8,8 @@ const {
     NotFound,
     Unauthorized,
     MethodNotAllowed,
-    ServiceUnavailable
+    ServiceUnavailable,
+    InternalServerError
   },
   commonFunctions : {
     isFeatureEnabled
@@ -17,6 +18,9 @@ const {
 const logger = require('@sf/logger');
 const { initializeEventListener } = require('@sf/event-logger');
 const config = require('@sf/app-config');
+const BrokerMtlsAPIClient = require('./BrokerMtlsAPIClient');
+let landscapeToSubjectPattern = new Map();
+let allSubjectPatterns = new Set();
 
 exports.methodNotAllowed = function (allow) {
   return function (req, res, next) {
@@ -37,32 +41,110 @@ exports.basicAuth = function (username, password) {
 };
 
 exports.tlsAuth = function () {
-  return function (req, res, next) {
+  return async function (req, res, next) {
     const clientCertificate = req.headers['ssl-client-cert'];
     if (!clientCertificate) {
       logger.error('clientCertificate not found in the request headers: ', req.headers);
       next(new Unauthorized('Client certificate not found in the request headers'));
     } else {
+      let reqSubjectDN = req.headers['ssl-client-subject-dn'];
+      if (!reqSubjectDN) {
+        logger.error('Failed to read subjectDN from the request headers: ', req.headers);
+        return next(new Unauthorized('Failed to read subjectDN from the request headers'));
+      }
+      let subjectDN = reqSubjectDN.split(',');
       const smCertSubjectPattern = _.get(config, 'smConnectionSettings.sm_certificate_subject_pattern');
-      if (smCertSubjectPattern) {
-        let subjectDN = req.headers['ssl-client-subject-dn'];
-        if (!subjectDN || !verifySubjectDN(subjectDN, smCertSubjectPattern)) {
-          logger.error('subject DN does not match the sm_certificate_subject_pattern, subjectDN: ', subjectDN, ' sm_certificate_subject_pattern: ', smCertSubjectPattern);
+      if (!_.isEmpty(smCertSubjectPattern)) {
+        let matches = verifySubjectDNWithPattern(subjectDN, splitForwardSlashesAndShift(smCertSubjectPattern));
+        if (!matches) {
+          logger.error('subject DN does not match the sm_certificate_subject_pattern, subjectDN: ', reqSubjectDN, ' sm_certificate_subject_pattern: ', smCertSubjectPattern);
           return next(new Unauthorized('Subject DN in the request header doesnt match the configured sm_certificate_subject_pattern'));
         }
         next();
+      }
+
+      logger.debug('smCertSubjectPattern is not defined. Checking for the endpoints to get the pattern details');
+      let endpoints = _.get(config, 'smConnectionSettings.landscape_endpoints');
+      if (endpoints.length > 0) {
+        try {
+          let subjectDnVerified = await verifySubjectDN(subjectDN, endpoints);
+          if (!subjectDnVerified) {
+            logger.error('subject DN does not match the sm_certificate_subject_pattern fetched from the endpoint, subjectDN: ', reqSubjectDN);
+            return next(new Unauthorized('Subject DN in the request header doesnt match the sm_certificate_subject_pattern fetched from the endpoint'));
+          }
+        } catch (error) {
+          logger.error('Caught error trying to validate the subject DN in the request header: ', error);
+          return next(new Unauthorized(error.message));
+        }
+        next();
       } else {
-        logger.error('sm_certificate_subject_pattern is either not defined or value is not set.');
-        return next(new Unauthorized('sm_certificate_subject_pattern is either not defined or value is not set.'));
+        logger.error('Endpoint required to fetch the certificate subject has either not been defined or its value is not set');
+        return next(new Unauthorized('Endpoint required to fetch the certificate subject has either not been defined or its value is not set'));
       }
     }
   };
 
-  function verifySubjectDN(subjectDN,smCertSubjectPattern) {
-    let splitSubjectDN = subjectDN.split(',');
+  function splitForwardSlashesAndShift(smCertSubjectPattern) {
     let splitSubjPattern = smCertSubjectPattern.split('/');
     splitSubjPattern.shift();
-    return _.isEmpty(_.xor(splitSubjectDN, splitSubjPattern));
+    return splitSubjPattern;
+  }
+
+  async function verifySubjectDN(subjectDN, endpoints) {
+    let index = 0;
+    while (index < allSubjectPatterns.length) {
+      let smCertSubjectPattern = allSubjectPatterns[index++];
+      if (verifySubjectDNWithPattern(subjectDN, smCertSubjectPattern)) {
+        return true;
+      }
+    }
+    let i = 0;
+    while (i < endpoints.length) {
+      let baseUrl = endpoints[i++];
+      if (landscapeToSubjectPattern.has(baseUrl)) {
+        logger.debug(`Skipping ${baseUrl} as its value is cached.`);
+        continue;
+      }
+      let smCertSubjectPattern = await getSMCertSubjectPattern(baseUrl);
+      if (_.isEmpty(smCertSubjectPattern)) {
+        logger.error(`Got empty cert info for ${baseUrl}, continuing to check other endpoints`);
+        continue;
+      }
+      if (verifySubjectDNWithPattern(subjectDN, smCertSubjectPattern)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function verifySubjectDNWithPattern(subjectDN, smCertSubjectPattern) {
+    logger.info(`comparing subjectDN ${subjectDN} with smCertSubjectPattern ${smCertSubjectPattern}`);
+    return _.isEmpty(_.xor(subjectDN, smCertSubjectPattern));
+  }
+
+  async function getSMCertSubjectPattern(baseUrl) {
+    let smCertSubjectPattern;
+    const mtlsApiClient = new BrokerMtlsAPIClient(baseUrl);
+    let retryCount = _.get(config, 'smConnectionSettings.retryCount') + 1;
+    while (retryCount > 0) {
+      try {
+        let smCertInfo = await mtlsApiClient.getCertificateInfo(baseUrl);
+        let smCertSubject = smCertInfo.service_manager_certificate_subject;
+        smCertSubjectPattern = splitForwardSlashesAndShift(smCertSubject);
+        break;
+      } catch (error) {
+        retryCount--;
+        if(retryCount == 0) {
+          logger.debug(`Max retries reached while fetching certificate info for ${baseUrl}.`);
+          throw new InternalServerError(error.message);
+        }
+        logger.debug(`Caught error {error} while fetching certificate info for ${baseUrl}. Retrying...`);
+      }
+    }
+    logger.debug(`Populating cache with subjectInfo: ${smCertSubjectPattern} for URL ${baseUrl}`);
+    landscapeToSubjectPattern.set(baseUrl, smCertSubjectPattern);
+    allSubjectPatterns.add(smCertSubjectPattern);
+    return smCertSubjectPattern;
   }
 };
 
@@ -166,7 +248,7 @@ exports.enableAbsMatchingRouteLookup = function (express) {
     if (req.__route && path) {
       const searchFromIdx = req.__route.length - path.length;
       if (req.__route.indexOf(path, searchFromIdx) > 0) {
-        // There have been instances (in case of error), where same mount path is repeatedly appended at times. 
+        // There have been instances (in case of error), where same mount path is repeatedly appended at times.
         // This ensures that if a mountpath is already at the end of the URL, then skip it dont add it.
         return origPP.apply(this, arguments);
       }

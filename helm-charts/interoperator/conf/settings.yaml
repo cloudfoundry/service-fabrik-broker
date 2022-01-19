@@ -20,6 +20,12 @@ defaults: &defaults
   smConnectionSettings:
     secureIncomingConnections: {{ .Values.broker.smConnectionSettings.secureIncomingConnections }}
     sm_certificate_subject_pattern: {{ .Values.broker.smConnectionSettings.sm_certificate_subject_pattern }}
+    timeout: {{ .Values.broker.smConnectionSettings.timeout }}
+    retryCount: {{ .Values.broker.smConnectionSettings.retryCount }}
+    {{- with .Values.broker.smConnectionSettings.landscape_endpoints }}
+    landscape_endpoints:
+      {{ . }}
+    {{- end }}
   
   ##############################
   # INTERNAL ENDPOINT SETTINGS #
