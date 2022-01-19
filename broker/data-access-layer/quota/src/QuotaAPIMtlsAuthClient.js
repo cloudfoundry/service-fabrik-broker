@@ -15,8 +15,10 @@ class QuotaAPIMtlsAuthClient extends HttpClient {
     }, options, {
       baseURL: (_.get(options, 'region')) ? (_.get(config.quota, ['regions', options.region, 'oauthDomain'])) : config.quota.oauthDomain,
       rejectUnauthorized: !config.skip_ssl_validation,
-      mtlsEnabled: _.get(config.quota, 'mtls.enabled', false)
+      mtlsEnabled: (_.get(options, 'region')) ? (_.get(config.quota, ['regions', options.region, 'mtls' ,'enabled'])) : config.quota.mtls.enabled,
+      timeout: _.get(config, 'quota.timeout', 0) * 1000
     }));
+    this.clientId = (_.get(options, 'region')) ? (_.get(config.quota, ['regions', options.region, 'mtls', 'client_id'])) : config.quota.mtls.client_id;
   }
 
   accessWithClientCredentials() {
@@ -25,8 +27,9 @@ class QuotaAPIMtlsAuthClient extends HttpClient {
       url: '/oauth/token',
       data: qs.stringify({
         grant_type: 'client_credentials',
-        client_id: _.get(config.quota, 'mtls.client_id', '')
+        client_id: this.clientId
       }),
+      timeout: _.get(config, 'quota.timeout', 0) * 1000,
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
       }

@@ -53,10 +53,13 @@ class HttpClient {
     // create an https agent with this option and pass to axios.
     const reject_unauthorized = _.get(options, 'rejectUnauthorized', true);
     const mtlsEnabled = _.get(options, 'mtlsEnabled', false);
+    const region = _.get(options, 'region', 'default');
+    let filePath = '/etc/certs/' + region;
     let httpsAgent;
     if(mtlsEnabled) {
-      const cert = fs.readFileSync('/etc/certs/cert', 'utf8');
-      const key = fs.readFileSync('/etc/certs/key', 'utf8');
+      const cert = fs.readFileSync(filePath + '/cert', 'utf8');
+      const key = fs.readFileSync(filePath + '/key', 'utf8');
+      const timeout = _.get(options, 'timeout', 60 * 1000);
       if (_.isEmpty(cert) || _.isEmpty(key)) {
         logger.error('Either certificate or key required for quota app authentication, is missing');
         throw new InternalServerError('Missing certificate or key required to authenticate quota API call');
@@ -64,7 +67,9 @@ class HttpClient {
       httpsAgent = new https.Agent({
         rejectUnauthorized: reject_unauthorized,
         cert: cert,
-        key: key
+        key: key,
+        // wait for 'timeout' milliseconds.
+        timeout: timeout
       });
     } else if (!reject_unauthorized) {
       httpsAgent = new https.Agent({
@@ -282,7 +287,11 @@ class HttpClient {
         return result;
       })
       .catch(error => {
-        logger.info(`Got error for: ${error.config.url}, HTTP Method: ${error.config.method}`);
+        if (error instanceof Promise.TimeoutError) {
+          logger.info(`Got timeout error for HTTP Method: ${error.config.method}`);
+        } else {
+          logger.info(`Got error for: ${error.config.url}, HTTP Method: ${error.config.method}`);
+        }
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the expected range.

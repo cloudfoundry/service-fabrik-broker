@@ -12,20 +12,16 @@ const QuotaAPIMtlsAuthClient = require('./QuotaAPIMtlsAuthClient');
 const TokenIssuer = require('./TokenIssuer');
 const TokenInfo = require('./TokenInfo');
 
-let quotaAPIAuthClient;
 const mtlsEnabled = _.get(config.quota, 'mtls.enabled', false);
 
-if (mtlsEnabled) {
-  quotaAPIAuthClient = new QuotaAPIMtlsAuthClient();
-} else {
-  quotaAPIAuthClient = new QuotaAPIAuthClient();
-}
+let quotaAPIAuthClient = mtlsEnabled ? new QuotaAPIMtlsAuthClient() : new QuotaAPIAuthClient();
 const tokenIssuer = new TokenIssuer(quotaAPIAuthClient);
 const quotaAPIClient = new QuotaAPIClient(tokenIssuer);
 
 const regionalQuotaAPIClients = {};
 for (let reg in config.quota.regions) {
-  let quotaAPIAuthClientRegional = new QuotaAPIAuthClient({ region:reg });
+  let regionalMtlsEnabled = _.get(config.quota, ['regions', reg, 'mtls' ,'enabled']);
+  let quotaAPIAuthClientRegional = regionalMtlsEnabled ? new QuotaAPIMtlsAuthClient({ region:reg }) : new QuotaAPIAuthClient({ region:reg });
   let tokenIssuerRegional = new TokenIssuer(quotaAPIAuthClientRegional);
   let regionalQuotaAPIClient = new QuotaAPIClient(tokenIssuerRegional, { region:reg });
   regionalQuotaAPIClients[reg] = regionalQuotaAPIClient;
