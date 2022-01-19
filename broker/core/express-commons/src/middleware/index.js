@@ -91,10 +91,10 @@ exports.tlsAuth = function () {
   }
 
   async function verifySubjectDN(subjectDN, endpoints) {
-    let index = 0;
-    while (index < allSubjectPatterns.length) {
-      let smCertSubjectPattern = allSubjectPatterns[index++];
+    for (let smCertSubjectPattern of allSubjectPatterns) {
+      logger.info(`smCertSubjectPattern: ${smCertSubjectPattern}`);
       if (verifySubjectDNWithPattern(subjectDN, smCertSubjectPattern)) {
+        logger.info('Found a match for the subjectPattern from the cache. Returning true');
         return true;
       }
     }
@@ -111,8 +111,10 @@ exports.tlsAuth = function () {
         continue;
       }
       if (verifySubjectDNWithPattern(subjectDN, smCertSubjectPattern)) {
+        logger.info(`Verification succeeded for ${baseUrl}. Returning true.`);
         return true;
       }
+      logger.info(`smCertSubjectPattern did not match with the subject for url ${baseUrl}. Checking other endpoints.`);
     }
     return false;
   }
@@ -141,9 +143,13 @@ exports.tlsAuth = function () {
         logger.debug(`Caught error {error} while fetching certificate info for ${baseUrl}. Retrying...`);
       }
     }
-    logger.debug(`Populating cache with subjectInfo: ${smCertSubjectPattern} for URL ${baseUrl}`);
-    landscapeToSubjectPattern.set(baseUrl, smCertSubjectPattern);
-    allSubjectPatterns.add(smCertSubjectPattern);
+    if (smCertSubjectPattern) {
+      logger.debug(`Populating cache with subjectInfo: ${smCertSubjectPattern} for URL ${baseUrl}`);
+      landscapeToSubjectPattern.set(baseUrl, smCertSubjectPattern);
+      allSubjectPatterns.add(smCertSubjectPattern);
+    } else {
+      logger.info(`Not populating cache for url ${baseUrl}, as smCertSubjectPattern is ${smCertSubjectPattern}`);
+    }
     return smCertSubjectPattern;
   }
 };
