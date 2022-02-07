@@ -140,8 +140,7 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID)
+	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID, !instance.GetDeletionTimestamp().IsZero())
 
 	if !instance.GetDeletionTimestamp().IsZero() && state == "delete" {
 		replica.SetName(instance.GetName())
@@ -327,7 +326,7 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 	return nil
 }
 
-func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, clusterID string) error {
+func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, clusterID string, deleted bool) error {
 	ctx := context.Background()
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
@@ -383,7 +382,28 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	if err != nil {
 		log.Error(err, "Failed to get SFPlan from leader")
 		lastErr = err
-	}
+	} else if deleted && !plan.GetDeletionTimestamp().IsZero() {
+        annotations := plan.GetAnnotations()
+        if annotations == nil {
+            annotations = make(map[string]string)
+        }
+        deleteAttempts, ok := annotations[constants.PlanDeleteAttempts];
+        /* Since the SFPlan's reconciler, "offboarding_sfplan_controller", is not watching on instances, there is no way to delete the plan
+           when all its corresponding instances have been deleted,once the deletion timestamp is set for the plan.
+           Hence everytime any instance created using this plan is attempted to be deleted, the below code will force trigger
+           the reconciliation, hence deleting the plan when all the instances created using this plan have been deleted or set to be deleted.
+         */
+        switch {
+            case deleteAttempts == "true":
+                annotations[constants.PlanDeleteAttempts] = "yes"
+            case deleteAttempts == "yes":
+                annotations[constants.PlanDeleteAttempts] = "true"
+            case !ok:
+                annotations[constants.PlanDeleteAttempts] = "true"
+        }
+        plan.SetAnnotations(annotations)
+        r.Update(ctx, plan)
+    }
 
 	err = targetClient.Get(ctx, planKey, planReplica)
 	if err != nil {
