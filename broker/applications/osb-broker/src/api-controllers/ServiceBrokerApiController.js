@@ -615,7 +615,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
               'binding_id:', params.binding_id, 'Binding orphaned');
           }).catch(err => {
             logger.error('RequestIdentity:', requestIdentity, 'instance_id:',params.instance_id,
-              'binding_id:', params.binding_id, 'Failed to orphan binding', err);
+              'binding_id:', params.binding_id, 'Failed to orphan binding', err, 'Removing finalizer from the binding');
+          }).then(() => this.removeFinalizersFromOSBResource(
+            CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            params.binding_id,
+            eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+            requestIdentity
+          )).catch(err => {
+            logger.error('RequestIdentity:', requestIdentity, 'instance_id:',params.instance_id,
+              'binding_id:', params.binding_id, 'Failed to remove finalizer from the binding', err);
           });
 
         res.status(CONST.HTTP_STATUS_CODE.TIMEOUT).send({
