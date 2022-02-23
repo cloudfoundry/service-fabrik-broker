@@ -2,12 +2,11 @@ version: 2
 
 updates:
   - package-ecosystem: "npm"
-    directory: "/broker/applications/admin"
+    directory: "/broker/applications/osb-broker"
     schedule:
       interval: "weekly"
-      day: "monday"
+      day: "thursday"
     ignore:
-      - dependency-name: ajv
       - dependency-name: rxjs
       - dependency-name: pkgcloud
       - dependency-name: dockerode
