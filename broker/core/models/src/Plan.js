@@ -93,7 +93,9 @@ class Plan {
       'maintenance_info',
       'schemas',
       'free',
-      'maximum_polling_duration'
+      'maximum_polling_duration',
+      'bindable',
+      'asyncBinding'
     ];
   }
 }
