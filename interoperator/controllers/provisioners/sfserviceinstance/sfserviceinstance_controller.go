@@ -656,7 +656,7 @@ func (r *ReconcileSFServiceInstance) updatePlanHash(namespacedName types.Namespa
 // SetupWithManager registers the SFServiceInstance Controller with manager
 // and setups the watches.
 func (r *ReconcileSFServiceInstance) SetupWithManager(mgr ctrl.Manager) error {
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("provisioners").WithName("instance")
 	}
 	if r.clusterRegistry == nil {
