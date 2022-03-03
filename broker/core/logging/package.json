@@ -10,7 +10,7 @@
   "dependencies": {
     "@sf/app-config": "*",
     "lodash": "4.17.21",
-    "winston": "3.3.3",
+    "winston": "3.6.0",
     "winston-syslog": "2.4.4"
   }
 }
