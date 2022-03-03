@@ -22,7 +22,7 @@
     "@sf/platforms": "*",
     "@sf/service-agent": "*",
     "bluebird": "3.7.2",
-    "js-yaml": "3.14.0",
+    "js-yaml": "4.1.0",
     "lodash": "4.17.21",
     "selfsigned": "1.10.7"
   }

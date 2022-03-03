@@ -33,7 +33,7 @@ const deployment_name = id;
 const taskId = Math.floor(Math.random() * 123456789);
 const bosh_taskId = `bosh_${taskId}`;
 let populateConfigCacheInProgress = false;
-const manifest = yaml.safeDump({
+const manifest = yaml.dump({
   name: id
 });
 let primary_config = _.sample(_

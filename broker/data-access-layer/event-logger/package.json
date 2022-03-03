@@ -15,7 +15,7 @@
     "@sf/logger": "*",
     "@sf/models": "*",
     "bluebird": "3.7.2",
-    "js-yaml": "3.14.0",
+    "js-yaml": "4.1.0",
     "lodash": "4.17.21",
     "pubsub-js": "1.9.4",
     "riemann": "2.0.0"

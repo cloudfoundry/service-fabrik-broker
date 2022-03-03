@@ -20,7 +20,7 @@ class EventLogInterceptor {
     const configFileName = `eventlog-config-${appType}.yml`;
     const eventConfAbsPath = process.env.CONF_DIR ? path.join(process.env.CONF_DIR, configFileName) :
       path.join(__dirname, 'config', configFileName);
-    this.EVENT_LOG_CONFIG = yaml.safeLoad(fs.readFileSync(eventConfAbsPath, 'utf8'));
+    this.EVENT_LOG_CONFIG = yaml.load(fs.readFileSync(eventConfAbsPath, 'utf8'));
     this.eventType = eventType;
     this.commonUpdatePrefix = this.getCommonUpdatePrefixForUpdate();
   }

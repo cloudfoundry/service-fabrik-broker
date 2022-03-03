@@ -19,7 +19,7 @@ class Header {
   }
 
   toString() {
-    return yaml.safeDump(this, {
+    return yaml.dump(this, {
       skipInvalid: true
     });
   }
