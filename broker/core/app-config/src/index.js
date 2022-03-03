@@ -30,7 +30,7 @@ const context = {
     return JSON.stringify(fs.readFileSync(filename).toString('ascii'));
   }
 };
-const config = yaml.safeLoad(_.template(buffer)(context))[ENV];
+const config = yaml.load(_.template(buffer)(context))[ENV];
 if (config.directors) {
   config.directors.forEach(director => completeDirectorConfig(director));
 }
@@ -194,7 +194,7 @@ function completeCircutBreakerConfig(config) {
   const circuitBreakerConfigAbsPath = process.env.CONF_DIR ? path.join(process.env.CONF_DIR, configFileName) :
     path.join(__dirname, '..', 'config', configFileName);
   if (fs.existsSync(circuitBreakerConfigAbsPath)) {
-    config.circuit_breaker = yaml.safeLoad(fs.readFileSync(circuitBreakerConfigAbsPath, 'utf8'));
+    config.circuit_breaker = yaml.load(fs.readFileSync(circuitBreakerConfigAbsPath, 'utf8'));
   } else {
     // eslint-disable-next-line no-console
     console.log('Circuit break config not found. Hystrix will not be configured.');

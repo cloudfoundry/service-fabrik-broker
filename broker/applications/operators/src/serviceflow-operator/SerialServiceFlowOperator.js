@@ -25,7 +25,7 @@ class SerialServiceFlowOperator extends BaseOperator {
   init() {
     const statesToWatchForServiceFlowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
     const statesToWatchForTaskRelay = [CONST.APISERVER.TASK_STATE.DONE];
-    this.SERVICE_FLOW_DEFINITION = yaml.safeLoad(fs.readFileSync(path.join(__dirname, CONST.SERVICE_FLOW.DEFINITION_FILE_NAME)));
+    this.SERVICE_FLOW_DEFINITION = yaml.load(fs.readFileSync(path.join(__dirname, CONST.SERVICE_FLOW.DEFINITION_FILE_NAME)));
     this.pollers = {};
     logger.info('Registering CRDs related to Service Flow Operator..!');
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW)

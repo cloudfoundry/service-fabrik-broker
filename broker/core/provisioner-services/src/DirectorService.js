@@ -981,9 +981,9 @@ class DirectorService extends BaseDirectorService {
         }
         let manifestYml = _.template(this.template)(context);
         if (!skipAddOns) {
-          const serviceManifest = yaml.safeLoad(manifestYml);
+          const serviceManifest = yaml.load(manifestYml);
           this.configureAddOnJobs(serviceManifest, context.spec);
-          manifestYml = yaml.safeDump(serviceManifest);
+          manifestYml = yaml.dump(serviceManifest);
         }
         return manifestYml;
       });
