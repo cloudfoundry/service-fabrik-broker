@@ -17,7 +17,7 @@
     "connect-timeout": "1.9.0",
     "express": "4.17.3",
     "express-interceptor": "1.2.0",
-    "helmet": "4.1.0",
+    "helmet": "5.0.2",
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
     "moment": "2.27.0",
