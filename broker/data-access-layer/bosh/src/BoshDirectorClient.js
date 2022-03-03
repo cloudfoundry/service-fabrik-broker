@@ -393,7 +393,7 @@ class BoshDirectorClient extends HttpClient {
         params: {
           redact: 'false'
         },
-        data: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
+        data: _.isObject(manifest) ? yaml.dump(manifest) : manifest
       }, 200, deploymentName)
       .then(res => res.body);
   }
@@ -404,7 +404,7 @@ class BoshDirectorClient extends HttpClient {
     return this
       .getDeployment(deploymentName)
       .then(deployment => deployment.manifest ?
-        yaml.safeLoad(deployment.manifest) : null
+        yaml.load(deployment.manifest) : null
       );
   }
 
@@ -474,7 +474,7 @@ class BoshDirectorClient extends HttpClient {
 
   createOrUpdateDeployment(action, manifest, opts, scheduled) {
     const query = opts ? ((action === CONST.OPERATION_TYPE.CREATE) ? _.pick(opts, 'recreate', 'skip_drain', 'context', 'canaries', 'max_in_flight') : _.pick(opts, 'recreate', 'skip_drain', 'context')) : undefined;
-    const deploymentName = yaml.safeLoad(manifest).name;
+    const deploymentName = yaml.load(manifest).name;
     const boshDirectorName = _.get(opts, 'bosh_director_name');
     delete this.deploymentIpsCache[deploymentName];
     return Promise.try(() => {
@@ -507,7 +507,7 @@ class BoshDirectorClient extends HttpClient {
             url: '/deployments',
             headers: reqHeaders,
             params: query,
-            data: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
+            data: _.isObject(manifest) ? yaml.dump(manifest) : manifest
           }, 302, config)
           .tap(() => {
             logger.info(`Cached ${deploymentName} at director: ${config.name} ${config.url}`);

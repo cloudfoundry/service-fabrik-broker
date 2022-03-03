@@ -18,7 +18,7 @@
     "express": "4.17.3",
     "express-interceptor": "1.2.0",
     "helmet": "5.0.2",
-    "js-yaml": "3.14.0",
+    "js-yaml": "4.1.0",
     "lodash": "4.17.21",
     "moment": "2.29.1",
     "morgan": "1.10.0",

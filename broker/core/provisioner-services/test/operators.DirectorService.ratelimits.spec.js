@@ -467,7 +467,7 @@ describe('service', () => {
         expect(directorService.plan.id).to.eql(plan_id);
         return directorService.generateManifest(`service-fabrik-90-${used_guid}`, {})
           .then(generatedManifest => {
-            const manifest = yaml.safeLoad(generatedManifest);
+            const manifest = yaml.load(generatedManifest);
             expect(manifest.addons.length).to.equal(2);
             expect(manifest.releases.length).to.equal(2);
           });
@@ -479,7 +479,7 @@ describe('service', () => {
         return directorService.generateManifest(`service-fabrik-90-${used_guid}`, {
           skip_addons: true
         }).then(generatedManifest => {
-          const manifest = yaml.safeLoad(generatedManifest);
+          const manifest = yaml.load(generatedManifest);
           expect(manifest.addons).to.equal(undefined);
           expect(manifest.releases.length).to.equal(1);
         });

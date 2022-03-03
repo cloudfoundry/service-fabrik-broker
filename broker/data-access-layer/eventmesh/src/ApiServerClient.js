@@ -348,7 +348,7 @@ class ApiServerClient {
     const crdEncodedTemplate = _.get(config, `apiserver.crds['${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml']`);
     if (crdEncodedTemplate) {
       logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
-      return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
+      return yaml.load(Buffer.from(crdEncodedTemplate, 'base64'));
     }
   }
 

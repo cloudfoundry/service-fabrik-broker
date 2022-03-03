@@ -47,7 +47,7 @@ class DashboardController extends FabrikBaseController {
       .then(info => {
         let additional_info = {};
         if (req.service.plan.manager.settings.dashboard_template) {
-          additional_info = yaml.safeLoad(_.template(Buffer.from(req.service.plan.manager.settings.dashboard_template, 'base64'))(info));
+          additional_info = yaml.load(_.template(Buffer.from(req.service.plan.manager.settings.dashboard_template, 'base64'))(info));
         }
         info = _.assign({
           userId: req.session.user_id,
