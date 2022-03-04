@@ -1547,7 +1547,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    express: 4.17.1
+    express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
     rxjs: 5.0.0
@@ -1613,7 +1613,7 @@ __metadata:
     basic-auth: 2.0.1
     body-parser: 1.19.0
     connect-timeout: 1.9.0
-    express: 4.17.1
+    express: 4.17.3
     express-interceptor: 1.2.0
     helmet: 4.1.0
     js-yaml: 3.14.0
@@ -1793,7 +1793,7 @@ __metadata:
     ajv: 6.12.6
     bluebird: 3.7.2
     camelcase-keys: 6.2.2
-    express: 4.17.1
+    express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
     rxjs: 5.0.0
@@ -1846,7 +1846,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     "@sf/quota": "*"
-    express: 4.17.1
+    express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
     rxjs: 5.0.0
@@ -1879,7 +1879,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    express: 4.17.1
+    express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
     rxjs: 5.0.0
