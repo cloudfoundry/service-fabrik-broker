@@ -14,7 +14,7 @@
     "@sf/models": "*",
     "ajv": "6.12.6",
     "bluebird": "3.7.2",
-    "camelcase-keys": "6.2.2",
+    "camelcase-keys": "7.0.2",
     "express": "4.17.3",
     "lodash": "4.17.21"
   },
