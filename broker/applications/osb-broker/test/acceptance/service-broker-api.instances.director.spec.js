@@ -232,7 +232,7 @@ describe('service-broker-api', function () {
           .then(res => {
             expect(res).to.have.status(400);
             expect(res.body.error).to.be.eql('Bad Request');
-            expect(res.body.description).to.be.eql('Failed to validate service parameters, reason: .enum_foo should be equal to one of the allowed values');
+            expect(res.body.description).to.be.eql('Failed to validate service parameters, reason: undefined must be equal to one of the allowed values');
           });
       });
 
