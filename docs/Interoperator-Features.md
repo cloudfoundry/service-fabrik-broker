@@ -141,3 +141,29 @@ spec
       update_predecessors:
         - '39d7d4c8-6fe2-4c2a-a5ca-b826937d5a88' # default plan
 ```
+
+## Service plan schema validation
+
+Interoperator uses Ajv JSON schema validator for validating the schema defined for a given plan. It supports JSON Schema draft-04 & draft-06. draft-04 support requires ajv-draft-04 package.
+
+Sample drafts-04 schema supported:
+
+```yaml
+schemas: &blueprint_schemas
+        service_instance:
+          create:
+            parameters:
+              "$schema": "http://json-schema.org/draft-04/schema#"
+              additionalProperties: true
+```
+
+If $schema is not explicitly defined in the plan template, we try validating both draft-04 & draft-06 schemas. The schema validation fails if it fails for both the draft versions.
+Sample template without $schema tag:
+
+```yaml
+schemas: &blueprint_schemas
+        service_instance:
+          create:
+            parameters:
+              additionalProperties: true
+```

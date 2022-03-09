@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const Ajv = require('ajv');
+const Ajv04 = require('ajv-draft-04');
 const {
   CONST,
   errors: {
@@ -210,28 +211,40 @@ exports.validateLastOperationRequest = function () {
 exports.validateSchemaForRequest = function (target, operation) {
   return function (req, res, next) {
     const plan = getPlanFromRequest(req);
-  
+
     const schema = _.get(plan, `schemas.${target}.${operation}.parameters`);
-  
+
     if (schema) {
       const parameters = _.get(req, 'body.parameters', {});
-  
+
       const schemaVersion = schema.$schema || '';
-      const validator = new Ajv({ schemaId: 'auto' });
+      const validator = new Ajv({ $schemaId: 'auto' });
+      const ajv04Validator = new Ajv04();
+      logger.info('Using Ajv04 for validating draft-04 schema');
+      let validate;
       if (schemaVersion.includes('draft-06')) {
         validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+        validate = validator.compile(schema);
       } else if (schemaVersion.includes('draft-04')) {
-        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
-      } else if (!schemaVersion.includes('draft-07')) {
-        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
-        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+        validate = ajv04Validator.compile(schema);
       }
-      const validate = validator.compile(schema);
-  
-      const isValid = validate(parameters);
-      if (!isValid) {
-        const reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
-        return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
+      if (schemaVersion == '') {
+        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+        validate = validator.compile(schema);
+        const ajv04Validate = ajv04Validator.compile(schema);
+        if (!ajv04Validate(parameters) && !validate(parameters)) {
+          let reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+          if (reason == '') {
+            reason = _.map(ajv04Validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+          }
+          return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
+        }
+      } else {
+        const isValid = validate(parameters);
+        if (!isValid) {
+          const reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+          return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
+        }
       }
     }
     next();
