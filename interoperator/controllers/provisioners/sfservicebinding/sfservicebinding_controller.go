@@ -566,7 +566,7 @@ func (r *ReconcileSFServiceBinding) restartOnWatchUpdate() {
 // SetupWithManager registers the SFServiceBinding Controller with manager
 // and setups the watches.
 func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("provisioners").WithName("binding")
 	}
 	if r.clusterRegistry == nil {

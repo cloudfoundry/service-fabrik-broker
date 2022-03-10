@@ -553,7 +553,7 @@ func (r *ReconcileProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("provisioner")
 	}
 	if r.clusterRegistry == nil {
