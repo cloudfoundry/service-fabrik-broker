@@ -507,7 +507,7 @@ func replicateSFPlanResourceData(source *osbv1alpha1.SFPlan, dest *osbv1alpha1.S
 // SetupWithManager registers the MCD Instance replicator with manager
 // and setups the watches.
 func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("replicator").WithName("instance")
 	}
 	if r.clusterRegistry == nil {

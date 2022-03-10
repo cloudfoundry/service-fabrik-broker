@@ -234,7 +234,7 @@ func (r *SFClusterReplicator) reconcileStatus(targetClient client.Client, cluste
 // SetupWithManager registers the MCD SFCluster replicator with manager
 // and setups the watches.
 func (r *SFClusterReplicator) SetupWithManager(mgr ctrl.Manager) error {
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("replicator").WithName("cluster")
 	}
 	if r.clusterRegistry == nil {

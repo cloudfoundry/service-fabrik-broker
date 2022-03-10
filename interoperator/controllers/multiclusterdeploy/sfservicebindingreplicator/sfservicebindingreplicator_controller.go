@@ -360,7 +360,7 @@ func replicateSFServiceBindingResourceData(source *osbv1alpha1.SFServiceBinding,
 // SetupWithManager registers the MCD Binding replicator with manager
 // and setups the watches.
 func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
-	if r.Log == nil {
+	if r.Log.GetSink() == nil {
 		r.Log = ctrl.Log.WithName("mcd").WithName("replicator").WithName("binding")
 	}
 	if r.clusterRegistry == nil {
