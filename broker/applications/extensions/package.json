@@ -30,7 +30,7 @@
     "express-session": "1.17.1",
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
-    "moment": "2.27.0",
+    "moment": "2.29.1",
     "rxjs": "5.0.0",
     "session-file-store": "1.4.0"
   }
