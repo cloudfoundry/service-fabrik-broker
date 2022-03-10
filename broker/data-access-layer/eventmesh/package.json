@@ -19,6 +19,6 @@
     "js-yaml": "3.14.0",
     "json-stream": "^1.0.0",
     "lodash": "4.17.21",
-    "pubsub-js": "1.8.0"
+    "pubsub-js": "1.9.4"
   }
 }
