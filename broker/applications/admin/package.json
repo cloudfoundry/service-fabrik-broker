@@ -27,7 +27,7 @@
     "@sf/provisioner-services": "*",
     "bluebird": "3.7.2",
     "express": "4.17.3",
-    "express-jwt": "6.0.0",
+    "express-jwt": "6.1.1",
     "lodash": "4.17.21",
     "rxjs": "5.0.0"
   }
