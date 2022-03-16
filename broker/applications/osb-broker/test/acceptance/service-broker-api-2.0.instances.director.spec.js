@@ -2384,7 +2384,7 @@ describe('service-broker-api-2.0', function () {
           });
           const timeout = CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC;
           CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC = 0;
-          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {});
+          //mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)

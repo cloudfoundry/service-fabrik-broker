@@ -714,11 +714,11 @@ class ApiServerClient {
 
     return Promise.try(() => {
       if (!_.get(opts, 'allNamespaces', false)) {
-        return client.listNamespacedCustomObject(group, version, namespaceId, plural, pretty, _continue,
-          fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+        return client.listNamespacedCustomObject(group, version, namespaceId, plural, pretty, undefined, _continue,
+          fieldSelector, labelSelector, limit, resourceVersion, undefined, timeoutSeconds, watch);
       } else {
-        return client.listClusterCustomObject(group, version, plural, pretty, _continue,
-          fieldSelector, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+        return client.listClusterCustomObject(group, version, plural, pretty, undefined, _continue,
+          fieldSelector, labelSelector, limit, resourceVersion, undefined, timeoutSeconds, watch);
       }
     })
       .then(response => _.get(response, 'body.items', []))
