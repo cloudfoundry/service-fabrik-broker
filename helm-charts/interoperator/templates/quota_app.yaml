@@ -92,8 +92,10 @@ spec:
           mountPath: '/etc/certs/default'
         {{- end }}
         {{- range $reg := .Values.broker.quota.regions }}
+        {{- if $reg.mtls.enabled }}
         - name: {{ $reg.name }}
           mountPath: /etc/certs/{{ $reg.name }}
+        {{- end }}
         {{- end }}
         - name: settings
           mountPath: /opt/sf-config
@@ -138,9 +140,11 @@ spec:
             secretName: {{ .Values.broker.quota.mtls.cert_secret }}
         {{- end }}
         {{- range $reg := .Values.broker.quota.regions }}
+        {{- if $reg.mtls.enabled }}
         - name: {{ $reg.name }}
           secret:
             secretName: {{ $reg.mtls.cert_secret }}
+        {{- end }}
         {{- end }}
       restartPolicy: Always
 ---
