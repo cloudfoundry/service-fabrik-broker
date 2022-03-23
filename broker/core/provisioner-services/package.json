@@ -24,6 +24,6 @@
     "bluebird": "3.7.2",
     "js-yaml": "4.1.0",
     "lodash": "4.17.21",
-    "selfsigned": "1.10.7"
+    "selfsigned": "2.0.0"
   }
 }
