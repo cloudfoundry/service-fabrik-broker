@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -21,34 +22,34 @@ type clientMock struct {
 	ListItems   *v1alpha1.SfeventList
 }
 
-func (c *clientMock) List(opts v1.ListOptions) (*v1alpha1.SfeventList, error) {
+func (c *clientMock) List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.SfeventList, error) {
 	if c.ErrorString != "" {
 		return nil, errors.New(c.ErrorString)
 	}
 	return c.ListItems, nil
 }
-func (c *clientMock) Create(sfevent *v1alpha1.Sfevent) (*v1alpha1.Sfevent, error) {
+func (c *clientMock) Create(ctx context.Context, sfevent *v1alpha1.Sfevent, opts v1.CreateOptions) (*v1alpha1.Sfevent, error) {
 	return nil, errors.New("Dummy Error")
 }
-func (c *clientMock) Delete(name string, options *v1.DeleteOptions) error {
+func (c *clientMock) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return errors.New("Dummy Error")
 }
-func (c *clientMock) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *clientMock) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	return errors.New("Dummy Error")
 }
-func (c *clientMock) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Sfevent, err error) {
+func (c *clientMock) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Sfevent, err error) {
 	return nil, errors.New("Dummy Error")
 }
-func (c *clientMock) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *clientMock) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return nil, errors.New("Dummy Error")
 }
-func (c *clientMock) Get(name string, options v1.GetOptions) (result *v1alpha1.Sfevent, err error) {
+func (c *clientMock) Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Sfevent, error) {
 	return nil, errors.New("Dummy Error")
 }
-func (c *clientMock) Update(sfevent *v1alpha1.Sfevent) (result *v1alpha1.Sfevent, err error) {
+func (c *clientMock) Update(ctx context.Context, sfevent *v1alpha1.Sfevent, opts v1.UpdateOptions) (*v1alpha1.Sfevent, error) {
 	return nil, errors.New("Dummy Error")
 }
-func (c *clientMock) UpdateStatus(sfevent *v1alpha1.Sfevent) (result *v1alpha1.Sfevent, err error) {
+func (c *clientMock) UpdateStatus(ctx context.Context, sfevent *v1alpha1.Sfevent, opts v1.UpdateOptions) (result *v1alpha1.Sfevent, err error) {
 	return nil, errors.New("Dummy Error")
 }
 
@@ -647,7 +648,7 @@ var _ = Describe("Event", func() {
 			evt.SetLabels(labels)
 			client := clientMock{}
 			client.ListItems = &v1alpha1.SfeventList{
-				Items: []v1alpha1.Sfevent{v1alpha1.Sfevent{}},
+				Items: []v1alpha1.Sfevent{{}},
 			}
 			metered, err := isEventMetered(&evt, &client)
 			Expect(err).To(BeNil())
