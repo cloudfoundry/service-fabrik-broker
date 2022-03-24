@@ -45,14 +45,12 @@ matrix:
         - "1.17"
       git:
         depth: 3
-      before_install:
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
         - pushd interoperator
-        - env KUBEBUILDER_VERSION=v1.0.7 ./scripts/install_test.sh
+        - ./scripts/install_test.sh
         - popd
         - cd webhooks
-        - dep ensure -v
+        - env GO111MODULE=on go mod download
         - cd ..
       script:
         - pushd webhooks
@@ -66,14 +64,15 @@ matrix:
       git:
         depth: 3
       before_install:
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
         - go install -v honnef.co/go/tools/cmd/staticcheck@v0.2.2
       install:
         - cd interoperator
         - env GO111MODULE=on go mod download
         - cd ../webhooks
-        - dep ensure -v
+        - env GO111MODULE=on go mod download
+        - cd ../operator-apis
+        - env GO111MODULE=on go mod download
         - cd ..
       script:
         - pushd interoperator
@@ -87,6 +86,8 @@ matrix:
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
         - go vet ./pkg/webhooks/manager/... ./pkg/apis/...
         - golint ./pkg/webhooks/manager/... ./pkg/apis/...
+        - PKGS=$(go list ./... | grep -v /vendor/)
+        - staticcheck $PKGS
         - popd
         - pushd operator-apis
         - go fmt ./internal/...
