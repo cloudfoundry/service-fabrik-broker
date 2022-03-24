@@ -19,8 +19,6 @@ import (
 
 type MockEvent struct {
 	AdmissionReview      *v1beta1.AdmissionReview
-	crd                  resources.GenericResource
-	oldCrd               resources.GenericResource
 	isMetering           bool
 	isMeteringError      error
 	createMerteringError error

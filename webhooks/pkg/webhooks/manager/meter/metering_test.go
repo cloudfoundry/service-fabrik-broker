@@ -28,8 +28,7 @@ var _ = Describe("Sfevent", func() {
 			signal := c.MeterStop
 			// Test creating metering object
 			m := NewMetering(opt, crd, signal, c.UpdateEvent)
-			var unmarsheledSfeventOptions v1alpha1.SfeventOptions
-			unmarsheledSfeventOptions = m.Spec.Options
+			var unmarsheledSfeventOptions v1alpha1.SfeventOptions = m.Spec.Options
 			Expect(unmarsheledSfeventOptions.ID).Should(MatchRegexp("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"), "Should be a valid guid")
 			Expect(unmarsheledSfeventOptions.Timestamp).Should(MatchRegexp(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}$`), "The tiemstamp format should match")
 			Expect(unmarsheledSfeventOptions.ServiceInfo.ID).To(Equal(opt.ServiceID), "Service Id should be populated")

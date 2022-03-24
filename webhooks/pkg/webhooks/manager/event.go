@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,7 +53,7 @@ type Event struct {
 
 // NewEvent is a constructor for Event
 func NewEvent(ar *v1beta1.AdmissionReview) (*Event, error) {
-	arjson, err := json.Marshal(ar)
+	arjson, _ := json.Marshal(ar)
 	req := ar.Request
 	glog.Infof(`
     Creating event for
@@ -201,7 +202,7 @@ func (e *Event) getEventType() (c.EventType, error) {
 		eventType = c.CreateEvent
 	}
 	if eventType == c.InvalidEvent {
-		return eventType, errors.New("No supported event found")
+		return eventType, errors.New("no supported event found")
 	}
 	return eventType, nil
 }
@@ -272,7 +273,7 @@ func (e *Event) validateOptions(opt resources.GenericOptions) error {
 func isEventMetered(evt *v1alpha1.Sfevent, client instanceclient.SfeventInterface) (bool, error) {
 	labels := evt.GetLabels()
 	if labels[c.EventTypeKey] == string(c.DeleteEvent) {
-		list, err := client.List(v1.ListOptions{
+		list, err := client.List(context.TODO(), v1.ListOptions{
 			LabelSelector: fmt.Sprintf("%s=%s,%s=%s", c.EventTypeKey, string(c.DeleteEvent), c.InstanceGUIDKey, evt.Spec.Options.ConsumerInfo.Instance),
 		})
 		if err != nil {
@@ -305,7 +306,7 @@ func (e *Event) createMertering(cfg *rest.Config) error {
 			return err
 		}
 		if !metered {
-			r, err := client.Create(evt)
+			r, err := client.Create(context.TODO(), evt, v1.CreateOptions{})
 			if err != nil {
 				glog.Errorf("Error creating event : %v", err)
 				return err
