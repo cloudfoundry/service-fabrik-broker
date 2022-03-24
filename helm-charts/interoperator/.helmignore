@@ -21,4 +21,6 @@
 *.tmproj
 .vscode/
 .xmake
-
+import
+gen/
+cfg
