@@ -1436,7 +1436,6 @@ __metadata:
     express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
-    rxjs: 5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1448,6 +1447,7 @@ __metadata:
     hystrixjs: 0.2.0
     js-yaml: 4.1.0
     lodash: 4.17.21
+    rxjs: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1521,6 +1521,7 @@ __metadata:
     lodash: 4.17.21
     moment: 2.29.1
     mongoose: 5.13.9
+    rxjs: ^5.0.0
     uuid: 8.3.2
   languageName: unknown
   linkType: soft
@@ -1557,7 +1558,6 @@ __metadata:
     express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
-    rxjs: 5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1657,7 +1657,6 @@ __metadata:
     js-yaml: 4.1.0
     lodash: 4.17.21
     moment: 2.29.1
-    rxjs: 5.0.0
     session-file-store: 1.4.0
   languageName: unknown
   linkType: soft
@@ -1782,7 +1781,6 @@ __metadata:
     json-stream: ^1.0.0
     lodash: 4.17.21
     moment: 2.29.1
-    rxjs: 5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1803,7 +1801,6 @@ __metadata:
     camelcase-keys: 7.0.2
     express: 4.17.3
     lodash: 4.17.21
-    rxjs: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1855,7 +1852,6 @@ __metadata:
     "@sf/quota": "*"
     express: 4.17.3
     lodash: 4.17.21
-    rxjs: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1888,7 +1884,6 @@ __metadata:
     express: 4.17.3
     express-jwt: 6.0.0
     lodash: 4.17.21
-    rxjs: 5.0.0
   languageName: unknown
   linkType: soft
 
@@ -1906,7 +1901,6 @@ __metadata:
     lodash: 4.17.21
     moment: 2.29.1
     pubsub-js: 1.9.4
-    rxjs: 5.0.0
   languageName: unknown
   linkType: soft
 
@@ -12975,15 +12969,6 @@ resolve@^1.15.1:
   languageName: node
   linkType: hard
 
-"rxjs@npm:5.0.0":
-  version: 5.0.0
-  resolution: "rxjs@npm:5.0.0"
-  dependencies:
-    symbol-observable: ^1.0.1
-  checksum: adf63ff477eeb237dbe0bcc7afadbf9ee1e59352472ffb5af8f2ac6663bb0033ed5382617a059ecc7c64a6492f2ec824472eec7643bb04b1c0502c3ebebeef43
-  languageName: node
-  linkType: hard
-
 "rxjs@npm:^5.0.0":
   version: 5.5.12
   resolution: "rxjs@npm:5.5.12"
@@ -14127,13 +14112,6 @@ resolve@^1.15.1:
   version: 1.0.1
   resolution: "symbol-observable@npm:1.0.1"
   checksum: 7f44d509d9f6e6692b181af73bb2551015670796918764ad96bc1f6c438b7198fc51a1e77ce70f5873c8ed24856954154945c3eb3f2420df05bce0c1f8cb7e7e
-  languageName: node
-  linkType: hard
-
-"symbol-observable@npm:^1.0.1":
-  version: 1.2.0
-  resolution: "symbol-observable@npm:1.2.0"
-  checksum: 268834a1d4cba19d40f367e5c2755f612969c8418e43a3be17408e392802a667f8bb542893440d58a080a8ea8da05ea98e27e472b9f4ff6fbda78a21a1a41c53
   languageName: node
   linkType: hard
 

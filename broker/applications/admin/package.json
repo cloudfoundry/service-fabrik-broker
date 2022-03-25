@@ -28,7 +28,6 @@
     "bluebird": "3.7.2",
     "express": "4.17.3",
     "express-jwt": "6.0.0",
-    "lodash": "4.17.21",
-    "rxjs": "5.0.0"
+    "lodash": "4.17.21"
   }
 }
