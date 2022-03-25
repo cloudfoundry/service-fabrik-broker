@@ -17,7 +17,8 @@
     "bluebird": "3.7.2",
     "camelcase-keys": "7.0.2",
     "express": "4.17.3",
-    "lodash": "4.17.21"
+    "lodash": "4.17.21",
+    "rxjs": "^5.0.0"
   },
   "scripts": {
     "eslint": "./node_modules/eslint/bin/eslint.js .",
