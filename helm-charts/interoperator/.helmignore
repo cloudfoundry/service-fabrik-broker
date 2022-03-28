@@ -19,3 +19,8 @@
 .project
 .idea/
 *.tmproj
+.vscode/
+.xmake
+import
+gen/
+cfg
