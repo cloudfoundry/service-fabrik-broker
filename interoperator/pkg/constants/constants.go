@@ -17,6 +17,7 @@ const (
 	PrimaryClusterKey                     = "interoperator.servicefabrik.io/primarycluster"
 	PlanHashKey                           = "interoperator.servicefabrik.io/planhash"
 	ErrorThreshold                        = 10
+	PlanDeleteAttempts                    = "interoperator.servicefabrik.io/deleteattempts"
 
 	ConfigMapName           = "interoperator-config"
 	ConfigMapKey            = "config"
