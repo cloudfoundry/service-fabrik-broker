@@ -24,6 +24,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/offboarding"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfplanoffboarding"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
@@ -88,6 +89,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create cluster offboarding controller", "controller", "SFClusterOffboarding")
 		return err
+	}
+
+	if err = (&sfplanoffboarding.SFPlanOffboarding{
+	    Client: mgr.GetClient(),
+	    Log: ctrl.Log.WithName("mcd").WithName("sfplan_offboarding").WithName("sfplan"),
+	}).SetupWithManager(mgr); err != nil {
+	    setupLog.Error(err, "unable to create sfplan offboarding controller", "controller", "SFPlanOffboarding")
+	    return err
 	}
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o client.Object) []string {
