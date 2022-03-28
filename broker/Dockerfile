@@ -26,8 +26,8 @@ RUN mkdir logs
 
 RUN yarn set version 2.4.1
 RUN yarn cache clean
-RUN yarn workspaces focus @sf/osb-broker --production
-RUN yarn workspaces focus @sf/quota-app --production
+
+RUN yarn workspaces focus @sf/osb-broker @sf/quota-app --production
 # copy in our source code last, as it changes the most
 
 ENV CONF_DIR /opt/service-fabrik-broker/broker/config
