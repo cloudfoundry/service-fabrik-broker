@@ -111,6 +111,11 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 	interoperatorCfg := r.cfgManager.GetConfig()
 	currPrimaryClusterID := interoperatorCfg.PrimaryClusterID
 
+	reconcileErr := r.reconcileSFPlan(instance, clusterID, !instance.GetDeletionTimestamp().IsZero())
+	if reconcileErr != nil {
+	  log.Error(reconcileErr, "Failed to reconcile SFPlan")
+	}
+
 	if clusterID == currPrimaryClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
@@ -140,7 +145,7 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID, !instance.GetDeletionTimestamp().IsZero())
+	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID)
 
 	if !instance.GetDeletionTimestamp().IsZero() && state == "delete" {
 		replica.SetName(instance.GetName())
@@ -258,6 +263,51 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
+func (r *InstanceReplicator) reconcileSFPlan(instance *osbv1alpha1.SFServiceInstance, clusterID string, deleted bool) error {
+	ctx := context.Background()
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+	log := r.Log.WithValues("clusterID", clusterID, "serviceID", serviceID, "planID", planID)
+
+	var lastErr error
+
+	plan := &osbv1alpha1.SFPlan{}
+	planKey := types.NamespacedName{
+		Name:      planID,
+		Namespace: constants.InteroperatorNamespace,
+	}
+
+	err := r.Get(ctx, planKey, plan)
+	log.Info("Checking deletion eligibility for the plan", "is instance set for deletion: ", deleted, "is deletion ts for the plan set", !plan.GetDeletionTimestamp().IsZero())
+	if err != nil {
+		log.Error(err, "Failed to get SFPlan from leader")
+		lastErr = err
+	} else if deleted && !plan.GetDeletionTimestamp().IsZero() {
+        annotations := plan.GetAnnotations()
+        if annotations == nil {
+            annotations = make(map[string]string)
+        }
+        deleteAttempts, ok := annotations[constants.PlanDeleteAttempts];
+        /* Since the SFPlan's reconciler, "offboarding_sfplan_controller", is not watching on instances, there is no way to delete the plan
+           when all its corresponding instances have been deleted,once the deletion timestamp is set for the plan.
+           Hence everytime any instance created using this plan is attempted to be deleted, the below code will force trigger
+           the reconciliation, hence deleting the plan when all the instances created using this plan have been deleted or set to be deleted.
+         */
+        switch {
+            case deleteAttempts == "true":
+                annotations[constants.PlanDeleteAttempts] = "yes"
+            case deleteAttempts == "yes":
+                annotations[constants.PlanDeleteAttempts] = "true"
+            case !ok:
+                annotations[constants.PlanDeleteAttempts] = "true"
+        }
+        plan.SetAnnotations(annotations)
+        r.Update(ctx, plan)
+    }
+
+	return lastErr
+}
+
 func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, namespace, clusterID string, delete bool) error {
 	ctx := context.Background()
 	log := r.Log.WithValues("clusterID", clusterID, "namespace", namespace, "deleteNamespace", delete)
@@ -326,7 +376,7 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 	return nil
 }
 
-func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, clusterID string, deleted bool) error {
+func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, clusterID string) error {
 	ctx := context.Background()
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
@@ -382,28 +432,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	if err != nil {
 		log.Error(err, "Failed to get SFPlan from leader")
 		lastErr = err
-	} else if deleted && !plan.GetDeletionTimestamp().IsZero() {
-        annotations := plan.GetAnnotations()
-        if annotations == nil {
-            annotations = make(map[string]string)
-        }
-        deleteAttempts, ok := annotations[constants.PlanDeleteAttempts];
-        /* Since the SFPlan's reconciler, "offboarding_sfplan_controller", is not watching on instances, there is no way to delete the plan
-           when all its corresponding instances have been deleted,once the deletion timestamp is set for the plan.
-           Hence everytime any instance created using this plan is attempted to be deleted, the below code will force trigger
-           the reconciliation, hence deleting the plan when all the instances created using this plan have been deleted or set to be deleted.
-         */
-        switch {
-            case deleteAttempts == "true":
-                annotations[constants.PlanDeleteAttempts] = "yes"
-            case deleteAttempts == "yes":
-                annotations[constants.PlanDeleteAttempts] = "true"
-            case !ok:
-                annotations[constants.PlanDeleteAttempts] = "true"
-        }
-        plan.SetAnnotations(annotations)
-        r.Update(ctx, plan)
-    }
+	}
 
 	err = targetClient.Get(ctx, planKey, planReplica)
 	if err != nil {
