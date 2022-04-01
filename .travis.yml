@@ -12,6 +12,7 @@ matrix:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
         - go get -v honnef.co/go/tools/cmd/staticcheck
+        - staticcheck -version
       install:
         - cd interoperator
         - env GO111MODULE=on go mod download
