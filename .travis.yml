@@ -62,7 +62,7 @@ matrix:
       os:
         - linux
       go:
-        - "1.17"
+        - "1.17.5"
       git:
         depth: 3
       before_install:
