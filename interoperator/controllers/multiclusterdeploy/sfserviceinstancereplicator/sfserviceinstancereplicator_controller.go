@@ -383,6 +383,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 		log.Error(err, "Failed to get SFPlan from leader")
 		lastErr = err
 	} else if deleted && !plan.GetDeletionTimestamp().IsZero() {
+	    log.Info("Reconciling the plan for this instance")
         annotations := plan.GetAnnotations()
         if annotations == nil {
             annotations = make(map[string]string)
