@@ -11,7 +11,7 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
-        - go get -v honnef.co/go/tools/cmd/staticcheck
+        - go get -v honnef.co/go/tools/cmd/staticcheck@v0.2.2
         - staticcheck -version
       install:
         - cd interoperator
