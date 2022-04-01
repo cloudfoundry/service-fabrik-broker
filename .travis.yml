@@ -68,7 +68,7 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
-        - go get -v honnef.co/go/tools/cmd/staticcheck
+        - go install -v honnef.co/go/tools/cmd/staticcheck@v0.2.2
       install:
         - cd interoperator
         - env GO111MODULE=on go mod download
