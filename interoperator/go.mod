@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/BurntSushi/toml v0.4.1
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/go-logr/logr v1.2.0
+	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
