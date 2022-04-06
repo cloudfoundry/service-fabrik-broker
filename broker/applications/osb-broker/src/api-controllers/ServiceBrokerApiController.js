@@ -797,6 +797,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             const plan = catalog.getPlan(_.get(resource, 'spec.planId'));
             _.set(context,'plan',plan);
             _.set(context,'instance_id',req.params.instance_id);
+            _.set(context,'instance',resource);
             const dashboardUrl = this.getDashboardUrl(context);
             if (dashboardUrl) {
               body.dashboard_url = dashboardUrl;
