@@ -24,7 +24,7 @@
     "agenda": "0.10.0",
     "bluebird": "3.7.2",
     "lodash": "4.17.21",
-    "moment": "2.29.1",
+    "moment": "2.29.2",
     "mongoose": "5.13.9",
     "pubsub-js": "1.9.4"
   }
