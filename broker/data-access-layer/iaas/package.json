@@ -23,7 +23,7 @@
     "azure-storage": "2.10.3",
     "bluebird": "3.7.2",
     "lodash": "4.17.21",
-    "moment": "2.29.1",
+    "moment": "2.29.2",
     "uuid": "8.3.2"
   }
 }

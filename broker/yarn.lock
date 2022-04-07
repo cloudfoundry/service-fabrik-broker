@@ -5,16 +5,16 @@ __metadata:
   version: 4
   cacheKey: 7
 
-"@alicloud/pop-core@npm:1.7.9":
-  version: 1.7.9
-  resolution: "@alicloud/pop-core@npm:1.7.9"
+"@alicloud/pop-core@npm:1.7.10":
+  version: 1.7.10
+  resolution: "@alicloud/pop-core@npm:1.7.10"
   dependencies:
     debug: ^3.1.0
     httpx: ^2.1.2
-    json-bigint: ^0.2.3
+    json-bigint: ^1.0.0
     kitx: ^1.2.1
     xml2js: ^0.4.17
-  checksum: 522c917f6f79c53f2fb7a882f3a1a306b6b8f55100e776f9a913a504d58abd0bb20260716ecaadaa648ecb55862c093c7f930da5a8d42ad0f1c1746af7a4b15f
+  checksum: 6820f8ddb757ddbc43e94befb3126e2412d409a7293bfbbef35fee029c2972c410f58bcd264e3e89221f2408ac335c8b6462e6e779c295a1a9c12451dbb0458c
   languageName: node
   linkType: hard
 
@@ -1519,7 +1519,7 @@ __metadata:
     hystrixjs: 0.2.0
     jsonwebtoken: 8.5.1
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     mongoose: 5.13.9
     rxjs: ^5.0.0
     uuid: 8.3.2
@@ -1625,7 +1625,7 @@ __metadata:
     helmet: 5.0.2
     js-yaml: 4.1.0
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     morgan: 1.10.0
     pubsub-js: 1.9.4
     pug: 3.0.2
@@ -1656,7 +1656,7 @@ __metadata:
     express-session: 1.17.1
     js-yaml: 4.1.0
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     session-file-store: 1.4.0
   languageName: unknown
   linkType: soft
@@ -1665,7 +1665,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sf/iaas@workspace:data-access-layer/iaas"
   dependencies:
-    "@alicloud/pop-core": 1.7.9
+    "@alicloud/pop-core": 1.7.10
     "@google-cloud/compute": 2.1.0
     "@google-cloud/storage": 5.3.0
     "@sf/app-config": "*"
@@ -1678,7 +1678,7 @@ __metadata:
     azure-storage: 2.10.3
     bluebird: 3.7.2
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     uuid: 8.3.2
   languageName: unknown
   linkType: soft
@@ -1701,7 +1701,7 @@ __metadata:
     agenda: 0.10.0
     bluebird: 3.7.2
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     mongoose: 5.13.9
     pubsub-js: 1.9.4
   languageName: unknown
@@ -1780,7 +1780,7 @@ __metadata:
     js-yaml: 4.1.0
     json-stream: ^1.0.0
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
   languageName: unknown
   linkType: soft
 
@@ -1899,7 +1899,7 @@ __metadata:
     bluebird: 3.7.2
     express-jwt: 6.0.0
     lodash: 4.17.21
-    moment: 2.29.1
+    moment: 2.29.2
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -3372,13 +3372,6 @@ __metadata:
   version: 2.1.0
   resolution: "before-after-hook@npm:2.1.0"
   checksum: 4df7ef0992ef7c5d8689a50bba12349789ab6da12203cd92c78dd5eb22e725694fd3602cff15ab85285a744c5d6106f3fbdc203f0cb6262cd3bebe42a763c3fd
-  languageName: node
-  linkType: hard
-
-"bignumber.js@npm:^4.0.0":
-  version: 4.1.0
-  resolution: "bignumber.js@npm:4.1.0"
-  checksum: b1b5031443586c646da8cf9c927a676959de9d9c79106157a9e65642b1b7770b2eb9b858f06da62712db1ea69ab9dc528788a4d9bfbd642bf9ae8c6b17ec07d9
   languageName: node
   linkType: hard
 
@@ -8538,15 +8531,6 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"json-bigint@npm:^0.2.3":
-  version: 0.2.3
-  resolution: "json-bigint@npm:0.2.3"
-  dependencies:
-    bignumber.js: ^4.0.0
-  checksum: 9535ff9f3a52648e0137cc3625fe3212aed24774958dd6f3148edd85d7c122cffb0dfe6015144a79f723f4998e476a55be048f618c8ca404f8de88af90f913d8
-  languageName: node
-  linkType: hard
-
 "json-bigint@npm:^1.0.0":
   version: 1.0.0
   resolution: "json-bigint@npm:1.0.0"
@@ -10048,7 +10032,14 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"moment@npm:2.29.1, moment@npm:>= 2.9.0, moment@npm:^2.21.0, moment@npm:^2.22.2":
+"moment@npm:2.29.2":
+  version: 2.29.2
+  resolution: "moment@npm:2.29.2"
+  checksum: 0969327a44aa49dc32bf510b620763c8c5a0d65308331b01ce007bc071a48d18dbd4e51018464b5c0ac415fd655206ae3e678037b08381f3330574bbd408c035
+  languageName: node
+  linkType: hard
+
+"moment@npm:>= 2.9.0, moment@npm:^2.21.0, moment@npm:^2.22.2":
   version: 2.29.1
   resolution: "moment@npm:2.29.1"
   checksum: 86729013febf7160de5b93da69273dd304d674b0224f9544b3abd09a87671ddd2cdd57598261ce57588910d63747ffd5590965e83c790d8bf327083c0e0a06e0
