@@ -256,7 +256,9 @@ class HttpClient {
 
   invoke(options, expectedStatusCode) {
     expectedStatusCode = expectedStatusCode || options.expectedStatusCode;
-    logger.debug('Sending HTTP request with options :', options);
+    // removes auth tokens before logging the http request options.
+    logger.debug('Sending HTTP request with options :',
+      _.omit(options, ['headers.authorization', 'headers.Authorization']));
     let enhanced_options = this.enhanceOptions(options);
 
     // validateStatus defines whether to resolve or reject the promise
