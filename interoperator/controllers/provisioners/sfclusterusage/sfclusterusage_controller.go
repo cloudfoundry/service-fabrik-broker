@@ -145,7 +145,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Named("scheduler_helper_sfclusterusage").
 		For(&resourcev1alpha1.SFCluster{}).
 		Watches(&source.Kind{Type: &corev1.Node{}}, watchMapper).
-		WithEventFilter(watches.NamespaceFilter())
+		WithEventFilter(watches.NodeFilter())
 
 	return builder.Complete(r)
 }
