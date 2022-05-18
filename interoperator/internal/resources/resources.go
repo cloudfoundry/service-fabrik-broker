@@ -141,8 +141,8 @@ func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedRe
 		if !force {
 			updatedResource, toBeUpdated, err = dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
 			if err != nil {
-			    log.Error(err, "reconcile- failed to update resource ", "kind ", kind, "namespacedName ", namespacedName)
-			    return nil, err
+				log.Error(err, "reconcile- failed to update resource ", "kind ", kind, "namespacedName ", namespacedName)
+				return nil, err
 			}
 		}
 		if toBeUpdated || force {
@@ -152,7 +152,8 @@ func (r resourceManager) ReconcileResources(client kubernetes.Client, expectedRe
 				err = client.Update(context.TODO(), expectedResource)
 			} else {
 				foundResource.Object = updatedResource.(map[string]interface{})
-				log.Info("reconcile - updating resource", "resource", foundResource.Object)
+				// Printing the object leaks credentialsstores in subresources. Disabling it for now.
+				// log.Info("reconcile - updating resource", "resource", foundResource.Object)
 				err = client.Update(context.TODO(), foundResource)
 			}
 			if err != nil {

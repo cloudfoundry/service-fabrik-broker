@@ -385,16 +385,12 @@ func NodeFilter() predicate.Predicate {
 			return true
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			old, ok := e.ObjectOld.(*corev1.Node)
-			if !ok {
-				return true
-			}
-			new, ok := e.ObjectNew.(*corev1.Node)
-			if !ok {
-				return true
-			}
-			if !reflect.DeepEqual(old.Status.Allocatable, new.Status.Allocatable) {
-				return true
+			switch new := e.ObjectNew.(type) {
+			case *corev1.Node:
+                old := e.ObjectOld.(*corev1.Node)
+                if !reflect.DeepEqual(old.Status.Allocatable, new.Status.Allocatable) {
+                    return true
+                }
 			}
 			return false
 		},
