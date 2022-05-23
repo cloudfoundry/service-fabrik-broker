@@ -5,6 +5,7 @@ import (
 	reflect "reflect"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/factory"
@@ -387,10 +388,15 @@ func NodeFilter() predicate.Predicate {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			switch new := e.ObjectNew.(type) {
 			case *corev1.Node:
-                old := e.ObjectOld.(*corev1.Node)
-                if !reflect.DeepEqual(old.Status.Allocatable, new.Status.Allocatable) {
-                    return true
-                }
+				old := e.ObjectOld.(*corev1.Node)
+				if !reflect.DeepEqual(old.Status.Allocatable, new.Status.Allocatable) {
+					return true
+				}
+			case *resourcev1alpha1.SFCluster:
+				old := e.ObjectOld.(*resourcev1alpha1.SFCluster)
+				if !reflect.DeepEqual(old.Status, new.Status) {
+					return true
+				}
 			}
 			return false
 		},

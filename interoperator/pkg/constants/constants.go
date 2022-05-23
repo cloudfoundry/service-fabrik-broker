@@ -42,7 +42,7 @@ const (
 	PlanWatchDrainTimeout           = time.Second * 2
 	DefaultClusterReconcileInterval = "20m"
 
-	ListPaginationLimit = 50
+	ListPaginationLimit = 500
 )
 
 // Configs initialized at startup
