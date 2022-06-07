@@ -39,7 +39,8 @@ import (
 // Reconciler reconciles a Node objects and computes the capacity of cluster
 type Reconciler struct {
 	client.Client
-	Log logr.Logger
+	Log            logr.Logger
+	uncachedClient client.Client
 }
 
 // Reconcile iterates through all nodes and computes requested resources
@@ -68,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	currentCapacity := make(corev1.ResourceList)
 	// TODO: Verify pagination works
 	for more := true; more; more = (nodes.Continue != "") {
-		err = r.List(ctx, nodes, client.Limit(constants.ListPaginationLimit), client.Continue(nodes.Continue))
+		err = r.uncachedClient.List(ctx, nodes, client.Limit(constants.ListPaginationLimit), client.Continue(nodes.Continue))
 		if err != nil {
 			log.Error(err, "error while fetching nodes")
 			return ctrl.Result{}, err
@@ -84,7 +85,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// TODO: Verify pagination works
 	for more := true; more; more = (pods.Continue != "") {
-		err = r.List(ctx, pods, client.Limit(constants.ListPaginationLimit), client.Continue(pods.Continue))
+		err = r.uncachedClient.List(ctx, pods, client.Limit(constants.ListPaginationLimit), client.Continue(pods.Continue))
 		if err != nil {
 			log.Error(err, "error while fetching pods")
 			return ctrl.Result{}, err
@@ -133,6 +134,17 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return nil
 	}
 
+	if r.uncachedClient == nil {
+		uncachedClient, err := client.New(mgr.GetConfig(), client.Options{
+			Scheme: mgr.GetScheme(),
+			Mapper: mgr.GetRESTMapper(),
+		})
+		if err != nil {
+			return err
+		}
+		r.uncachedClient = uncachedClient
+	}
+
 	watchMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
@@ -145,7 +157,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Named("scheduler_helper_sfclusterusage").
 		For(&resourcev1alpha1.SFCluster{}).
 		Watches(&source.Kind{Type: &corev1.Node{}}, watchMapper).
-		WithEventFilter(watches.NamespaceFilter())
+		WithEventFilter(watches.NodeFilter())
 
 	return builder.Complete(r)
 }

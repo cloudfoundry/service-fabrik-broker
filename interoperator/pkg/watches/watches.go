@@ -2,14 +2,17 @@ package watches
 
 import (
 	"context"
+	reflect "reflect"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/properties"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/renderer/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -368,6 +371,37 @@ func NamespaceFilter() predicate.Predicate {
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
 			return f(e.Object.GetNamespace())
+		},
+	}
+	return p
+}
+
+// NodeFilter creates a predicates for filtering objects in interoperator namespace
+func NodeFilter() predicate.Predicate {
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return true
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			switch new := e.ObjectNew.(type) {
+			case *corev1.Node:
+				old := e.ObjectOld.(*corev1.Node)
+				if !reflect.DeepEqual(old.Status.Allocatable, new.Status.Allocatable) {
+					return true
+				}
+			case *resourcev1alpha1.SFCluster:
+				old := e.ObjectOld.(*resourcev1alpha1.SFCluster)
+				if !reflect.DeepEqual(old.Status, new.Status) {
+					return true
+				}
+			}
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return true
 		},
 	}
 	return p
