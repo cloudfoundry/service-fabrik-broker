@@ -9,7 +9,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	helm.sh/helm/v3 v3.8.0
 	k8s.io/api v0.23.3
 	k8s.io/apiextensions-apiserver v0.23.1
