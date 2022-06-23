@@ -7,7 +7,7 @@
 
 To add service fabrik interoperator helm chart repo
 ```shell
-helm repo add sf-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
+helm repo add sf-charts https://cloudfoundry.github.io/service-fabrik-broker/helm-charts
 ```
 
 Deploy SF Interoperator using helm
@@ -28,5 +28,5 @@ Update the index
 
 ```shell
 cd <path to gh-pages clone>/helm-charts
-helm repo index --url https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts .
+helm repo index --url https://cloudfoundry.github.io/service-fabrik-broker/helm-charts .
 ```
