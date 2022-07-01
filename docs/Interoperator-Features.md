@@ -167,3 +167,5 @@ schemas: &blueprint_schemas
             parameters:
               additionalProperties: true
 ```
+
+Refer [this sample blueprint plan for example](https://github.com/cloudfoundry/service-fabrik-broker/blob/e84064c184f908f8821d5f2dc583c63515ae8642/broker/config/settings.yml#L743-L820).
