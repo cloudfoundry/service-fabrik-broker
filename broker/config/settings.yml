@@ -1012,7 +1012,7 @@ defaults: &defaults
           template: <%= base64_template('templates/rabbitmq-manifest.yml.ejs') %>
           releases: &dedicated_releases
           - { name: rabbitmq, version: 25 }
-          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-rabbitmq, version: 36 }
           context: &context_plan9
             agent: *agent_rabbitmq
@@ -1057,7 +1057,7 @@ defaults: &defaults
           template: <%= base64_template('templates/rabbitmq-manifest.yml.ejs') %>
           releases: &dedicated_releases
           - { name: rabbitmq, version: 25 }
-          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-rabbitmq, version: 36 }
           context: &context_plan9
             agent: *agent_rabbitmq
@@ -1195,7 +1195,7 @@ defaults: &defaults
           template: <%= base64_template('templates/postgresql-manifest.yml.ejs') %>
           releases: &dedicated_releases
           - { name: postgresql, version: 121 }
-          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-postgresql, version: 83 }
           context: &context_plan11
             agent: *agent_postgresql

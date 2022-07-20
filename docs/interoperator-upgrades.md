@@ -77,7 +77,7 @@ kubectl -n interoperator delete statefulset provisioner --ignore-not-found
 
 To add service fabrik interoperator helm chart repo if not already added
 ```shell
-helm repo add interoperator-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
+helm repo add interoperator-charts https://cloudfoundry.github.io/service-fabrik-broker/helm-charts
 helm repo update
 ```
 
@@ -98,7 +98,7 @@ Once the ClusterRole is deleted the existing deployment stops working and there 
 
 To add service fabrik interoperator helm chart repo if not already added
 ```shell
-helm repo add interoperator-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
+helm repo add interoperator-charts https://cloudfoundry.github.io/service-fabrik-broker/helm-charts
 helm repo update
 ```
 
