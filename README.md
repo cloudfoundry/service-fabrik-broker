@@ -39,7 +39,7 @@ You have to deploy and run your own operator. Currently SF-Inter-Operator suppor
 #### Deploy using publicly published helm chart (Recommended)
 To add service fabrik interoperator helm chart repo
 ```shell
-helm repo add interoperator-charts https://cloudfoundry-incubator.github.io/service-fabrik-broker/helm-charts
+helm repo add interoperator-charts https://cloudfoundry.github.io/service-fabrik-broker/helm-charts
 helm repo update
 ```
 
