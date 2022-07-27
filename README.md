@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-incubator/service-fabrik-broker/badge.svg?branch=master)](https://coveralls.io/github/cloudfoundry-incubator/service-fabrik-broker?branch=master) [![Travis Build Status](https://app.travis-ci.com/cloudfoundry-incubator/service-fabrik-broker.svg?branch=master)](https://app.travis-ci.com/cloudfoundry-incubator/service-fabrik-broker) [![Go Report Card](https://goreportcard.com/badge/github.com/cloudfoundry-incubator/service-fabrik-broker)](https://goreportcard.com/report/github.com/cloudfoundry-incubator/service-fabrik-broker) [![codecov](https://codecov.io/gh/cloudfoundry-incubator/service-fabrik-broker/branch/master/graph/badge.svg)](https://codecov.io/gh/cloudfoundry-incubator/service-fabrik-broker) [![yarn](https://img.shields.io/badge/maintained%20with-yarn-cc00ff.svg)](https://yarnpkg.com/)
+[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry/service-fabrik-broker/badge.svg?branch=master)](https://coveralls.io/github/cloudfoundry/service-fabrik-broker?branch=master) [![Travis Build Status](https://app.travis-ci.com/cloudfoundry/service-fabrik-broker.svg?branch=master)](https://app.travis-ci.com/cloudfoundry/service-fabrik-broker) [![Go Report Card](https://goreportcard.com/badge/github.com/cloudfoundry-incubator/service-fabrik-broker)](https://goreportcard.com/report/github.com/cloudfoundry-incubator/service-fabrik-broker)[![codecov](https://codecov.io/gh/cloudfoundry/service-fabrik-broker/branch/master/graph/badge.svg)](https://codecov.io/gh/cloudfoundry/service-fabrik-broker) [![yarn](https://img.shields.io/badge/maintained%20with-yarn-cc00ff.svg)](https://yarnpkg.com/)
 
 # Service Fabrik Broker aka Interoperator
 
@@ -9,7 +9,7 @@ In the next sections we first discuss about the Deployment layout of BOSH based 
 
 ## Service Fabrik Broker Deployment Layout
 
-![Missing](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/img/SF2.0-tam-block-diagram-overview.png?raw=true)
+![Missing](https://github.com/cloudfoundry/service-fabrik-broker/blob/gh-pages/img/SF2.0-tam-block-diagram-overview.png?raw=true)
 Above is the component diagram of Service Fabrik.
 Service Fabrik has been re-designed to a model which is event driven and based on decoupled components which participate and communicate via an [APIServer](https://kubernetes.io/docs/concepts/overview/kubernetes-api/) managed by Service Fabrik. 
 
@@ -19,11 +19,11 @@ To facilitate plugging in external components, we intend to model service Fabrik
 
 This allows capabilities like provisioning and operations on provisioned instances to be built independently and plugged into the Service Fabrik APIServer based on specific requirements.
 
-Steps to Integrate new provisioners are mentioned in [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/SF2.0.md)
+Steps to Integrate new provisioners are mentioned in [here](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/docs/SF2.0.md)
 
 ## Interoperator Architecture
 
-Interoperator Architecture is the heart of the OSB framework of Service Fabrik. The details are discussed [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/Interoperator.md).
+Interoperator Architecture is the heart of the OSB framework of Service Fabrik. The details are discussed [here](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/docs/Interoperator.md).
 
 ## Deploy Interoperator
 
@@ -51,7 +51,7 @@ helm install --set cluster.host=sf.ingress.< clusterdomain > --namespace interop
 #### Deploy using helm chart repo
 To deploy using helm chart repo
 ```
-git clone https://github.com/cloudfoundry-incubator/service-fabrik-broker
+git clone https://github.com/cloudfoundry/service-fabrik-broker
 helm install --set cluster.host=sf.ingress.< clusterdomain > --namespace interoperator interoperator helm-charts/interoperator
 ```
 
@@ -59,7 +59,7 @@ helm install --set cluster.host=sf.ingress.< clusterdomain > --namespace interop
 
 ### Upgrade existing Interoperator deployment
 
-To check how you can upgrade existing interoperator deployment, please check this document [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/interoperator-upgrades.md).
+To check how you can upgrade existing interoperator deployment, please check this document [here](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/docs/interoperator-upgrades.md).
 
 ### Deploy SFClusters, SFServices and SFPlans and Register with Interoperator
 
@@ -69,7 +69,7 @@ For multi-cluster support, all corresponding sfcluster CRs need to be created an
 
 Please note that `sfservice`, `sfplans` and `sfcluster` (along with the `secret` it refers to) need to be deployed in the same namespace where SF is deployed (default is `interoperator`).
 
-To understand the CRs and their structures, please check the Architecture. The different templates are described in [interoperator-templates](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/Interoperator-templates.md)
+To understand the CRs and their structures, please check the Architecture. The different templates are described in [interoperator-templates](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/docs/Interoperator-templates.md)
 
 ### Deploying multiple interoperator in the same cluster
 
@@ -87,9 +87,9 @@ You can either register with service manager which then exposes it to consuming 
 
 ## Other Features
 
-Checkout other features like enabling Service Instance sharing, custom service dashboard and quota management [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/docs/Interoperator-Features.md).
+Checkout other features like enabling Service Instance sharing, custom service dashboard and quota management [here](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/docs/Interoperator-Features.md).
 
-## [Releases](https://github.com/cloudfoundry-incubator/service-fabrik-broker/releases)
+## [Releases](https://github.com/cloudfoundry/service-fabrik-broker/releases)
 
 ## Local Development Setup (Ubuntu)
 
@@ -114,7 +114,7 @@ cd ~/workspace
 * Clone and setup fork and git-secrets ( requires [hub] and [git secrets] to be
   installed)
   ```
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/master/bin/clone-for-development)"
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/master/broker/bin/clone-for-development)"
   cd service-fabrik-broker/broker
   git checkout -b my-new-feature
   # make code changes
@@ -168,8 +168,8 @@ curl -sk -u broker:secret -H "X-Broker-Api-Version: 2.9" https://127.0.0.1:9293/
 
 * Launch the Deployment Hooks Process
 This process executes action scripts provided by services in restricted environment.
-More information on how to configure action scripts is documented here: https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
-If you don't want any predeployment action to run please comment out `actions` property in [service](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L574) and [plan](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L685) from catalog.
+More information on how to configure action scripts is documented here: https://github.com/cloudfoundry/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
+If you don't want any predeployment action to run please comment out `actions` property in [service](https://github.com/cloudfoundry/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L574) and [plan](https://github.com/cloudfoundry/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L685) from catalog.
 
 If predeployment actions are present in service catalog then deployment hook process has to be running.
 Before starting deployment hooks process, SETTINGS_PATH env variable has to be set.
@@ -316,7 +316,7 @@ cf delete-service -f my-service
 ```
 ## How to obtain support
 
-If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](https://github.com/cloudfoundry-incubator/service-fabrik-broker/issues). You can also reach us out on our [Slack Channel](https://cloudfoundry.slack.com/messages/C814KVC59).
+If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](https://github.com/cloudfoundry/service-fabrik-broker/issues). You can also reach us out on our [Slack Channel](https://cloudfoundry.slack.com/messages/C814KVC59).
 
 ## LICENSE
 

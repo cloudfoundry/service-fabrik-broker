@@ -100,7 +100,7 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 1. Templates of the Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
 1. Mapping of OSB actions such as `provision`, `deprovision`, `bind`, `unbind` etc. to the templated of Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
 
-![Inter-operator Design](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/inter-operator.png)
+![Inter-operator Design](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/inter-operator.png)
 
 ### Service Fabrik Inter-operator Broker
 
@@ -116,7 +116,7 @@ The inter-operator provisioner is a [custom controller](https://kubernetes.io/do
 
 ### Catalog
 
-![Service Fabrik Inter-operator Basic Control-flow Catalog](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-catalog.png)
+![Service Fabrik Inter-operator Basic Control-flow Catalog](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-catalog.png)
 
 #### Service and Plan registration
 
@@ -149,7 +149,7 @@ The Service Fabrik Broker watches for registered `sfservices` and `sfplans`. It 
 
 This section presumes that the `SFService` and `sfplans` are already registered as describe [above](#catalog).
 
-![Service Fabrik Inter-operator Basic Control-flow Provision](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-provision.png)
+![Service Fabrik Inter-operator Basic Control-flow Provision](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-provision.png)
 
 #### Service Fabrik Inter-operator Broker
 
@@ -178,7 +178,7 @@ This section presumes the following steps have already been performed.
 1. `SFService` and `sfplans` are already registered as describe [above](#catalog).
 1. A service instance is `provision`ed as described [above](#provision).
 
-![Service Fabrik Inter-operator Basic Control-flow Last Operator](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-last-operation.png)
+![Service Fabrik Inter-operator Basic Control-flow Last Operator](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-last-operation.png)
 
 #### Service Operator
 
@@ -206,7 +206,7 @@ This section presumes the following steps have already been performed.
 1. `SFService` and `sfplans` are already registered as describe [above](#catalog).
 1. A service instance is `provision`ed as described [above](#provision).
 
-![Service Fabrik Inter-operator Basic Control-flow Bind](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-bind.png)
+![Service Fabrik Inter-operator Basic Control-flow Bind](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/basic-control-flow-bind.png)
 
 #### Service Fabrik Inter-operator Broker
 
@@ -597,7 +597,7 @@ spec:
   templates:
   - action: provision
     type: gotemplate
-    url: "https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/feature/inter-operator/interoperator/config/samples/templates/gotemplates/postgres/postgres.yaml"
+    url: "https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/feature/inter-operator/interoperator/config/samples/templates/gotemplates/postgres/postgres.yaml"
 ```
 
 Please note that the URLs have to be accessible for the Service Fabrik inter-operator. This is especially relevant in the private cloud scenario.
@@ -819,10 +819,10 @@ Following are the flow for a deployment of Interoperator.
 3. [Provisioner Controller](#provisioner-controller) then takes care of replicating the provisioner component to all sister clusters and [Service Replicator](#service-replicator) takes care of replicating the SFServices and SFPlans in all the clusters.
 
 Now the setup is ready for taking requests. We depict this in the picture below.
-![Inter-operator Deployment Flow](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Deployment%20Flow%20Updated.png)
+![Inter-operator Deployment Flow](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Deployment%20Flow%20Updated.png)
 ## Runtime Flow
 After the interoperator is ready and setup across multiple clusters as described [above](#deployment-flow), service instance and service binding can be created. When in the master cluster, broker creates an `SFServiceInstance`, Scheduler picks it up first and schedules/assigns a cluster where service needs to be provisioned. Then [Service Instance Reconciler](#service-instance-reconciler) reconciles that `SFServiceInstance` in the sister cluster where it is scheduled. Once that is done, [provisioner](#provisioner) residing in the sister cluster takes over and from then onwards, the process described in [service provisioning](#service-fabrik-inter-operator-provisioner-1) is followed. For another `SFServiceInstance`, it is again scheduled in one of the sister cluster and provisioner provisions the service there. The picture below describes the steps.
-![Inter-operator Runtime Flow](https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Runtime%20Flow%20Updated.png)
+![Inter-operator Runtime Flow](https://raw.githubusercontent.com/cloudfoundry/service-fabrik-broker/gh-pages/inter-operator/architecture/images/Runtime%20Flow%20Updated.png)
 
 ## Limitations with Multi-Cluster deployment
 1. Interoperator currently does not take care of the cluster off-boarding.

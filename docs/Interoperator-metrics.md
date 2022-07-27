@@ -29,7 +29,7 @@ The metrics endpoints are exposed regardless of the status of leader election. S
 ## Developer Docs
 
 ### Adding additional metrics
-An example for adding custom metric can be found in pull request [#983](https://github.com/cloudfoundry-incubator/service-fabrik-broker/pull/983). To expose a custom metric from a controller:
+An example for adding custom metric can be found in pull request [#983](https://github.com/cloudfoundry/service-fabrik-broker/pull/983). To expose a custom metric from a controller:
 * Declare a prometheus [Collector](https://godoc.org/github.com/prometheus/client_golang/prometheus#Collector) as a global variable in the controller. The list of supported collectors can be found in [prometheus client docs](https://godoc.org/github.com/prometheus/client_golang/prometheus).
 * In `SetupWithManager` section of the controller, register the `collector` with the prometheus [Registry](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/metrics) using the `metrics.Registry.MustRegister()` function. `MustRegister()` accepts variable number of arguments and all the `collectors` can be registered together. Import the `"sigs.k8s.io/controller-runtime/pkg/metrics"` package to access the global `Registry`.
 * Anywhere in the reconcile loop, update the metric.

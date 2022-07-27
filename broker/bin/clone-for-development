@@ -15,7 +15,7 @@ if ! which git-secrets > /dev/null ; then
 fi
 
 git config --global hub.protocol https
-git clone https://github.com/cloudfoundry-incubator/service-fabrik-broker
+git clone https://github.com/cloudfoundry/service-fabrik-broker
 cd service-fabrik-broker
 hub fork
 git secrets --install

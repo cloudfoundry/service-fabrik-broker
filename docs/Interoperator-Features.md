@@ -67,7 +67,7 @@ The template also support more complex use cases with conditional checks. For ex
 
 ## Quota Management
 
-Quota management can be enabled setting the quota related values mentioned [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/helm-charts/interoperator/values.yaml#L16-L21) and enabling quota and other related details.
+Quota management can be enabled setting the quota related values mentioned [here](https://github.com/cloudfoundry/service-fabrik-broker/blob/master/helm-charts/interoperator/values.yaml#L16-L21) and enabling quota and other related details.
 
 As a Service Provider, if one wants to define quotas on services provisioned, It can be possible using Interoperator. Here is how quota management works in Interoperator.
 
