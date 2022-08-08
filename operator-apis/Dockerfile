@@ -1,5 +1,5 @@
 # Build the operator-apis binary
-FROM golang:1.17 as builder
+FROM golang:1.19.0 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
