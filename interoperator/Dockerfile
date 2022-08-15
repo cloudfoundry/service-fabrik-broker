@@ -25,7 +25,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags multiclu
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 # FROM gcr.io/distroless/static:nonroot 
 # Using alphine as xmake supports alphine seamlessly
-FROM alpine:3.15
+FROM alpine:3.16.2
 
 WORKDIR /
 COPY --from=builder /workspace/manager .
