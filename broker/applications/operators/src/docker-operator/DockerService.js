@@ -762,6 +762,7 @@ class DockerService extends BaseService {
         'Exposed Volumes': this.containerInfo.HostConfig.Binds
       });
     }
+    logger.info(`Exit: Building details hash for container '${this.containerName}'...`);
     return details;
   }
 
@@ -776,6 +777,7 @@ class DockerService extends BaseService {
   }
 
   getProcesses() {
+    logger.info(`Entry: getProcesses '${this.containerInfo.State.Running}'...`);
     if (this.containerInfo.State.Running) {
       return this.container
         .topAsync({
@@ -786,6 +788,7 @@ class DockerService extends BaseService {
   }
 
   getLogs() {
+    logger.info('Entry: getLogs....');
     return this.container
       .logsAsync({
         stdout: 1,
