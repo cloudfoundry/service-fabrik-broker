@@ -1520,7 +1520,7 @@ __metadata:
     jsonwebtoken: 8.5.1
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 6.5.4
+    mongoose: 6.4.6
     rxjs: ^5.0.0
     uuid: 8.3.2
   languageName: unknown
@@ -1540,7 +1540,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
     lodash: 4.17.21
-    mongoose: 6.5.4
+    mongoose: 6.4.6
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -1702,7 +1702,7 @@ __metadata:
     bluebird: 3.7.2
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 6.5.4
+    mongoose: 6.4.6
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -3499,7 +3499,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bson@npm:^4.6.5":
+"bson@npm:^4.6.2, bson@npm:^4.6.3":
   version: 4.7.0
   resolution: "bson@npm:4.7.0"
   dependencies:
@@ -10068,11 +10068,11 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongodb@npm:4.8.1":
-  version: 4.8.1
-  resolution: "mongodb@npm:4.8.1"
+"mongodb@npm:4.7.0":
+  version: 4.7.0
+  resolution: "mongodb@npm:4.7.0"
   dependencies:
-    bson: ^4.6.5
+    bson: ^4.6.3
     denque: ^2.0.1
     mongodb-connection-string-url: ^2.5.2
     saslprep: ^1.0.3
@@ -10080,7 +10080,7 @@ fsevents@^1.0.0:
   dependenciesMeta:
     saslprep:
       optional: true
-  checksum: 90dea5dade06363b78c1887c2cccd74fdc4d04a4d11b0786a3aa97ce9124deebcb04916190d556952c7c3fc4891ccfdf46dedcf1f5d180cadca658299b3f9e79
+  checksum: 42d4d69d98193150b61677c9f79b63ecdc3de6db6ceaa36e9331b8a9dbd707251775a2b04e565b0c6a4982c170bb4f086514a8a43730d7e09b05445ac35122e6
   languageName: node
   linkType: hard
 
@@ -10095,18 +10095,18 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongoose@npm:6.5.4":
-  version: 6.5.4
-  resolution: "mongoose@npm:6.5.4"
+"mongoose@npm:6.4.6":
+  version: 6.4.6
+  resolution: "mongoose@npm:6.4.6"
   dependencies:
-    bson: ^4.6.5
+    bson: ^4.6.2
     kareem: 2.4.1
-    mongodb: 4.8.1
+    mongodb: 4.7.0
     mpath: 0.9.0
     mquery: 4.0.3
     ms: 2.1.3
     sift: 16.0.0
-  checksum: 9b000b172cc88d2ce9cc7da15adc2049120998f107619dc1cf0308d40d11f943e7b576e8951ded50a10622e4c1cf0db45f4ffb11e4e520d4481c6cb014ede4ae
+  checksum: fa9a981b9892d9e00696ad4b32f7c878507962c22a358805a5bdf5cad46f875d9300cf7534b04c5781ebebf4ec3de1772d9cf0c56f560998e5c03eb8aab1e7aa
   languageName: node
   linkType: hard
 
