@@ -10,7 +10,7 @@ import (
 // Helper functions to calculate checksum
 //
 
-// Finds checksum of the string
+// CalculateHash finds checksum of the string
 func CalculateHash(v interface{}) string {
 	arrBytes := []byte{}
 	jsonBytes, _ := json.Marshal(v)

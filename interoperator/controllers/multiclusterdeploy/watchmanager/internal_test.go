@@ -568,13 +568,13 @@ func Test_watchManager_requeueSFCRs(t *testing.T) {
 	})
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o kubernetes.Object) []string {
-		instance_state := o.(*osbv1alpha1.SFServiceInstance).Status.State
-		return []string{instance_state}
+		instanceState := o.(*osbv1alpha1.SFServiceInstance).Status.State
+		return []string{instanceState}
 	})
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o kubernetes.Object) []string {
-		binding_state := o.(*osbv1alpha1.SFServiceBinding).Status.State
-		return []string{binding_state}
+		bindingState := o.(*osbv1alpha1.SFServiceBinding).Status.State
+		return []string{bindingState}
 	})
 
 	cancelMgr, mgrStopped := StartTestManager(mgr, g)

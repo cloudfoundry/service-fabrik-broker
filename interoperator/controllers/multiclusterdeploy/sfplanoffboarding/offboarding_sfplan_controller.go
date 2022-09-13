@@ -34,7 +34,7 @@ import (
 // SFPlanOffboarding protects SFPlan from accidental deletion
 type SFPlanOffboarding struct {
 	client.Client
-	Log         logr.Logger
+	Log logr.Logger
 }
 
 // Reconcile reads that state of the SFPlan object and makes changes based on the state read
@@ -47,50 +47,50 @@ func (r *SFPlanOffboarding) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	plan := &osbv1alpha1.SFPlan{}
 	err := r.Get(ctx, req.NamespacedName, plan)
 	if err != nil {
-	    if errors.IsNotFound(err) {
-	        // Object not found, return.  Created objects are automatically garbage collected.
-	        // For additional cleanup logic use finalizers.
-	        return ctrl.Result{}, nil
-	    }
-	    // Error reading the object - requeue the request.
-	    return ctrl.Result{}, err
+		if errors.IsNotFound(err) {
+			// Object not found, return.  Created objects are automatically garbage collected.
+			// For additional cleanup logic use finalizers.
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return ctrl.Result{}, err
 	}
 
 	updateRequired := false
 	if !plan.GetDeletionTimestamp().IsZero() {
-	    var instances osbv1alpha1.SFServiceInstanceList
-	    err = r.List(context.Background(), &instances, client.MatchingLabels{"plan_id":plan.GetName()})
-	    if err != nil {
-	        log.Error(err, "Failed to fetch sfserviceinstances for the plan");
-            return ctrl.Result{}, err
-        }
-        log.Info("instance", "size", len(instances.Items));
-        if len(instances.Items) <= 0 || r.canBeDeleted(&instances, plan.GetName()) {
-            log.Info("Reconcile: ", "Removing finalizer ", plan.GetDeletionTimestamp().IsZero())
-            controllerutil.RemoveFinalizer(plan, constants.FinalizerName)
-            updateRequired = true
-        } else {
-            log.Info("Not deleting the plan since one or more sfserviceinstances exist for this plan, that are not set to be deleted")
-        }
-    }
+		var instances osbv1alpha1.SFServiceInstanceList
+		err = r.List(context.Background(), &instances, client.MatchingLabels{"plan_id": plan.GetName()})
+		if err != nil {
+			log.Error(err, "Failed to fetch sfserviceinstances for the plan")
+			return ctrl.Result{}, err
+		}
+		log.Info("instance", "size", len(instances.Items))
+		if len(instances.Items) <= 0 || r.canBeDeleted(&instances, plan.GetName()) {
+			log.Info("Reconcile: ", "Removing finalizer ", plan.GetDeletionTimestamp().IsZero())
+			controllerutil.RemoveFinalizer(plan, constants.FinalizerName)
+			updateRequired = true
+		} else {
+			log.Info("Not deleting the plan since one or more sfserviceinstances exist for this plan, that are not set to be deleted")
+		}
+	}
 
-    err = r.reconcileFinalizers(plan, 0, updateRequired)
-    if err != nil {
-        if errors.IsNotFound(err) {
-            return ctrl.Result{}, nil
-        }
-        return ctrl.Result{}, err
-    }
-    return ctrl.Result{}, nil
+	err = r.reconcileFinalizers(plan, 0, updateRequired)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
 }
 
-func (r *SFPlanOffboarding) canBeDeleted(instances *osbv1alpha1.SFServiceInstanceList, planID string) (bool) {
-    for _, instance := range instances.Items {
-        if instance.GetDeletionTimestamp().IsZero() {
-            return false
-        }
-    }
-    return true
+func (r *SFPlanOffboarding) canBeDeleted(instances *osbv1alpha1.SFServiceInstanceList, planID string) bool {
+	for _, instance := range instances.Items {
+		if instance.GetDeletionTimestamp().IsZero() {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *SFPlanOffboarding) reconcileFinalizers(plan *osbv1alpha1.SFPlan, retryCount int, updateRequired bool) error {
@@ -99,32 +99,32 @@ func (r *SFPlanOffboarding) reconcileFinalizers(plan *osbv1alpha1.SFPlan, retryC
 	log := r.Log.WithValues("planID", planID)
 
 	if plan.GetDeletionTimestamp().IsZero() {
-	    if !utils.ContainsString(plan.GetFinalizers(), constants.FinalizerName) {
-	        // The plan is not being deleted, so if it does not have our finalizer,
-	        // then lets add the finalizer and update the plan.
-	        controllerutil.AddFinalizer(plan, constants.FinalizerName)
-	        updateRequired = true
-	    }
+		if !utils.ContainsString(plan.GetFinalizers(), constants.FinalizerName) {
+			// The plan is not being deleted, so if it does not have our finalizer,
+			// then lets add the finalizer and update the plan.
+			controllerutil.AddFinalizer(plan, constants.FinalizerName)
+			updateRequired = true
+		}
 	}
 	if !updateRequired {
-	    log.Info("Update of the plan is not required... returning")
-	    return nil
+		log.Info("Update of the plan is not required... returning")
+		return nil
 	}
 	if err := r.Update(ctx, plan); err != nil {
-        if retryCount < constants.ErrorThreshold {
-            log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1)
-            return r.reconcileFinalizers(plan, retryCount+1, updateRequired)
-        }
-        return err
-    }
-    return nil
+		if retryCount < constants.ErrorThreshold {
+			log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1)
+			return r.reconcileFinalizers(plan, retryCount+1, updateRequired)
+		}
+		return err
+	}
+	return nil
 }
 
 // SetupWithManager registers the SFPlan Controller
 func (r *SFPlanOffboarding) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-	    For(&osbv1alpha1.SFPlan{}).
-	    Named("mcd_sfplan_offboarding").
-	    WithEventFilter(watches.NamespaceFilter()).
-	    Complete(r)
+		For(&osbv1alpha1.SFPlan{}).
+		Named("mcd_sfplan_offboarding").
+		WithEventFilter(watches.NamespaceFilter()).
+		Complete(r)
 }

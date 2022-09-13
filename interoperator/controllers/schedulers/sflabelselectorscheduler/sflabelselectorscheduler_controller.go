@@ -258,7 +258,7 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 
 	// Requested resources for the plan not provided.
 	// Schedule on the cluster with least number of service instances
-	if requests == nil || len(requests) == 0 {
+	if len(requests) == 0 {
 		if len(clusters.Items) == 1 {
 			log.Info("Only one cluster matching the criteria", "cluster name", clusters.Items[0].GetName())
 			return clusters.Items[0].GetName(), nil
@@ -286,7 +286,7 @@ func (r *SFLabelSelectorScheduler) schedule(sfServiceInstance *osbv1alpha1.SFSer
 	maxAllocatable := make(corev1.ResourceList)
 	for _, cluster := range clusters.Items {
 		allocatable := cluster.Status.TotalCapacity.DeepCopy()
-		if allocatable == nil || len(allocatable) == 0 {
+		if len(allocatable) == 0 {
 			allocatable = cluster.Status.CurrentCapacity.DeepCopy()
 		}
 		resourcev1alpha1.ResourceListSub(allocatable, cluster.Status.Requests)

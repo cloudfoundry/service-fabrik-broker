@@ -121,13 +121,13 @@ func (wm *watchManager) requeueSFCRs(cachedClient kubernetes.Client, clusterID s
 	}
 
 	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
-	instance_options := &kubernetes.ListOptions{}
-	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(instance_options)
-	kubernetes.MatchingFields{"spec.clusterId": "clusterID"}.ApplyToList(instance_options)
-	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(instance_options)
+	instanceOptions := &kubernetes.ListOptions{}
+	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(instanceOptions)
+	kubernetes.MatchingFields{"spec.clusterId": "clusterID"}.ApplyToList(instanceOptions)
+	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(instanceOptions)
 
 	for more := true; more; more = (sfserviceinstances.Continue != "") {
-		err := cachedClient.List(ctx, sfserviceinstances, instance_options, kubernetes.Limit(constants.ListPaginationLimit),
+		err := cachedClient.List(ctx, sfserviceinstances, instanceOptions, kubernetes.Limit(constants.ListPaginationLimit),
 			kubernetes.Continue(sfserviceinstances.Continue))
 		if err != nil {
 			log.Error(err, "error while fetching sfserviceinstances")
@@ -142,19 +142,19 @@ func (wm *watchManager) requeueSFCRs(cachedClient kubernetes.Client, clusterID s
 	}
 
 	sfservicebindings := &osbv1alpha1.SFServiceBindingList{}
-	binding_options := &kubernetes.ListOptions{}
-	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(binding_options)
-	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(binding_options)
+	bindingOptions := &kubernetes.ListOptions{}
+	kubernetes.MatchingLabels{"state": "delete"}.ApplyToList(bindingOptions)
+	kubernetes.MatchingFields{"status.state": "in progress"}.ApplyToList(bindingOptions)
 
 	for moreBindings := true; moreBindings; moreBindings = (sfservicebindings.Continue != "") {
-		err := cachedClient.List(ctx, sfservicebindings, binding_options, kubernetes.Limit(constants.ListPaginationLimit),
+		err := cachedClient.List(ctx, sfservicebindings, bindingOptions, kubernetes.Limit(constants.ListPaginationLimit),
 			kubernetes.Continue(sfservicebindings.Continue))
 		if err != nil {
 			log.Error(err, "error while fetching sfservicebindings")
 			return err
 		}
 		for _, sfservicebinding := range sfservicebindings.Items {
-			if sf_clusterID, err := sfservicebinding.GetClusterID(cachedClient); err == nil && sf_clusterID == clusterID {
+			if sfClusterID, err := sfservicebinding.GetClusterID(cachedClient); err == nil && sfClusterID == clusterID {
 				binding := sfservicebinding.DeepCopy()
 				cw.bindingEvents <- event.GenericEvent{
 					Object: binding,

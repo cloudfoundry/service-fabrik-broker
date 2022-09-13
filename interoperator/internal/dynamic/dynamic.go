@@ -96,8 +96,8 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool, error) {
 	case map[string]interface{}:
 		current, ok := currentObj.(map[string]interface{})
 		if !ok {
-		    log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj ", newObj)
-		    return currentObj, toBeUpdated, err
+			log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj ", newObj)
+			return currentObj, toBeUpdated, err
 		}
 		for updateKey, value := range new {
 			//If the existing resource doesnot have the field add it
@@ -106,8 +106,8 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool, error) {
 				toBeUpdated = true
 			} else {
 				updatedVal, ok, err := DeepUpdate(foundField, value)
-				if err!= nil {
-				    return currentObj, toBeUpdated, err
+				if err != nil {
+					return currentObj, toBeUpdated, err
 				}
 				if ok {
 					current[updateKey] = updatedVal
@@ -119,15 +119,15 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool, error) {
 	case []interface{}:
 		current, ok := currentObj.([]interface{})
 		if !ok {
-		    log.Error(err, "Error updating ", "currentObj ", currentObj, " to newObj ", newObj)
-		    return currentObj, toBeUpdated, err
+			log.Error(err, "Error updating ", "currentObj ", currentObj, " to newObj ", newObj)
+			return currentObj, toBeUpdated, err
 		}
 		currentLen := len(current)
 		for i, val := range new {
 			if i < currentLen {
 				updatedVal, ok, err := DeepUpdate(current[i], val)
-				if err!= nil {
-				    return currentObj, toBeUpdated, err
+				if err != nil {
+					return currentObj, toBeUpdated, err
 				}
 				if ok {
 					current[i] = updatedVal
@@ -143,15 +143,15 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool, error) {
 	case []map[string]interface{}:
 		current, ok := currentObj.([]map[string]interface{})
 		if !ok {
-		    log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj type ", newObj)
-		    return currentObj, toBeUpdated, err
+			log.Error(err, "Error updating", " currentObj ", currentObj, " to newObj type ", newObj)
+			return currentObj, toBeUpdated, err
 		}
 		currentLen := len(current)
 		for i, val := range new {
 			if i < currentLen {
 				updatedVal, ok, err := DeepUpdate(current[i], val)
-				if err!= nil {
-				    return currentObj, toBeUpdated, err
+				if err != nil {
+					return currentObj, toBeUpdated, err
 				}
 				if ok {
 					current[i] = updatedVal.(map[string]interface{})

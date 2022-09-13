@@ -173,12 +173,12 @@ func (r *ReconcileSFPlan) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 		log.Info("Plan labels updated", "plan", instance.GetName())
 	}
-	r.updatePlanHash(instance, ctx)
+	r.updatePlanHash(ctx, instance)
 	return ctrl.Result{}, nil
 }
 
 // Keeping the plan hash for versioning
-func (r *ReconcileSFPlan) updatePlanHash(plan *osbv1alpha1.SFPlan, ctx context.Context) error {
+func (r *ReconcileSFPlan) updatePlanHash(ctx context.Context, plan *osbv1alpha1.SFPlan) error {
 
 	log := r.Log.WithValues("sfplan", plan.GetName(), "function", "updatePlanHash")
 	annotations := plan.GetAnnotations()

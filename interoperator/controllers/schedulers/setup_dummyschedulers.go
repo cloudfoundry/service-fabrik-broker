@@ -1,3 +1,4 @@
+//go:build !schedulers && !default
 // +build !schedulers,!default
 
 /*

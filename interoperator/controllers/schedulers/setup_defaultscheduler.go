@@ -1,3 +1,4 @@
+//go:build default
 // +build default
 
 /*
