@@ -1,3 +1,4 @@
+//go:build multiclusterdeploy
 // +build multiclusterdeploy
 
 /*

@@ -1,3 +1,4 @@
+//go:build !provisioners && !schedulers && !multiclusterdeploy
 // +build !provisioners,!schedulers,!multiclusterdeploy
 
 /*

@@ -1,9 +1,9 @@
 package dynamic
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -250,38 +250,38 @@ func TestDeepUpdate(t *testing.T) {
 			},
 			want:  updatedObj,
 			want1: true,
-			err: nil,
+			err:   nil,
 		},
 		{
-            name: "Test2",
-            args: args{
-                currentObj: currentObjString,
-                newObj:     newObj,
-            },
-            want:  currentObjString,
-            want1: false,
-            err: fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newObj, currentObjString, newObj),
-        },
-        {
-            name: "Test3",
-            args: args{
-                currentObj: currentObjString,
-                newObj:     newObj1,
-            },
-            want:  currentObjString,
-            want1: false,
-            err: fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newObj1, currentObjString, newObj1),
-        },
-        {
-            name: "Test4",
-            args: args{
-                currentObj: currentObjString,
-                newObj:     newArray,
-            },
-            want:  currentObjString,
-            want1: false,
-            err: fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newArray, currentObjString, newArray),
-        },
+			name: "Test2",
+			args: args{
+				currentObj: currentObjString,
+				newObj:     newObj,
+			},
+			want:  currentObjString,
+			want1: false,
+			err:   fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newObj, currentObjString, newObj),
+		},
+		{
+			name: "Test3",
+			args: args{
+				currentObj: currentObjString,
+				newObj:     newObj1,
+			},
+			want:  currentObjString,
+			want1: false,
+			err:   fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newObj1, currentObjString, newObj1),
+		},
+		{
+			name: "Test4",
+			args: args{
+				currentObj: currentObjString,
+				newObj:     newArray,
+			},
+			want:  currentObjString,
+			want1: false,
+			err:   fmt.Errorf("failed to apply new value %s to the resources due to type mismatch. Type %T to %T", newArray, currentObjString, newArray),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -292,8 +292,8 @@ func TestDeepUpdate(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("DeepUpdate() got1 = %v, want %v", got1, tt.want1)
 			}
-			if err != nil && tt.err!= nil && err.Error() != tt.err.Error() {
-			    t.Errorf("DeepUpdate() goterr %v, want %v", err, tt.err)
+			if err != nil && tt.err != nil && err.Error() != tt.err.Error() {
+				t.Errorf("DeepUpdate() goterr %v, want %v", err, tt.err)
 			}
 		})
 	}

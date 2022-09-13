@@ -24,9 +24,9 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/offboarding"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfplanoffboarding"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfplanoffboarding"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
@@ -92,11 +92,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	if err = (&sfplanoffboarding.SFPlanOffboarding{
-	    Client: mgr.GetClient(),
-	    Log: ctrl.Log.WithName("mcd").WithName("sfplan_offboarding").WithName("sfplan"),
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("sfplan_offboarding").WithName("sfplan"),
 	}).SetupWithManager(mgr); err != nil {
-	    setupLog.Error(err, "unable to create sfplan offboarding controller", "controller", "SFPlanOffboarding")
-	    return err
+		setupLog.Error(err, "unable to create sfplan offboarding controller", "controller", "SFPlanOffboarding")
+		return err
 	}
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "spec.clusterId", func(o client.Object) []string {
@@ -105,13 +105,13 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	})
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceInstance{}, "status.state", func(o client.Object) []string {
-		instance_state := o.(*osbv1alpha1.SFServiceInstance).Status.State
-		return []string{instance_state}
+		instanceState := o.(*osbv1alpha1.SFServiceInstance).Status.State
+		return []string{instanceState}
 	})
 
 	_ = mgr.GetFieldIndexer().IndexField(context.Background(), &osbv1alpha1.SFServiceBinding{}, "status.state", func(o client.Object) []string {
-		binding_state := o.(*osbv1alpha1.SFServiceBinding).Status.State
-		return []string{binding_state}
+		bindingState := o.(*osbv1alpha1.SFServiceBinding).Status.State
+		return []string{bindingState}
 	})
 
 	return nil

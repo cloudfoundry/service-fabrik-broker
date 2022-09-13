@@ -98,7 +98,7 @@ func (r *SFClusterReplicator) Reconcile(ctx context.Context, req ctrl.Request) (
 	clusterID := cluster.GetName()
 
 	allocatable := cluster.Status.TotalCapacity.DeepCopy()
-	if allocatable == nil || len(allocatable) == 0 {
+	if len(allocatable) == 0 {
 		allocatable = cluster.Status.CurrentCapacity.DeepCopy()
 	}
 	resourcev1alpha1.ResourceListSub(allocatable, cluster.Status.Requests)
