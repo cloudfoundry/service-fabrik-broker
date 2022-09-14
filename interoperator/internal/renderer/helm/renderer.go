@@ -18,7 +18,6 @@ package helm
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -119,7 +118,7 @@ func (r *helmRenderer) Render(rawInput renderer.Input) (renderer.Output, error) 
 		return nil, err
 	}
 
-	dir, err := ioutil.TempDir("", "helm")
+	dir, err := os.MkdirTemp("", "helm")
 	if err != nil {
 		return nil, err
 	}

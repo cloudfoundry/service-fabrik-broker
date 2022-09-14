@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
@@ -58,8 +58,8 @@ var _ = Describe("Event", func() {
 		ar             v1beta1.AdmissionReview
 		arDockerCreate v1beta1.AdmissionReview
 	)
-	dat, err := ioutil.ReadFile("test_resources/admission_request.json")
-	dockerCreateAr, err := ioutil.ReadFile("test_resources/admission_request_docker_create.json")
+	dat, err := os.ReadFile("test_resources/admission_request.json")
+	dockerCreateAr, err := os.ReadFile("test_resources/admission_request_docker_create.json")
 	if err != nil {
 		panic(err)
 	}

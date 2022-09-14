@@ -63,6 +63,7 @@ func (cluster *SFCluster) GetKubeConfig(c kubernetes.Client) (*rest.Config, erro
 
 // SFClusterInterface is defined so that and SFCluster can be mocked in tests
 // +kubebuilder:object:generate=false
+//
 //go:generate mockgen -destination ./mock_sfcluster/mock_sfcluster.go github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1 SFClusterInterface
 type SFClusterInterface interface {
 	metav1.Object
