@@ -19,6 +19,7 @@ var log = logf.Log.WithName("watchmanager.mcd")
 var managerObject watchManagerInterface
 
 // watchManager manages multi cluster watch
+//
 //go:generate mockgen -source manager.go -destination ./mock_manager.go -package watchmanager
 type watchManagerInterface interface {
 	getWatchChannel(resource string) (<-chan event.GenericEvent, error)

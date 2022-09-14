@@ -19,13 +19,13 @@ import (
 	"k8s.io/api/admission/v1beta1"
 )
 
-//LastOperationType
+// LastOperationType
 const (
 	loUpdate string = "update"
 	loCreate string = "create"
 )
 
-//State
+// State
 const (
 	Succeeded string = "succeeded"
 	Delete    string = "delete"

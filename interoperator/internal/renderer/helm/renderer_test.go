@@ -18,7 +18,7 @@ package helm
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -213,7 +213,7 @@ func Test_helmRenderer_processCRDS(t *testing.T) {
 
 	output := make(map[string]string)
 
-	sampleCRDFile, err := ioutil.ReadFile("./samples/postgresql/crds/sample.yaml")
+	sampleCRDFile, err := os.ReadFile("./samples/postgresql/crds/sample.yaml")
 	if err != nil {
 		fmt.Printf("Failed to read sampleCRD file: %v\n", err)
 		return

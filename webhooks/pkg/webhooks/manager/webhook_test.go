@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 
@@ -221,7 +221,7 @@ func Test_createPatch(t *testing.T) {
 func TestWebhookServer_mutate(t *testing.T) {
 	var ar v1beta1.AdmissionReview
 	var arInvalid v1beta1.AdmissionReview
-	dat, err := ioutil.ReadFile("test_resources/admission_request.json")
+	dat, err := os.ReadFile("test_resources/admission_request.json")
 	if err != nil {
 		panic(err)
 	}
@@ -302,7 +302,7 @@ func TestWebhookServer_mutate(t *testing.T) {
 }
 
 func TestWebhookServer_serve(t *testing.T) {
-	dat, err := ioutil.ReadFile("test_resources/admission_request.json")
+	dat, err := os.ReadFile("test_resources/admission_request.json")
 	if err != nil {
 		panic(err)
 	}

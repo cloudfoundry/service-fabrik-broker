@@ -20,6 +20,7 @@ import (
 var log = logf.Log.WithName("resources.internal")
 
 // ResourceManager defines the interface implemented by resources
+//
 //go:generate mockgen -source resources.go -destination ./mock_resources/mock_resources.go
 type ResourceManager interface {
 	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)

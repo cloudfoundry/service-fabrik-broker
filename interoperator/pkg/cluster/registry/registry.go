@@ -21,6 +21,7 @@ import (
 var log = logf.Log.WithName("cluster.registry")
 
 // ClusterRegistry keep track of clusters and gets client for them
+//
 //go:generate mockgen -source registry.go -destination ./mock_registry/mock_registry.go
 type ClusterRegistry interface {
 	GetClient(clusterID string) (kubernetes.Client, error)
