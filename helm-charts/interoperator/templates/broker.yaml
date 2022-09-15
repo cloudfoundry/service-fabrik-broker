@@ -32,6 +32,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "{{ .Values.broker.smConnectionSettings.auth_tls_verify_client }}"
     nginx.ingress.kubernetes.io/auth-tls-secret: "{{ .Values.broker.smConnectionSettings.auth_tls_secret }}"
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "{{ .Values.broker.smConnectionSettings.auth_tls_pass_certificate_to_upstream }}"
+{{ toYaml .Values.broker.ingress.annotations | indent 4 }}
 spec:
   rules:
   - host: {{ .Values.cluster.host }}

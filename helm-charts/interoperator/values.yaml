@@ -18,8 +18,14 @@ broker:
   allow_concurrent_operations: true
   allow_concurrent_binding_operations: true
   send_binding_metadata: true
+  ingress:
+    annotations:
+      # override the validation depth between the client certificate and the CA chain
+      nginx.ingress.kubernetes.io/auth-tls-verify-depth: 2
+      # another-ingress-annotation: "value"
+
   smConnectionSettings:
-    timeout: 10           #in seconds
+    timeout: 10  # in seconds
     retryCount: 2
     auth_tls_verify_client: "off"
     auth_tls_secret: ''
