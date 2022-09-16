@@ -21,7 +21,7 @@ broker:
   ingress:
     annotations:
       # override the validation depth between the client certificate and the CA chain
-      nginx.ingress.kubernetes.io/auth-tls-verify-depth: 2
+      nginx.ingress.kubernetes.io/auth-tls-verify-depth: '2'
       # another-ingress-annotation: "value"
 
   smConnectionSettings:
