@@ -8,7 +8,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.20.1
+	github.com/onsi/gomega v1.22.1
 	github.com/prometheus/client_golang v1.13.0
 	helm.sh/helm/v3 v3.9.4
 	k8s.io/api v0.25.0
