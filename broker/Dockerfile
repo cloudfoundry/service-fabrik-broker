@@ -1,5 +1,5 @@
 # FROM node:14.16-alpine3.13 also works here for a smaller image
-FROM node:16.14-alpine3.15
+FROM node:16.18-alpine3.16
 
 # set our node environment, either development or production
 # defaults to production, compose overrides this to development on build and run
