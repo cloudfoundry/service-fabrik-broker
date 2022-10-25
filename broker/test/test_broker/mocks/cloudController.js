@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const nock = require('nock');
 const config = require('@sf/app-config');
+const logger = require('@sf/logger');
 const cloudControllerUrl = config.cf.url;
 const prefix = 'service-fabrik';
 const DirectorService = require('@sf/provisioner-services').DirectorService;
@@ -125,18 +126,20 @@ function getServiceInstance(guid, entity, times) {
       }, entity)
     });
 }
-
-function getSpace(guid, entity, times) {
+function getSpace(guid, org_guid, times) {
   return nock(cloudControllerUrl)
-    .get(`/v2/spaces/${guid}`)
+    .get(`/v3/spaces/${guid}`)
     .times(times || 1)
     .reply(200, {
-      metadata: {
-        guid: guid
-      },
-      entity: _.assign({
-        name: 'blueprint'
-      }, entity)
+      guid: guid,
+      name: 'blueprint',
+      relationships:{
+        organization:{
+          data:{
+            guid: org_guid
+          }
+        }
+      }
     });
 }
 
@@ -180,12 +183,10 @@ function getSpaces(space_guid) {
   return nock(cloudControllerUrl)
     .get('/v2/spaces')
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: space_guid
-        },
-        entity: {}
-      }]
+      metadata: {
+        guid: space_guid
+      },
+      entity: {}
     });
 }
 
@@ -193,26 +194,21 @@ function getOrganizations(org_guid) {
   return nock(cloudControllerUrl)
     .get('/v2/organizations')
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: org_guid
-        },
-        entity: {}
-      }]
+      metadata: {
+        guid: org_guid
+      },
+      entity: {}
     });
-}
+  }
+   
 
 function getOrganization(guid, entity, times) {
   return nock(cloudControllerUrl)
-    .get(`/v2/organizations/${guid}`)
+    .get(`/v3/organizations/${guid}`)
     .times(times || 1)
     .reply(200, {
-      metadata: {
-        guid: guid
-      },
-      entity: _.assign({
-        name: 'blueprint'
-      }, entity)
+      guid: guid,
+      name: 'blueprint'
     });
 }
 

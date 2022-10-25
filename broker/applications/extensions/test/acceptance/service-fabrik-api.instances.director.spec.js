@@ -237,7 +237,7 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-      });
+      }); 
 
       describe('#backup-schedule', function () {
         it('should return 503 - schedule backup feature not enabled', function () {
@@ -290,9 +290,7 @@ describe('service-fabrik-api', function () {
         it('should return 201 OK', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
+          mocks.cloudController.getSpace(space_guid, organization_guid);
           mocks.cloudController.getOrganization(organization_guid);
           mocks.cloudController.getSpaceDevelopers(space_guid);
 

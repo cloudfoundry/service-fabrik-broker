@@ -28,7 +28,7 @@ class CFPlatformQuotaManager extends BaseQuotaManager {
 
   async isOrgWhitelisted(orgId) {
     const org = await cloudController.getOrganization(orgId);
-    const orgLower = _.toLower(org.entity.name);
+    const orgLower = _.toLower(org.name);
     logger.debug('current org details are ', org);
     logger.debug('current org name is ', orgLower);
     logger.debug('Whitelisted orgs are ', config.quota.whitelist);

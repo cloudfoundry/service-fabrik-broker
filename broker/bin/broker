@@ -30,7 +30,7 @@ function init_without_instance() {
   # space
   space_guid=$(cat ~/.cf/config.json | jq -r .SpaceFields.GUID)
   # refresh access token
-  cf curl "/v2/spaces/$space_guid" &>/dev/null
+  cf curl "/v3/spaces/$space_guid" &>/dev/null
   # access token
   auth_header=$(cat ~/.cf/config.json | jq -r .AccessToken)
 }

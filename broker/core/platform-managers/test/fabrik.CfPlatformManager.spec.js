@@ -196,8 +196,12 @@ describe('fabrik', function () {
       before(function () {
         getSpaceStub = sinon.stub(cloudController, 'getSpace').callsFake(() => {
           return Promise.resolve({
-            entity: {
-              organization_guid: 'target'
+            relationships:{
+              organization:{
+                data:{
+                  guid: 'target'
+                }
+              }
             }
           });
         });
@@ -369,9 +373,7 @@ describe('fabrik', function () {
       before(function () {
         getOrgStub = sinon.stub(cloudController, 'getOrganization').callsFake(() => {
           return Promise.resolve({
-            entity: {
-              name: 'test'
-            }
+            name: 'test'
           });
         });
       });

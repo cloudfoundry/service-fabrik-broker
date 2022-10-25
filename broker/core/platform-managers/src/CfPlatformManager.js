@@ -49,9 +49,9 @@ class CfPlatformManager extends BasePlatformManager {
       return Promise.resolve(true);
     }
     return this.cloudController.getSpace(options.bind_resource.space_guid)
-      .tap(targetSpaceDetails => logger.info(`shared instance binding: source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.entity.organization_guid}`))
+      .tap(targetSpaceDetails => logger.info(`shared instance binding: source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.relationships.organization.data.guid}`))
       .then(targetSpaceDetails => {
-        if (options.context.organization_guid !== targetSpaceDetails.entity.organization_guid) {
+        if (options.context.organization_guid !== targetSpaceDetails.relationships.organization.data.guid) {
           throw new CrossOrganizationSharingNotAllowed();
         }
         return true;
@@ -208,7 +208,7 @@ class CfPlatformManager extends BasePlatformManager {
     const orgId = _.get(options, 'context.organization_guid');
     assert.ok(orgId, 'OrgId must be present when checking for whitelisting of Tenant in CF Context');
     return this.cloudController.getOrganization(orgId)
-      .then(org => _.includes(config.quota.whitelist, org.entity.name))
+      .then(org => _.includes(config.quota.whitelist, org.name))
       .tap(result => logger.info(`Current org - ${orgId} is whitelisted: ${result}`));
   }
 

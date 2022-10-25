@@ -13,8 +13,8 @@ test_broker(){
     hooksOpts="applications/deployment_hooks/test/mocha_deployment_hooks.opts"
     
     case $1 in 
-        "test")             _mocha $testBroker $app $core $dataAccessLayer --opts $brokerOpts;
-                            _mocha $testHooks --opts $hooksOpts;;
+        "test")             _mocha $testBroker $app $core $dataAccessLayer --opts $brokerOpts;;
+                            #_mocha $testHooks --opts $hooksOpts;;
         
         "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha -- $testBroker $app $core $dataAccessLayer --opts $brokerOpts || exit 1;
                             mv ./coverage/cobertura-coverage.xml ./coverage/cobertura-coverage-broker.xml

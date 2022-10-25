@@ -1999,9 +1999,7 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 201 OK', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
+          mocks.cloudController.getSpace(space_guid, organization_guid);
           mocks.cloudController.getOrganization(organization_guid);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
