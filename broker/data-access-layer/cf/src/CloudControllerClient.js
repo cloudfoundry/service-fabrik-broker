@@ -264,7 +264,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   getSpace(space_guid, options) {
-    return this.getResource(`/v3/spaces/${space_guid}`, options)
+    return this.getResource(`/v3/spaces/${space_guid}`, options);
   }
 
   getOrgAndSpaceGuid(instance_guid, space_guid) {
@@ -276,7 +276,7 @@ class CloudControllerClient extends HttpClient {
         space_name: space.name,
         space_guid: space.guid,
         organization_guid: space.relationships.organization.data.guid
-      }))
+      }));
   }
 
   getOrgAndSpaceDetails(instance_guid, space_guid) {
@@ -307,7 +307,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   getOrganization(org_guid, options) {
-    return this.getResource(`/v3/organizations/${org_guid}`, options)
+    return this.getResource(`/v3/organizations/${org_guid}`, options);
   }
 
   getResource(pathname, options) {
