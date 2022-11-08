@@ -81,7 +81,7 @@ broker:
     tag: 0.23.4
     pullPolicy: Always
   service:
-    type: LoadBalancer
+    type: ClusterIP
   hpa:
     enabled: false
     scaleUp:
