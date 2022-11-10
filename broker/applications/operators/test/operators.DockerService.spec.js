@@ -341,11 +341,7 @@ describe('docker-operator', function () {
         let target_space_guid = 'target_id';
         let binding_id = 'binding_id';
         mocks.docker.inspectContainer(instance_id);
-        mocks.cloudController.getSpace(target_space_guid,organization_guid
-        // {  
-        //   'organization_guid': organization_guid
-        // }
-        );
+        mocks.cloudController.getSpace(target_space_guid,organization_guid);
         mocks.cloudController.createSecurityGroup(binding_id);
         const options = {
           binding_id: binding_id,

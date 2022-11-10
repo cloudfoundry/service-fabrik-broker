@@ -147,8 +147,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       spaces = _
         .chain(spaces)
         .map(resource => {
-          const entity = resource.entity;
-          entity.guid = resource.metadata.guid;
+          const entity = {
+            guid: resource.guid,
+            name: resource.name,
+            organization_guid: resource.relationships.organization.data.guid
+          };
           return entity;
         })
         .keyBy('guid')
@@ -156,8 +159,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       organizations = _
         .chain(organizations)
         .map(resource => {
-          const entity = resource.entity;
-          entity.guid = resource.metadata.guid;
+          const entity = {
+            guid: resource.guid,
+            name: resource.name,
+            quota_definition_guid: resource.relationships.quota.data.guid
+          };
           return entity;
         })
         .keyBy('guid')
@@ -169,6 +175,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           deployment.organization = organizations[_.get(deployment, 'space.organization_guid')];
         }
       });
+      
       return deployments;
     }
 

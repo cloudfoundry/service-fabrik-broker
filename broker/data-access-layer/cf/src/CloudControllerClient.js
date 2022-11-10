@@ -256,7 +256,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   createSpaceStream(options) {
-    return this.createResourceStream('/v2/spaces', options);
+    return this.createResourceStream('/v3/spaces', options);
   }
 
   getSpaces(options) {
@@ -299,7 +299,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   createOrganizationStream(options) {
-    return this.createResourceStream('/v2/organizations', options);
+    return this.createResourceStream('/v3/organizations', options);
   }
 
   getOrganizations(options) {

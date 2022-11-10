@@ -3,7 +3,6 @@
 const _ = require('lodash');
 const nock = require('nock');
 const config = require('@sf/app-config');
-const logger = require('@sf/logger');
 const cloudControllerUrl = config.cf.url;
 const prefix = 'service-fabrik';
 const DirectorService = require('@sf/provisioner-services').DirectorService;
@@ -181,7 +180,7 @@ function getServicePlans(broker_guid, plan_guid, plan_unique_id) {
 
 function getSpaces(space_guid) {
   return nock(cloudControllerUrl)
-    .get('/v2/spaces')
+    .get('/v3/spaces')
     .reply(200, {
       metadata: {
         guid: space_guid
@@ -192,7 +191,7 @@ function getSpaces(space_guid) {
 
 function getOrganizations(org_guid) {
   return nock(cloudControllerUrl)
-    .get('/v2/organizations')
+    .get('/v3/organizations')
     .reply(200, {
       metadata: {
         guid: org_guid

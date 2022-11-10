@@ -10,8 +10,6 @@ const {
     SecurityGroupNotFound
   }
 } = require('@sf/common-utils');
-const { tap, before } = require('lodash');
-const logger = require('@sf/logger');
 
 describe('cf', function () {
   describe('CloudControllerClient', function () {
@@ -294,7 +292,7 @@ describe('cf', function () {
       const calls = _.range(7);
 
       function url(i) {
-        const firstUrl = '/v2/spaces?results-per-page=1';
+        const firstUrl = '/v3/spaces?results-per-page=1';
         if (i === 0) {
           return firstUrl;
         }
@@ -364,6 +362,7 @@ describe('cf', function () {
 
     describe('#getOrgAndSpaceDetails', function () {
 
+      // Response of Get a space and Get an organization into one
       const SOresponse = {
         guid: id,
         name: name,
