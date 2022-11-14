@@ -274,7 +274,7 @@ describe('quota', () => {
           },
           'tags': [],
           'service_guid': 'fe503379-832b-4d56-ad12-3a6ef68dcb34',
-          'space_url': '/v2/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
+          'space_url': '/v3/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
           'service_plan_url': '/v2/service_plans/cb862bfe-3a50-4d12-a8e2-156d6e11bed4',
           'service_bindings_url': '/v2/service_instances/001ca5e5-2aeb-47c5-a063-567bdfe942ec/service_bindings',
           'service_keys_url': '/v2/service_instances/001ca5e5-2aeb-47c5-a063-567bdfe942ec/service_keys',
@@ -444,12 +444,8 @@ describe('quota', () => {
       let sandbox, getOrganizationStub;
       let orgId = '63125bbc-81fe-46c3-9437-e5a8a6594774';
       let org = {
-        'metadata': {
-          'guid': '63125bbc-81fe-46c3-9437-e5a8a6594774'
-        },
-        'entity': {
-          'name': 'Dev'
-        }
+        'guid': '63125bbc-81fe-46c3-9437-e5a8a6594774',
+        'name': 'Dev'
       };
       before(function () {
         sandbox = sinon.createSandbox();

@@ -1416,9 +1416,7 @@ describe('#DirectorService', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: '8 hours'
           });
-          mocks.cloudController.getSpace(target_space_guid, {
-            'organization_guid': organization_guid
-          });
+          mocks.cloudController.getSpace(target_space_guid, organization_guid);
           mocks.cloudController.createSecurityGroup(binding_id);
           const options = {
             binding_id: binding_id,

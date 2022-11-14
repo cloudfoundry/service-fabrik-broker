@@ -125,18 +125,20 @@ function getServiceInstance(guid, entity, times) {
       }, entity)
     });
 }
-
-function getSpace(guid, entity, times) {
+function getSpace(guid, org_guid, times) {
   return nock(cloudControllerUrl)
-    .get(`/v2/spaces/${guid}`)
+    .get(`/v3/spaces/${guid}`)
     .times(times || 1)
     .reply(200, {
-      metadata: {
-        guid: guid
-      },
-      entity: _.assign({
-        name: 'blueprint'
-      }, entity)
+      guid: guid,
+      name: 'blueprint',
+      relationships:{
+        organization:{
+          data:{
+            guid: org_guid
+          }
+        }
+      }
     });
 }
 
@@ -178,41 +180,34 @@ function getServicePlans(broker_guid, plan_guid, plan_unique_id) {
 
 function getSpaces(space_guid) {
   return nock(cloudControllerUrl)
-    .get('/v2/spaces')
+    .get('/v3/spaces')
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: space_guid
-        },
-        entity: {}
-      }]
+      metadata: {
+        guid: space_guid
+      },
+      entity: {}
     });
 }
 
 function getOrganizations(org_guid) {
   return nock(cloudControllerUrl)
-    .get('/v2/organizations')
+    .get('/v3/organizations')
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: org_guid
-        },
-        entity: {}
-      }]
+      metadata: {
+        guid: org_guid
+      },
+      entity: {}
     });
-}
+  }
+   
 
 function getOrganization(guid, entity, times) {
   return nock(cloudControllerUrl)
-    .get(`/v2/organizations/${guid}`)
+    .get(`/v3/organizations/${guid}`)
     .times(times || 1)
     .reply(200, {
-      metadata: {
-        guid: guid
-      },
-      entity: _.assign({
-        name: 'blueprint'
-      }, entity)
+      guid: guid,
+      name: 'blueprint'
     });
 }
 

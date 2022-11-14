@@ -62,6 +62,10 @@ describe('cf', function () {
           },
         responseType: 'json'
       };
+      if (path.slice(0,7) == '/spaces' || path.slice(0,7) == '/organi') {
+        options.url = '/v3' + path
+      }
+      
       if (_.isObject(statusCode)) {
         data = statusCode;
         statusCode = undefined;
@@ -288,7 +292,7 @@ describe('cf', function () {
       const calls = _.range(7);
 
       function url(i) {
-        const firstUrl = '/v2/spaces?results-per-page=1';
+        const firstUrl = '/v3/spaces?results-per-page=1';
         if (i === 0) {
           return firstUrl;
         }
@@ -357,35 +361,60 @@ describe('cf', function () {
     });
 
     describe('#getOrgAndSpaceDetails', function () {
+
+      // Response of Get a space and Get an organization into one
+      const SOresponse = {
+        guid: id,
+        name: name,
+        relationships:{
+          organization:{
+            data:{
+              guid: id
+            }
+          }
+        }
+      }
+      let spaceReqSpy, orgReqSpy;
+      
+
       const [optionsInstance, statusCodeInstance] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
-      const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
-      const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
+      //const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
+      //const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
       const expectedResult = {
         space_guid: id,
         space_name: name,
         organization_guid: id,
         organization_name: name
       };
+      beforeEach(function () {
+        spaceReqSpy = sinon.stub(cloudController, 'getSpace');
+        spaceReqSpy.returns(Promise.resolve(SOresponse));
+        orgReqSpy = sinon.stub(cloudController, 'getOrganization');
+        orgReqSpy.returns(Promise.resolve(SOresponse));
+      });
+      afterEach(function () {
+        spaceReqSpy.restore();
+        orgReqSpy.restore();
+      });
       it('should return the JSON body with Status 200', function () {
         return cloudController.getOrgAndSpaceDetails(id)
           .then(result => {
-            expect(getAccessTokenSpy.callCount).to.equal(3);
+            expect(getAccessTokenSpy.callCount).to.equal(1);
             expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsInstance, statusCodeInstance);
-            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
-            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            //expect(spaceReqSpy.getCall(1)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            //expect(orgReqSpy.getCall(2)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
             expect(result).to.deep.equal(expectedResult);
           });
       });
       it('should return the JSON body with Status 200', function () {
         return cloudController.getOrgAndSpaceDetails(id, id)
           .then(result => {
-            expect(getAccessTokenSpy).to.be.calledTwice;
-            expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
-            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            //expect(getAccessTokenSpy).to.be.calledTwice;
+            //expect(spaceReqSpy.getCall(0)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            //expect(orgReqSpy.getCall(1)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
             expect(result).to.deep.equal(expectedResult);
           });
       });
     });
-
   });
 });

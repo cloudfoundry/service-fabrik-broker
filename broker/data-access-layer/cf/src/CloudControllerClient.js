@@ -256,7 +256,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   createSpaceStream(options) {
-    return this.createResourceStream('/v2/spaces', options);
+    return this.createResourceStream('/v3/spaces', options);
   }
 
   getSpaces(options) {
@@ -264,7 +264,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   getSpace(space_guid, options) {
-    return this.getResource(`/v2/spaces/${space_guid}`, options);
+    return this.getResource(`/v3/spaces/${space_guid}`, options);
   }
 
   getOrgAndSpaceGuid(instance_guid, space_guid) {
@@ -273,9 +273,9 @@ class CloudControllerClient extends HttpClient {
         .getServiceInstance(instance_guid)
         .then(instance => this.getSpace(instance.entity.space_guid)))
       .then(space => ({
-        space_name: space.entity.name,
-        space_guid: space.metadata.guid,
-        organization_guid: space.entity.organization_guid
+        space_name: space.name,
+        space_guid: space.guid,
+        organization_guid: space.relationships.organization.data.guid
       }));
   }
 
@@ -291,7 +291,7 @@ class CloudControllerClient extends HttpClient {
         return this.getOrganization(data.organization_guid)
           .then(org => {
             _.assign(data, {
-              organization_name: org.entity.name
+              organization_name: org.name
             });
             return data;
           });
@@ -299,7 +299,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   createOrganizationStream(options) {
-    return this.createResourceStream('/v2/organizations', options);
+    return this.createResourceStream('/v3/organizations', options);
   }
 
   getOrganizations(options) {
@@ -307,7 +307,7 @@ class CloudControllerClient extends HttpClient {
   }
 
   getOrganization(org_guid, options) {
-    return this.getResource(`/v2/organizations/${org_guid}`, options);
+    return this.getResource(`/v3/organizations/${org_guid}`, options);
   }
 
   getResource(pathname, options) {

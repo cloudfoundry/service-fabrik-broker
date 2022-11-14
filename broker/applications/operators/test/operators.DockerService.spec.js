@@ -335,15 +335,13 @@ describe('docker-operator', function () {
               uri: `http://${username}:${password}@${docker_url.hostname}`
             });
             mocks.verify();
-          });
+          }); 
       });
       it('returns 201 Created and creates Security Group for shared instance binding', function () {
         let target_space_guid = 'target_id';
         let binding_id = 'binding_id';
         mocks.docker.inspectContainer(instance_id);
-        mocks.cloudController.getSpace(target_space_guid, {
-          'organization_guid': organization_guid
-        });
+        mocks.cloudController.getSpace(target_space_guid,organization_guid);
         mocks.cloudController.createSecurityGroup(binding_id);
         const options = {
           binding_id: binding_id,
