@@ -243,7 +243,7 @@ describe('quota', () => {
           },
           'tags': [],
           'service_guid': 'fe503379-832b-4d56-ad12-3a6ef68dcb34',
-          'space_url': '/v3/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
+          'space_url': '/v2/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
           'service_plan_url': '/v2/service_plans/c77ff479-ea63-42ea-b6d1-d824c4012f1c',
           'service_bindings_url': '/v2/service_instances/cbf07265-1bb9-4eae-bb8f-cef39534d045/service_bindings',
           'service_keys_url': '/v2/service_instances/cbf07265-1bb9-4eae-bb8f-cef39534d045/service_keys',
