@@ -305,7 +305,7 @@ describe('quota', () => {
           },
           'tags': [],
           'service_guid': 'fe503379-832b-4d56-ad12-3a6ef68dcb34',
-          'space_url': '/v3/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
+          'space_url': '/v2/spaces/6b48f3ea-0ef1-44eb-9de4-942d89779d37',
           'service_plan_url': '/v2/service_plans/cb862bfe-3a50-4d12-a8e2-156d6e11bed4',
           'service_bindings_url': '/v2/service_instances/5f8cadbb-7958-41b2-b5a5-54907c763f1e/service_bindings',
           'service_keys_url': '/v2/service_instances/5f8cadbb-7958-41b2-b5a5-54907c763f1e/service_keys',
