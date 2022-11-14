@@ -11,9 +11,9 @@ require (
 	github.com/onsi/gomega v1.20.1
 	github.com/prometheus/client_golang v1.13.0
 	helm.sh/helm/v3 v3.9.4
-	k8s.io/api v0.25.0
+	k8s.io/api v0.25.4
 	k8s.io/apiextensions-apiserver v0.25.0
-	k8s.io/apimachinery v0.25.3
+	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v0.25.0
 	k8s.io/code-generator v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
