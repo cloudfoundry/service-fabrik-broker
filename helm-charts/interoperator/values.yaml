@@ -13,6 +13,7 @@ broker:
   port: 9293
   username: broker
   password: secret
+  log_level: info
   enable_namespaced_separation: true
   services_namespace: "services"
   allow_concurrent_operations: true

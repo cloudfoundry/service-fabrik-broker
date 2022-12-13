@@ -120,4 +120,4 @@ development: &development
 
 kubernetes:
   <<: *development
-  log_level: debug
+  log_level: {{ .Values.broker.log_level }}

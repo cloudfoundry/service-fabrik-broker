@@ -42,7 +42,7 @@ const transports = [
     )
   }),
   new winston.transports.Console({
-    level: process.env.LOG_LEVEL || 'debug',
+    level: process.env.LOG_LEVEL || config.log_level || 'debug',
     silent: _.includes(['production', 'test'], process.env.NODE_ENV),
     format: winston.format.combine(
       winston.format.prettyPrint(),
