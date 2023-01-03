@@ -472,7 +472,7 @@ __metadata:
     axios: 0.25.0
     bluebird: 3.7.2
     hystrixjs: 0.2.0
-    jsonwebtoken: 8.5.1
+    jsonwebtoken: 9.0.0
     lodash: 4.17.21
     moment: 2.29.2
     mongoose: 5.13.9
@@ -6537,7 +6537,19 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"jsonwebtoken@npm:8.5.1, jsonwebtoken@npm:^8.1.0":
+"jsonwebtoken@npm:9.0.0":
+  version: 9.0.0
+  resolution: "jsonwebtoken@npm:9.0.0"
+  dependencies:
+    jws: ^3.2.2
+    lodash: ^4.17.21
+    ms: ^2.1.1
+    semver: ^7.3.8
+  checksum: 8b2f16708501d17b56e2a12941a0a8963dbdcda4ea5f8329e2bf1ce235e0dc546e2b7ef0c28ba941e7bda3a2b4ee8b3838e6d8c10c269be4dbee8ca1b744c310
+  languageName: node
+  linkType: hard
+
+"jsonwebtoken@npm:^8.1.0":
   version: 8.5.1
   resolution: "jsonwebtoken@npm:8.5.1"
   dependencies:
@@ -6900,7 +6912,7 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"lodash@npm:4.17.21":
+"lodash@npm:4.17.21, lodash@npm:^4.17.21":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 4983720b9abca930a4a46f18db163d7dad8dd00dbed6db0cc7b499b33b717cce69f80928b27bbb1ff2cbd3b19d251ee90669a8b5ea466072ca81c2ebe91e7468
@@ -9960,6 +9972,17 @@ resolve@^1.15.1:
   bin:
     semver: bin/semver.js
   checksum: f2c7f9aeb976d1484b2f39aa7afc8332a1d21fd32ca4a6fbf650e1423455ebf3e7029f6e2e7ba0cd71935b85942521f1ec25b6cc2c031b953c8ca4ff2d7a823d
+  languageName: node
+  linkType: hard
+
+"semver@npm:^7.3.8":
+  version: 7.3.8
+  resolution: "semver@npm:7.3.8"
+  dependencies:
+    lru-cache: ^6.0.0
+  bin:
+    semver: bin/semver.js
+  checksum: cfb9c2101dae4ee93c415471f48797c750174d65def4e06ff691bf910194cc6ca92793e597be8302175ceb640100a3da36451e7656320da53b51167eeaf11eb5
   languageName: node
   linkType: hard
 
