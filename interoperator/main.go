@@ -56,9 +56,11 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":9877", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", true,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	leaderElectionNamespace := constants.InteroperatorNamespace
 
@@ -71,6 +73,7 @@ func main() {
 		Port:                    9443,
 		SyncPeriod:              &syncPeriod,
 	})
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
