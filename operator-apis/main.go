@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,7 +16,11 @@ import (
 )
 
 func main() {
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
+	flag.Parse()
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	setupLog := ctrl.Log.WithName("setup")
 
 	kubeConfig, err := ctrl.GetConfig()

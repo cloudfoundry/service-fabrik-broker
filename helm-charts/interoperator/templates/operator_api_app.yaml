@@ -126,5 +126,9 @@ spec:
         {{- if not (empty $resourceSpec) }}
         {{- tpl (.Files.Get "conf/resources.yaml") (merge $resourceSpec .) | nindent 8 }}
         {{- end }}
+        args:
+        - --zap-log-level={{ .Values.interoperator.log_level }}
+        - --zap-encoder={{ .Values.interoperator.log_output_format }}
+        - --zap-stacktrace-level={{ .Values.interoperator.log_stacktrace_level }}
       restartPolicy: Always
 {{- end }}
