@@ -995,11 +995,11 @@ behavior:
 ### Interoperator
 
 In interoperator we are using `zap` (i.e. sigs.k8s.io/controller-runtime/pkg/log/zap) plugin for logging. The log level, stacktrace level and output format can be changed/configured from [values.yaml](../helm-charts/interoperator/values.yaml).
-* values.interoperator.log_level : To set log level. Allowed values are 'info', 'error', 'debug' or any integer value > 0 (i.e. 1 or 2 or 3). Default value is 'info'.  
-* values.interoperator.log_output_format : Log Output format or Encoder. Allowed values are 'json' or 'console'. Default value is 'json'.  
-* values.interoperator.log_stacktrace_level : Allowed values are 'info', 'error' or 'panic'. Default value is 'error'.   
+* interoperator.log_level: To set log level. Allowed values are `info`, `error`, `debug` or any integer value > 0 (i.e. 1 or 2 or 3). Default value is `info`.  
+* interoperator.log_output_format: Log Output format or Encoder. Allowed values are `json` or `console`. Default value is `json`.  
+* interoperator.log_stacktrace_level: Allowed values are `info`, `error` or `panic`. Default value is `error`.   
 
 ### Broker  
 
 For Broker we can change log level from values.yaml file.  
-* values.broker.log_level: Allowed values are 'info', 'error' or 'debug'. Default value is info.   
+* broker.log_level: Allowed values are `info`, `error` or `debug`. Default value is `info`. 
