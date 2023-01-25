@@ -43,6 +43,9 @@ spec:
         args:
         - --metrics-addr=:8443
         - --enable-leader-election
+        - --zap-log-level={{ .Values.interoperator.log_level }}
+        - --zap-encoder={{ .Values.interoperator.log_output_format }}
+        - --zap-stacktrace-level={{ .Values.interoperator.log_stacktrace_level }}
         {{- $resourceSpec := dict }}
         {{- with .Values.interoperator.scheduler.resources }}
           {{- $resourceSpec = deepCopy . }}

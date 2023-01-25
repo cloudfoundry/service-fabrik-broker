@@ -230,3 +230,10 @@ Response Code: 200
 Response Body:
 Triggering update for 5 instances
 ```
+
+## Logging  
+
+In operator-apis we are using `zap` (i.e. sigs.k8s.io/controller-runtime/pkg/log/zap) plugin for logging. The log level, stacktrace level and output format can be changed/configured from [values.yaml](../helm-charts/interoperator/values.yaml).
+* values.operator_apis.log_level : To set log level. Allowed values are 'info', 'error', 'debug' or any integer value > 0 (i.e. 1 or 2 or 3).  
+* values.operator_apis.log_output_format : Log Output format or Encoder. Allowed values are 'json' or 'console'.  
+* values.operator_apis.log_stacktrace_level : Allowed values are 'info', 'error' or 'panic'.  

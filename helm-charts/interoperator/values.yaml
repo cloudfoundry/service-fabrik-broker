@@ -13,6 +13,7 @@ broker:
   port: 9293
   username: broker
   password: secret
+  log_level: info
   enable_namespaced_separation: true
   services_namespace: "services"
   allow_concurrent_operations: true
@@ -190,6 +191,13 @@ interoperator:
       requests:
         cpu: 400m
         memory: 64Mi
+  
+  #Define log level. Can be one of 'debug', 'info', 'error', or any integer value > 0 (i.e. 1 or 2 or 3)
+  log_level: info
+  # Log Output format or Encoder (one of 'json' or 'console')
+  log_output_format: json
+  # Log stack strace level can have any value from list 'info' or 'error' or 'panic'
+  log_stacktrace_level: error
 
 operator_apis:
   enabled: true
@@ -216,6 +224,12 @@ operator_apis:
   ssl: true
   sslsecret: op-api-ssl-cert
 
+  #Define log level. Can be one of 'debug', 'info', 'error', or any integer value > 0 (i.e. 1 or 2 or 3)
+  log_level: info
+  # Log Output format or Encoder (one of 'json' or 'console')
+  log_output_format: json
+  # Log stack strace level can have any value from list 'info' or 'error' or 'panic'
+  log_stacktrace_level: error
 
 #imagePullSecrets:
 #- name: docker-dmz
