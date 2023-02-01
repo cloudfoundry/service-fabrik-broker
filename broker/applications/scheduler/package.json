@@ -16,7 +16,7 @@
     "@sf/event-logger": "*",
     "@sf/logger": "*",
     "bluebird": "3.7.2",
-    "express-jwt": "6.0.0",
+    "express-jwt": "8.3.0",
     "lodash": "4.17.21",
     "moment": "2.29.2",
     "pubsub-js": "1.9.4"
