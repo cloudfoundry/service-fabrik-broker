@@ -475,7 +475,7 @@ __metadata:
     jsonwebtoken: 9.0.0
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 5.13.9
+    mongoose: 5.13.15
     rxjs: ^5.0.0
     uuid: 8.3.2
   languageName: unknown
@@ -495,7 +495,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
     lodash: 4.17.21
-    mongoose: 5.13.9
+    mongoose: 5.13.15
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -657,7 +657,7 @@ __metadata:
     bluebird: 3.7.2
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 5.13.9
+    mongoose: 5.13.15
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -7557,14 +7557,14 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongodb@npm:3.6.11":
-  version: 3.6.11
-  resolution: "mongodb@npm:3.6.11"
+"mongodb@npm:3.7.3":
+  version: 3.7.3
+  resolution: "mongodb@npm:3.7.3"
   dependencies:
     bl: ^2.2.1
     bson: ^1.1.4
     denque: ^1.4.1
-    optional-require: ^1.0.3
+    optional-require: ^1.1.8
     safe-buffer: ^5.1.2
     saslprep: ^1.0.0
   dependenciesMeta:
@@ -7583,7 +7583,7 @@ fsevents@^1.0.0:
       optional: true
     snappy:
       optional: true
-  checksum: 2d13e576f37657a8f48bd527d99da3478648aa4ae26210a4331d45bff551de8a3d5342dcfb762bd9bda9a904efca169abda6d3c91d60d6baa6118f7452ffda90
+  checksum: cad0b5d06e736123168c1a1ab161c9b52916dac39195abc24e8679ecdae5152d86e923622c17ca048cd249b8f7d9126ebb35b1eb6c9d77064f7db6348db3369f
   languageName: node
   linkType: hard
 
@@ -7607,15 +7607,15 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongoose@npm:5.13.9":
-  version: 5.13.9
-  resolution: "mongoose@npm:5.13.9"
+"mongoose@npm:5.13.15":
+  version: 5.13.15
+  resolution: "mongoose@npm:5.13.15"
   dependencies:
     "@types/bson": 1.x || 4.0.x
     "@types/mongodb": ^3.5.27
     bson: ^1.1.4
     kareem: 2.3.2
-    mongodb: 3.6.11
+    mongodb: 3.7.3
     mongoose-legacy-pluralize: 1.0.2
     mpath: 0.8.4
     mquery: 3.2.5
@@ -7625,7 +7625,7 @@ fsevents@^1.0.0:
     safe-buffer: 5.2.1
     sift: 13.5.2
     sliced: 1.0.1
-  checksum: efb619db6616253ff8381f664b888d801e13a34e986c15d605e370da7ccccd29b6159ac02996f892a7ff882cbd1b4f4c6672f6a985800c858bc7eaffa8913b00
+  checksum: 8bfb2034aa29265d5d78c45d00bdcb6f049ff1b8525609e9c5603437b28f8626aaada733526c3e72cccff9a59bec8b1608e9a2f16fce368dda2d360c999a8d86
   languageName: node
   linkType: hard
 
@@ -8261,12 +8261,12 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"optional-require@npm:^1.0.3":
-  version: 1.1.7
-  resolution: "optional-require@npm:1.1.7"
+"optional-require@npm:^1.1.8":
+  version: 1.1.8
+  resolution: "optional-require@npm:1.1.8"
   dependencies:
     require-at: ^1.0.6
-  checksum: b781f9bc6af3004d4400ae11467614ff95059c546b0bdd68bbd08471cedf1133172eb5c3aad6f896e7ff0eb0bbff91e342b301c7312b59e8c6e9c3889e3ee5b7
+  checksum: 7045ef176a8a2c1730a520c5b75adadf7092ba162d5f567529d02ba3b26e87e710629da56e40cfa58c6029c915d948622a9e6ddceb1befc91bb86eba627d59ee
   languageName: node
   linkType: hard
 
