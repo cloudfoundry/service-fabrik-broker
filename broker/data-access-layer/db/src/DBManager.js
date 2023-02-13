@@ -210,7 +210,7 @@ class DBManager {
           context: context,
           service_id: CONST.FABRIK_INTERNAL_MONGO_DB.SERVICE_ID,
           previous_values: {
-            plan_id: config.mongodb.provision.plan_id,
+            plan_id: (config.mongodb.provision.previous_plan_id === undefined ? config.mongodb.provision.plan_id : config.mongodb.provision.previous_plan_id),
             organization_id: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
             space_id: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID
           },
@@ -219,6 +219,8 @@ class DBManager {
           }
         };
         logger.info('Updating DB Deployment...');
+	logger.info(`previous plan id : ${config.mongodb.provision.previous_plan_id}`);
+	logger.info(`Plan params... ${JSON.stringify(params)}`);
       }
       if (config.mongodb.provision.network_index === undefined) {
         logger.error(`mongodb.provision.network_index is undefined in mongodb configuration. Mongodb ${operation} cannot continue`);
