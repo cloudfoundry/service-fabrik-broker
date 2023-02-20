@@ -17,7 +17,7 @@ broker:
   enable_namespaced_separation: true
   services_namespace_labels:
     # # Note: The labels are igonored if enable_namespaced_separation is false.
-    # app.kubernetes.io/managed-by: Interoperator
+    app.kubernetes.io/managed-by: Interoperator
     # # Try out Pod Security Admission in k8s v1.25
     # pod-security.kubernetes.io/enforce: restricted
     # pod-security.kubernetes.io/enforce-version: v1.25
