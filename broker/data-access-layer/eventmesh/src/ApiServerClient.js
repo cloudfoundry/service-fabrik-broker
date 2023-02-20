@@ -369,7 +369,8 @@ class ApiServerClient {
       kind: CONST.APISERVER.NAMESPACE_OBJECT,
       apiVersion: CONST.APISERVER.NAMESPACE_API_VERSION,
       metadata: {
-        name: name
+        name: name,
+        ...!(_.isEmpty(config.apiserver.services_namespace_labels)) && {labels: _.get(config.apiserver, 'services_namespace_labels')}
       }
     };
     const client = this._getApiClient('', CONST.APISERVER.NAMESPACE_API_VERSION);

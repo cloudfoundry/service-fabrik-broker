@@ -1142,7 +1142,7 @@ describe('eventmesh', () => {
       });
     });
     describe('createNamespace', () => {
-      it('Creates namespace successfully', () => {
+      it('Creates namespace successfully without labels', () => {
         const payload = {
           kind: CONST.APISERVER.NAMESPACE_OBJECT,
           apiVersion: 'v1',
@@ -1167,11 +1167,40 @@ describe('eventmesh', () => {
             name: 'namespace1'
           }
         };
+        config.apiserver.enable_namespaced_separation = true;
         mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload, 409);
         return apiserver.createNamespace('namespace1')
           .catch(err => {
             expect(err.status).to.eql(409);
             verify();
+            config.apiserver.enable_namespaced_separation = false;
+          });
+      });
+      it('Creates namespace successfully with labels', () => {
+        config.apiserver.services_namespace_labels = {
+          'app.kubernetes.io/managed-by': 'Interoperator',
+          'pod-security.kubernetes.io/warn': 'restricted',
+          'pod-security.kubernetes.io/warn-version': 'v1.25'
+        }
+        const payload = {
+          kind: CONST.APISERVER.NAMESPACE_OBJECT,
+          apiVersion: 'v1',
+          metadata: {
+            name: 'namespace1',
+            labels: {
+              'app.kubernetes.io/managed-by': 'Interoperator',
+              'pod-security.kubernetes.io/warn': 'restricted',
+              'pod-security.kubernetes.io/warn-version': 'v1.25'
+            }
+          }
+        };
+        config.apiserver.enable_namespaced_separation = true;
+        mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload);
+        return apiserver.createNamespace('namespace1')
+          .then(res => {
+            expect(res.body).to.eql({});
+            mocks.verify();
+            config.apiserver.enable_namespaced_separation = false;
           });
       });
     });
