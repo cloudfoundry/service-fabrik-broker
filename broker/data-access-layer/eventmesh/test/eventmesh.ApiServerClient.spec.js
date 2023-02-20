@@ -1201,6 +1201,7 @@ describe('eventmesh', () => {
             expect(res.body).to.eql({});
             mocks.verify();
             config.apiserver.enable_namespaced_separation = false;
+            delete config.apiserver.services_namespace_labels;
           });
       });
     });
