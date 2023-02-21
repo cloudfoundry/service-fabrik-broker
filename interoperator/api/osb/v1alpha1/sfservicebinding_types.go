@@ -18,7 +18,10 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -125,4 +128,50 @@ func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) (string, error) {
 		return "", err
 	}
 	return instance.GetClusterID()
+}
+
+// Get Labels converted to string from map[string]string for Metrics
+func (r *SFServiceBinding) GetLabelsForMetrics() string {
+	log := ctrl.Log.WithName("SFServiceBinding:GetLabelsForMetrics")
+	if r == nil {
+		log.V(2).Info("failed to read Labels For Metrics")
+		return ""
+	}
+	log.V(2).Info("Getting Labels converted to string")
+
+	labelsJson := make(map[string]string)
+	labelsJson = r.GetLabels()
+	labelsStrArr := make([]string, 0)
+	for k, v := range labelsJson {
+		labelsStrArr = append(labelsStrArr, fmt.Sprintf("%s:%s", k, v))
+	}
+
+	return strings.Join(labelsStrArr, ",")
+}
+
+func (r *SFServiceBinding) GetLastOperation() string {
+	log := ctrl.Log.WithName("SFServiceBinding")
+	if r == nil {
+		log.V(2).Info("failed to read last operation: instance details are nil")
+		return ""
+	}
+	labels := r.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, exists := labels[constants.LastOperationKey]
+	if !exists {
+		log.V(2).Info("failed to read last operation: last operation not found")
+		return ""
+	}
+	return lastOperation
+}
+
+func (r *SFServiceBinding) GetDeletionTimestampForMetrics() string {
+	log := ctrl.Log.WithName("SFServiceBinding")
+	if r == nil || r.GetDeletionTimestamp() == nil {
+		log.V(2).Info("Failed to read deletion timestamp OR not set deletion timestamp yet. Ignore if deletion is not called yet.")
+		return ""
+	}
+	return r.GetDeletionTimestamp().String()
 }

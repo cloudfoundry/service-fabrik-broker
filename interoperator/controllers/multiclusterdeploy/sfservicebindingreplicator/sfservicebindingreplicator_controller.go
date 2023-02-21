@@ -54,6 +54,12 @@ var (
 			"binding_id",
 			// the instance this binding belongs to
 			"instance_id",
+			//"labels",
+			"creation_timestamp",
+			"deletion_timestamp",
+			"state",
+			"sf_namespace",
+			//"last_operation",
 		},
 	)
 )
@@ -91,17 +97,23 @@ func (r *BindingReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	bindingID := binding.GetName()
 	state := binding.GetState()
 	instanceID := binding.Spec.InstanceID
+	//labelsForMetrics := binding.GetLabelsForMetrics()
+	creationTimestamp := binding.GetCreationTimestamp().String()
+	deletionTimestamp := binding.GetDeletionTimestampForMetrics()
+	sfNamespace := binding.GetNamespace()
+	//lastOperation := binding.GetLastOperation()
+
 	switch state {
 	case "succeeded":
-		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(0)
+		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(0)
 	case "failed":
-		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(1)
+		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(1)
 	case "in progress":
-		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(2)
+		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(2)
 	case "in_queue":
 	case "update":
 	case "delete":
-		bindingsMetric.WithLabelValues(bindingID, instanceID).Set(3)
+		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(3)
 	}
 
 	clusterID, err := binding.GetClusterID(r)

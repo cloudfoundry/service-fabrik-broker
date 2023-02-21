@@ -52,6 +52,15 @@ var (
 		[]string{
 			// What was the state of the instance
 			"instance_id",
+			"state",
+			"creation_timestamp",
+			"deletion_timestamp",
+			"service_id",
+			"plan_id",
+			"organization_guid",
+			"space_guid",
+			"sf_namespace",
+			"last_operation",
 		},
 	)
 )
@@ -88,17 +97,27 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	instanceID := instance.GetName()
 	state := instance.GetState()
+	//labelsForMetrics := instance.GetLabelsForMetrics()
+	creationTimestamp := instance.GetCreationTimestamp().String()
+	deletionTimestamp := instance.GetDeletionTimestampForMetrics()
+	serviceId := instance.Spec.ServiceID
+	planId := instance.Spec.PlanID
+	organizationGuid := instance.Spec.OrganizationGUID
+	spaceGuid := instance.Spec.SpaceGUID
+	sfNamespace := instance.GetNamespace()
+	lastOperation := instance.GetLastOperation()
+
 	switch state {
 	case "succeeded":
-		instancesMetric.WithLabelValues(instanceID).Set(0)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(0)
 	case "failed":
-		instancesMetric.WithLabelValues(instanceID).Set(1)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(1)
 	case "in progress":
-		instancesMetric.WithLabelValues(instanceID).Set(2)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(2)
 	case "in_queue":
 	case "update":
 	case "delete":
-		instancesMetric.WithLabelValues(instanceID).Set(3)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(3)
 	}
 
 	clusterID, err := instance.GetClusterID()
