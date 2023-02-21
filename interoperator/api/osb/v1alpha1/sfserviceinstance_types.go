@@ -128,7 +128,7 @@ func (r *SFServiceInstance) GetLabelsForMetrics() string {
 	log := ctrl.Log.WithName("SFServiceInstance:GetLabelsForMetrics")
 	if r == nil {
 		log.V(2).Info("failed to read Labels For Metrics")
-		return "", nil
+		return ""
 	}
 	log.V(2).Info("Getting Labels converted to string")
 
