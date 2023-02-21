@@ -109,9 +109,18 @@ defaults: &defaults
     mtls:
       enabled: {{ .Values.broker.quota.mtls.enabled }}
       client_id: {{ .Values.broker.quota.mtls.client_id }}
-    {{- with .Values.broker.quota.regions }}
     regions:
-      {{- toYaml . | nindent 6 }}
+    {{- range $k, $v := .Values.broker.quota.regions }}
+      {{ $k }}:
+    {{- range $kk, $vv := $v }}
+    {{- if and (ne $kk "username") (ne $kk "password") }}
+    {{- if eq $kk "mtls" }}
+        {{ $kk }}: {{ $vv | toYaml | nindent 10 }}
+    {{- else }}
+        {{ $kk }}: {{ $vv }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
     {{- end }}
 
 development: &development
