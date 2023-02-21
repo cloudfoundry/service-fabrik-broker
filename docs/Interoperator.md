@@ -76,6 +76,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   - [Default behavior for interoperator HPA](#default-behavior-for-interoperator-hpa)
   - [Scaling Policies](#scaling-policies)
   - [Stabilization Window](#stabilization-window)
+- [Logging](#logging)
 
 
 ## Context
@@ -988,3 +989,17 @@ behavior:
       value: 30
       periodSeconds: 30
 ```
+
+## Logging  
+
+### Interoperator
+
+In interoperator we are using `zap` (i.e. sigs.k8s.io/controller-runtime/pkg/log/zap) plugin for logging. The log level, stacktrace level and output format can be changed/configured from [values.yaml](../helm-charts/interoperator/values.yaml).
+* interoperator.log_level: To set log level. Allowed values are `info`, `error`, `debug` or any integer value > 0 (i.e. 1 or 2 or 3). Default value is `info`.  
+* interoperator.log_output_format: Log Output format or Encoder. Allowed values are `json` or `console`. Default value is `json`.  
+* interoperator.log_stacktrace_level: Allowed values are `info`, `error` or `panic`. Default value is `error`.   
+
+### Broker  
+
+For Broker we can change log level from values.yaml file.  
+* broker.log_level: Allowed values are `info`, `error` or `debug`. Default value is `info`. 

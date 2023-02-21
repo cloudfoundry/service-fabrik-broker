@@ -25,7 +25,7 @@
     "@sf/provisioner-services": "*",
     "@sf/service-agent": "*",
     "bluebird": "3.7.2",
-    "express-jwt": "6.0.0",
+    "express-jwt": "8.3.0",
     "js-yaml": "4.1.0",
     "json-stream": "^1.0.0",
     "lodash": "4.17.21",

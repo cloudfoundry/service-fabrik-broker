@@ -86,6 +86,20 @@ spec:
               name: {{ .Release.Name }}-creds
               key: quota_password
         {{- end }}
+        {{- range $k, $v := .Values.broker.quota.regions }}
+        {{- if eq $v.mtls.enabled false }}
+        - name: {{ print "REGION_" }}{{ upper $v.name | replace "-" "_" }}{{ print "_USERNAME" }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-creds
+              key: {{ print "region_" }}{{ $v.name }}{{ print "_username" }}
+        - name: {{ print "REGION_" }}{{ upper $v.name | replace "-" "_" }}{{ print "_PASSWORD" }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-creds
+              key: {{ print "region_" }}{{ $v.name }}{{ print "_password" }}
+        {{- end }}
+        {{- end }}
         volumeMounts:
         {{- if not (empty .Values.broker.quota.mtls.cert_secret) }}
         - name: 'cert-secret'
