@@ -15,6 +15,12 @@ broker:
   password: secret
   log_level: info
   enable_namespaced_separation: true
+  services_namespace_labels:
+    # # Note: The labels are igonored if enable_namespaced_separation is false.
+    app.kubernetes.io/managed-by: Interoperator
+    # # Try out Pod Security Admission in k8s v1.25
+    # pod-security.kubernetes.io/enforce: restricted
+    # pod-security.kubernetes.io/enforce-version: v1.25
   services_namespace: "services"
   allow_concurrent_operations: true
   allow_concurrent_binding_operations: true
