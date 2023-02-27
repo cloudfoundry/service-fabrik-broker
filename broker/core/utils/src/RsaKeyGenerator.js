@@ -44,8 +44,8 @@ class RsaKeyGenerator {
   runSshKeygen() {
     return new Promise(resolve => {
       const keygen = spawn('ssh-keygen', [
-        '-t', 'rsa',
-        '-b', 2048,
+        '-t', 'ecdsa',
+        '-b', 256,
         '-C', this.user,
         '-f', this.location,
         '-m', 'pem',
