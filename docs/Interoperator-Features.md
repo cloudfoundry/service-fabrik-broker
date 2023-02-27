@@ -127,6 +127,22 @@ $ helm install --set cluster.host=xxxx \
      --namespace interoperator --wait interoperator interoperator
 ```
 
+## Add Custom Labels to all the Service Instance Namespace
+
+You can add custom labels to the namespace created for the service instance. This custom labels can also be use to exploit `Pod Security Admission` feature of Kubernetes. Below is the example shows how you can add labels,
+```
+In Values.yaml, you can find broker.services_namespace_labels where you can add labels of your choice -
+
+broker: 
+  enable_namespaced_separation: true
+  services_namespace_labels: 
+  	# Note: The labels are igonored if enable_namespaced_separation is false.
+	app.kubernetes.io/managed-by: Interoperator
+	# Try out Pod Security Admission in k8s v1.25
+	# pod-security.kubernetes.io/warn: restricted
+        # pod-security.kubernetes.io/warn-version: v1.25
+ ```
+ 
 ## Service instance plan upgrade
 
 This feature controls how a user request for a service instance update (typically `cf update-service mydb -p large`) is validated.
