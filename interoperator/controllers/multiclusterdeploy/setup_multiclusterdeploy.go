@@ -27,6 +27,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfplanoffboarding"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingmetrics"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancemetrics"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
@@ -65,6 +66,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("binding"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create binding replicator", "controller", "BindingReplicator")
+		return err
+	}
+
+	if err = (&sfservicebindingmetrics.BindingMetrics{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("metrics").WithName("binding"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create binding metrics", "controller", "BindingMetrics")
 		return err
 	}
 

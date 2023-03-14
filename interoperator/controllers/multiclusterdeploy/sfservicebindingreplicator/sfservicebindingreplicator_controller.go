@@ -28,7 +28,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,31 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-)
-
-var (
-	bindingsMetric = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name:      "state",
-			Namespace: "interoperator",
-			Subsystem: "service_bindings",
-			Help:      "State of service binding. 0 - succeeded, 1 - failed, 2 - in progress, 3 - in_queue/update/delete",
-		},
-		[]string{
-			// What was the state of the binding
-			"binding_id",
-			// the instance this binding belongs to
-			"instance_id",
-			//"labels",
-			"creation_timestamp",
-			"deletion_timestamp",
-			"state",
-			"sf_namespace",
-			//"last_operation",
-		},
-	)
 )
 
 var getWatchChannel = watchmanager.GetWatchChannel
@@ -87,7 +62,6 @@ func (r *BindingReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			bindingsMetric.WithLabelValues(req.NamespacedName.Name, "").Set(4)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -96,25 +70,6 @@ func (r *BindingReplicator) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	bindingID := binding.GetName()
 	state := binding.GetState()
-	instanceID := binding.Spec.InstanceID
-	//labelsForMetrics := binding.GetLabelsForMetrics()
-	creationTimestamp := binding.GetCreationTimestamp().String()
-	deletionTimestamp := binding.GetDeletionTimestampForMetrics()
-	sfNamespace := binding.GetNamespace()
-	//lastOperation := binding.GetLastOperation()
-
-	switch state {
-	case "succeeded":
-		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(0)
-	case "failed":
-		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(1)
-	case "in progress":
-		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(2)
-	case "in_queue":
-	case "update":
-	case "delete":
-		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(3)
-	}
 
 	clusterID, err := binding.GetClusterID(r)
 	if err != nil {
@@ -394,8 +349,6 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
-
-	metrics.Registry.MustRegister(bindingsMetric)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_binding").
