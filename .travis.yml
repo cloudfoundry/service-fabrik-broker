@@ -65,7 +65,7 @@ matrix:
         depth: 3
       before_install:
         - go get golang.org/x/lint/golint
-        - go install honnef.co/go/tools/cmd/staticcheck@latest
+        - go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
       install:
         - cd interoperator
         - env GO111MODULE=on go mod download
