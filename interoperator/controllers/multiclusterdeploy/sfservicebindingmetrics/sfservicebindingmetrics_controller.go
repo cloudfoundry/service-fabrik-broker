@@ -41,7 +41,7 @@ var (
 		prometheus.GaugeOpts{
 			Name:      "state",
 			Namespace: "interoperator",
-			Subsystem: "service_bindings",
+			Subsystem: "service_bindings_metrics",
 			Help:      "State of service binding. 0 - succeeded, 1 - failed, 2 - in progress, 3 - in_queue/update/delete",
 		},
 		[]string{
@@ -81,7 +81,7 @@ func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			bindingsMetric.WithLabelValues(req.NamespacedName.Name, "").Set(4)
+			bindingsMetric.WithLabelValues(req.NamespacedName.Name, "", "", "", "", "").Set(4)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.

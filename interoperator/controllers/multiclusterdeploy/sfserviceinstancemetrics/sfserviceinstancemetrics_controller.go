@@ -41,7 +41,7 @@ var (
 		prometheus.GaugeOpts{
 			Name:      "state",
 			Namespace: "interoperator",
-			Subsystem: "service_instances",
+			Subsystem: "service_instances_metrics",
 			Help:      "State of service instance. 0 - succeeded, 1 - failed, 2 - in progress, 3 - in_queue/update/delete, 4 - gone",
 		},
 		[]string{
