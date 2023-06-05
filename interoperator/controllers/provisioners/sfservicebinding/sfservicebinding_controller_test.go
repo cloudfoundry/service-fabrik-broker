@@ -87,7 +87,6 @@ var binding = &osbv1alpha1.SFServiceBinding{
 var c client.Client
 
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: constants.InteroperatorNamespace}}
 
 const timeout = time.Second * 5
 

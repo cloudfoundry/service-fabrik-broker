@@ -37,12 +37,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var c, c2 client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
 var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
