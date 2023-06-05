@@ -82,12 +82,13 @@ if (process.env.QUOTA_PASSWORD) {
 }
 
 _.each(process.env, (value, key) => {
-  if(key.substring(0,7) == "REGION_"){
-      let region_info=key.split('_');
-      if(region_info.at(-1)=="USERNAME")
-        config.quota.regions[region_info.slice(1,-1).join('-').toLowerCase()]['username']=process.env[key]
-      else
-        config.quota.regions[region_info.slice(1,-1).join('-').toLowerCase()]['password']=process.env[key]
+  if(key.substring(0,7) == 'REGION_') {
+    let region_info = key.split('_');
+    if(region_info.at(-1) == 'USERNAME') {
+      config.quota.regions[region_info.slice(1,-1).join('-').toLowerCase()].username = process.env[key];
+    } else {
+      config.quota.regions[region_info.slice(1,-1).join('-').toLowerCase()].password = process.env[key];
+    }
   }
 });
 

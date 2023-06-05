@@ -58,7 +58,12 @@ var _ = Describe("Event", func() {
 		ar             v1beta1.AdmissionReview
 		arDockerCreate v1beta1.AdmissionReview
 	)
+
 	dat, err := os.ReadFile("test_resources/admission_request.json")
+	if err != nil {
+		panic(err)
+	}
+
 	dockerCreateAr, err := os.ReadFile("test_resources/admission_request_docker_create.json")
 	if err != nil {
 		panic(err)

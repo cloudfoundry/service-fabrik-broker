@@ -32,13 +32,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var c client.Client
 
 var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
-var expectedRequest = reconcile.Request{NamespacedName: serviceKey}
 
 const timeout = time.Second * 5
 
