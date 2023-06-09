@@ -40,6 +40,7 @@
     "@yarnpkg/parsers": "^2.3.0",
     "babel-cli": "^6.9.0",
     "babel-eslint": "10.1.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chai": "^4.0.0",
     "chai-http": "^2.0.1",
     "coveralls": "^3.0.0",

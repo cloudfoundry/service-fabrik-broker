@@ -59,6 +59,12 @@ defaults: &defaults
     getConfigInCluster: true
     isServiceDefinitionAvailableOnApiserver: true
     enable_namespaced_separation: {{ .Values.broker.enable_namespaced_separation }}
+    {{- if .Values.broker.services_namespace_labels }}
+    services_namespace_labels:
+    {{- range $k, $v := .Values.broker.services_namespace_labels }}
+      {{ $k }}: {{ $v }}
+    {{- end }}
+    {{- end }}
     services_namespace: {{ .Values.broker.services_namespace }}
     crds:
       "osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml": {{ (.Files.Get "crds/sfserviceinstance.yaml") | b64enc }}

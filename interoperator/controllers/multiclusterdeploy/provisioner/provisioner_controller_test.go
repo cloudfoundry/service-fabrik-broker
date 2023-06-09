@@ -44,11 +44,7 @@ import (
 
 var c client.Client
 
-var expectedRequest = ctrlrun.Request{NamespacedName: types.NamespacedName{Name: "1", Namespace: constants.InteroperatorNamespace}}
-
 const timeout = time.Second * 5
-
-// var expectedRequest = reconcile.Request{NamespacedName: "1"}
 
 var clusterInstance = &resourcev1alpha1.SFCluster{
 	ObjectMeta: metav1.ObjectMeta{

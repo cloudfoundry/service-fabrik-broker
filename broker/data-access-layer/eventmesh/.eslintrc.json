@@ -14,7 +14,11 @@
     "extends": "eslint:recommended",
     "parser": "babel-eslint",
     "parserOptions": {
-      "ecmaVersion": 2017,
+      "ecmaFeatures": {
+        "jsx": true,
+        "experimentalObjectRestSpread": true
+      },
+      "ecmaVersion": 2018,
       "sourceType": "module"
     },
     "plugins": ["mocha", "prettier"],

@@ -74,7 +74,6 @@ var instance = &osbv1alpha1.SFServiceInstance{
 }
 
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: constants.InteroperatorNamespace}
-var expectedRequest = reconcile.Request{NamespacedName: instanceKey}
 
 func setupInteroperatorConfig(g *gomega.GomegaWithT) {
 	data := make(map[string]string)

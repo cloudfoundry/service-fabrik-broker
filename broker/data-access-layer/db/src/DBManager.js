@@ -26,6 +26,10 @@ const { BasePlatformManager } = require('@sf/platforms');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
 const dbConnectionManager = require('./DbConnectionManager');
 
+const mongodbPlans = {
+  'mongodb3.4':  '3ec2dfd3-53b0-4062-83de-4988519f2f6c',
+  'mongodb4.0': '46a45099-b80a-4d39-8f63-ef2480329a29'
+};
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
  * or it can be configured to provision one of the mongodb from the catalog by specifying the plan id via 'config.mongodb.provision...'
@@ -157,15 +161,16 @@ class DBManager {
       }
       logger.info(`DB ${operation} initiated for:${config.mongodb.deployment_name} > plan: ${config.mongodb.provision.plan_id}`);
       return this.director
-        .getDeployment(config.mongodb.deployment_name)
-        .then(deployment => {
-          logger.info(`MongoDB deployment - ${JSON.stringify(deployment)}`);
+        .getDeploymentManifest(config.mongodb.deployment_name)
+        .then(manifest => {
+          logger.info(`MongoDB deployment - ${JSON.stringify(manifest)}`);
           if (createIfNotPresent) {
             logger.error(`Trying to create exisiting ${config.mongodb.deployment_name} once again. Run deployment with mongodb.update flag instead of create flag`);
             // DB already exists. Ignore the create request
             throw new BadRequest('MongoDB already exists. Use update instead of create operation');
           }
-          return this.dbCreateUpdate(createIfNotPresent);
+          const previousPlanId = this.findPreviousPlanId(manifest);
+          return this.dbCreateUpdate(createIfNotPresent, previousPlanId);
         })
         .catch(NotFound, err => {
           // Explicit check to first retrieve DB Deployment. In production, only once in Fabrik's lifetime DB is to be provisioined.
@@ -183,7 +188,8 @@ class DBManager {
     });
   }
 
-  dbCreateUpdate(createIfNotPresent) {
+  dbCreateUpdate(createIfNotPresent, previousPlanId) {
+    logger.info(`MongoDB previous plan id - ${previousPlanId}`);
     return Promise.try(() => {
       let params;
       this.dbState = CONST.DB.STATE.CREATE_UPDATE_IN_PROGRESS;
@@ -210,7 +216,7 @@ class DBManager {
           context: context,
           service_id: CONST.FABRIK_INTERNAL_MONGO_DB.SERVICE_ID,
           previous_values: {
-            plan_id: (config.mongodb.provision.previous_plan_id === undefined ? config.mongodb.provision.plan_id : config.mongodb.provision.previous_plan_id),
+            plan_id: (previousPlanId === undefined ? config.mongodb.provision.plan_id : previousPlanId),
             organization_id: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
             space_id: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID
           },
@@ -219,8 +225,7 @@ class DBManager {
           }
         };
         logger.info('Updating DB Deployment...');
-	logger.info(`previous plan id : ${config.mongodb.provision.previous_plan_id}`);
-	logger.info(`Plan params... ${JSON.stringify(params)}`);
+        logger.info(`Plan params... ${JSON.stringify(params)}`);
       }
       if (config.mongodb.provision.network_index === undefined) {
         logger.error(`mongodb.provision.network_index is undefined in mongodb configuration. Mongodb ${operation} cannot continue`);
@@ -335,6 +340,19 @@ class DBManager {
       url: this.dbUrl || ''
     };
   }
+
+  findPreviousPlanId(manifest) {
+    const mongodbVersion = _.chain(manifest)
+      .get(['instance_groups', '0', 'jobs'])
+      .find(job => job.release === 'mongodb')
+      .get('name')
+      .trim()
+      .value();
+    logger.info(`current mongodbPlan: ${mongodbVersion}`);
+    return _.get(mongodbPlans, mongodbVersion);
+  }
 }
+
+
 
 module.exports = DBManager;
