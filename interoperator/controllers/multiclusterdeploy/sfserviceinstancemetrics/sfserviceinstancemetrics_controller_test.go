@@ -29,7 +29,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	//apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -37,12 +37,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	//"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var c, c2 client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
+// var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
 var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
@@ -164,7 +164,7 @@ func TestReconcile(t *testing.T) {
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	mockClusterRegistry.EXPECT().GetClient("2").Return(c2, nil).AnyTimes()
 
-	controller := &InstanceReplicator{
+	controller := &InstanceMetrics{
 		Client:          mgr.GetClient(),
 		Log:             ctrlrun.Log.WithName("mcd").WithName("metrics").WithName("instance"),
 		clusterRegistry: mockClusterRegistry,
@@ -379,7 +379,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
-func TestInstanceReplicator_setInProgress(t *testing.T) {
+/*func TestInstanceMetrics_setInProgress(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -412,7 +412,7 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	r := &InstanceReplicator{
+	r := &InstanceMetrics{
 		Client:          c,
 		Log:             ctrlrun.Log.WithName("mcd").WithName("metrics").WithName("instance"),
 		clusterRegistry: nil,
@@ -518,8 +518,8 @@ func TestInstanceReplicator_setInProgress(t *testing.T) {
 				defer tt.cleanup()
 			}
 			if err := r.setInProgress(tt.args.instance, tt.args.state); (err != nil) != tt.wantErr {
-				t.Errorf("InstanceReplicator.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("InstanceMetrics.setInProgress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
-}
+}*/

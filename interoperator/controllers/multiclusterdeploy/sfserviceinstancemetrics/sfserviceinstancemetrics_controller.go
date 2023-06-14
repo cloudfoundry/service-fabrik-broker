@@ -131,6 +131,56 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 
+/*func (r *InstanceMetrics) setInProgress(instance *osbv1alpha1.SFServiceInstance, state string) error {
+	instanceID := instance.GetName()
+	clusterID, _ := instance.GetClusterID()
+	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+
+	ctx := context.Background()
+	log := r.Log.WithValues("instanceID", instanceID, "clusterID", clusterID)
+
+	err := r.Get(ctx, types.NamespacedName{
+		Name:      instanceID,
+		Namespace: instance.GetNamespace(),
+	}, instance)
+	if err != nil {
+		log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "state", state,
+			"lastOperation", lastOperation)
+		return err
+	}
+
+	curentState := instance.GetState()
+	if curentState != state {
+		log.Info("Error while trying to set in progress. state mismatch", "state", state,
+			"currentState", curentState, "lastOperation", lastOperation)
+		// Will get requeued since a change has happened
+		return nil
+	}
+	instance.SetState("in progress")
+	labels = instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[constants.LastOperationKey] = state
+	instance.SetLabels(labels)
+	err = r.Update(ctx, instance)
+	if err != nil {
+		log.Error(err, "Updating status to in progress failed", "state", state,
+			"lastOperation", lastOperation, "newLastOperation", state)
+		return err
+	}
+	log.Info("Updated status to in progress", "state", state,
+		"lastOperation", lastOperation, "newLastOperation", state)
+	return nil
+}*/
+
 // SetupWithManager registers the MCD Instance replicator with manager
 // and setups the watches.
 func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {

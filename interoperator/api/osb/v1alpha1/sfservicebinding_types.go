@@ -139,8 +139,8 @@ func (r *SFServiceBinding) GetLabelsForMetrics() string {
 	}
 	log.V(2).Info("Getting Labels converted to string")
 
-	labelsJson := make(map[string]string)
-	labelsJson = r.GetLabels()
+	//labelsJson := make(map[string]string)
+	labelsJson := r.GetLabels()
 	labelsStrArr := make([]string, 0)
 	for k, v := range labelsJson {
 		labelsStrArr = append(labelsStrArr, fmt.Sprintf("%s:%s", k, v))
