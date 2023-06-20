@@ -61,7 +61,6 @@ var (
 
 var getWatchChannel = watchmanager.GetWatchChannel
 
-// BindingReplicator replicates sfserviceinstance
 type BindingMetrics struct {
 	client.Client
 	Log             logr.Logger
@@ -69,12 +68,9 @@ type BindingMetrics struct {
 	cfgManager      config.Config
 }
 
-// Reconcile reads that state of the cluster for a SFServiceInstanceReplicator object and makes changes based on the state read
-// and what is in the SFServiceInstanceReplicator.Spec
 func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("bindingMetrics", req.NamespacedName)
 
-	// Fetch the SFServiceInstanceReplicator instance
 	binding := &osbv1alpha1.SFServiceBinding{}
 	err := r.Get(ctx, req.NamespacedName, binding)
 	if err != nil {
