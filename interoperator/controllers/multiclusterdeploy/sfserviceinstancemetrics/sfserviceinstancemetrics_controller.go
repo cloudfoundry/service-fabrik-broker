@@ -71,8 +71,6 @@ type InstanceMetrics struct {
 	cfgManager      config.Config
 }
 
-// Reconcile reads that state of the cluster for a SFServiceInstance object on master and sister cluster
-// and replicates it.
 func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("InstanceMetrics", req.NamespacedName)
 
