@@ -99,6 +99,7 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 	case "update":
 	case "delete":
 		instancesMetric.WithLabelValues(instanceID).Set(3)
+
 	}
 
 	clusterID, err := instance.GetClusterID()

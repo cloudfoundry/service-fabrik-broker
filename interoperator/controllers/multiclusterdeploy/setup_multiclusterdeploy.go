@@ -27,7 +27,9 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/provisioner"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfclusterreplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfplanoffboarding"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingmetrics"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfservicebindingreplicator"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancemetrics"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/sfserviceinstancereplicator"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,11 +69,27 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	if err = (&sfservicebindingmetrics.BindingMetrics{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("metrics").WithName("binding"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create binding metrics", "controller", "BindingMetrics")
+		return err
+	}
+
 	if err = (&sfserviceinstancereplicator.InstanceReplicator{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("mcd").WithName("replicator").WithName("instance"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create instance replicator", "controller", "InstanceReplicator")
+		return err
+	}
+
+	if err = (&sfserviceinstancemetrics.InstanceMetrics{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("mcd").WithName("metrics").WithName("instance"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create instance metrics", "controller", "InstanceMetrics")
 		return err
 	}
 
