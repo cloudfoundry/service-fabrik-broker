@@ -15,11 +15,7 @@ interoperator_cluster_allocatable | cluster <br> type | Allocatable resources pa
 interoperator_service_bindings_state | binding_id <br> instance_id | State of the service binding.<br> 0 - succeeded <br> 1 - failed <br> 2 - in progress <br> 3 - in_queue/update/delete <br> 4 - gone
 
 From Interoperator release v0.25.1 there are 2 new controllers added to push metrics for service instance and binding calls.  
-The 2 new controllers are  
-* sfserviceinstancemetrics
-* sfservicebindingmetrics
-
-Details of new metrics from these 2 new controllers are describe below  
+One may view more detailed information of the instances and bindings using the following metrics.  
 
 Metric | Labels | Description
 --- | --- | ---
