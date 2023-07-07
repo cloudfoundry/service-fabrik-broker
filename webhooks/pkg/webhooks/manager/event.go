@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	instanceclient "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/client/clientset/versioned/typed/instance/v1alpha1"
@@ -230,8 +231,10 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 		if err = e.validateOptions(oldAppliedOptions); err != nil {
 			return nil, err
 		}
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.UpdateEvent))
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.UpdateEvent))
+		// Sleep for 1 ms to make sure that timestamp of both stop and start events are not same.
+                time.Sleep(1 * time.Millisecond)
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.UpdateEvent))
 	case c.CreateEvent:
 		if err = e.validateOptions(options); err != nil {
 			return nil, err
