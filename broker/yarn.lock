@@ -475,7 +475,7 @@ __metadata:
     jsonwebtoken: 9.0.0
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 5.13.9
+    mongoose: 5.13.20
     rxjs: ^5.0.0
     uuid: 8.3.2
   languageName: unknown
@@ -495,7 +495,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
     lodash: 4.17.21
-    mongoose: 5.13.9
+    mongoose: 5.13.20
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -657,7 +657,7 @@ __metadata:
     bluebird: 3.7.2
     lodash: 4.17.21
     moment: 2.29.2
-    mongoose: 5.13.9
+    mongoose: 5.13.20
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -2048,6 +2048,23 @@ __metadata:
   dependencies:
     babel-runtime: ^6.22.0
   checksum: 9a04e1b86bf68f0469efc7d09d04dbcd69d386ae0347d71c67b8867d6763f0b46616856ca3669b982e9e000642b0546271ecda51c1e1a321fc8cf179ad6d65ad
+  languageName: node
+  linkType: hard
+
+"babel-plugin-syntax-object-rest-spread@npm:^6.8.0":
+  version: 6.13.0
+  resolution: "babel-plugin-syntax-object-rest-spread@npm:6.13.0"
+  checksum: 459844d1a89dfe580876daa6c8be3f120931db2705cfc32ffacaa93442ca8036e38ad3f687fc889e9cd6e96f51d83cb4b520c063d8f12223baf6f8a34a07e4cc
+  languageName: node
+  linkType: hard
+
+"babel-plugin-transform-object-rest-spread@npm:^6.26.0":
+  version: 6.26.0
+  resolution: "babel-plugin-transform-object-rest-spread@npm:6.26.0"
+  dependencies:
+    babel-plugin-syntax-object-rest-spread: ^6.8.0
+    babel-runtime: ^6.26.0
+  checksum: 1d8ff820576afd78850081dc71e36f77be08484b502a8fe87b959bad4463581bd0731c605b09307cd3ffabeb372c70524c0f8a303dc99c4d15085f84c06f26e3
   languageName: node
   linkType: hard
 
@@ -7557,14 +7574,14 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongodb@npm:3.6.11":
-  version: 3.6.11
-  resolution: "mongodb@npm:3.6.11"
+"mongodb@npm:3.7.4":
+  version: 3.7.4
+  resolution: "mongodb@npm:3.7.4"
   dependencies:
     bl: ^2.2.1
     bson: ^1.1.4
     denque: ^1.4.1
-    optional-require: ^1.0.3
+    optional-require: ^1.1.8
     safe-buffer: ^5.1.2
     saslprep: ^1.0.0
   dependenciesMeta:
@@ -7583,7 +7600,7 @@ fsevents@^1.0.0:
       optional: true
     snappy:
       optional: true
-  checksum: 2d13e576f37657a8f48bd527d99da3478648aa4ae26210a4331d45bff551de8a3d5342dcfb762bd9bda9a904efca169abda6d3c91d60d6baa6118f7452ffda90
+  checksum: 1486591506b2ed989f21c0aa57bf4a5534d80c0b338616f51246c0ada3682ba3a0f19859de55d2e1caca45bd873f1a6c6c37ff6c91b6e74c31544653df1faa72
   languageName: node
   linkType: hard
 
@@ -7607,15 +7624,15 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"mongoose@npm:5.13.9":
-  version: 5.13.9
-  resolution: "mongoose@npm:5.13.9"
+"mongoose@npm:5.13.20":
+  version: 5.13.20
+  resolution: "mongoose@npm:5.13.20"
   dependencies:
     "@types/bson": 1.x || 4.0.x
     "@types/mongodb": ^3.5.27
     bson: ^1.1.4
     kareem: 2.3.2
-    mongodb: 3.6.11
+    mongodb: 3.7.4
     mongoose-legacy-pluralize: 1.0.2
     mpath: 0.8.4
     mquery: 3.2.5
@@ -7625,7 +7642,7 @@ fsevents@^1.0.0:
     safe-buffer: 5.2.1
     sift: 13.5.2
     sliced: 1.0.1
-  checksum: efb619db6616253ff8381f664b888d801e13a34e986c15d605e370da7ccccd29b6159ac02996f892a7ff882cbd1b4f4c6672f6a985800c858bc7eaffa8913b00
+  checksum: 5ed5fc3a42b400e26f9cf8543f23ada7bd1da94ae30dbe30f9954de3f1404036910821b016ec0e569a2e9d01481384c7baac1fbaf03d39cdf54b960eac07b359
   languageName: node
   linkType: hard
 
@@ -8261,12 +8278,12 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"optional-require@npm:^1.0.3":
-  version: 1.1.7
-  resolution: "optional-require@npm:1.1.7"
+"optional-require@npm:^1.1.8":
+  version: 1.1.8
+  resolution: "optional-require@npm:1.1.8"
   dependencies:
     require-at: ^1.0.6
-  checksum: b781f9bc6af3004d4400ae11467614ff95059c546b0bdd68bbd08471cedf1133172eb5c3aad6f896e7ff0eb0bbff91e342b301c7312b59e8c6e9c3889e3ee5b7
+  checksum: 7045ef176a8a2c1730a520c5b75adadf7092ba162d5f567529d02ba3b26e87e710629da56e40cfa58c6029c915d948622a9e6ddceb1befc91bb86eba627d59ee
   languageName: node
   linkType: hard
 
@@ -9977,6 +9994,7 @@ resolve@^1.15.1:
     "@yarnpkg/parsers": ^2.3.0
     babel-cli: ^6.9.0
     babel-eslint: 10.1.0
+    babel-plugin-transform-object-rest-spread: ^6.26.0
     chai: ^4.0.0
     chai-http: ^2.0.1
     coveralls: ^3.0.0
