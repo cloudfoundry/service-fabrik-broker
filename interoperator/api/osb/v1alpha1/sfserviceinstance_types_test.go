@@ -203,7 +203,6 @@ func TestSFServiceInstance_GetLabelsForMetrics(t *testing.T) {
 				Status:     tt.fields.Status,
 			}
 			got := r.GetLabelsForMetrics()
-			t.Logf("SFServiceInstance.GetLabelsForMetrics() = %v, want %v", got, tt.want)
 			if got != tt.want {
 				t.Errorf("SFServiceInstance.GetLabelsForMetrics() = %v, want %v", got, tt.want)
 			}
@@ -248,7 +247,6 @@ func TestSFServiceInstance_GetLastOperation(t *testing.T) {
 				Status:     tt.fields.Status,
 			}
 			got := r.GetLastOperation()
-			t.Logf("SFServiceInstance.GetLastOperation() = %v, want %v", got, tt.want)
 			if got != tt.want {
 				t.Errorf("SFServiceInstance.GetLastOperation() = %v, want %v", got, tt.want)
 			}
@@ -257,28 +255,30 @@ func TestSFServiceInstance_GetLastOperation(t *testing.T) {
 	}
 }
 
-/*func TestSFServiceInstance_GetDeletionTimestampForMetrics(t *testing.T) {
+func TestSFServiceInstance_GetDeletionTimestampForMetrics(t *testing.T) {
 	type fields struct {
 		TypeMeta   metav1.TypeMeta
 		ObjectMeta metav1.ObjectMeta
 		Spec       SFServiceInstanceSpec
 		Status     SFServiceInstanceStatus
 	}
+
+	//deletionTimestampTest, _ := time.Parse("2009-11-17T20:34:58Z", "2009-11-17T20:34:58Z")
 	tests := []struct {
 		name   string
 		fields fields
 		want   string
 	}{
-		{
+		/*{
 			name: "If DeletionTimestamp is set",
 			fields: fields{
-				ObjectMeta: map[string]interface{}{
-					"deletionTimestamp": "2010-11-10T23:00:00Z",
-					//DeletionTimestamp: map[string]interface{}{"2009-11-17T20:34:58Z"},
+				ObjectMeta: metav1.ObjectMeta{
+					//"deletionTimestamp": "2010-11-10T23:00:00Z",
+					DeletionTimestamp: (deletionTimestampTest),
 				},
 			},
 			want: "2009-11-17T20:34:58Z",
-		},
+		},*/
 		{
 			name:   "If DeletionTimestamp is not set",
 			fields: fields{},
@@ -301,7 +301,7 @@ func TestSFServiceInstance_GetLastOperation(t *testing.T) {
 
 		})
 	}
-}*/
+}
 
 func TestSFServiceInstance_SetState(t *testing.T) {
 	type fields struct {
