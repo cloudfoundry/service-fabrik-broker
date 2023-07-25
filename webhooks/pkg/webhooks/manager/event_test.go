@@ -508,9 +508,10 @@ var _ = Describe("Event", func() {
 				var docStop v1alpha1.SfeventOptions
 				docStart = docs[0].Spec.Options
 				docStop = docs[1].Spec.Options
-				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
-				Expect(docStop.InstancesMeasures[0].Value).To(Equal(c.MeterStop))
+
 				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlanUUID"))
+				Expect(docStop.InstancesMeasures[0].Value).To(Equal(c.MeterStop))
+				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
 				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
 			})
 		})
