@@ -509,9 +509,9 @@ var _ = Describe("Event", func() {
 				docStart = docs[0].Spec.Options
 				docStop = docs[1].Spec.Options
 				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
-				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
-				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlanUUID"))
 				Expect(docStop.InstancesMeasures[0].Value).To(Equal(c.MeterStop))
+				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlanUUID"))
+				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
 			})
 		})
 		Context("when type is create", func() {
