@@ -63,6 +63,8 @@ class AliClient extends BaseCloudClient {
       options = container;
       container = this.containerName;
     }
+    options['max-keys'] = CONST.ALI_CLIENT.MAX_KEY_SIZE;
+    
     return Promise.try(() => {
       return this.storage
         .useBucket(container)

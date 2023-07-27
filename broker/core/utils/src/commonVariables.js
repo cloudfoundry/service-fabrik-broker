@@ -536,6 +536,7 @@ module.exports = Object.freeze({
       REQ_TIMEOUT: 20000, // 20 seconds
       AVAILABILITY_POLLER_DELAY: 1000, // 1sec
       AVAILABILITY_POLLER_TIMEOUT_IN_SEC: 3600 // 60 minutes
-    }
+    },
+    MAX_KEY_SIZE: 1000
   }
 });
