@@ -39,8 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var cfg *rest.Config
-var k8sClient client.Client
+var cfg, cfg2 *rest.Config
+var k8sClient, k8sClient2 client.Client
 var testEnv, testEnv2 *envtest.Environment
 var testLog logr.Logger
 
@@ -71,7 +71,16 @@ func TestMain(m *testing.M) {
 		stdlog.Fatal(err)
 	}
 
+	if cfg2, err = testEnv2.Start(); err != nil {
+		stdlog.Fatal(err)
+	}
+
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	k8sClient2, err = client.New(cfg2, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		stdlog.Fatal(err)
 	}

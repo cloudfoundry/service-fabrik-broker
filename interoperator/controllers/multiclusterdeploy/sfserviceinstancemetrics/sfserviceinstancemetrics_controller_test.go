@@ -17,44 +17,39 @@ limitations under the License.
 package sfserviceinstancemetrics
 
 import (
-	//"context"
-	//"fmt"
+	"context"
+	"fmt"
 	"testing"
-	//"time"
+	"time"
 
-	//osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
-	//"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
-	//corev1 "k8s.io/api/core/v1"
-	//apierrors "k8s.io/apimachinery/pkg/api/errors"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"k8s.io/apimachinery/pkg/types"
-	//"k8s.io/client-go/util/retry"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	//"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var c client.Client
+var c, c2 client.Client
+var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 
-//var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: constants.InteroperatorNamespace}}
-//var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
-//var serviceKey = types.NamespacedName{Name: "service-id", Namespace: constants.InteroperatorNamespace}
-//var planKey = types.NamespacedName{Name: "plan-id", Namespace: constants.InteroperatorNamespace}
+const timeout = time.Second * 5
 
-//const timeout = time.Second * 5
-
-/*var instance = &osbv1alpha1.SFServiceInstance{
+var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
 		Namespace: "sf-instance-id",
 		Labels: map[string]string{
-			"state": "in_queue",
+			"state":                    "delete",
+			constants.LastOperationKey: "create",
 		},
 		Finalizers: []string{"foo"},
 	},
@@ -68,12 +63,15 @@ var c client.Client
 		PreviousValues:   nil,
 	},
 	Status: osbv1alpha1.SFServiceInstanceStatus{
-		State: "in_progress",
+		State: "delete",
 	},
-}*/
+}
 
-func TestReconcile(t *testing.T) {
-	//instance2 := &osbv1alpha1.SFServiceInstance{}
+// Create instance2 empty var for validation
+// To fetch the values of instance for validation
+var instance2 = &osbv1alpha1.SFServiceInstance{}
+
+func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 	watchChannel := make(chan event.GenericEvent)
 
 	g := gomega.NewGomegaWithT(t)
@@ -101,12 +99,18 @@ func TestReconcile(t *testing.T) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
+	c2, err = client.New(cfg2, client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
-	mockClusterRegistry.EXPECT().GetClient("2").Return(c, nil).AnyTimes()
+	mockClusterRegistry.EXPECT().GetClient("2").Return(c2, nil).AnyTimes()
 
 	controller := &InstanceMetrics{
 		Client:          mgr.GetClient(),
-		Log:             ctrlrun.Log.WithName("mcd").WithName("metrics").WithName("instance"),
+		Log:             ctrlrun.Log.WithName("mcd").WithName("instance").WithName("metrics"),
 		clusterRegistry: mockClusterRegistry,
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
@@ -116,5 +120,72 @@ func TestReconcile(t *testing.T) {
 		cancelMgr()
 		mgrStopped.Wait()
 	}()
+
+	// Create a new namespace
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "sf-instance-id",
+		},
+	}
+	g.Expect(c.Create(context.TODO(), ns)).NotTo(gomega.HaveOccurred())
+
+	// Create instance
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+	testValues := map[string]int{
+		"succeeded":   0,
+		"failed":      1,
+		"in progress": 2,
+		"in_queue":    3,
+		"update":      3,
+		"delete":      3,
+	}
+
+	var instanceID string
+	var state string
+	var creationTimestamp string
+	var deletionTimestamp string
+	var serviceId string
+	var planId string
+	var organizationGuid string
+	var spaceGuid string
+	var sfNamespace string
+	var lastOperation string
+	var metricValue float64
+
+	for stateKey, expectedMetricValue := range testValues {
+
+		instance.SetState(stateKey)
+		// Update instance
+		g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+		// Read instance values into var instance2
+		c.Get(context.TODO(), instanceKey, instance2)
+
+		instanceID = instance2.GetName()
+		state = instance2.GetState()
+		creationTimestamp = instance2.GetCreationTimestamp().String()
+		deletionTimestamp = instance2.GetDeletionTimestampForMetrics()
+		serviceId = instance2.Spec.ServiceID
+		planId = instance2.Spec.PlanID
+		organizationGuid = instance2.Spec.OrganizationGUID
+		spaceGuid = instance2.Spec.SpaceGUID
+		sfNamespace = instance2.GetNamespace()
+		lastOperation = instance2.GetLastOperation()
+
+		fmt.Println("state: ", state)
+		fmt.Println("Expected Metric Value: ", expectedMetricValue)
+		metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+		fmt.Println("Received Metric Value: ", metricValue)
+		if float64(expectedMetricValue) != metricValue {
+			// Wait for 2 seconds for reconciler to start
+			fmt.Println("Waiting for 2 seconds...")
+			time.Sleep(2 * time.Second)
+			metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+			fmt.Println("Received Metric Value after 2 seconds: ", metricValue)
+		}
+		g.Expect(metricValue).To(gomega.Equal(float64(expectedMetricValue)))
+
+	}
 
 }
