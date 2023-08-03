@@ -40,7 +40,6 @@ import (
 
 var c, c2 client.Client
 
-var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "sf-instance-id"}
 
 var instance = &osbv1alpha1.SFServiceInstance{

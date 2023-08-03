@@ -41,8 +41,6 @@ import (
 var c, c2 client.Client
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
 
-const timeout = time.Second * 5
-
 var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
