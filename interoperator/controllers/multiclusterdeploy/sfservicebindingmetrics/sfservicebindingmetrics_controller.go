@@ -93,7 +93,7 @@ func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	sfNamespace := binding.GetNamespace()
 	//lastOperation := binding.GetLastOperation()
 
-	log.Info("Sending Metrics to prometheus for binding ", bindingID)
+	log.Info("Sending Metrics to prometheus for binding ", "Binding Id: ", bindingID)
 
 	switch state {
 	case "succeeded":
