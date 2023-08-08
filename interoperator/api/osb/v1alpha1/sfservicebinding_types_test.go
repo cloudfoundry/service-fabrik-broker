@@ -207,3 +207,139 @@ func TestSFServiceBinding_SetState(t *testing.T) {
 		})
 	}
 }
+
+func TestSFServiceBinding_GetLabelsForMetrics(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceBindingSpec
+		Status     SFServiceBindingStatus
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "If Labels are set",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"key": "value"},
+				},
+			},
+			want: "key:value",
+		},
+		{
+			name:   "If there are no Labels",
+			fields: fields{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceBinding{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			got := r.GetLabelsForMetrics()
+			if got != tt.want {
+				t.Errorf("SFServiceBinding.GetLabelsForMetrics() = %v, want %v", got, tt.want)
+			}
+
+		})
+	}
+}
+
+func TestSFServiceBinding_GetLastOperation(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceBindingSpec
+		Status     SFServiceBindingStatus
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "If LastOperation is set",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{constants.LastOperationKey: "create"},
+				},
+			},
+			want: "create",
+		},
+		{
+			name:   "If LastOperation is not set",
+			fields: fields{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceBinding{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			got := r.GetLastOperation()
+			if got != tt.want {
+				t.Errorf("SFServiceBinding.GetLastOperation() = %v, want %v", got, tt.want)
+			}
+
+		})
+	}
+}
+
+func TestSFServiceBinding_GetDeletionTimestampForMetrics(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceBindingSpec
+		Status     SFServiceBindingStatus
+	}
+
+	//deletionTimestampTest, _ := time.Parse("2009-11-17T20:34:58Z", "2009-11-17T20:34:58Z")
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		/*{
+			name: "If DeletionTimestamp is set",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					//"deletionTimestamp": "2010-11-10T23:00:00Z",
+					DeletionTimestamp: (deletionTimestampTest),
+				},
+			},
+			want: "2009-11-17T20:34:58Z",
+		},*/
+		{
+			name:   "If DeletionTimestamp is not set",
+			fields: fields{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceBinding{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			got := r.GetDeletionTimestampForMetrics()
+			t.Logf("SFServiceBinding.GetDeletionTimestampForMetrics() = %v, want %v", got, tt.want)
+			if got != tt.want {
+				t.Errorf("SFServiceBinding.GetDeletionTimestampForMetrics() = %v, want %v", got, tt.want)
+			}
+
+		})
+	}
+}

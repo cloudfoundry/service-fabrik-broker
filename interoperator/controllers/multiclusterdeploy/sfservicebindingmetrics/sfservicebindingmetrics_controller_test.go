@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sfserviceinstancemetrics
+package sfservicebindingmetrics
 
 import (
 	"context"
@@ -39,14 +39,15 @@ import (
 )
 
 var c, c2 client.Client
-var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "sf-instance-id"}
+
+var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "sf-instance-id"}
 
 var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
 		Namespace: "sf-instance-id",
 		Labels: map[string]string{
-			"state":                    "delete",
+			"state":                    "succeeded",
 			constants.LastOperationKey: "create",
 		},
 		Finalizers: []string{"foo"},
@@ -61,15 +62,29 @@ var instance = &osbv1alpha1.SFServiceInstance{
 		PreviousValues:   nil,
 	},
 	Status: osbv1alpha1.SFServiceInstanceStatus{
-		State: "delete",
+		State: "succeeded",
 	},
 }
 
-// Create instance2 empty var for validation
-// To fetch the values of instance for validation
-var instance2 = &osbv1alpha1.SFServiceInstance{}
+var binding = &osbv1alpha1.SFServiceBinding{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "binding-id",
+		Namespace: "sf-instance-id",
+	},
+	Spec: osbv1alpha1.SFServiceBindingSpec{
+		ID:         "binding-id",
+		InstanceID: "instance-id",
+		PlanID:     "plan-id",
+		ServiceID:  "service-id",
+	},
+	Status: osbv1alpha1.SFServiceBindingStatus{
+		State: "update",
+	},
+}
 
-func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
+var binding2 = &osbv1alpha1.SFServiceBinding{}
+
+func TestReconcileSFServiceBindingMetrics(t *testing.T) {
 	watchChannel := make(chan event.GenericEvent)
 
 	g := gomega.NewGomegaWithT(t)
@@ -106,9 +121,9 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	mockClusterRegistry.EXPECT().GetClient("2").Return(c2, nil).AnyTimes()
 
-	controller := &InstanceMetrics{
+	controller := &BindingMetrics{
 		Client:          mgr.GetClient(),
-		Log:             ctrlrun.Log.WithName("mcd").WithName("instance").WithName("metrics"),
+		Log:             ctrlrun.Log.WithName("mcd").WithName("binding").WithName("metrics"),
 		clusterRegistry: mockClusterRegistry,
 	}
 	g.Expect(controller.SetupWithManager(mgr)).NotTo(gomega.HaveOccurred())
@@ -127,8 +142,11 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 	}
 	g.Expect(c.Create(context.TODO(), ns)).NotTo(gomega.HaveOccurred())
 
-	// Create instance
+	// Create Instance
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+	// Create binding
+	g.Expect(c.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 
 	testValues := map[string]int{
 		"succeeded":   0,
@@ -141,47 +159,40 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 
 	var instanceID string
 	var state string
+	var bindingID string
 	var creationTimestamp string
 	var deletionTimestamp string
-	var serviceId string
-	var planId string
-	var organizationGuid string
-	var spaceGuid string
 	var sfNamespace string
-	var lastOperation string
 	var metricValue float64
 
 	for stateKey, expectedMetricValue := range testValues {
 
-		instance.SetState(stateKey)
-		// Update instance
-		g.Expect(c.Update(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+		binding.SetState(stateKey)
+		// Update binding
+		g.Expect(c.Update(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 
-		// Read instance values into var instance2
-		c.Get(context.TODO(), instanceKey, instance2)
+		// Read binding values into var binding2
+		c.Get(context.TODO(), bindingKey, binding2)
 
-		instanceID = instance2.GetName()
-		state = instance2.GetState()
-		creationTimestamp = instance2.GetCreationTimestamp().String()
-		deletionTimestamp = instance2.GetDeletionTimestampForMetrics()
-		serviceId = instance2.Spec.ServiceID
-		planId = instance2.Spec.PlanID
-		organizationGuid = instance2.Spec.OrganizationGUID
-		spaceGuid = instance2.Spec.SpaceGUID
-		sfNamespace = instance2.GetNamespace()
-		lastOperation = instance2.GetLastOperation()
+		bindingID = binding2.GetName()
+		state = binding2.GetState()
+		instanceID = binding2.Spec.InstanceID
+		creationTimestamp = binding2.GetCreationTimestamp().String()
+		deletionTimestamp = binding2.GetDeletionTimestampForMetrics()
+		sfNamespace = binding2.GetNamespace()
 
 		fmt.Println("state: ", state)
 		fmt.Println("Expected Metric Value: ", expectedMetricValue)
-		metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+		metricValue = testutil.ToFloat64(bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace))
 		fmt.Println("Received Metric Value: ", metricValue)
 		if float64(expectedMetricValue) != metricValue {
 			// Wait for 2 seconds for reconciler to start
 			fmt.Println("Waiting for 2 seconds...")
 			time.Sleep(2 * time.Second)
-			metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+			metricValue = testutil.ToFloat64(bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace))
 			fmt.Println("Received Metric Value after 2 seconds: ", metricValue)
 		}
+
 		g.Expect(metricValue).To(gomega.Equal(float64(expectedMetricValue)))
 
 	}
