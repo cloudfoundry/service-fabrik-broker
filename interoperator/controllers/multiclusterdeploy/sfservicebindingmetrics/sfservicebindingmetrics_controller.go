@@ -93,7 +93,7 @@ func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	sfNamespace := binding.GetNamespace()
 	//lastOperation := binding.GetLastOperation()
 
-	log.Info("Sending Metrics to prometheus for binding ", bindingID)
+	log.Info("Sending Metrics to prometheus for binding ", "BindingId:", bindingID, "State: ", state)
 
 	switch state {
 	case "succeeded":
@@ -102,9 +102,7 @@ func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(1)
 	case "in progress":
 		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(2)
-	case "in_queue":
-	case "update":
-	case "delete":
+	case "in_queue", "update", "delete":
 		bindingsMetric.WithLabelValues(bindingID, instanceID, creationTimestamp, deletionTimestamp, state, sfNamespace).Set(3)
 	}
 

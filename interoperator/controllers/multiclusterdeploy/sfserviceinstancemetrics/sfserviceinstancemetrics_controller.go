@@ -80,7 +80,7 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.
-			instancesMetric.WithLabelValues(req.NamespacedName.Name).Set(4)
+			instancesMetric.WithLabelValues(req.NamespacedName.Name, "", "", "", "", "", "", "", "", "").Set(4)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -99,7 +99,7 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	sfNamespace := instance.GetNamespace()
 	lastOperation := instance.GetLastOperation()
 
-	log.Info("Sending Metrics to prometheus for instance ", "InstanceID: ", instanceID)
+	log.Info("Sending Metrics to prometheus for instance ", "InstanceID: ", instanceID, "State: ", state)
 
 	switch state {
 	case "succeeded":
@@ -108,9 +108,7 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(1)
 	case "in progress":
 		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(2)
-	case "in_queue":
-	case "update":
-	case "delete":
+	case "in_queue", "update", "delete":
 		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(3)
 	}
 	return ctrl.Result{}, nil
@@ -134,8 +132,9 @@ func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
-	interoperatorCfg := cfgManager.GetConfig()
 	r.cfgManager = cfgManager
+	interoperatorCfg := cfgManager.GetConfig()
+	//r.cfgManager = cfgManager
 
 	// Watch for changes to SFServiceInstance in sister clusters
 	watchEvents, err := getWatchChannel("sfserviceinstances")

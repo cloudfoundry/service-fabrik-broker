@@ -504,14 +504,12 @@ var _ = Describe("Event", func() {
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(2))
-				var docStart v1alpha1.SfeventOptions
-				var docStop v1alpha1.SfeventOptions
-				docStart = docs[0].Spec.Options
-				docStop = docs[1].Spec.Options
-				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
-				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
+				var docStop v1alpha1.SfeventOptions = docs[0].Spec.Options
+				var docStart v1alpha1.SfeventOptions = docs[1].Spec.Options
 				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlanUUID"))
 				Expect(docStop.InstancesMeasures[0].Value).To(Equal(c.MeterStop))
+				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
+				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
 			})
 		})
 		Context("when type is create", func() {
