@@ -60,6 +60,14 @@ func TestGetOperatorApisRouter(t *testing.T) {
 						path:   "/operator/deployments/{deploymentID}",
 						method: "PATCH",
 					},
+					routeInfo{
+						path:   "/operator/deployments/{deploymentID}",
+						method: "PATCH",
+					},
+					routeInfo{
+						path:   "/operator/service_instances/{instanceid}/service_bindings/{binding}/cleanup",
+						method: "PATCH",
+					},
 				},
 			},
 			want:    true,

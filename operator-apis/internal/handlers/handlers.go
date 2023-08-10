@@ -12,6 +12,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -169,6 +170,7 @@ func (h *OperatorApisHandler) UpdateDeployment(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	instance.SetState("update")
 	_, err = sfserviceinstanceClient.Update(ctx, instance, metav1.UpdateOptions{})
 	if err != nil {
@@ -208,6 +210,55 @@ func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r 
 	fmt.Fprintf(w, "Triggering update for %d instances", len(instances.Items))
 }
 
+func (h *OperatorApisHandler) CleanUpBinding(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	instanceID := vars["instanceID"]
+	bindingID := vars["bindingID"]
+	log.Info("Trying to trigger cleanup for: ", "bindingID", bindingID, "instanceID", instanceID)
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
+	if err != nil {
+		log.Error(err, "Error while initializing clients")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	instanceNamespace := "sf-" + instanceID
+
+	sfservicebindingClient := clientset.OsbV1alpha1().SFServiceBindings(instanceNamespace)
+	binding, err := sfservicebindingClient.Get(ctx, bindingID, metav1.GetOptions{})
+	if err != nil {
+		log.Error(err, "Error while getting service binding from apiserver")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	labels := binding.GetLabels()
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+
+	if lastOperation != "delete" {
+		binding.SetState("delete")
+		if !utils.ContainsString(binding.GetFinalizers(), constants.BrokerFinializer) {
+			binding.SetFinalizers(Remove(binding.GetFinalizers(), constants.BrokerFinializer))
+			log.Info("Removed broker finalizer", "bindingID", bindingID, "instanceID", instanceID)
+		}
+	} else {
+		binding.SetFinalizers([]string{})
+		log.Info("Remvoed all finalizers", "bindingID", bindingID, "instanceID", instanceID)
+	}
+
+	_, err = sfservicebindingClient.Update(ctx, binding, metav1.UpdateOptions{})
+	if err != nil {
+		log.Error(err, "Error while updating instance")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.Info("Triggered cleanup for: ", "bindingID", bindingID, "instanceID", instanceID)
+	w.WriteHeader(http.StatusOK)
+}
+
 func triggerBatchUpdates(instances *osbv1alpha1.SFServiceInstanceList, clientset *versioned.Clientset) int {
 	ctx := context.Background()
 	successCount := 0
@@ -226,4 +277,14 @@ func triggerBatchUpdates(instances *osbv1alpha1.SFServiceInstanceList, clientset
 		time.Sleep(constants.DelayBetweenBatchUpdates * time.Second)
 	}
 	return successCount
+}
+
+// Remove removes a string from an array of strings
+func Remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }
