@@ -1,6 +1,6 @@
 module github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks
 
-go 1.19
+go 1.21
 
 require (
 	github.com/golang/glog v1.0.0
