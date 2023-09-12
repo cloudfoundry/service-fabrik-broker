@@ -57,6 +57,10 @@ func (r *SFServiceInstanceCounter) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
+	isError := func(err error) bool {
+		return err != nil
+	}
+
 	if instance.Spec.ClusterID != "" { //act only if the clusterID is not set
 		log.Info("ClusterID is set", "function", "Reconcile", "ClusterID", instance.Spec.ClusterID)
 		if instance.GetDeletionTimestamp().IsZero() { // not marked for deletion
@@ -81,7 +85,7 @@ func (r *SFServiceInstanceCounter) Reconcile(ctx context.Context, req ctrl.Reque
 					Name:      instance.Spec.ClusterID,
 					Namespace: sfNamespace,
 				}
-				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err = retry.OnError(retry.DefaultRetry, isError, func() error {
 					err1 := r.Get(ctx, namespacedName, sfCluster)
 					if err1 != nil {
 						return err1
@@ -117,7 +121,7 @@ func (r *SFServiceInstanceCounter) Reconcile(ctx context.Context, req ctrl.Reque
 					Name:      instance.Spec.ClusterID,
 					Namespace: sfNamespace,
 				}
-				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err = retry.OnError(retry.DefaultRetry, isError, func() error {
 					err1 := r.Get(ctx, namespacedName, sfCluster)
 					if err1 != nil {
 						return err1

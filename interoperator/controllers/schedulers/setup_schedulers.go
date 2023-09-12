@@ -35,6 +35,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	setupLog := ctrl.Log.WithName("setup").WithName("schedulers")
 
+	go updateInstanceCount(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+
 	if err = (&sfserviceinstancecounter.SFServiceInstanceCounter{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("scheduler-helper").WithName("sfserviceinstance-counter"),
