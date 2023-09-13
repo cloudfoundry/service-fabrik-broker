@@ -75,7 +75,7 @@ func updateInstanceCount(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper
 		}
 		for _, sfserviceinstance := range sfserviceinstances.Items {
 			for _, finalizer := range sfserviceinstance.Finalizers {
-				if finalizer == constants.SFServiceInstanceCounterFinalizerName {
+				if finalizer == constants.SFServiceInstanceCounterFinalizerName && sfserviceinstance.Spec.ClusterID != "" {
 					instanceCount[sfserviceinstance.Spec.ClusterID]++
 					break
 				}
@@ -103,6 +103,7 @@ func updateInstanceCount(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper
 			err := client.Status().Update(ctx, &sfCluster)
 			if err != nil {
 				log.Error(err, "While trying to update service instance count of sfcluster:", sfCluster.Name, "with new count:", expectedServiceInstanceCount)
+				continue
 			}
 			log.Info("Success", "Updated service instance count of sfcluster:", sfCluster.Name, "with new count:", expectedServiceInstanceCount)
 		}
