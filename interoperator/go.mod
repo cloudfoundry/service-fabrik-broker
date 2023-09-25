@@ -3,7 +3,7 @@ module github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
 go 1.21
 
 require (
-	github.com/BurntSushi/toml v1.2.0
+	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
