@@ -20,7 +20,6 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
@@ -31,9 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -59,9 +56,6 @@ var (
 		},
 	)
 )
-
-// To the function mock
-var getWatchChannel = watchmanager.GetWatchChannel
 
 // InstanceReplicator replicates a SFServiceInstance object to sister cluster
 type InstanceMetrics struct {
@@ -134,13 +128,6 @@ func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.cfgManager = cfgManager
 	interoperatorCfg := cfgManager.GetConfig()
-	//r.cfgManager = cfgManager
-
-	// Watch for changes to SFServiceInstance in sister clusters
-	watchEvents, err := getWatchChannel("sfserviceinstances")
-	if err != nil {
-		return err
-	}
 
 	metrics.Registry.MustRegister(instancesMetric)
 
@@ -150,7 +137,6 @@ func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)
