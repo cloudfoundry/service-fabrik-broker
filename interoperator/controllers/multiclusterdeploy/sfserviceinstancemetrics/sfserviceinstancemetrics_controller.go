@@ -134,13 +134,6 @@ func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.cfgManager = cfgManager
 	interoperatorCfg := cfgManager.GetConfig()
-	//r.cfgManager = cfgManager
-
-	// Watch for changes to SFServiceInstance in sister clusters
-	watchEvents, err := getWatchChannel("sfserviceinstances")
-	if err != nil {
-		return err
-	}
 
 	metrics.Registry.MustRegister(instancesMetric)
 
@@ -150,7 +143,6 @@ func (r *InstanceMetrics) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)

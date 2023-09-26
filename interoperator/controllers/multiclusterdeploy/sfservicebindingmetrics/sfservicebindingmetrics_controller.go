@@ -31,9 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -129,11 +127,6 @@ func (r *BindingMetrics) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	interoperatorCfg := cfgManager.GetConfig()
 	r.cfgManager = cfgManager
-	// Watch for changes to SFServiceBinding in sister clusters
-	watchEvents, err := getWatchChannel("sfservicebindings")
-	if err != nil {
-		return err
-	}
 
 	metrics.Registry.MustRegister(bindingsMetric)
 
@@ -143,7 +136,6 @@ func (r *BindingMetrics) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.BindingWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceBinding{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)
