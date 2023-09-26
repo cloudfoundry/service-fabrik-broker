@@ -11,6 +11,8 @@ const (
 	PasswordConfigKey        = "OPERATOR_APIS_APP_PASSWORD"
 	PageSizeKey              = "OPERATOR_APIS_APP_PAGE_SIZE"
 	DefaultPageSize          = 5
+	BrokerFinializer         = "broker.servicefabrik.io"
+	LastOperationKey         = "interoperator.servicefabrik.io/lastoperation"
 )
 
 // SupportedQueryKeysToLabels holds supported query keys for get and patch APIs and it's mapping

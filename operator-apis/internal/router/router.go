@@ -25,5 +25,6 @@ func GetOperatorApisRouter(appConfig *config.OperatorApisConfig) (*mux.Router, e
 	operatorApisRouter.HandleFunc("/deployments/{deploymentID}", h.GetDeployment).Methods("GET")
 	operatorApisRouter.HandleFunc("/deployments/{deploymentID}", h.UpdateDeployment).Methods("PATCH")
 	operatorApisRouter.HandleFunc("/deployments", h.UpdateDeploymentsInBatch).Methods("PATCH")
+	operatorApisRouter.HandleFunc("/service_instances/{instanceID}/service_bindings/{bindingID}/cleanup", h.ForceBindingCleanup).Methods("DELETE")
 	return r, nil
 }

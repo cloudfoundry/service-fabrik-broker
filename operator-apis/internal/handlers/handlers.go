@@ -12,6 +12,7 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client/clientset/versioned"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/operator-apis/internal/constants"
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -206,6 +207,95 @@ func (h *OperatorApisHandler) UpdateDeploymentsInBatch(w http.ResponseWriter, r 
 		log.Info(fmt.Sprintf("Successfully triggered updates for %d deployments", successCount))
 	}()
 	fmt.Fprintf(w, "Triggering update for %d instances", len(instances.Items))
+}
+
+func (h *OperatorApisHandler) ForceBindingCleanup(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	instanceID := vars["instanceID"]
+	bindingID := vars["bindingID"]
+	clientset, err := initInteroperatorClientset(h.appConfig.Kubeconfig)
+	if err != nil {
+		log.Error(err, "Error while initializing clients")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Info("Triggered cleanup for: ", "bindingID", bindingID, "instanceID", instanceID)
+
+	namespace := "sf-" + instanceID
+	sfservicebindingClient := clientset.OsbV1alpha1().SFServiceBindings(namespace)
+	binding, err := sfservicebindingClient.Get(ctx, bindingID, metav1.GetOptions{})
+	if err != nil {
+		log.Error(err, "Error while getting service binding from apiserver")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	labels := binding.GetLabels()
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		log.Error(err, "Error while lastOperation of binding")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	if lastOperation != "delete" {
+		log.Info("Got binding lastOperation state is delete")
+
+		err = sfservicebindingClient.Delete(ctx, bindingID, metav1.DeleteOptions{})
+		if err != nil {
+			log.Error(err, "Error while deleting instance")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		binding, err := sfservicebindingClient.Get(ctx, bindingID, metav1.GetOptions{})
+		if err != nil {
+			log.Error(err, "Error while getting service binding from apiserver")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		binding.SetState("delete")
+		_, err = sfservicebindingClient.Update(ctx, binding, metav1.UpdateOptions{})
+		if err != nil {
+			log.Error(err, "Error while updating instance")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log.Info("UPDATE: set state to delete triggered for the binding")
+
+		if utils.ContainsString(binding.GetFinalizers(), constants.BrokerFinializer) {
+			log.Info("Removing broker finalizers", "bindingID", bindingID, "instanceID", instanceID)
+			binding, err := sfservicebindingClient.Get(ctx, bindingID, metav1.GetOptions{})
+			if err != nil {
+				log.Error(err, "Error while getting service binding from apiserver")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			binding.SetFinalizers(utils.RemoveString(binding.GetFinalizers(), constants.BrokerFinializer))
+			_, err = sfservicebindingClient.Update(ctx, binding, metav1.UpdateOptions{})
+			if err != nil {
+				log.Error(err, "Error while updating instance")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			log.Info("Removed broker finalizers", "bindingID", bindingID, "instanceID", instanceID)
+		}
+	} else {
+		log.Info("Binding is in delete state", "bindingID", bindingID, "instanceID", instanceID)
+		binding.SetFinalizers([]string{})
+		_, err = sfservicebindingClient.Update(ctx, binding, metav1.UpdateOptions{})
+		if err != nil {
+			log.Error(err, "Error while updating instance")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		log.Info("Removed all finalizers", "bindingID", bindingID, "instanceID", instanceID)
+	}
+
+	fmt.Fprintf(w, "Deleted binding %s  deleted successfully", bindingID)
+	w.WriteHeader(http.StatusOK)
 }
 
 func triggerBatchUpdates(instances *osbv1alpha1.SFServiceInstanceList, clientset *versioned.Clientset) int {
