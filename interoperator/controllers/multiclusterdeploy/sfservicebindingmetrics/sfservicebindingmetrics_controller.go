@@ -20,7 +20,6 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/controllers/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
@@ -56,8 +55,6 @@ var (
 		},
 	)
 )
-
-var getWatchChannel = watchmanager.GetWatchChannel
 
 type BindingMetrics struct {
 	client.Client

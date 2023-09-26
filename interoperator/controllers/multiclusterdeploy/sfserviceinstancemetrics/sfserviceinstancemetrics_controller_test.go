@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -70,19 +69,9 @@ var instance = &osbv1alpha1.SFServiceInstance{
 var instance2 = &osbv1alpha1.SFServiceInstance{}
 
 func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
-	watchChannel := make(chan event.GenericEvent)
-
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	_getWatchChannel := getWatchChannel
-	defer func() {
-		getWatchChannel = _getWatchChannel
-	}()
-	getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
-		return watchChannel, nil
-	}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
