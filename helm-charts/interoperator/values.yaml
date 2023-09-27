@@ -85,7 +85,7 @@ broker:
 #          client_id: ''
   image:
     repository: servicefabrikjenkins/service-fabrik-broker
-    tag: 0.25.1
+    tag: 0.26.0
     pullPolicy: Always
   service:
     type: ClusterIP
@@ -153,7 +153,7 @@ quota_app:
 interoperator:
   image:
     repository: servicefabrikjenkins/service-fabrik-interoperator
-    tag: 0.25.1
+    tag: 0.26.0
     pullPolicy: Always
 
   # override the global replicaCount just for interoperator components
@@ -213,7 +213,7 @@ operator_apis:
   #host: op.ingress.sf21-intop.interop.shoot.canary.k8s-hana.ondemand.com
   image:
     repository: servicefabrikjenkins/operatorapis
-    tag: 0.25.1
+    tag: 0.26.0
     pullPolicy: Always
 
   # override the global replicaCount just for operator apis
