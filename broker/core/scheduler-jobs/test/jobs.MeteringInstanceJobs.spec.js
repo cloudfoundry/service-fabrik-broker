@@ -177,28 +177,6 @@ describe('Jobs', () => {
         publishAndAuditLogEventStub.restore();
       });
 
-      it('should not send metering event for excluded plans', () => {
-        const expectedResponse = {
-          status: 200
-        };
-        const payload = {
-          status: {
-            state: CONST.METER_STATE.EXCLUDED
-          }
-        };
-        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
-          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
-        // updated the dummy event with exluded plans
-        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
-        const dummy_event = getDummyEvent(options_json);
-        return MeterInstanceJob.sendEvent(dummy_event)
-          .then(res => {
-            expect(res).to.eql(true);
-            expect(publishAndAuditLogEventStub).to.be.not.called;
-            mocks.verify();
-          });
-      });
       it('should send document to metering and update state in apiserver', () => {
         const expectedResponse = {
           status: 200

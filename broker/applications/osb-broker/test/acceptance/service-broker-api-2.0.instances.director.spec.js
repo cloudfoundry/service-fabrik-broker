@@ -329,8 +329,8 @@ describe('service-broker-api-2.0', function () {
         });
         
         it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
-          const oldTemp = config.services[0].plans[4].manager.settings.dashboard_url_template;
-          config.services[0].plans[4].manager.settings.dashboard_url_template = new Buffer('${instance.spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+instance.metadata.name+\'?planId=\'+instance.spec.planId+\'&serviceId=\'+instance.spec.serviceId : \'\'}').toString('base64');
+          const oldTemp = config.services[0].plans[1].manager.settings.dashboard_url_template;
+          config.services[0].plans[1].manager.settings.dashboard_url_template = new Buffer('${instance.spec.clusterId == 1 ? \'blah://service-fabrik-broker.bosh-lite.com/manage/dashboards/director/instances/\'+instance.metadata.name+\'?planId=\'+instance.spec.planId+\'&serviceId=\'+instance.spec.serviceId : \'\'}').toString('base64');
           const testPayload = _.cloneDeep(payload);
           testPayload.spec.plan_id = plan_id_custom_dashboard;
           testPayload.spec = camelcaseKeys(testPayload.spec);
@@ -364,7 +364,7 @@ describe('service-broker-api-2.0', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              config.services[0].plans[4].manager.settings.dashboard_url_template = oldTemp;
+              config.services[0].plans[1].manager.settings.dashboard_url_template = oldTemp;
               expect(res).to.have.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
               expect(res.body.description).to.include("Unable to generate valid dashboard URL with the template");
               mocks.verify();
