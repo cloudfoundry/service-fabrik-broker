@@ -371,3 +371,10 @@ class DirectorServiceUnavailable extends ServiceUnavailable {
   }
 }
 exports.DirectorServiceUnavailable = DirectorServiceUnavailable;
+
+class DBUnavailable extends HttpServerError {
+  constructor(message) {
+    super(503, 'DB Unavailable', message);
+  }
+}
+exports.DBUnavailable = DBUnavailable;
