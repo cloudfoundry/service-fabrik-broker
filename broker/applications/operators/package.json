@@ -14,7 +14,6 @@
     "@sf/cf": "*",
     "@sf/common-utils": "*",
     "@sf/db": "*",
-    "@sf/docker": "*",
     "@sf/event-logger": "*",
     "@sf/eventmesh": "*",
     "@sf/iaas": "*",

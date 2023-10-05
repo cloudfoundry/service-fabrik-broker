@@ -214,9 +214,7 @@ defaults: &defaults
       "backup.servicefabrik.io_v1alpha1_defaultrestores.yaml": <%= base64_template('crds/backup.servicefabrik.io_v1alpha1_defaultrestores.yaml') %>
       "backup.servicefabrik.io_v1alpha1_defaultboshrestores.yaml": <%= base64_template('crds/backup.servicefabrik.io_v1alpha1_defaultboshrestores.yaml') %>
       "bind.servicefabrik.io_v1alpha1_directorbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_directorbinds.yaml') %>
-      "bind.servicefabrik.io_v1alpha1_dockerbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_dockerbinds.yaml') %>
       "backup.servicefabrik.io_v1alpha1_defaultbackups.yaml": <%= base64_template('crds/backup.servicefabrik.io_v1alpha1_defaultbackups.yaml') %>
-      "deployment.servicefabrik.io_v1alpha1_dockers.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_dockers.yaml') %>
       "deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml') %>
       "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml') %>
@@ -457,18 +455,6 @@ defaults: &defaults
     password: admin
     identity_provider: uaa
   
-  ###################
-  # DOCKER SETTINGS #
-  ###################
-  docker: &docker
-    url: unix:///var/run/docker.sock # how to connect the broker to docker
-    allocate_docker_host_ports: true # if true the broker will allocate fixed port mappings for the containers
-    volume_driver: local
-  
-  #List of add on jobs that are to be added onto each service vm
-  service_addon_jobs:
-  - iptables-manager
-  
   #####################
   # DIRECTOR SETTINGS #
   #####################
@@ -607,136 +593,6 @@ defaults: &defaults
     backup_interval: '8 hours'
     pitr: true
     plans:
-    ###########################
-    # CONTAINER SERVICE PLANS #
-    ###########################
-    - &blueprint_plan1
-      id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
-      name: 'v1.0-dev'
-      sku_name: 'dev'
-      metered: false
-      free: true
-      manager:
-        name: 'docker'
-        async: false
-        resource_mappings: &docker_resource_mappings
-          resource_group: 'deployment.servicefabrik.io'
-          resource_type: 'dockers'
-          bind:
-            resource_group: 'bind.servicefabrik.io'
-            resource_type: 'dockerbinds'
-        settings:
-          image: 'servicefabrikjenkins/blueprint'
-          tag: 'latest'
-          memory: '128m'
-          persistent_volumes:
-          - name: 'data'
-            path: '/data'
-            size: '100m'
-      credentials:
-        username:
-          key: 'BLUEPRINT_USER_NAME'
-        password:
-          key: 'BLUEPRINT_USER_PASS'
-        uri:
-          prefix: 'http'
-          port: 8080/tcp
-      description: 'Blueprint 1.0 service running inside a Docker container (for non-productive usage)'
-      metadata:
-        costs:
-        - amount:
-            usd: 0.0
-          unit: 'MONTHLY'
-        bullets:
-        - 'Container Deployment'
-        - '128 MB Memory'
-        - '100 MB Disk'
-      templates: &docker_templates
-      - action: sources
-        type: gotemplate
-        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/sources.yaml')  %>
-      - action: status
-        type: gotemplate
-        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/status.yaml') %>
-      - action: provision
-        type: gotemplate
-        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/provision.yaml') %>
-      - action: bind
-        type: gotemplate
-        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/bind.yaml') %>
-    - &blueprint_plan2
-      id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
-      name: 'v1.0-dev-large'
-      sku_name: 'dev'
-      metered: false
-      free: true
-      manager:
-        name: 'docker'
-        async: false
-        resource_mappings: *docker_resource_mappings
-        settings:
-          image: 'servicefabrikjenkins/blueprint'
-          tag: 'latest'
-          memory: '256m'
-          persistent_volumes:
-          - name: 'data'
-            path: '/data'
-            size: '200m'
-      credentials:
-        username:
-          key: 'BLUEPRINT_USER_NAME'
-        password:
-          key: 'BLUEPRINT_USER_PASS'
-        uri:
-          prefix: 'http'
-          port: 8080/tcp
-      description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
-      metadata:
-        costs:
-        - amount:
-            usd: 0.0
-          unit: 'MONTHLY'
-        bullets:
-        - 'Container Deployment'
-        - '256 MB Memory'
-        - '200 MB Disk'
-      templates: *docker_templates
-    - &blueprint_plan7
-      id: '61a8d1f7-6477-4eb7-a85d-57ac067e80c4'
-      name: 'v1.0-container-large-deprecated'
-      free: true
-      manager:
-        name: 'docker'
-        async: false
-        resource_mappings: *docker_resource_mappings
-        settings:
-          image: 'servicefabrikjenkins/blueprint'
-          tag: 'latest'
-          memory: '256m'
-          persistent_volumes:
-          - name: 'data'
-            path: '/data'
-            size: '200m'
-      credentials:
-        username:
-          key: 'BLUEPRINT_USER_NAME'
-        password:
-          key: 'BLUEPRINT_USER_PASS'
-        uri:
-          prefix: 'http'
-          port: 8080/tcp
-      description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
-      metadata:
-        state: deprecated
-        costs:
-        - amount:
-            usd: 0.0
-          unit: 'MONTHLY'
-        bullets:
-        - 'Container Deployment'
-        - '256 MB Memory'
-        - '200 MB Disk'
-      templates: *docker_templates
     ###########################
     # DEDICATED SERVICE PLANS #
     ###########################
@@ -1421,8 +1277,6 @@ test:
     <<: *external
     protocol: 'http'
     cookie_secure: false
-  docker:
-    <<: *docker
     url: 'https://192.168.99.100:2376'
   directors:
   - <<: *director

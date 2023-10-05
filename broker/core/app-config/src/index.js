@@ -37,9 +37,6 @@ if (config.directors) {
 if (process.env.worker) {
   updateLogFileConfig(config.log_path);
 }
-if (config.docker) {
-  completeDockerConfig(config.docker);
-}
 if (config.cf) {
   completeCloudFoundryConfig(config.cf);
 }
@@ -136,39 +133,6 @@ function completeDirectorConfig(director) {
   }
 }
 
-function completeDockerConfig(docker) {
-  const opts = {
-    ip_local_port_range: ipLocalPortRange(docker.ip_local_port_range)
-  };
-  const dockerUrl = docker.url || process.env.DOCKER_HOST;
-  if (dockerUrl) {
-    const url = parseUrl(dockerUrl);
-    if (!url.protocol || url.protocol === 'unix:') {
-      opts.socketPath = url.pathname;
-    } else {
-      opts.host = url.hostname;
-      opts.port = url.port;
-      opts.protocol = url.protocol.replace(/:$/, '');
-      if (opts.protocol === 'tcp') {
-        if (process.env.DOCKER_TLS_VERIFY === '1' || opts.port === 2376) {
-          opts.protocol = 'https';
-        } else {
-          opts.protocol = 'http';
-        }
-      }
-    }
-  }
-  // const dockerCertPath = docker.cert_path || process.env.DOCKER_CERT_PATH;
-  if (process.env.DOCKER_TLS_VERIFY === '1') {
-    opts.ca = [
-      docker.ssl.ca
-    ];
-    opts.cert = docker.ssl.cert;
-    opts.key = docker.ssl.key;
-  }
-  _.defaults(docker, opts);
-}
-
 function completeCloudFoundryConfig(cf) {
   const endpoint = parseUrl(cf.url);
   endpoint.host = undefined;
@@ -185,20 +149,6 @@ function completeCloudFoundryConfig(cf) {
   });
 }
 
-
-function ipLocalPortRange(portRange) {
-  if (_.isArray(portRange)) {
-    return portRange;
-  }
-  if (!/^\s*\d+\s+\d+\s*$/.test(portRange)) {
-    try {
-      portRange = fs.readFileSync('/proc/sys/net/ipv4/ip_local_port_range', 'ascii');
-    } catch (err) {
-      portRange = '32768 61000';
-    }
-  }
-  return _.compact(_.split(portRange, /\s+/));
-}
 
 function completeCircutBreakerConfig(config) {
   const configFileName = 'circuit-breaker-config.yml';

@@ -28,7 +28,6 @@ const {
 } = require('@sf/common-controllers');
 
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const DockerService = require('../../../operators/src/docker-operator/DockerService');
 const VirtualHostService = require('../../../operators/src/virtualhost-operator/VirtualHostService');
 
 Promise.promisifyAll(crypto, Session.prototype);
@@ -183,9 +182,6 @@ class DashboardController extends FabrikBaseController {
       case CONST.INSTANCE_TYPE.DIRECTOR:
         resourceType = CONST.APISERVER.RESOURCE_TYPES.DIRECTOR;
         break;
-      case CONST.INSTANCE_TYPE.DOCKER:
-        resourceType = CONST.APISERVER.RESOURCE_TYPES.DOCKER;
-        break;
       case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
         resourceType = CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST;
         break;
@@ -298,17 +294,10 @@ function createService(plan_id, instance_id, context) {
   switch (plan.manager.name) {
     case CONST.INSTANCE_TYPE.DIRECTOR:
       return DirectorService.createInstance(instance_id, options);
-    case CONST.INSTANCE_TYPE.DOCKER:
-      if (config.enable_swarm_manager) {
-        return DockerService.createInstance(instance_id, options);
-      } else {
-        assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
-      }
-      break;
     case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
       return VirtualHostService.createVirtualHostService(instance_id, options);
     default:
-      assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.DOCKER, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
+      assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
   }
 }
 
