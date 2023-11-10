@@ -389,7 +389,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
     express: 4.17.3
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
   linkType: soft
@@ -469,7 +469,7 @@ __metadata:
   dependencies:
     "@sf/app-config": "*"
     "@sf/logger": "*"
-    axios: 0.25.0
+    axios: 1.6.0
     bluebird: 3.7.2
     hystrixjs: 0.2.0
     jsonwebtoken: 9.0.0
@@ -511,7 +511,7 @@ __metadata:
     "@sf/logger": "*"
     bluebird: 3.7.2
     express: 4.17.3
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
   linkType: soft
@@ -607,7 +607,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
     express: 4.17.3
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     express-session: 1.17.1
     js-yaml: 4.1.0
     lodash: 4.17.21
@@ -731,7 +731,7 @@ __metadata:
     "@sf/provisioner-services": "*"
     "@sf/service-agent": "*"
     bluebird: 3.7.2
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     js-yaml: 4.1.0
     json-stream: ^1.0.0
     lodash: 4.17.21
@@ -837,7 +837,7 @@ __metadata:
     "@sf/logger": "*"
     bluebird: 3.7.2
     express: 4.17.3
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
   linkType: soft
@@ -852,7 +852,7 @@ __metadata:
     "@sf/event-logger": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    express-jwt: 8.3.0
+    express-jwt: 8.4.1
     lodash: 4.17.21
     moment: 2.29.2
     pubsub-js: 1.9.4
@@ -1893,12 +1893,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:0.25.0":
-  version: 0.25.0
-  resolution: "axios@npm:0.25.0"
+"axios@npm:1.6.0":
+  version: 1.6.0
+  resolution: "axios@npm:1.6.0"
   dependencies:
-    follow-redirects: ^1.14.7
-  checksum: 2b2d5a0e1d53ab19b0808324336044db0a2ea2f18842a455436ee2bf35548e016dd9a3c52fee722c9e9602c8dd0185e9ccf9a77d76bb8acd706703f6e7c5eb91
+    follow-redirects: ^1.15.0
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: 23da240c7e982560f7dd21525b8d8df0c72e8789a58329d6ce3858257e2f70b15907ee58220eb37196483126b5fe3d3b29214f80ba2cabd352bc6d14ca9312ab
   languageName: node
   linkType: hard
 
@@ -2048,6 +2050,23 @@ __metadata:
   dependencies:
     babel-runtime: ^6.22.0
   checksum: 9a04e1b86bf68f0469efc7d09d04dbcd69d386ae0347d71c67b8867d6763f0b46616856ca3669b982e9e000642b0546271ecda51c1e1a321fc8cf179ad6d65ad
+  languageName: node
+  linkType: hard
+
+"babel-plugin-syntax-object-rest-spread@npm:^6.8.0":
+  version: 6.13.0
+  resolution: "babel-plugin-syntax-object-rest-spread@npm:6.13.0"
+  checksum: 459844d1a89dfe580876daa6c8be3f120931db2705cfc32ffacaa93442ca8036e38ad3f687fc889e9cd6e96f51d83cb4b520c063d8f12223baf6f8a34a07e4cc
+  languageName: node
+  linkType: hard
+
+"babel-plugin-transform-object-rest-spread@npm:^6.26.0":
+  version: 6.26.0
+  resolution: "babel-plugin-transform-object-rest-spread@npm:6.26.0"
+  dependencies:
+    babel-plugin-syntax-object-rest-spread: ^6.8.0
+    babel-runtime: ^6.26.0
+  checksum: 1d8ff820576afd78850081dc71e36f77be08484b502a8fe87b959bad4463581bd0731c605b09307cd3ffabeb372c70524c0f8a303dc99c4d15085f84c06f26e3
   languageName: node
   linkType: hard
 
@@ -2919,7 +2938,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"combined-stream@npm:^1.0.6, combined-stream@npm:~1.0.6":
+"combined-stream@npm:^1.0.6, combined-stream@npm:^1.0.8, combined-stream@npm:~1.0.6":
   version: 1.0.8
   resolution: "combined-stream@npm:1.0.8"
   dependencies:
@@ -4367,15 +4386,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-jwt@npm:8.3.0":
-  version: 8.3.0
-  resolution: "express-jwt@npm:8.3.0"
+"express-jwt@npm:8.4.1":
+  version: 8.4.1
+  resolution: "express-jwt@npm:8.4.1"
   dependencies:
     "@types/jsonwebtoken": ^9
     express-unless: ^2.1.3
     jsonwebtoken: ^9.0.0
-    lodash.set: ^4.3.2
-  checksum: 10b31d02e1044d79842a7ab3ac3346d344507a72cbeec6fa149bf5a88e324a58e382dc50d3c2f1641e54f18a02116dfbe0815d9c934f2625cb0b830426d8ca95
+  checksum: 2cddc23ceb17e91c2996c74b78747dc834477def0092afd86bdc0daf49561b67720a3ff4587911d20f10fb9b9f25829bb8de697882042b27ede4934dea4e8f61
   languageName: node
   linkType: hard
 
@@ -4730,13 +4748,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.14.7":
-  version: 1.14.9
-  resolution: "follow-redirects@npm:1.14.9"
+"follow-redirects@npm:^1.15.0":
+  version: 1.15.3
+  resolution: "follow-redirects@npm:1.15.3"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: 1b602c548b4194c66d8d530d2c8f76b4116b6c498434acfa561f583f45b571fd9fc042fba778748cd863044051656cf4788ba11c8ff35407223ed0d38ffff0d4
+  checksum: 1fd01d726599ac41af19682571a6ef23d7c278773f9d0752a8ba6904b6f609dbbdab50e7a90bf5c63329bea519ec71b3936d7725b1486acf13b56b092e798fd3
   languageName: node
   linkType: hard
 
@@ -4782,6 +4800,17 @@ __metadata:
     combined-stream: ^1.0.6
     mime-types: ^2.1.12
   checksum: c46ee9a14a8678b6e0dfafabc96e25237d9f11ced9c51cd371a2b3448f6a3f2fa684b3bbbb35911bae8f5448b3f3c48c73f7f2be791a4ae5aee0eb0ab3cdfec2
+  languageName: node
+  linkType: hard
+
+"form-data@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "form-data@npm:4.0.0"
+  dependencies:
+    asynckit: ^0.4.0
+    combined-stream: ^1.0.8
+    mime-types: ^2.1.12
+  checksum: ecbe8f41bcf5c415f38e39058b34598a9261bb74a3d54b633d0b5dd8b7cf9a30b0626cd06ae8e79874a2ca88c222041142a7893e5afdd35fdfc3272264d03d44
   languageName: node
   linkType: hard
 
@@ -8875,7 +8904,7 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"proxy-from-env@npm:^1.0.0":
+"proxy-from-env@npm:^1.0.0, proxy-from-env@npm:^1.1.0":
   version: 1.1.0
   resolution: "proxy-from-env@npm:1.1.0"
   checksum: 6459372a57f3e8ef5211f7847ca2fffabcdd6490005892fcc0dcd62fe2b3551900c8a07fad7df9de3897547b1ab4ac7a7197964cd6fa7e76303caa4936bfaf32
@@ -9977,6 +10006,7 @@ resolve@^1.15.1:
     "@yarnpkg/parsers": ^2.3.0
     babel-cli: ^6.9.0
     babel-eslint: 10.1.0
+    babel-plugin-transform-object-rest-spread: ^6.26.0
     chai: ^4.0.0
     chai-http: ^2.0.1
     coveralls: ^3.0.0
