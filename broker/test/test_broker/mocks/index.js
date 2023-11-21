@@ -9,7 +9,6 @@ const cloudProvider = require('./cloudProvider');
 const uaa = require('./uaa');
 const metering = require('./metering');
 const director = require('./director');
-const docker = require('./docker');
 const agent = require('./agent');
 const virtualHostAgent = require('./virtualHostAgent');
 const multitenancyAgent = require('./multitenancyAgent');
@@ -26,7 +25,6 @@ exports.cloudProvider = cloudProvider;
 exports.uaa = uaa;
 exports.metering = metering;
 exports.director = director;
-exports.docker = docker;
 exports.agent = agent;
 exports.virtualHostAgent = virtualHostAgent;
 exports.multitenancyAgent = multitenancyAgent;
@@ -59,11 +57,13 @@ function verify(ignoreList = []) {
       logger.info('Comparing pending mocks with ignore mocks');
       let count = 0;     
       for(let i = 0; i < ignoreList.length; i++) {
-        if(nockPendingMocks[i] === ignoreList[i])
+        if(nockPendingMocks[i] === ignoreList[i]) {
           count++;
+        }
       }
-      if(count == ignoreList.length)
+      if(count == ignoreList.length) {
         reset();
+      }
     }    
   }
  

@@ -1,4 +1,0 @@
-#!/bin/bash -eu
-watch eval 'echo "Docker Container"; docker ps --all --format "{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}\t{{.Ports}}" | sed -r "s/0\.0\.0\.0://g"'
-# alternatively run in VM:
-# watch eval 'echo "Docker Container"; /var/vcap/packages/docker/bin/docker --host unix:///var/vcap/sys/run/docker/docker.sock ps --all --format "{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}\t{{.Ports}}" | sed -r "s/0\.0\.0\.0://g"'

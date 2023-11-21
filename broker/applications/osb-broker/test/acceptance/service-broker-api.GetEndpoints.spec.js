@@ -16,16 +16,11 @@ const camelcaseKeys = require('camelcase-keys');
 describe('service-broker-api-2.0', function () {
   describe('instances', function () {
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-    const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
+    const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     const instance_id = '951f7a03-df8a-4b75-90be-38abe455568d';
     const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
-    const protocol = config.external.protocol;
-    const host = config.external.host;
-    const docker_url = parseUrl(config.docker.url);
-    const username = 'user';
-    const password = 'secret';
     const baseCFUrl = '/cf/v2';
 
     afterEach(function () {
@@ -57,31 +52,6 @@ describe('service-broker-api-2.0', function () {
           parameters: {
             foo: 'bar'
           }
-        },
-        status: {
-          state: 'succeeded'
-        }
-      };
-
-      const payload2K8s = {
-        apiVersion: 'osb.servicefabrik.io/v1alpha1',
-        kind: 'SFServiceInstance',
-        metadata: {
-          finalizers: ['broker.servicefabrik.io'],
-          name: instance_id,
-          labels: {
-            state: 'in_queue'
-          }
-        },
-        spec: {
-          service_id: service_id,
-          plan_id: plan_id,
-          context: {
-            platform: 'kubernetes',
-            namespace: 'default'
-          },
-          organization_guid: organization_guid,
-          space_guid: space_guid,
         },
         status: {
           state: 'succeeded'
@@ -250,185 +220,6 @@ describe('service-broker-api-2.0', function () {
           });
       });
 
-      it('returns 200 if service instance is successfully returned', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: {
-                foo: 'bar'
-              },
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
-            })
-            mocks.verify();
-          });
-      });
-
-      it('returns 200 if service instance is successfully returned - returns specified list of parameters', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        let plan;
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          plan = _.find(service.plans, ['id', plan_id]);
-          if(plan) {
-            _.set(plan, 'metadata.retrievableParametersList', ['foo1', 'foo', 'foo3']);
-          }
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        testPayload2.spec.parameters.foo1 = "bar1";
-        testPayload2.spec.parameters.foo2 = "bar2";
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            if(plan) {
-              _.unset(plan, 'metadata.retrievableParametersList');
-            }
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: {
-                foo: 'bar',
-                foo1: 'bar1'
-              },
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
-            })
-            mocks.verify();
-          });
-      });
-
-      it('returns 200 if service instance is successfully returned - returns service instance metadata', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        let plan;
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          plan = _.find(service.plans, ['id', plan_id]);
-          if(plan) {
-            _.set(plan, 'metadata.retrievableParametersList', ['foo1', 'foo', 'foo3']);
-          }
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        testPayload2.spec.parameters.foo1 = "bar1";
-        testPayload2.spec.parameters.foo2 = "bar2";
-        testPayload2.spec.metadata = {
-          "labels": {
-            "brokerName": "service-fabrik-broker"
-          }
-        };
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            if(plan) {
-              _.unset(plan, 'metadata.retrievableParametersList');
-            }
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: {
-                foo: 'bar',
-                foo1: 'bar1'
-              },
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`,
-              metadata: {
-                "labels": {
-                  "brokerName": "service-fabrik-broker"
-                }
-              }
-            })
-            mocks.verify();
-          });
-      });
-
-      it('returns 200 if service instance is successfully returned (k8s)', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2K8s);
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
-            })
-          });
-      });
-
-      it('returns 200 if status is failed', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.status.state = 'failed';
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: {
-                foo: 'bar'
-              },
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
-            })
-            mocks.verify();
-          });
-      });
-
       it('returns 412 (PreconditionFailed) error if broker api version is not atleast 2.14', function () {
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.spec = camelcaseKeys(testPayload2.spec);
@@ -443,38 +234,6 @@ describe('service-broker-api-2.0', function () {
           });
       });
       
-      it('should return X-Broker-API-Request-Identity in response if set in request', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        if (service) {
-          _.set(service, 'instances_retrievable', true);
-          catalog.reload();
-        }
-        const testPayload2 = _.cloneDeep(payload2);
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, testPayload2, 1);
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .set('X-Broker-API-Request-Identity', 'someid')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res).to.have.header('X-Broker-API-Request-Identity', 'someid');
-            expect(res.body).to.deep.equal({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: {
-                foo: 'bar'
-              },
-              dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
-            })
-            mocks.verify();
-          });
-      });
-
       it('should return X-Broker-API-Request-Identity in response if set in request (with precondition failure)', function () {
         const testPayload2 = _.cloneDeep(payload2);
         testPayload2.spec = camelcaseKeys(testPayload2.spec);
@@ -525,15 +284,6 @@ describe('service-broker-api-2.0', function () {
             secretRef: binding_id
           }
         }
-      };
-      const secretData = {
-        hostname: docker_url.hostname,
-        username: username,
-        password: password,
-        ports: {
-          '12345/tcp': 12345
-        },
-        uri: `http://${username}:${password}@${docker_url.hostname}`
       };
 
       it('returns 400 (BadRequest) error if service does not support binding retrieval', function () {
@@ -595,7 +345,7 @@ describe('service-broker-api-2.0', function () {
           });
       });
 
-      it('returns 200 if service binding is successfully returned', function () {
+      it('returns 404 if service binding status is not succeeded', function () {
         const oldServices = config.services;
         const service = _.find(config.services, ['id', service_id]);
         const plan = _.find(service.plans, ['id', plan_id]);
@@ -610,51 +360,7 @@ describe('service-broker-api-2.0', function () {
 
         const testPayload2 = _.cloneDeep(bindPayload2);
         testPayload2.spec = camelcaseKeys(testPayload2.spec);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
-        mocks.apiServerEventMesh.nockGetSecret(binding_id, _.get(config, 'sf_namespace', CONST.APISERVER.DEFAULT_NAMESPACE), {
-          data: {
-            response: encodeBase64({ credentials: secretData })
-          }
-        });
-        return chai.request(app)
-          .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-          .set('X-Broker-API-Version', '2.14')
-          .auth(config.username, config.password)
-          .then(res => {
-            config.services = oldServices;
-            catalog.reload();
-            expect(res).to.have.status(200);
-            expect(res.body).to.eql({
-              parameters: {
-                foo: 'bar'
-              },
-              credentials: {
-                hostname: docker_url.hostname,
-                username: username,
-                password: password,
-                ports: {
-                  '12345/tcp': 12345
-                },
-                uri: `http://${username}:${password}@${docker_url.hostname}`
-              }
-            });
-            mocks.verify();
-          });
-      });
-
-      it('returns 404 if service binding status is not succeeded', function () {
-        const oldServices = config.services;
-        const service = _.find(config.services, ['id', service_id]);
-        const plan = _.find(service.plans, ['id', plan_id]);
-        if (service) {
-          _.set(service, 'bindings_retrievable', true);
-          _.set(service, 'bindable', true);
-        }
-        catalog.reload();
-
-        const testPayload2 = _.cloneDeep(bindPayload2);
         testPayload2.status.state = 'failed';
-        testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
         return chai.request(app)
           .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -673,14 +379,14 @@ describe('service-broker-api-2.0', function () {
         const testPayload2 = _.cloneDeep(bindPayload2);
         testPayload2.spec = camelcaseKeys(testPayload2.spec);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
-          return chai.request(app)
-            .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .set('X-Broker-API-Version', '2.12')
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(412);
-            });
+        return chai.request(app)
+          .get(`${baseCFUrl}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+          .set('X-Broker-API-Version', '2.12')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(412);
+          });
       });
 
     });

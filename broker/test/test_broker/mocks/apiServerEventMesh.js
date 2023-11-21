@@ -76,7 +76,7 @@ function nockCreateCrd(resourceGroup, resourceType, response, times, expectedSta
 
 function nockCreateNamespace(name, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
-    .post(`/api/v1/namespaces`, verifier)
+    .post('/api/v1/namespaces', verifier)
     .times(times || 1)
     .reply(expectedStatusCode || 201, response);
 }
@@ -117,10 +117,10 @@ function nockGetConfigMap(expectedStatusCode, enabled) {
 
 function nockPatchResource(resourceGroup, resourceType, id, response, times, payload, expectedStatusCode) {
   nock(apiServerHost, {
-      reqheaders: {
-        'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-      }
-    })
+    reqheaders: {
+      'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+    }
+  })
     .patch(
       `/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, _.matches(payload)
     )

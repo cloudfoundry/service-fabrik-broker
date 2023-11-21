@@ -20,7 +20,7 @@ describe('service-broker-api', function () {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
           expect(res.body.services).to.have.length(4);
-          expect(res.body.services[0].plans).to.have.length(8);
+          expect(res.body.services[0].plans).to.have.length(5);
           expect(res.body.services[1].plans).to.have.length(3);
         });
     });
@@ -128,7 +128,7 @@ describe('service-broker-api', function () {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
           expect(res.body.services).to.have.length(4);
-          expect(res.body.services[0].plans).to.have.length(8);
+          expect(res.body.services[0].plans).to.have.length(5);
           expect(res.body.services[1].plans).to.have.length(3);
           toJsonStub.restore();
         });

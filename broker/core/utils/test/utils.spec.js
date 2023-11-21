@@ -515,7 +515,7 @@ describe('utils', function () {
   describe('#pushServicePlanToApiServer', function () {
     it('Push Service and Plans on apiserver', function () {
       mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, 4);
-      mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, 14);
+      mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, 11);
       return utils.pushServicePlanToApiServer()
         .then(res => {
           expect(res.length).to.eql(4);
@@ -529,7 +529,7 @@ describe('utils', function () {
       const meteringCrdJson = apiServerClient.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
       mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson, 409);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, meteringCrdJson.metadata.name, {}, meteringCrdJson);
-     return utils.registerSFEventsCrd()
+      return utils.registerSFEventsCrd()
         .then(() => {
           mocks.verify();
         });
@@ -547,11 +547,11 @@ describe('utils', function () {
       delayStub.restore();
     });
     it('waiting successfully till the sfservices ', () => {
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 200);
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
-       mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 200);
-       return utils.waitWhileCRDsAreRegistered()
+      mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
+      mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 200);
+      mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 404);
+      mocks.apiServerEventMesh.nockGetCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS + '.' + CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, {}, 1, 200);
+      return utils.waitWhileCRDsAreRegistered()
         .then(() => {
           mocks.verify();
         });
