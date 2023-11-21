@@ -109,7 +109,6 @@ module.exports = Object.freeze({
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',
-    DOCKER: 'docker',
     VIRTUAL_HOST: 'virtual_host'
   },
   HTTP_METHOD: {
@@ -277,9 +276,6 @@ module.exports = Object.freeze({
       DEPLOYMENT_NOT_FOUND: 20004,
       DEPLOYMENT_ALREADY_EXISTS: 20009
     },
-    DOCKER: {
-      DOCKER_UNAVAILABLE: 30003
-    },
     CF: {
       DEFAULT: 40001
     },
@@ -359,11 +355,9 @@ module.exports = Object.freeze({
       INTEROPERATOR_PLANS: 'sfplans',
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
-      DOCKER: 'dockers',
       VIRTUALHOST: 'virtualhosts',
       POSTGRESQL_MT: 'postgresqlmts',
       DIRECTOR_BIND: 'directorbinds',
-      DOCKER_BIND: 'dockerbinds',
       VIRTUALHOST_BIND: 'virtualhostbinds',
       POSTGRESQL_MT_BIND: 'postgresqlmtbinds',
       DEFAULT_BACKUP: 'defaultbackups',
@@ -512,9 +506,6 @@ module.exports = Object.freeze({
       DOWNGRADE_TO_SINGLE_AZ: 'downgrade_to_single_az',
       MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
     }
-  },
-  DOCKER_HOST_CONFIG: {
-    PIDS_LIMIT: 150
   },
   CF_SECURITY_GROUP: {
     MAX_RETRIES: 4,

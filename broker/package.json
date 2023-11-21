@@ -26,7 +26,6 @@
     "broker",
     "cf",
     "cloudfoundry",
-    "docker",
     "services",
     "service-broker",
     "service-fabrik"

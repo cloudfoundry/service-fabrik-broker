@@ -55,8 +55,7 @@ func (c *clientMock) UpdateStatus(ctx context.Context, sfevent *v1alpha1.Sfevent
 
 var _ = Describe("Event", func() {
 	var (
-		ar             v1beta1.AdmissionReview
-		arDockerCreate v1beta1.AdmissionReview
+		ar v1beta1.AdmissionReview
 	)
 
 	dat, err := os.ReadFile("test_resources/admission_request.json")
@@ -64,17 +63,8 @@ var _ = Describe("Event", func() {
 		panic(err)
 	}
 
-	dockerCreateAr, err := os.ReadFile("test_resources/admission_request_docker_create.json")
-	if err != nil {
-		panic(err)
-	}
-
 	BeforeEach(func() {
 		err = json.Unmarshal(dat, &ar)
-		if err != nil {
-			panic(err)
-		}
-		err = json.Unmarshal(dockerCreateAr, &arDockerCreate)
 		if err != nil {
 			panic(err)
 		}
@@ -225,26 +215,6 @@ var _ = Describe("Event", func() {
 			})
 			// false for create triggered
 		})
-		Context("When Type is Create and kind is Docker", func() {
-			It("Should should return true if create succeeds", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.Status.State = "succeeded"
-				evt.oldCrd.Status.State = ""
-				Expect(evt.isMeteringEvent()).To(Equal(true))
-			})
-			It("Should should return false if create state change does not change", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.Status.State = "succeeded"
-				evt.oldCrd.Status.State = "succeeded"
-				Expect(evt.isMeteringEvent()).To(Equal(false))
-			})
-			It("Should should return false if create fails", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.Status.State = "failed"
-				evt.oldCrd.Status.State = ""
-				Expect(evt.isMeteringEvent()).To(Equal(false))
-			})
-		})
 		Context("When Type is Delete and kind is Director", func() {
 			It("Should should return true if delete is triggered", func() {
 				evt, _ := NewEvent(&ar)
@@ -277,32 +247,6 @@ var _ = Describe("Event", func() {
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 		})
-		Context("When Type is Delete and kind is Docker", func() {
-			It("Should should return true if delete is triggered", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.Status.State = "delete"
-				evt.oldCrd.Status.State = "succeeded"
-				Expect(evt.isMeteringEvent()).To(Equal(true))
-			})
-			It("Should should return false when delete state change does not change", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.Status.State = "delete"
-				evt.oldCrd.Status.State = "delete"
-				Expect(evt.isMeteringEvent()).To(Equal(false))
-			})
-			It("Should should return false if delete fails", func() {
-				evt, _ := NewEvent(&arDockerCreate)
-				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type: "delete",
-				})
-				evt.crd.Status.State = "failed"
-				evt.oldCrd.Status.State = "delete"
-				evt.oldCrd.SetLastOperation(resources.GenericLastOperation{
-					Type: "delete",
-				})
-				Expect(evt.isMeteringEvent()).To(Equal(false))
-			})
-		})
 		It("should return error if isUpdate fails", func() {
 			evt, _ := NewEvent(&ar)
 			evt.crd.Status.State = "succeeded"
@@ -323,60 +267,6 @@ var _ = Describe("Event", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("isUpdate", func() {
-		It("Should throw error if GetLastOpertaion fails", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Status.LastOperationRaw = "invalid json"
-			_, err := evt.isUpdate()
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("isCreate", func() {
-		It("Should throw error if GetLastOpertaion fails", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Status.LastOperationRaw = "invalid json"
-			_, err := evt.isCreate()
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("getEventType", func() {
-		It("Should throw error if GetLastOpertaion fails", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Status.LastOperationRaw = "invalid json"
-			_, err := evt.getEventType()
-			Expect(err).To(HaveOccurred())
-		})
-		It("Should detect docker create event", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Kind = "Docker"
-			evt.crd.Status.State = "succeeded"
-			etype, err := evt.getEventType()
-			Expect(etype).To(Equal(c.CreateEvent))
-			Expect(err).To(BeNil())
-		})
-		It("Should return error if no condition matches", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Kind = "Docker"
-			etype, err := evt.getEventType()
-			Expect(etype).To(Equal(c.InvalidEvent))
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("isPlanChanged", func() {
-		It("Should throw error if GetAppliedOption fails for new resource", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Status.AppliedOptions = "invalid json"
-			_, err := evt.isPlanChanged()
-			Expect(err).To(HaveOccurred())
-		})
-		It("Should throw error if GetAppliedOption fails for old resource", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.oldCrd.Status.AppliedOptions = "invalid json"
-			_, err := evt.isPlanChanged()
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
 	Describe("validateOptions", func() {
 		It("Returns nil if options has necessary values", func() {
 			evt, _ := NewEvent(&ar)
@@ -531,25 +421,6 @@ var _ = Describe("Event", func() {
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(1))
 			})
-			It("Should choose Options if docker", func() {
-				evt, _ := NewEvent(&ar)
-				evt.crd.Kind = "Docker"
-				evt.oldCrd.Status.AppliedOptions = ""
-				evt.crd.Status.State = "delete"
-				docs, err := evt.getMeteringEvents()
-				Expect(err).To(BeNil())
-				Expect(len(docs)).To(Equal(1))
-			})
-			It("Should throw error if Docker and Options is empty", func() {
-				evt, _ := NewEvent(&ar)
-				evt.crd.Kind = "Docker"
-				evt.crd.Spec.Options = ""
-				evt.oldCrd.Status.AppliedOptions = ""
-				evt.crd.Status.State = "delete"
-				docs, err := evt.getMeteringEvents()
-				Expect(err).To(HaveOccurred())
-				Expect(docs).To(BeNil())
-			})
 		})
 		It("Should throw error when Options is empty", func() {
 			evt, _ := NewEvent(&ar)
@@ -606,13 +477,6 @@ var _ = Describe("Event", func() {
 			docs, err := evt.getMeteringEvents()
 			Expect(err).Should(HaveOccurred())
 			Expect(docs).To(BeNil())
-		})
-		It("Should return error if no condition matches", func() {
-			evt, _ := NewEvent(&arDockerCreate)
-			evt.crd.Kind = "Docker"
-			docs, err := evt.getMeteringEvents()
-			Expect(docs).To(BeNil())
-			Expect(err).To(HaveOccurred())
 		})
 	})
 

@@ -35,7 +35,6 @@ const (
 // CrdKind
 const (
 	Director    string = "Director"
-	Docker      string = "Docker"
 	SfeventKind string = "Sfevent"
 )
 
@@ -140,10 +139,6 @@ func (e *Event) isDirector() bool {
 	return e.crd.Kind == Director
 }
 
-func (e *Event) isDocker() bool {
-	return e.crd.Kind == Docker
-}
-
 func (e *Event) isMeteringEvent() (bool, error) {
 	// An event is metering event if
 	// Create succeeded
@@ -167,7 +162,7 @@ func (e *Event) isMeteringEvent() (bool, error) {
 		}
 		return e.isDeleteTriggered(), nil
 	}
-	return e.isDocker() && e.isStateChanged() && (e.isSucceeded() || e.isDeleteTriggered()), nil
+	return false, nil
 }
 
 func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
@@ -199,8 +194,6 @@ func (e *Event) getEventType() (c.EventType, error) {
 		case loCreate:
 			eventType = c.CreateEvent
 		}
-	} else if e.isDocker() && e.crd.Status.State == Succeeded {
-		eventType = c.CreateEvent
 	}
 	if eventType == c.InvalidEvent {
 		return eventType, errors.New("no supported event found")
@@ -233,7 +226,7 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 		}
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.UpdateEvent))
 		// Sleep for 1 ms to make sure that timestamp of both stop and start events are not same.
-                time.Sleep(1 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.UpdateEvent))
 	case c.CreateEvent:
 		if err = e.validateOptions(options); err != nil {

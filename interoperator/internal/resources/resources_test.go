@@ -402,18 +402,6 @@ status:
 	lastResource1.Namespace = constants.InteroperatorNamespace
 	lastResource1.Name = "instance-id"
 
-	lastResource2 := osbv1alpha1.Source{}
-	lastResource2.APIVersion = "deployment.servicefabrik.io/v1alpha1"
-	lastResource2.Kind = "Docker"
-	lastResource2.Namespace = constants.InteroperatorNamespace
-	lastResource2.Name = "instance-id"
-
-	oldResource := &unstructured.Unstructured{}
-	oldResource.SetKind(lastResource2.Kind)
-	oldResource.SetAPIVersion(lastResource2.APIVersion)
-	oldResource.SetName(lastResource2.Name)
-	oldResource.SetNamespace(lastResource2.Namespace)
-
 	type args struct {
 		client            kubernetes.Client
 		expectedResources []*unstructured.Unstructured
@@ -428,18 +416,6 @@ status:
 		want    []*unstructured.Unstructured
 		wantErr bool
 	}{
-		{
-			name: "Test1",
-			r:    resourceManager{},
-			args: args{
-				client:            c,
-				expectedResources: expectedResources,
-				lastResources:     []osbv1alpha1.Source{lastResource1, lastResource2},
-				force:             false,
-			},
-			want:    append(foundResources, oldResource),
-			wantErr: false,
-		},
 		{
 			name: "Test2",
 			r:    resourceManager{},

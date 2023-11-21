@@ -372,13 +372,6 @@ class DirectorServiceUnavailable extends ServiceUnavailable {
 }
 exports.DirectorServiceUnavailable = DirectorServiceUnavailable;
 
-class DockerServiceUnavailable extends ServiceUnavailable {
-  constructor(message) {
-    super(message, CONST.ERR_STATUS_CODES.DOCKER.DOCKER_UNAVAILABLE);
-  }
-}
-exports.DockerServiceUnavailable = DockerServiceUnavailable;
-
 class DBUnavailable extends HttpServerError {
   constructor(message) {
     super(503, 'DB Unavailable', message);

@@ -37,7 +37,6 @@ const NotImplemented = errors.NotImplemented;
 const BadGateway = errors.BadGateway;
 const ServiceUnavailable = errors.ServiceUnavailable;
 const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
-const DockerServiceUnavailable = errors.DockerServiceUnavailable;
 
 describe('errors', () => {
   let status = 100;
@@ -460,17 +459,6 @@ describe('errors', () => {
       expect(directorServiceUnavailable.statusCode).to.eql(20003);
       expect(directorServiceUnavailable.reason).to.eql('Service Unavailable');
       expect(directorServiceUnavailable.message).to.eql(message);
-    });
-  });
-
-  describe('DockerServiceUnavailable', () => {
-    let dockerServiceUnavailable = new DockerServiceUnavailable(message);
-
-    it('sets the class properties correctly', () => {
-      expect(dockerServiceUnavailable.status).to.eql(503);
-      expect(dockerServiceUnavailable.statusCode).to.eql(30003);
-      expect(dockerServiceUnavailable.reason).to.eql('Service Unavailable');
-      expect(dockerServiceUnavailable.message).to.eql(message);
     });
   });
 });

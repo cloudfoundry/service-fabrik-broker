@@ -2,7 +2,6 @@
 
 const Promise = require('bluebird');
 const DirectorService = require('@sf/provisioner-services').DirectorService;
-const DockerService = require('../../../applications/operators/src/docker-operator/DockerService');
 const { catalog } = require('@sf/models');
 const {
   commonFunctions: {
@@ -34,9 +33,7 @@ const EventLogInterceptor = proxyquire('../src/EventLogInterceptor', {
 
 describe('EventLogInterceptor', function () {
   /* jshint expr:true */
-  let dummyInstanceGuid = 'fd93a58c-7cef-43bd-81bc-bd38efc85ff6';
   const directorService = new DirectorService(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
-  const dockerService = new DockerService(dummyInstanceGuid, catalog.getPlan('466c5078-df6e-427d-8fb2-c76af50c0f56'));
   const internalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
   const externalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.external.event_type, 'external');
   let pubSubSpy;
@@ -72,56 +69,6 @@ describe('EventLogInterceptor', function () {
   }
 
   describe('#interceptServiceInstanceCreation', function () {
-    it('should log docker service creation status as successful', () => {
-      const pathParams = {
-        instance_id: '5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
-      };
-      const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
-      const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
-      const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, dockerService, respBody, 200);
-      return Promise
-        .try(() => {
-          internalAppEventLogInterceptor.execute(request, response, respBody);
-        })
-        .then(() => {
-          expect(pubSubSpy).to.be.called;
-          const testResponse = pubSubSpy.firstCall.args[0];
-          expect(testResponse).to.be.an('object');
-          const testResult = testResponse.event;
-          expect(testResult.state).to.eql(config.monitoring.success_state);
-          expect(testResult.metric).to.eql(config.monitoring.success_metric);
-          expect(testResult.request.instance_id).to.eql('5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerService.name}.create_instance`;
-          expect(testResult.eventName).to.eql(expectedEvtName);
-        });
-    });
-
-    it('should log docker service deletion status as successful', () => {
-      const pathParams = {
-        instance_id: '5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
-      };
-      const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
-      const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
-      const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, dockerService, respBody, 200);
-      return Promise
-        .try(() => {
-          internalAppEventLogInterceptor.execute(request, response, respBody);
-        })
-        .then(() => {
-          expect(pubSubSpy).to.be.called;
-          const testResponse = pubSubSpy.firstCall.args[0];
-          expect(testResponse).to.be.an('object');
-          const testResult = testResponse.event;
-          expect(testResult.state).to.eql(config.monitoring.success_state);
-          expect(testResult.metric).to.eql(config.monitoring.success_metric);
-          expect(testResult.request.instance_id).to.eql('5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerService.name}.delete_instance`;
-          expect(testResult.eventName).to.eql(expectedEvtName);
-        });
-    });
-
     it('should log director service creation status as in-progress', () => {
       const pathParams = {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
