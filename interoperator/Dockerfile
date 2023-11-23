@@ -16,10 +16,24 @@ COPY interoperator/controllers/ controllers/
 COPY interoperator/internal/ internal/
 COPY interoperator/pkg/ pkg/
 
+WORKDIR /rotation_workspace
+COPY interoperator/akc_rotation/go.mod go.mod
+COPY interoperator/akc_rotation/go.sum go.sum
+
+RUN go mod download
+
+COPY interoperator/akc_rotation/main.go main.go
+
+WORKDIR /workspace
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags provisioners -a -o manager main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags schedulers -a -o scheduler main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -tags multiclusterdeploy -a -o multiclusterdeploy main.go
+
+
+WORKDIR /rotation_workspace
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o akc main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
@@ -31,6 +45,7 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/scheduler .
 COPY --from=builder /workspace/multiclusterdeploy .
+COPY --from=builder /rotation_workspace/akc .
 
 # Default entrypoint is manager (provisioners)
 ENTRYPOINT ["/manager"]
