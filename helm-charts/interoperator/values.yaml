@@ -237,6 +237,9 @@ operator_apis:
   # Log stack strace level can have any value from list 'info' or 'error' or 'panic'
   log_stacktrace_level: error
 
+
+kubeconfig_rotation:
+  enabled: false
 #imagePullSecrets:
 #- name: docker-dmz
 #- name: docker-dmz2
