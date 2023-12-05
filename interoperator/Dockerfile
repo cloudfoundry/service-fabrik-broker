@@ -17,12 +17,12 @@ COPY interoperator/internal/ internal/
 COPY interoperator/pkg/ pkg/
 
 WORKDIR /rotation_workspace
-COPY interoperator/akc_rotation/go.mod go.mod
-COPY interoperator/akc_rotation/go.sum go.sum
+COPY interoperator/kubeconfig_rotation/go.mod go.mod
+COPY interoperator/kubeconfig_rotation/go.sum go.sum
 
 RUN go mod download
 
-COPY interoperator/akc_rotation/main.go main.go
+COPY interoperator/kubeconfig_rotation/main.go main.go
 
 WORKDIR /workspace
 
