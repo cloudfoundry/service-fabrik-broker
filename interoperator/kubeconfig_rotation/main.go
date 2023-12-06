@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -60,42 +59,48 @@ func createAdminKubeConfig() error {
 	return err
 }
 
-func getUpdatedSecret(secret_name string, secret_namespace string) error {
-	err := ms_cl.Get(context.Background(), cl.ObjectKey{
+func updateShootSecret(secret_name string, secret_namespace string) error {
+	err1 := ms_cl.Get(context.Background(), cl.ObjectKey{
 		Name:      secret_name,
 		Namespace: secret_namespace,
 	}, updated_sec)
-	return err
-}
-
-func updateShootSecret() error {
-	err := ms_cl.Update(ctx, updated_sec)
-	return err
+	if err1 != nil {
+		return err1
+	}
+	shoot_kubeconfig := adminKubeconfigRequest.Status.Kubeconfig
+	updated_sec.Data["kubeconfig"] = shoot_kubeconfig
+	err2 := ms_cl.Update(ctx, updated_sec)
+	return err2
 }
 
 func Retry(maxRetries int, sleep time.Duration, operation RetryableOperation) error {
+	var err error
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		err := operation()
+		err = operation()
 		if err == nil {
 			return nil
 		}
+		fmt.Println(err)
+		fmt.Println("Retrying...")
 		time.Sleep(sleep * time.Duration(attempt))
 	}
-
-	return errors.New("Exhausted all attempts")
+	fmt.Println(err)
+	fmt.Println("All retries failed.")
+	return err
 }
 
 func main() {
 
 	maxRetries := 3
-	retryInterval := 30 * time.Second
+	retryInterval := 20 * time.Second
 	err := Retry(maxRetries, retryInterval, func() error {
 		var err error
 		in_cluster_config, err = getInClusterConfig()
 		return err
 	})
 	if err != nil {
-		fmt.Println("Failed to fetch in-cluster config: ", err)
+		fmt.Println("Failed to fetch in-cluster config.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	} else {
 		fmt.Println("Fetched the in-cluster config.")
@@ -104,6 +109,7 @@ func main() {
 	ms_cl, err = cl.New(in_cluster_config, cl.Options{})
 	if err != nil {
 		fmt.Println("Failed to create client of mastercluster.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	}
 
@@ -113,7 +119,8 @@ func main() {
 		return getServiceAccountKubeconfigSecret()
 	})
 	if err != nil {
-		fmt.Println("Failed in fetching service-account-kubeconfig secret", err)
+		fmt.Println("Failed in fetching service-account-kubeconfig secret.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	} else {
 		fmt.Println("Fetched the service-account-kubeconfig secret.")
@@ -122,12 +129,14 @@ func main() {
 	sa_config, err := clientcmd.RESTConfigFromKubeConfig(sa_sec.Data["kubeconfig"])
 	if err != nil {
 		fmt.Println("Error in getting service account REST Config from kubeconfig.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	}
 
 	sa_cl, err = cl.New(sa_config, cl.Options{Scheme: kubernetes.GardenScheme})
 	if err != nil {
 		fmt.Println("Failed to create service account client.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	}
 
@@ -135,7 +144,8 @@ func main() {
 		return getSecretList()
 	})
 	if err != nil {
-		fmt.Println("Failed in fetching secret list", err)
+		fmt.Println("Failed in fetching secret list.")
+		fmt.Println("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	} else {
 		fmt.Println("Fetched the secret list")
@@ -143,7 +153,8 @@ func main() {
 
 	expiration := 1440 * time.Minute
 	expirationSeconds := int64(expiration.Seconds())
-
+	var allUpdateSuccess bool
+	allUpdateSuccess = true
 	for _, secret := range secList.Items {
 		if secret.Labels["type"] == "interoperator-cluster-secret" {
 			shoot_name := secret.Labels["shoot"]
@@ -160,8 +171,8 @@ func main() {
 				return getShootCluster(shoot_namespace, shoot_name)
 			})
 			if err != nil {
-				fmt.Println("Failed in fetching shoot cluster ", shoot_name, ": ", err)
-				os.Exit(1)
+				fmt.Println("Failed in fetching shoot cluster ", shoot_name)
+				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				fmt.Println("Fetched the shoot cluster ", shoot_name)
 			}
@@ -170,37 +181,29 @@ func main() {
 				return createAdminKubeConfig()
 			})
 			if err != nil {
-				fmt.Println("Failed in creating adminkubeconfig of ", shoot_name, " cluster: ", err)
-				os.Exit(1)
+				fmt.Println("Failed in creating adminkubeconfig of ", shoot_name, " cluster.")
+				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				fmt.Println("Created adminkubeconfig of ", shoot_name, " cluster.")
 			}
-
-			shoot_kubeconfig := adminKubeconfigRequest.Status.Kubeconfig
 			updated_sec = &corev1.Secret{}
 			err = Retry(maxRetries, retryInterval, func() error {
-				return getUpdatedSecret(secret.Name, secret.Namespace)
+				return updateShootSecret(secret.Name, secret.Namespace)
 			})
 			if err != nil {
-				fmt.Println("Failed in fetching updated secret of ", shoot_name, " cluster: ", err)
-				os.Exit(1)
-			} else {
-				fmt.Println("Fetched updated secret of ", shoot_name, " cluster.")
-			}
-
-			updated_sec.Data["kubeconfig"] = shoot_kubeconfig
-
-			err = Retry(maxRetries, retryInterval, func() error {
-				return updateShootSecret()
-			})
-			if err != nil {
-				fmt.Println("Failed in updating the existing secret for the ", shoot_name, " cluster: ", err)
-				os.Exit(1)
+				fmt.Println("Failed in updating the existing secret for the ", shoot_name, " cluster.")
+				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				fmt.Println("Updated the existing secret of the  ", shoot_name, " cluster.")
 			}
 
 		}
+	}
+	if allUpdateSuccess != true {
+		fmt.Println("Kubeconfig Rotation Job failed.")
+		os.Exit(1)
+	} else {
+		os.Exit(0)
 	}
 
 }

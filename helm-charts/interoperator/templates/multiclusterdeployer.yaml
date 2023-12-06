@@ -137,6 +137,7 @@ metadata:
     type: {{ .Release.Namespace }}-kubeconfig-rotation-cronjob
 spec:
   schedule: "0 */10 * * *"
+  failedJobsHistoryLimit: 3
   jobTemplate:
     metadata:
       labels:
@@ -156,5 +157,5 @@ spec:
             env:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-          restartPolicy: OnFailure
+          restartPolicy: Never
 {{- end }}
