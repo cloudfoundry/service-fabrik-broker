@@ -34,6 +34,8 @@ Interoperator uses helm charts for deployment. Interoperator requires **helm ver
 
 You have to deploy and run your own operator. Currently SF-Inter-Operator supports only in-cluster operators, so you have to deploy it in the same cluster where SF-Inter-Operator is deployed.
 
+**NOTE:** It is suggested for Gardener users to refer [this](https://github.com/cloudfoundry/service-fabrik-broker/blob/dd661d17e7b59b05d8ef2b43cfeae90978aef694/docs/Interoperator-Features.md#automatic-kubeconfig-rotation-of-clusters) before either Fresh Deployment or Update of Interoperator
+
 ### Deploy Interoperator(Fresh deploy)
 
 #### Deploy using publicly published helm chart (Recommended)

@@ -169,3 +169,40 @@ schemas: &blueprint_schemas
 ```
 
 Refer [this sample blueprint plan for example](https://github.com/cloudfoundry/service-fabrik-broker/blob/e84064c184f908f8821d5f2dc583c63515ae8642/broker/config/settings.yml#L743-L820).
+
+
+
+## Automatic Kubeconfig Rotation of clusters
+
+**NOTE:** This feature is specifically for Gardener users.
+
+With K8S 1.27 onwards in Gardener, the support for static kubeconfig is deprecated. User needs to create the AdminKubeConfig(AKC) and then apply it as a secret. This AKC is valid maximum upto 24 hrs and after its expiration, jobs related to multicluster deployment (provision, binding etc. in sister cluster) would fail.
+In order to solve this issue, this feature automatically creates fresh AKC and updates the corresponding secrets in the master cluster.
+
+It uses the Gardener Project level service-account-kubeconfig to generate AKC for respective clusters using a cronjob.
+
+* Before enabling this feature, either making a Fresh Deploy or Updating the Interoperator, the user has to create a Service Account Kubeconfig at Gardener Project level and apply it as a secret in the given format.
+
+  ```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: service-account-kubeconfig
+    namespace: <namespace of your interoperator deployment>
+  data:
+    kubeconfig: <kubeconfig of Service Account in base64 encoded format>
+  ```
+  **NOTE:** The `metadata.name` should exactly match as given above.<br>
+
+* The secrets used to refer their correspoding master and sister cluster have to be labelled in the specific format given below. For the existing deployments, those secrets have to be updated accordingly. 
+  ```yaml
+  metadata:
+    ...
+    labels:
+      type: interoperator-cluster-secret
+      shoot: <name of gardener shoot cluster>
+      namespace: <namespace of gardener shoot cluster>
+  ...
+  ```
+
+* Finally, for enabing this feature, set the `kubeconfig_rotation.enabled` as `true` in `values.yaml`. If you are using helm then  `--set kubeconfig_rotation.enabled=true` while running `install` or `upgrade` command.
