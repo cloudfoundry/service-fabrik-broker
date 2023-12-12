@@ -104,7 +104,7 @@ matrix:
       script:
         - pushd broker
         - npm install -g yarn
-        - yarn set version 2.4.1
+        - yarn set version 1.22.21
         - yarn install
         - "npm run test-coverall"
         - popd
@@ -116,7 +116,7 @@ matrix:
       script:
         - pushd broker
         - npm install -g yarn
-        - yarn set version 2.4.1
+        - yarn set version 1.22.21
         - yarn install
         - "yarn run eslint"
         - "yarn run jsdoc"
