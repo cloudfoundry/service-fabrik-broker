@@ -102,3 +102,60 @@ spec:
     targetPort: http
   selector:
     control-plane: {{ .Release.Name }}-multiclusterdeployer-controller-manager
+---
+{{ if .Values.kubeconfig_rotation.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name:  {{ .Release.Name }}-secret-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-read-secrets-global
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: default 
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Release.Name }}-secret-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-kubeconfig-rotation-cronjob
+  namespace: {{ .Release.Namespace }}
+  labels:
+    type: {{ .Release.Namespace }}-kubeconfig-rotation-cronjob
+spec:
+  schedule: "0 */10 * * *"
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        type: {{ .Release.Namespace }}-kubeconfig-rotation-job
+    spec:
+      template:
+        metadata:
+          labels:
+            type: {{ .Release.Namespace }}-kubeconfig-rotation-job
+        spec:
+          containers:
+          - name: {{ .Release.Name }}-kubeconfig-rotation-cronjob-container
+            image: "{{ .Values.interoperator.image.repository }}:{{ .Values.interoperator.image.tag }}"
+            imagePullPolicy: {{ .Values.interoperator.image.pullPolicy }}
+            command:
+              - /akc
+            env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+          restartPolicy: Never
+{{- end }}
