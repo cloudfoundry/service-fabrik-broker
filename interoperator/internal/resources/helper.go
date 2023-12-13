@@ -263,9 +263,15 @@ func computeInputObjects(client kubernetes.Client, instance *osbv1alpha1.SFServi
 			obj := &unstructured.Unstructured{}
 			obj.SetKind(val.Kind)
 			obj.SetAPIVersion(val.APIVersion)
+			valNamespace := func() string {
+				if val.Namespace == "" {
+					return name.Namespace
+				}
+				return val.Namespace
+			}()
 			namespacedName := types.NamespacedName{
 				Name:      val.Name,
-				Namespace: name.Namespace,
+				Namespace: valNamespace,
 			}
 			err := client.Get(context.TODO(), namespacedName, obj)
 			if err != nil {
