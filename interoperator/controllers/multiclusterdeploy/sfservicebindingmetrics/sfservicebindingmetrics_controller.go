@@ -56,6 +56,7 @@ var (
 	)
 )
 
+// BindingMetrics reconciles a SFServiceBinding object
 type BindingMetrics struct {
 	client.Client
 	Log             logr.Logger
@@ -63,6 +64,7 @@ type BindingMetrics struct {
 	cfgManager      config.Config
 }
 
+// Reconcile reads that state of the SFServiceBinding object on master cluster and send the metrics data to prometheus
 func (r *BindingMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("bindingMetrics", req.NamespacedName)
 

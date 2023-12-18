@@ -130,7 +130,7 @@ func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) (string, error) {
 	return instance.GetClusterID()
 }
 
-// Get Labels converted to string from map[string]string for Metrics
+// GetLabelsForMetrics : Get Labels converted to string from map[string]string for Metrics
 func (r *SFServiceBinding) GetLabelsForMetrics() string {
 	log := ctrl.Log.WithName("SFServiceBinding:GetLabelsForMetrics")
 	if r == nil {
@@ -139,16 +139,16 @@ func (r *SFServiceBinding) GetLabelsForMetrics() string {
 	}
 	log.V(2).Info("Getting Labels converted to string")
 
-	//labelsJson := make(map[string]string)
-	labelsJson := r.GetLabels()
+	labelsJSON := r.GetLabels()
 	labelsStrArr := make([]string, 0)
-	for k, v := range labelsJson {
+	for k, v := range labelsJSON {
 		labelsStrArr = append(labelsStrArr, fmt.Sprintf("%s:%s", k, v))
 	}
 
 	return strings.Join(labelsStrArr, ",")
 }
 
+// GetLastOperation returns lastOperation label of the SFServiceBinding if exist, else returns empty string.
 func (r *SFServiceBinding) GetLastOperation() string {
 	log := ctrl.Log.WithName("SFServiceBinding")
 	if r == nil {
@@ -167,6 +167,7 @@ func (r *SFServiceBinding) GetLastOperation() string {
 	return lastOperation
 }
 
+// GetDeletionTimestampForMetrics return DeletionTimestamp of the SFServiceBinding if exists else return empty string.
 func (r *SFServiceBinding) GetDeletionTimestampForMetrics() string {
 	log := ctrl.Log.WithName("SFServiceBinding")
 	if r == nil || r.GetDeletionTimestamp() == nil {
