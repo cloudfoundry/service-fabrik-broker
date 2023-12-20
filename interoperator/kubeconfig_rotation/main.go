@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var sa_sec *corev1.Secret = &corev1.Secret{}
@@ -91,6 +92,7 @@ func Retry(maxRetries int, sleep time.Duration, operation RetryableOperation) er
 }
 
 func main() {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	cronjobLog := ctrl.Log.WithName("kubeconfig-rotation-cronjob")
 	maxRetries := 3
 	retryInterval := 20 * time.Second
