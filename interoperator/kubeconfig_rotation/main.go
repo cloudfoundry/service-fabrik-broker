@@ -216,7 +216,7 @@ func main() {
 	}
 	if allUpdateSuccess != true {
 		// fmt.Println("Kubeconfig Rotation Job failed.")
-		cronjobLog.Error("Kubeconfig Rotation Job failed.")
+		cronjobLog.Info("Kubeconfig Rotation Job failed.")
 		os.Exit(1)
 	} else {
 		cronjobLog.Info("Kubeconfig Rotation Job is successful.")
