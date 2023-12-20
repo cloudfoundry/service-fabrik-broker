@@ -182,11 +182,11 @@ func main() {
 			})
 			if err != nil {
 				// fmt.Println("Failed in fetching shoot cluster ", shoot_name)
-				cronjobLog.Error(err, "Failed in fetching shoot cluster ", shoot_name)
+				cronjobLog.Error(err, "Failed in fetching shoot cluster", "shoot_cluster", shoot_name)
 				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				// fmt.Println("Fetched the shoot cluster ", shoot_name)
-				cronjobLog.Info("Fetched the shoot cluster ", shoot_name)
+				cronjobLog.Info("Fetched the shoot cluster", shoot_name)
 			}
 
 			err = Retry(maxRetries, retryInterval, func() error {
@@ -194,12 +194,12 @@ func main() {
 			})
 			if err != nil {
 				// fmt.Println("Failed in creating adminkubeconfig of ", shoot_name, " cluster.")
-				cronjobLog.Error(err, "Failed in creating adminkubeconfig of ", shoot_name, " cluster.")
+				cronjobLog.Error(err, "Failed in creating adminkubeconfig", "shoot_cluster", shoot_name)
 
 				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				// fmt.Println("Created adminkubeconfig of ", shoot_name, " cluster.")
-				cronjobLog.Info("Created adminkubeconfig of ", shoot_name, " cluster.")
+				cronjobLog.Info(shoot_name, "Created adminkubeconfig")
 			}
 			updated_sec = &corev1.Secret{}
 			err = Retry(maxRetries, retryInterval, func() error {
@@ -207,11 +207,11 @@ func main() {
 			})
 			if err != nil {
 				// fmt.Println("Failed in updating the existing secret for the ", shoot_name, " cluster.")
-				cronjobLog.Error(err, "Failed in updating the existing secret for the ", shoot_name, " cluster.")
+				cronjobLog.Error(err, "shoot_cluster", shoot_name, "Failed in updating the existing secret")
 				allUpdateSuccess = allUpdateSuccess && false
 			} else {
 				// fmt.Println("Updated the existing secret of the  ", shoot_name, " cluster.")
-				cronjobLog.Info("Updated the existing secret of the  ", shoot_name, " cluster.")
+				cronjobLog.Info(shoot_name, "Updated the existing secret")
 			}
 
 		}
