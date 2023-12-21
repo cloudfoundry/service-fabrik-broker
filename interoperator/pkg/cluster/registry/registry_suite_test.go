@@ -59,17 +59,23 @@ func TestMain(m *testing.M) {
 		stdlog.Fatal(err)
 	}
 
-	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig)
-	if err != nil {
-		stdlog.Fatal(err)
-	}
-
 	if c, err = client.New(kubeConfig, client.Options{
 		Scheme: scheme.Scheme,
 		Mapper: mapper,
 	}); err != nil {
 		stdlog.Fatal(err)
 	}
+
+	httpClient, err := rest.HTTPClientFor(kubeConfig)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig, httpClient)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
 	sch = scheme.Scheme
 
 	code := m.Run()

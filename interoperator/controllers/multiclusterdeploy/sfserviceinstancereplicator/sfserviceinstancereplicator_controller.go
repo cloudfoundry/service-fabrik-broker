@@ -589,7 +589,10 @@ func (r *InstanceReplicator) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceInstance{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(
+			&source.Channel{Source: watchEvents},
+			&handler.EnqueueRequestForObject{},
+		).
 		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)

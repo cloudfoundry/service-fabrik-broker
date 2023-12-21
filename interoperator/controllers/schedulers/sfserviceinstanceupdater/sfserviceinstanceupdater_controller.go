@@ -81,8 +81,11 @@ func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Reque
 			var instances osbv1alpha1.SFServiceInstanceList
 			err = r.List(context.Background(), &instances, client.MatchingFields{"spec.planId": plan.ObjectMeta.Name})
 			if err != nil {
+				log.Error(err, "Error while getting the list of instances for the plan")
 				return ctrl.Result{}, err
 			}
+
+			log.Info("instance", "size", len(instances.Items))
 
 			for _, instance := range instances.Items {
 				labels := instance.GetLabels()

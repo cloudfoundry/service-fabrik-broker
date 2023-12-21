@@ -1,11 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: sfclusters.resource.servicefabrik.io
 spec:
   group: resource.servicefabrik.io
@@ -53,7 +51,11 @@ spec:
                 type: string
               totalCapacity:
                 additionalProperties:
-                  type: string
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
                 description: TotalCapacity represents the total resources of a cluster.
                   This should include the future capacity introduced by node autoscaler.
                 type: object
@@ -65,13 +67,21 @@ spec:
             properties:
               currentCapacity:
                 additionalProperties:
-                  type: string
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
                 description: CurrentCapacity represents the total resources of a cluster
                   from all the current nodes
                 type: object
               requests:
                 additionalProperties:
-                  type: string
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
                 description: Requests represents the total resources requested by
                   all the pods on the cluster
                 type: object
@@ -79,7 +89,11 @@ spec:
                 type: integer
               totalCapacity:
                 additionalProperties:
-                  type: string
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
                 description: TotalCapacity represents the total resources of a cluster.
                   This should include the future capacity introduced by node autoscaler.
                 type: object
@@ -89,9 +103,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

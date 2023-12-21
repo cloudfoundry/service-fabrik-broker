@@ -3,9 +3,11 @@ package watchmanager
 import (
 	"context"
 	"reflect"
-	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 	"testing"
+
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
@@ -159,7 +161,7 @@ func TestAddCluster(t *testing.T) {
 	var ctrl *gomock.Controller
 
 	mgr, err := manager.New(cfg1, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 

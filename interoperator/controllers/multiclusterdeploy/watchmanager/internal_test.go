@@ -20,6 +20,7 @@ import (
 	"github.com/onsi/gomega"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func Test_watchManager_getWatchChannel(t *testing.T) {
@@ -558,7 +559,7 @@ func Test_watchManager_requeueSFCRs(t *testing.T) {
 	//var ctrl *gomock.Controller
 
 	mgr, err := manager.New(cfg1, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
