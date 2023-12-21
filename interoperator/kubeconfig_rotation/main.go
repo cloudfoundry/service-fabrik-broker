@@ -14,12 +14,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 )
 
 var sa_sec *corev1.Secret = &corev1.Secret{}
@@ -32,6 +34,8 @@ var adminKubeconfigRequest *authenticationv1alpha1.AdminKubeconfigRequest = &aut
 var updated_sec *corev1.Secret = &corev1.Secret{}
 var in_cluster_config *rest.Config
 var cronjobLog logr.Logger
+
+
 
 func getInClusterConfig() (*rest.Config, error) {
 	in_cluster_config, err := rest.InClusterConfig()
@@ -84,7 +88,6 @@ func Retry(maxRetries int, sleep time.Duration, operation RetryableOperation) er
 		if err == nil {
 			return nil
 		}
-		fmt.Println(err)
 		cronjobLog.Error(err, "Retrying operation")
 		time.Sleep(sleep * time.Duration(attempt))
 	}
@@ -92,8 +95,10 @@ func Retry(maxRetries int, sleep time.Duration, operation RetryableOperation) er
 }
 
 func main() {
+
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	cronjobLog = ctrl.Log.WithName("kubeconfig-rotation-cronjob")
+
 	maxRetries := 3
 	retryInterval := 20 * time.Second
 	err := Retry(maxRetries, retryInterval, func() error {
@@ -102,6 +107,7 @@ func main() {
 		return err
 	})
 	if err != nil {
+
 		cronjobLog.Error(err, "Failed to fetch in-cluster config", "message", "Kubeconfig rotation cronjob failed.")
 		os.Exit(1)
 	}
@@ -132,6 +138,7 @@ func main() {
 
 	sa_cl, err = cl.New(sa_config, cl.Options{Scheme: kubernetes.GardenScheme})
 	if err != nil {
+
 		cronjobLog.Error(err, "Failed to create service account client.", "message", "Kubeconfig rotation cronjob failed.")
 		os.Exit(1)
 	}
@@ -140,10 +147,12 @@ func main() {
 		return getSecretList()
 	})
 	if err != nil {
+
 		cronjobLog.Error(err, "Failed in fetching secret list.", "message", "Kubeconfig rotation cronjob failed.")
 		os.Exit(1)
 	}
 	cronjobLog.Info("Fetched the secret list")
+
 
 	expiration := 1440 * time.Minute
 	expirationSeconds := int64(expiration.Seconds())
@@ -165,30 +174,37 @@ func main() {
 				return getShootCluster(shoot_namespace, shoot_name)
 			})
 			if err != nil {
+
 				cronjobLog.Error(err, "Failed in fetching shoot cluster", "shoot_name", shoot_name)
 				allUpdateSuccess = allUpdateSuccess && false
 			}
 			cronjobLog.Info("Fetched the shoot cluster", "shoot_cluster", shoot_name)
 
+
 			err = Retry(maxRetries, retryInterval, func() error {
 				return createAdminKubeConfig()
 			})
 			if err != nil {
+
 				cronjobLog.Error(err, "Failed in creating adminkubeconfig", "shoot_name", shoot_name)
 
 				allUpdateSuccess = allUpdateSuccess && false
 			}
 			cronjobLog.Info("Created adminkubeconfig", "shoot_cluster", shoot_name)
 
+
+
 			updated_sec = &corev1.Secret{}
 			err = Retry(maxRetries, retryInterval, func() error {
 				return updateShootSecret(secret.Name, secret.Namespace)
 			})
 			if err != nil {
+
 				cronjobLog.Error(err, "Failed in updating the existing secret", "shoot_name", shoot_name)
 				allUpdateSuccess = allUpdateSuccess && false
 			}
 			cronjobLog.Info("Updated the existing secret", "shoot_name", shoot_name)
+
 
 		}
 	}
@@ -198,5 +214,4 @@ func main() {
 	}
 	cronjobLog.Info("Kubeconfig Rotation Job is successful.")
 	os.Exit(0)
-
 }
