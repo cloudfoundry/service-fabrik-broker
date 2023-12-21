@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const brokerFinalizer = "broker.servicefabrik.io"
@@ -53,7 +54,7 @@ var _ = Describe("SFServiceBindingCleaner controller", func() {
 	Context("Orphaned service bindings", func() {
 		It("should be deleted", func(done Done) {
 			mgr, err := manager.New(cfg, manager.Options{
-				MetricsBindAddress: "0",
+				Metrics: metricsserver.Options{BindAddress: "0"},
 			})
 			Expect(err).NotTo(HaveOccurred())
 			c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})

@@ -51,20 +51,6 @@ func (mr *MockSFClusterInterfaceMockRecorder) GetAnnotations() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnotations", reflect.TypeOf((*MockSFClusterInterface)(nil).GetAnnotations))
 }
 
-// GetClusterName mocks base method.
-func (m *MockSFClusterInterface) GetClusterName() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClusterName")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetClusterName indicates an expected call of GetClusterName.
-func (mr *MockSFClusterInterfaceMockRecorder) GetClusterName() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterName", reflect.TypeOf((*MockSFClusterInterface)(nil).GetClusterName))
-}
-
 // GetCreationTimestamp mocks base method.
 func (m *MockSFClusterInterface) GetCreationTimestamp() v1.Time {
 	m.ctrl.T.Helper()
@@ -286,18 +272,6 @@ func (m *MockSFClusterInterface) SetAnnotations(arg0 map[string]string) {
 func (mr *MockSFClusterInterfaceMockRecorder) SetAnnotations(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAnnotations", reflect.TypeOf((*MockSFClusterInterface)(nil).SetAnnotations), arg0)
-}
-
-// SetClusterName mocks base method.
-func (m *MockSFClusterInterface) SetClusterName(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetClusterName", arg0)
-}
-
-// SetClusterName indicates an expected call of SetClusterName.
-func (mr *MockSFClusterInterfaceMockRecorder) SetClusterName(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetClusterName", reflect.TypeOf((*MockSFClusterInterface)(nil).SetClusterName), arg0)
 }
 
 // SetCreationTimestamp mocks base method.

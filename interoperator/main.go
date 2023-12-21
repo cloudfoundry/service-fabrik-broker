@@ -32,7 +32,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -66,12 +69,16 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        constants.LeaderElectionID,
 		LeaderElectionNamespace: leaderElectionNamespace,
-		Port:                    9443,
-		SyncPeriod:              &syncPeriod,
+		WebhookServer:           webhook.NewServer(webhook.Options{Port: 9443}),
+		Cache: cache.Options{
+			SyncPeriod: &syncPeriod,
+
+			// DefaultNamespaces: map[string]cache.Config{"ctrl": {}},
+		},
 	})
 
 	if err != nil {

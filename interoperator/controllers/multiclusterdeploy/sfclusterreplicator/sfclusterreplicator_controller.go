@@ -262,7 +262,10 @@ func (r *SFClusterReplicator) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("mcd_replicator_cluster").
 		For(&resourcev1alpha1.SFCluster{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(
+			&source.Channel{Source: watchEvents},
+			&handler.EnqueueRequestForObject{},
+		).
 		WithEventFilter(watches.NamespaceFilter())
 
 	return builder.Complete(r)

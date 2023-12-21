@@ -40,6 +40,7 @@ import (
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var c client.Client
@@ -96,7 +97,7 @@ func TestReconcile(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
@@ -220,7 +221,7 @@ func TestReconcileProvisioner_registerSFCrds(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -313,7 +314,7 @@ func TestReconcileProvisioner_reconcilePrimaryClusterIDConfig(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -382,7 +383,7 @@ func TestReconcileProvisioner_reconcileNamespace(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{
@@ -447,7 +448,7 @@ func TestReconcileProvisioner_reconcileSfClusterCrd(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{
@@ -525,7 +526,7 @@ func TestReconcileProvisioner_reconcileSecret(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{
@@ -610,7 +611,7 @@ func TestReconcileProvisioner_reconcileDeployment(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{
@@ -697,7 +698,7 @@ func TestReconcileProvisioner_reconcileClusterRoleBinding(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c, err = client.New(cfg, client.Options{

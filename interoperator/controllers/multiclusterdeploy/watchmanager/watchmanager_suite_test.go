@@ -18,6 +18,7 @@ package watchmanager
 
 import (
 	stdlog "log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -47,6 +48,7 @@ var c1, c2 client.Client
 var mapper1, mapper2 meta.RESTMapper
 var cfgManager config.Config
 var testLog logr.Logger
+var httpClient1, httpClient2 *http.Client
 
 func TestMain(m *testing.M) {
 	var err error
@@ -85,7 +87,10 @@ func TestMain(m *testing.M) {
 
 func setupClients(g *gomega.GomegaWithT) {
 	var err error
-	mapper1, err = apiutil.NewDiscoveryRESTMapper(cfg1)
+	httpClient1, err = rest.HTTPClientFor(cfg1)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	mapper1, err = apiutil.NewDiscoveryRESTMapper(cfg1, httpClient1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	c1, err = client.New(cfg1, client.Options{
@@ -94,7 +99,9 @@ func setupClients(g *gomega.GomegaWithT) {
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	mapper2, err = apiutil.NewDiscoveryRESTMapper(cfg2)
+	httpClient2, err = rest.HTTPClientFor(cfg2)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	mapper2, err = apiutil.NewDiscoveryRESTMapper(cfg2, httpClient2)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	c2, err = client.New(cfg2, client.Options{

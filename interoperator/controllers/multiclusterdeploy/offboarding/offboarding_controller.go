@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/api/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
@@ -165,11 +164,10 @@ func (r *SFClusterOffboarding) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&resourcev1alpha1.SFCluster{}).
 		Named("mcd_offboarding").
-		Watches(&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: false,
-				OwnerType:    &resourcev1alpha1.SFCluster{},
-			}).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &resourcev1alpha1.SFCluster{}),
+		).
 		WithEventFilter(watches.NamespaceLabelFilter()).
 		Complete(r)
 }
