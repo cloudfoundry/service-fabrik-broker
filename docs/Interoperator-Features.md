@@ -176,12 +176,12 @@ Refer [this sample blueprint plan for example](https://github.com/cloudfoundry/s
 
 **NOTE:** This feature is specifically for Gardener users.
 
-With K8S 1.27 onwards in Gardener, the support for static kubeconfig is deprecated. User needs to create the AdminKubeConfig(AKC) and then apply it as a secret. This AKC is valid maximum upto 24 hrs and after its expiration, jobs related to multicluster deployment (provision, binding etc. in sister cluster) would fail.
+With K8S 1.27 onwards in Gardener, the support for static kubeconfig is deprecated. User needs to create the AdminKubeConfig(AKC) and then apply it as a secret. This AKC is valid maximum upto 24 hrs and after its expiration, jobs related to multicluster deployment (provision, binding etc. in sister cluster) would fail. Refer to this [Gardener Documentation](https://github.com/gardener/gardener/blob/2edac3255e8e27f8c3239da1e18b3d7e02258443/docs/usage/shoot_access.md) for details.
 In order to solve this issue, this feature automatically creates fresh AKC and updates the corresponding secrets in the master cluster.
 
 It uses the Gardener Project level service-account-kubeconfig to generate AKC for respective clusters using a cronjob.
 
-* Before enabling this feature, either making a Fresh Deploy or Updating the Interoperator, the user has to create a Service Account Kubeconfig at Gardener Project level and apply it as a secret in the given format.
+* Before enabling this feature, either while making a Fresh Deploy or Updating the Interoperator, the user has to create a Service Account Kubeconfig at Gardener Project level and apply it as a secret in the given format in the primary cluster.
 
   ```yaml
   apiVersion: v1
@@ -194,7 +194,7 @@ It uses the Gardener Project level service-account-kubeconfig to generate AKC fo
   ```
   **NOTE:** The `metadata.name` should exactly match as given above.<br>
 
-* The secrets used to refer their correspoding master and sister cluster have to be labelled in the specific format given below. For the existing deployments, those secrets have to be updated accordingly. 
+* The secrets used to refer their corresponding primary and sister cluster have to be labelled in the specific format given below. For the existing deployments, those secrets have to be updated accordingly. 
   ```yaml
   metadata:
     ...
