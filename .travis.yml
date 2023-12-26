@@ -109,7 +109,8 @@ matrix:
         - yarn install
         - "npm run test-coverall"
         - popd
-    - language: node_js
+    - dist: focal
+      language: node_js
       node_js:
         - "20.10.0"
       env:
@@ -123,7 +124,8 @@ matrix:
         - "yarn run jsdoc"
         - "yarn constraints"
         - popd
-    - language: node_js
+    - dist: focal
+      language: node_js
       node_js:
         - "20.10.0"
       before_install:
