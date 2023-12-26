@@ -96,7 +96,8 @@ matrix:
         - PKGS=$(go list ./... | grep -v /vendor/)
         - staticcheck $PKGS
         - popd
-    - language: node_js
+    - dist: focal
+      language: node_js
       node_js:
         - "20.10.0"
       env:
