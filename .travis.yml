@@ -97,6 +97,7 @@ matrix:
         - staticcheck $PKGS
         - popd
     - language: node_js
+      dist: focal
       node_js:
         - 19
       env:
@@ -109,6 +110,7 @@ matrix:
         - "npm run test-coverall"
         - popd
     - language: node_js
+      dist: focal
       node_js:
         - "20.9"
       env:
@@ -123,6 +125,7 @@ matrix:
         - "yarn constraints"
         - popd
     - language: node_js
+      dist: focal
       node_js:
         - "20.9"
       before_install:
