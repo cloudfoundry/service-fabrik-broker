@@ -98,8 +98,7 @@ matrix:
         - popd
     - language: node_js
       dist: focal
-      node_js:
-        - 20.9
+      node_js: "stable"
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
