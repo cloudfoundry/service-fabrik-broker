@@ -98,13 +98,13 @@ matrix:
         - popd
     - language: node_js
       dist: focal
-      node_js: 18
+      node_js: 20.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
         - npm install -g yarn
-        - yarn set version 2.4.3
+        - yarn set version 1.22.19
         - yarn install
         - "npm run test-coverall"
         - popd
