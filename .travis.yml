@@ -97,7 +97,7 @@ matrix:
         - staticcheck $PKGS
         - popd
     - language: node_js
-      dist: focal
+      dist: bionic
       node_js: 20.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
