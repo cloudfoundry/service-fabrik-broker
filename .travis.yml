@@ -99,8 +99,8 @@ matrix:
     - language: node_js
       dist: focal
       node_js: 20.9
-      env:
-        - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
+      #env:
+      #  - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
         - npm install -g yarn
