@@ -111,7 +111,7 @@ matrix:
     - language: node_js
       dist: focal
       node_js:
-        - "20.9"
+        - 18
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
