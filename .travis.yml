@@ -117,7 +117,7 @@ matrix:
       script:
         - pushd broker
         - npm install -g yarn
-        - yarn set version 1.22.21
+        - yarn set version 2.4.3
         - yarn install
         - "yarn run eslint"
         - "yarn run jsdoc"
