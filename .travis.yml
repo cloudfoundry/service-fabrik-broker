@@ -97,6 +97,8 @@ matrix:
         - staticcheck $PKGS
         - popd
     - dist: focal
+      os:linux
+      arch: amd64
       language: node_js
       node_js:
         - "20.10.0"
