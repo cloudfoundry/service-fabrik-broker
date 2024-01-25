@@ -66,7 +66,13 @@ func TestMain(m *testing.M) {
 	if kubeConfig, err = t.Start(); err != nil {
 		stdlog.Fatal(err)
 	}
-	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig)
+
+	httpClient, err := rest.HTTPClientFor(kubeConfig)
+	if err != nil {
+		stdlog.Fatal(err)
+	}
+
+	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig, httpClient)
 	if err != nil {
 		stdlog.Fatal(err)
 	}

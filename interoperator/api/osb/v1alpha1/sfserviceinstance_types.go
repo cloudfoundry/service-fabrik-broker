@@ -123,7 +123,7 @@ func (r *SFServiceInstance) GetClusterID() (string, error) {
 	return r.Spec.ClusterID, nil
 }
 
-// Get Labels converted to string from map[string]string for Metrics
+// GetLabelsForMetrics : Get Labels converted to string from map[string]string for Metrics
 func (r *SFServiceInstance) GetLabelsForMetrics() string {
 	log := ctrl.Log.WithName("SFServiceInstance:GetLabelsForMetrics")
 	if r == nil {
@@ -133,15 +133,16 @@ func (r *SFServiceInstance) GetLabelsForMetrics() string {
 	log.V(2).Info("Getting Labels converted to string")
 
 	//labelsJson := make(map[string]string)
-	labelsJson := r.GetLabels()
+	labelsJSON := r.GetLabels()
 	labelsStrArr := make([]string, 0)
-	for k, v := range labelsJson {
+	for k, v := range labelsJSON {
 		labelsStrArr = append(labelsStrArr, fmt.Sprintf("%s:%s", k, v))
 	}
 
 	return strings.Join(labelsStrArr, ",")
 }
 
+// GetLastOperation returns lastOperation label of the SFServiceInstance if exist, else returns empty string.
 func (r *SFServiceInstance) GetLastOperation() string {
 	log := ctrl.Log.WithName("SFServiceInstance")
 	if r == nil {
@@ -160,6 +161,7 @@ func (r *SFServiceInstance) GetLastOperation() string {
 	return lastOperation
 }
 
+// GetDeletionTimestampForMetrics return DeletionTimestamp of the SFServiceInstance if exists else return empty string.
 func (r *SFServiceInstance) GetDeletionTimestampForMetrics() string {
 	log := ctrl.Log.WithName("SFServiceInstance")
 	if r == nil || r.GetDeletionTimestamp() == nil {

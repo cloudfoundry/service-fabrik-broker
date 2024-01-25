@@ -391,7 +391,10 @@ func (r *BindingReplicator) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.BindingWorkerCount,
 		}).
 		For(&osbv1alpha1.SFServiceBinding{}).
-		Watches(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(
+			&source.Channel{Source: watchEvents},
+			&handler.EnqueueRequestForObject{},
+		).
 		WithEventFilter(watches.NamespaceLabelFilter())
 
 	return builder.Complete(r)

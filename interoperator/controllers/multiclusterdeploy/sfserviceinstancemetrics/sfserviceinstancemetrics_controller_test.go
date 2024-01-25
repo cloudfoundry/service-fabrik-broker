@@ -35,6 +35,7 @@ import (
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var c, c2 client.Client
@@ -76,7 +77,7 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -132,10 +133,10 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 	var state string
 	var creationTimestamp string
 	var deletionTimestamp string
-	var serviceId string
-	var planId string
-	var organizationGuid string
-	var spaceGuid string
+	var serviceID string
+	var planID string
+	var organizationGUID string
+	var spaceGUID string
 	var sfNamespace string
 	var lastOperation string
 	var metricValue float64
@@ -153,22 +154,22 @@ func TestReconcileSFServiceInstanceMetrics(t *testing.T) {
 		state = instance2.GetState()
 		creationTimestamp = instance2.GetCreationTimestamp().String()
 		deletionTimestamp = instance2.GetDeletionTimestampForMetrics()
-		serviceId = instance2.Spec.ServiceID
-		planId = instance2.Spec.PlanID
-		organizationGuid = instance2.Spec.OrganizationGUID
-		spaceGuid = instance2.Spec.SpaceGUID
+		serviceID = instance2.Spec.ServiceID
+		planID = instance2.Spec.PlanID
+		organizationGUID = instance2.Spec.OrganizationGUID
+		spaceGUID = instance2.Spec.SpaceGUID
 		sfNamespace = instance2.GetNamespace()
 		lastOperation = instance2.GetLastOperation()
 
 		fmt.Println("state: ", state)
 		fmt.Println("Expected Metric Value: ", expectedMetricValue)
-		metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+		metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation))
 		fmt.Println("Received Metric Value: ", metricValue)
 		if float64(expectedMetricValue) != metricValue {
 			// Wait for 2 seconds for reconciler to start
 			fmt.Println("Waiting for 2 seconds...")
 			time.Sleep(2 * time.Second)
-			metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation))
+			metricValue = testutil.ToFloat64(instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation))
 			fmt.Println("Received Metric Value after 2 seconds: ", metricValue)
 		}
 		g.Expect(metricValue).To(gomega.Equal(float64(expectedMetricValue)))

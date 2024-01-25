@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // ReconcileSFServiceBinding reconciles a SFServiceBinding object
@@ -607,11 +606,10 @@ func (r *ReconcileSFServiceBinding) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	for _, subresource := range subresources {
-		builder = builder.Watches(&source.Kind{Type: subresource},
-			&handler.EnqueueRequestForOwner{
-				IsController: false,
-				OwnerType:    &osbv1alpha1.SFServiceBinding{},
-			})
+		builder = builder.Watches(
+			subresource,
+			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &osbv1alpha1.SFServiceBinding{}),
+		)
 	}
 	builder = builder.WithEventFilter(watches.NamespaceLabelFilter())
 

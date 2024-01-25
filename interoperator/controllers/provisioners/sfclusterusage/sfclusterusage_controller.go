@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // Reconciler reconciles a Node objects and computes the capacity of cluster
@@ -145,7 +144,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.uncachedClient = uncachedClient
 	}
 
-	watchMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+	watchMapper := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Name:      constants.OwnClusterID,
@@ -156,7 +155,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		Named("scheduler_helper_sfclusterusage").
 		For(&resourcev1alpha1.SFCluster{}).
-		Watches(&source.Kind{Type: &corev1.Node{}}, watchMapper).
+		Watches(&corev1.Node{}, watchMapper).
 		WithEventFilter(watches.NodeFilter())
 
 	return builder.Complete(r)

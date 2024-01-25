@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var c, c2 client.Client
@@ -120,7 +121,7 @@ func TestReconcileMasterClusterBind(t *testing.T) {
 	watchChannel := make(chan event.GenericEvent)
 	doInitialSetup(watchChannel)
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -193,7 +194,7 @@ func TestReconcileMultiClusterBind(t *testing.T) {
 	doInitialSetup(watchChannel)
 
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -320,7 +321,7 @@ func TestReconcileMultiClusterUnbind(t *testing.T) {
 	doInitialSetup(watchChannel)
 
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 

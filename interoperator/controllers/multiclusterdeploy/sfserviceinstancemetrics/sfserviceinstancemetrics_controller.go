@@ -57,7 +57,7 @@ var (
 	)
 )
 
-// InstanceReplicator replicates a SFServiceInstance object to sister cluster
+// InstanceMetrics reconciles a SFServiceInstances object
 type InstanceMetrics struct {
 	client.Client
 	Log             logr.Logger
@@ -65,6 +65,7 @@ type InstanceMetrics struct {
 	cfgManager      config.Config
 }
 
+// Reconcile reads that state of the SFServiceInstance object on master cluster and send the metrics data to prometheus
 func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("InstanceMetrics", req.NamespacedName)
 
@@ -86,10 +87,10 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	//labelsForMetrics := instance.GetLabelsForMetrics()
 	creationTimestamp := instance.GetCreationTimestamp().String()
 	deletionTimestamp := instance.GetDeletionTimestampForMetrics()
-	serviceId := instance.Spec.ServiceID
-	planId := instance.Spec.PlanID
-	organizationGuid := instance.Spec.OrganizationGUID
-	spaceGuid := instance.Spec.SpaceGUID
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+	organizationGUID := instance.Spec.OrganizationGUID
+	spaceGUID := instance.Spec.SpaceGUID
 	sfNamespace := instance.GetNamespace()
 	lastOperation := instance.GetLastOperation()
 
@@ -97,13 +98,13 @@ func (r *InstanceMetrics) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	switch state {
 	case "succeeded":
-		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(0)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation).Set(0)
 	case "failed":
-		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(1)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation).Set(1)
 	case "in progress":
-		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(2)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation).Set(2)
 	case "in_queue", "update", "delete":
-		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceId, planId, organizationGuid, spaceGuid, sfNamespace, lastOperation).Set(3)
+		instancesMetric.WithLabelValues(instanceID, state, creationTimestamp, deletionTimestamp, serviceID, planID, organizationGUID, spaceGUID, sfNamespace, lastOperation).Set(3)
 	}
 	return ctrl.Result{}, nil
 }
