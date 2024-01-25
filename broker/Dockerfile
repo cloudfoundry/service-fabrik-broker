@@ -1,5 +1,5 @@
 # FROM node:14.16-alpine3.13 also works here for a smaller image
-FROM node:18.9-alpine3.17
+FROM node:18.19.0-alpine3.19
 
 # set our node environment, either development or production
 # defaults to production, compose overrides this to development on build and run
@@ -9,7 +9,7 @@ EXPOSE 9293 9296
 
 # you'll likely want the latest npm, regardless of node version, for speed and fixes
 # but pin this version for the best stability
-RUN npm i npm@9.8.1 -g
+RUN npm i npm@latest -g
 
 # install dependencies first, in a different location for easier app bind mounting for local development
 WORKDIR /opt/service-fabrik-broker/broker
