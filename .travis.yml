@@ -98,7 +98,7 @@ matrix:
         - popd
     - language: node_js
       dist: focal
-      node_js: 18.8
+      node_js: 18.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
@@ -112,7 +112,7 @@ matrix:
     - language: node_js
       dist: focal
       node_js:
-        - 18.8
+        - 18.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
@@ -127,7 +127,7 @@ matrix:
     - language: node_js
       dist: focal
       node_js:
-        - "18.8"
+        - "18.9"
       before_install:
         # - pip install --user truffleHog==2.0.89
         - |
