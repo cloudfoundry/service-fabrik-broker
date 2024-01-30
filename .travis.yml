@@ -97,11 +97,12 @@ matrix:
         - staticcheck $PKGS
         - popd
     - language: node_js
-      node_js:
-        - "16.18"
+      dist: focal
+      node_js: 18.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
+        - npm config set sprin=true
         - pushd broker
         - npm install -g yarn
         - yarn set version 2.4.1
@@ -109,22 +110,24 @@ matrix:
         - "npm run test-coverall"
         - popd
     - language: node_js
+      dist: focal
       node_js:
-        - "16.18"
+        - 18.9
       env:
         - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
       script:
         - pushd broker
         - npm install -g yarn
-        - yarn set version 2.4.1
+        - yarn set version 2.4.3
         - yarn install
         - "yarn run eslint"
         - "yarn run jsdoc"
         - "yarn constraints"
         - popd
     - language: node_js
+      dist: focal
       node_js:
-        - "16.18"
+        - "18.9"
       before_install:
         # - pip install --user truffleHog==2.0.89
         - |
