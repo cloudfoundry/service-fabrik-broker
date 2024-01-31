@@ -332,7 +332,7 @@ class ApiServerClient {
       .catch(Conflict, () => {
         logger.info(`CRD ${name} already registered, patching it now..`);
         return client.patchCustomResourceDefinition(name, crdJson, undefined, undefined, undefined,
-          undefined, {
+          undefined, undefined, {
             headers: {
               'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
             }
@@ -820,7 +820,7 @@ class ApiServerClient {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
         return client.patchNamespacedConfigMap(configName, namespaceId, resourceBody, undefined, undefined,
-          undefined, undefined, {
+          undefined, undefined, undefined, {
             headers: {
               'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
             }

@@ -8,7 +8,7 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "@kubernetes/client-node": "0.16.3",
+    "@kubernetes/client-node": "0.20.0",
     "@sf/app-config": "*",
     "@sf/common-utils": "*",
     "@sf/logger": "*",
