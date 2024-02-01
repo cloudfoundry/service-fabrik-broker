@@ -544,7 +544,7 @@ __metadata:
     hystrixjs: 0.2.0
     jsonwebtoken: 9.0.0
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     mongoose: 5.13.22
     rxjs: ^5.0.0
     uuid: 8.3.2
@@ -637,7 +637,7 @@ __metadata:
     helmet: 5.0.2
     js-yaml: 4.1.0
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     morgan: 1.10.0
     pubsub-js: 1.9.4
     pug: 3.0.2
@@ -667,7 +667,7 @@ __metadata:
     express-session: 1.17.1
     js-yaml: 4.1.0
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     session-file-store: 1.4.0
   languageName: unknown
   linkType: soft
@@ -689,7 +689,7 @@ __metadata:
     azure-storage: 2.10.7
     bluebird: 3.7.2
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     uuid: 8.3.2
   languageName: unknown
   linkType: soft
@@ -712,7 +712,7 @@ __metadata:
     agenda: 0.10.0
     bluebird: 3.7.2
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     mongoose: 5.13.22
     pubsub-js: 1.9.4
   languageName: unknown
@@ -790,7 +790,7 @@ __metadata:
     js-yaml: 4.1.0
     json-stream: ^1.0.0
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
   languageName: unknown
   linkType: soft
 
@@ -909,7 +909,7 @@ __metadata:
     bluebird: 3.7.2
     express-jwt: 8.4.1
     lodash: 4.17.21
-    moment: 2.29.2
+    moment: 2.30.1
     pubsub-js: 1.9.4
   languageName: unknown
   linkType: soft
@@ -7166,10 +7166,10 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"moment@npm:2.29.2":
-  version: 2.29.2
-  resolution: "moment@npm:2.29.2"
-  checksum: 0969327a44aa49dc32bf510b620763c8c5a0d65308331b01ce007bc071a48d18dbd4e51018464b5c0ac415fd655206ae3e678037b08381f3330574bbd408c035
+"moment@npm:2.30.1":
+  version: 2.30.1
+  resolution: "moment@npm:2.30.1"
+  checksum: 74c146f9ea946b7f0fc480c305ea71198acabb435e0359817d2535927480275234bbc24fc82febc0b156e980e8b5d2614c4002ce700905f2412fbe257701a2e6
   languageName: node
   linkType: hard
 
