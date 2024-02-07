@@ -704,7 +704,7 @@ __metadata:
     "@sf/event-logger": "*"
     "@sf/logger": "*"
     basic-auth: 2.0.1
-    body-parser: 1.19.2
+    body-parser: 1.20.2
     connect-timeout: 1.9.0
     express: 4.18.2
     express-interceptor: 1.2.0
@@ -879,7 +879,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     "@sf/models": "*"
-    ajv: 8.10.0
+    ajv: 8.12.0
     ajv-draft-04: 1.0.0
     bluebird: 3.7.2
     camelcase-keys: 7.0.2
@@ -1519,15 +1519,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:8.10.0":
-  version: 8.10.0
-  resolution: "ajv@npm:8.10.0"
+"ajv@npm:8.12.0":
+  version: 8.12.0
+  resolution: "ajv@npm:8.12.0"
   dependencies:
     fast-deep-equal: ^3.1.1
     json-schema-traverse: ^1.0.0
     require-from-string: ^2.0.2
     uri-js: ^4.2.2
-  checksum: 4eb44b84050549e8e33dadb6388da8442647e45f72b44d504e4a6001ebc5f579ca23438d61f830b9111748893f8f0278a519335221ca295d8a0c6aceb7b1643a
+  checksum: 3bdee674686025195d85ab010d40b1834cad24ad128e457371ec6e597bba66674ee3ad3e5673c3ffbdfef24e616ae06a5e078006b1c20f49726788b0e1631db3
   languageName: node
   linkType: hard
 
@@ -2347,24 +2347,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"body-parser@npm:1.19.2":
-  version: 1.19.2
-  resolution: "body-parser@npm:1.19.2"
-  dependencies:
-    bytes: 3.1.2
-    content-type: ~1.0.4
-    debug: 2.6.9
-    depd: ~1.1.2
-    http-errors: 1.8.1
-    iconv-lite: 0.4.24
-    on-finished: ~2.3.0
-    qs: 6.9.7
-    raw-body: 2.4.3
-    type-is: ~1.6.18
-  checksum: 91008e860048e1e1ca59e6e6f9d2db56b44c7e27f170bfd62e194d13b65080b9d66c460a9cc03d38d7a81d7ba15d72da5eead59fe2028fa23ab88abea16eb62e
-  languageName: node
-  linkType: hard
-
 "body-parser@npm:1.20.1":
   version: 1.20.1
   resolution: "body-parser@npm:1.20.1"
@@ -2382,6 +2364,26 @@ __metadata:
     type-is: ~1.6.18
     unpipe: 1.0.0
   checksum: 473245b1ff1828a1c0b0aee08f6503aefba9ea5e0de21bf65f014295c262f4177e4d6e60f97e11eab15fb1dafdfeaaa9f5f99cbbf55682c3521905c68f593684
+  languageName: node
+  linkType: hard
+
+"body-parser@npm:1.20.2":
+  version: 1.20.2
+  resolution: "body-parser@npm:1.20.2"
+  dependencies:
+    bytes: 3.1.2
+    content-type: ~1.0.5
+    debug: 2.6.9
+    depd: 2.0.0
+    destroy: 1.2.0
+    http-errors: 2.0.0
+    iconv-lite: 0.4.24
+    on-finished: 2.4.1
+    qs: 6.11.0
+    raw-body: 2.5.2
+    type-is: ~1.6.18
+    unpipe: 1.0.0
+  checksum: 1a774a1636d1f40168d56ff89326eb1fed3728752ce40edc0d426194149b0585f170646d45627ec6a92b431a84cd8e2072d53c8ae1d03814ca934390fff975d8
   languageName: node
   linkType: hard
 
@@ -3035,7 +3037,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"content-type@npm:^1.0.2, content-type@npm:~1.0.4":
+"content-type@npm:^1.0.2, content-type@npm:~1.0.4, content-type@npm:~1.0.5":
   version: 1.0.5
   resolution: "content-type@npm:1.0.5"
   checksum: b9048d1de893fcbc79c94dd17c6080e5cf9a8b35b322674be91e76c0831504f857d2caf7ce29d330e4e5f20ba914164377c99b3285cfe7ffbe64afe976dacd7b
@@ -5457,19 +5459,6 @@ fsevents@^1.0.0:
   version: 4.1.1
   resolution: "http-cache-semantics@npm:4.1.1"
   checksum: ea193328de177fedad7790cbe2217d81bf013a24d021331e826ddda0de347dc94f2adfb383e9b92d4e5889baa76f356d78ea5b0b8843668b8a788540946b9faa
-  languageName: node
-  linkType: hard
-
-"http-errors@npm:1.8.1":
-  version: 1.8.1
-  resolution: "http-errors@npm:1.8.1"
-  dependencies:
-    depd: ~1.1.2
-    inherits: 2.0.4
-    setprototypeof: 1.2.0
-    statuses: ">= 1.5.0 < 2"
-    toidentifier: 1.0.1
-  checksum: f8bd2e837a4da9b25c21545de08bf9db2e8014a1bd025707a0d77b8562259e28a4f2b1ec750968e8676b3118668f6da41e5407e7f29055b14cd68fc54cfa6d09
   languageName: node
   linkType: hard
 
@@ -8885,13 +8874,6 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"qs@npm:6.9.7":
-  version: 6.9.7
-  resolution: "qs@npm:6.9.7"
-  checksum: 2be95a70de737e98d24846a90065fbf6fcf449cf0367040eff3da3f3add05f1d0a256198e267ac9c8429aaa311ca7030f824df3615c850ed28967329d29d002a
-  languageName: node
-  linkType: hard
-
 "qs@npm:^6.4.0, qs@npm:^6.5.2":
   version: 6.11.2
   resolution: "qs@npm:6.11.2"
@@ -8961,18 +8943,6 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"raw-body@npm:2.4.3":
-  version: 2.4.3
-  resolution: "raw-body@npm:2.4.3"
-  dependencies:
-    bytes: 3.1.2
-    http-errors: 1.8.1
-    iconv-lite: 0.4.24
-    unpipe: 1.0.0
-  checksum: ebee34d0b84162a4888fad15c496f7f717b9dabde20c6b590cb99886cba2e21bfec79b24d5041d53d388a8c3eff3d8bbe852d7061715efb63340a0044dc26700
-  languageName: node
-  linkType: hard
-
 "raw-body@npm:2.5.1":
   version: 2.5.1
   resolution: "raw-body@npm:2.5.1"
@@ -8982,6 +8952,18 @@ fsevents@^1.0.0:
     iconv-lite: 0.4.24
     unpipe: 1.0.0
   checksum: aa356884ff024caa889329585b81f0f1f8ddf7ff39b8e10740efe6e4181a054cec2a8af0fc5496e8432e779da56ca85a628199d3edd3cc213b1277f065315321
+  languageName: node
+  linkType: hard
+
+"raw-body@npm:2.5.2":
+  version: 2.5.2
+  resolution: "raw-body@npm:2.5.2"
+  dependencies:
+    bytes: 3.1.2
+    http-errors: 2.0.0
+    iconv-lite: 0.4.24
+    unpipe: 1.0.0
+  checksum: d6fe5e5ad11458398a226be09ed68cbdf7a0719c67a9b172dbf595e2515416df55bc5a2e9681a64c304203b5bc1d3766cbc8fe5f89c6499bf12eb9da085dceaf
   languageName: node
   linkType: hard
 
@@ -10116,7 +10098,7 @@ fsevents@^1.0.0:
   languageName: node
   linkType: hard
 
-"statuses@npm:>= 1.4.0 < 2, statuses@npm:>= 1.5.0 < 2, statuses@npm:^1.3.1":
+"statuses@npm:>= 1.4.0 < 2, statuses@npm:^1.3.1":
   version: 1.5.0
   resolution: "statuses@npm:1.5.0"
   checksum: 57735269bf231176a60deb80f6d60214cb4a87663b0937e79497afe9aebe2597f8377fd28893f4d1776205f18dd0b927774a26b72051411ac5108e9e2dfc77d2
