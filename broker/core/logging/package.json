@@ -11,6 +11,6 @@
     "@sf/app-config": "*",
     "lodash": "4.17.21",
     "winston": "3.11.0",
-    "winston-syslog": "2.5.0"
+    "winston-syslog": "2.7.0"
   }
 }

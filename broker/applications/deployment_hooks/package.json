@@ -16,7 +16,7 @@
     "@sf/express-commons": "*",
     "@sf/logger": "*",
     "bluebird": "3.7.2",
-    "express": "4.17.3",
+    "express": "4.18.2",
     "express-jwt": "8.4.1",
     "lodash": "4.17.21"
   }
