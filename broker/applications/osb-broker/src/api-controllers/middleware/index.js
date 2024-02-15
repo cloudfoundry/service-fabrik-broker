@@ -233,16 +233,16 @@ exports.validateSchemaForRequest = function (target, operation) {
         validate = validator.compile(schema);
         const ajv04Validate = ajv04Validator.compile(schema);
         if (!ajv04Validate(parameters) && !validate(parameters)) {
-          let reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+          let reason = _.map(validate.errors, ({ instancePath, message }) => `${instancePath} ${message}`).join(', ');
           if (reason == '') {
-            reason = _.map(ajv04Validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+            reason = _.map(ajv04Validate.errors, ({ instancePath, message }) => `${instancePath} ${message}`).join(', ');
           }
           return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
         }
       } else {
         const isValid = validate(parameters);
         if (!isValid) {
-          const reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+          const reason = _.map(validate.errors, ({ instancePath, message }) => `${instancePath} ${message}`).join(', ');
           return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
         }
       }
