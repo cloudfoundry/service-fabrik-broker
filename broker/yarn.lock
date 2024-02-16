@@ -613,7 +613,7 @@ __metadata:
   dependencies:
     "@sf/app-config": "*"
     "@sf/logger": "*"
-    axios: 0.25.0
+    axios: 0.28.0
     bluebird: 3.7.2
     hystrixjs: 0.2.0
     jsonwebtoken: 9.0.0
@@ -1958,12 +1958,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:0.25.0":
-  version: 0.25.0
-  resolution: "axios@npm:0.25.0"
+"axios@npm:0.28.0":
+  version: 0.28.0
+  resolution: "axios@npm:0.28.0"
   dependencies:
-    follow-redirects: ^1.14.7
-  checksum: 2b2d5a0e1d53ab19b0808324336044db0a2ea2f18842a455436ee2bf35548e016dd9a3c52fee722c9e9602c8dd0185e9ccf9a77d76bb8acd706703f6e7c5eb91
+    follow-redirects: ^1.15.0
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: d44a4f51013605fe2f7b950e7cd0f337d0c0b330ad3e3e6e83333637dd69d0908da9a404c10559dc8e44cc300f6258cdf05b45c12d4717955f053dbe6900e645
   languageName: node
   linkType: hard
 
@@ -2890,7 +2892,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"combined-stream@npm:^1.0.6, combined-stream@npm:~1.0.6":
+"combined-stream@npm:^1.0.6, combined-stream@npm:^1.0.8, combined-stream@npm:~1.0.6":
   version: 1.0.8
   resolution: "combined-stream@npm:1.0.8"
   dependencies:
@@ -4667,7 +4669,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.14.0, follow-redirects@npm:^1.14.7":
+"follow-redirects@npm:^1.14.0, follow-redirects@npm:^1.15.0":
   version: 1.15.5
   resolution: "follow-redirects@npm:1.15.5"
   peerDependenciesMeta:
@@ -4738,6 +4740,17 @@ __metadata:
     combined-stream: ^1.0.6
     mime-types: ^2.1.12
   checksum: c46ee9a14a8678b6e0dfafabc96e25237d9f11ced9c51cd371a2b3448f6a3f2fa684b3bbbb35911bae8f5448b3f3c48c73f7f2be791a4ae5aee0eb0ab3cdfec2
+  languageName: node
+  linkType: hard
+
+"form-data@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "form-data@npm:4.0.0"
+  dependencies:
+    asynckit: ^0.4.0
+    combined-stream: ^1.0.8
+    mime-types: ^2.1.12
+  checksum: ecbe8f41bcf5c415f38e39058b34598a9261bb74a3d54b633d0b5dd8b7cf9a30b0626cd06ae8e79874a2ca88c222041142a7893e5afdd35fdfc3272264d03d44
   languageName: node
   linkType: hard
 
@@ -8640,6 +8653,13 @@ fsevents@^1.0.0:
     forwarded: 0.2.0
     ipaddr.js: 1.9.1
   checksum: ad78682246dc20ed6ca4080539349828bc2708cf0b69c55d6a3c41532780a8d05f563dcbac6ec4b74dce367421bff6fc4bc6b700b14319ecf57c93bd62727fc6
+  languageName: node
+  linkType: hard
+
+"proxy-from-env@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "proxy-from-env@npm:1.1.0"
+  checksum: 6459372a57f3e8ef5211f7847ca2fffabcdd6490005892fcc0dcd62fe2b3551900c8a07fad7df9de3897547b1ab4ac7a7197964cd6fa7e76303caa4936bfaf32
   languageName: node
   linkType: hard
 
