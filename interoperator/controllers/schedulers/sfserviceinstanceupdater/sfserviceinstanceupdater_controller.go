@@ -55,6 +55,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Reque
 	err := r.Get(ctx, req.NamespacedName, plan)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
+			log.Error(err, "Error occured while getting the sfplan")
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -66,6 +67,7 @@ func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Reque
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				err1 := r.Get(ctx, req.NamespacedName, plan)
 				if err1 != nil {
+					log.Error(err, "Error occured while fetching the sfplan")
 					return err1
 				}
 				currentSpecHash := utils.CalculateHash(plan.Spec)
@@ -77,54 +79,18 @@ func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{}, err
 			}
 		} else if plan.Status.SpecHash != currentSpecHash {
-			updateStatusSpecHash := true
-			var instances osbv1alpha1.SFServiceInstanceList
-			err = r.List(context.Background(), &instances, client.MatchingFields{"spec.planId": plan.ObjectMeta.Name})
+			updateStatusSpecHash, err := r.updateServiceInstances(ctx, plan.ObjectMeta.Name, currentSpecHash)
 			if err != nil {
-				log.Error(err, "Error while getting the list of instances for the plan")
+				log.Error(err, "Error while triggering update from serviceinstance")
+				updateStatusSpecHash = false
 				return ctrl.Result{}, err
 			}
 
-			log.Info("instance", "size", len(instances.Items))
-
-			for _, instance := range instances.Items {
-				labels := instance.GetLabels()
-				lastOperation := labels[constants.LastOperationKey]
-
-				annotations := instance.GetAnnotations()
-				planHash := annotations[constants.PlanHashKey]
-
-				if lastOperation == "delete" || planHash == currentSpecHash {
-					// Skip updating instance in deletion
-					// or already updated
-					log.Info("Update not required : Instance with plan ID", "plan ID", plan.ObjectMeta.Name, "SFServiceInstance ID", instance.Name, "lastOperation", lastOperation)
-					continue
-				}
-
-				log.Info("Update required for : Instance with plan ID", "plan ID", plan.ObjectMeta.Name, "SFServiceInstance ID", instance.Name)
-				// Set state as update for instances
-				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-					err1 := r.Get(ctx, types.NamespacedName{
-						Name:      instance.GetName(),
-						Namespace: instance.GetNamespace(),
-					}, &instance)
-					if err1 != nil {
-						return err1
-					}
-					instance.Status.State = "update"
-					return r.Update(ctx, &instance)
-				})
-				if err != nil {
-					log.Error(err, "Error occured while auto updating the instance", "instance-name", instance.GetName())
-					// There is an error while updating an instance
-					// block updating status.spec.hash in plan to ensure retry
-					updateStatusSpecHash = false
-				}
-			}
 			if updateStatusSpecHash { // update plan only when all instances are updated
 				err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 					err1 := r.Get(ctx, req.NamespacedName, plan)
 					if err1 != nil {
+						log.Error(err, "Error occured while fetching the sfplan")
 						return err1
 					}
 					plan.Status.SpecHash = utils.CalculateHash(plan.Spec)
@@ -138,6 +104,64 @@ func (r *SFServiceInstanceUpdater) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+// Keeping the plan hash for versioning
+func (r *SFServiceInstanceUpdater) updateServiceInstances(ctx context.Context, planID string, currentSpecHash string) (bool, error) {
+	log := r.Log.WithValues("planID", planID)
+
+	updateStatusSpecHash := true
+	sfserviceinstances := &osbv1alpha1.SFServiceInstanceList{}
+	instanceOptions := &client.ListOptions{}
+	client.MatchingFields{"spec.planId": planID}.ApplyToList(instanceOptions)
+	log.Info("spec.planId", "spec.planId", planID)
+
+	for more := true; more; more = (sfserviceinstances.Continue != "") {
+		err := r.List(ctx, sfserviceinstances, instanceOptions, client.Limit(constants.ListPaginationLimit),
+			client.Continue(sfserviceinstances.Continue))
+		if err != nil {
+			log.Error(err, "error while fetching sfserviceinstances")
+			return updateStatusSpecHash, err
+		}
+
+		log.Info("Instance count", "size", len(sfserviceinstances.Items))
+
+		for _, instance := range sfserviceinstances.Items {
+			labels := instance.GetLabels()
+			lastOperation := labels[constants.LastOperationKey]
+
+			annotations := instance.GetAnnotations()
+			planHash := annotations[constants.PlanHashKey]
+
+			if lastOperation == "delete" || planHash == currentSpecHash {
+				// Skip updating instance in deletion
+				// or already updated
+				log.Info("Update not required : Instance with plan ID", "planID", planID, "serviceInstanceID", instance.Name, "lastOperation", lastOperation)
+				continue
+			}
+
+			log.Info("Update required for : Instance with plan ID", "planID", planID, "serviceInstanceID", instance.Name)
+			// Set state as update for instances
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				err1 := r.Get(ctx, types.NamespacedName{
+					Name:      instance.GetName(),
+					Namespace: instance.GetNamespace(),
+				}, &instance)
+				if err1 != nil {
+					return err1
+				}
+				instance.Status.State = "update"
+				return r.Update(ctx, &instance)
+			})
+			if err != nil {
+				log.Error(err, "Error occured while auto updating the instance", "instance-name", instance.GetName())
+				// There is an error while updating an instance
+				// block updating status.spec.hash in plan to ensure retry
+				updateStatusSpecHash = false
+			}
+		}
+	}
+	return updateStatusSpecHash, nil
 }
 
 // SetupWithManager should be called if the controller is to be initialized.
@@ -154,6 +178,6 @@ func (r *SFServiceInstanceUpdater) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: interoperatorCfg.InstanceWorkerCount,
 		}).
 		For(&osbv1alpha1.SFPlan{}).
-		WithEventFilter(watches.NamespaceFilter()).
+		WithEventFilter(watches.SfServiceInstanceUpdateFilter()).
 		Complete(r)
 }
