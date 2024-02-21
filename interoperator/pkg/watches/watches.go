@@ -376,6 +376,30 @@ func NamespaceFilter() predicate.Predicate {
 	return p
 }
 
+// SfServiceInstanceUpdateFilter creates a predicates for filtering objects in interoperator namespace
+func SfServiceInstanceUpdateFilter() predicate.Predicate {
+	f := func(namespace string) bool {
+		return namespace == "" || namespace == constants.InteroperatorNamespace
+	}
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return f(e.Object.GetNamespace())
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return f(e.Object.GetNamespace())
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			new := e.ObjectNew.(*osbv1alpha1.SFPlan)
+			old := e.ObjectOld.(*osbv1alpha1.SFPlan)
+			return f(e.ObjectNew.GetNamespace()) && !reflect.DeepEqual(old.Spec, new.Spec)
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return f(e.Object.GetNamespace())
+		},
+	}
+	return p
+}
+
 // NodeFilter creates a predicates for filtering objects in interoperator namespace
 func NodeFilter() predicate.Predicate {
 	p := predicate.Funcs{
