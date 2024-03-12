@@ -3,7 +3,7 @@ matrix:
   include:
     - language: go
       os:
-        - linux
+        - linx
       go:
         - "1.21.x"
       git:
