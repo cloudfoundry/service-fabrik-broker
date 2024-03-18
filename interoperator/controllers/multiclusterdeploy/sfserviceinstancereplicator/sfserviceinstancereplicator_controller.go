@@ -147,6 +147,10 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 	lastErr := r.reconcileServicePlan(targetClient, instance, clusterID)
+	if lastErr != nil {
+		// re que if service/plan replication failed
+		return ctrl.Result{}, err
+	}
 
 	if !instance.GetDeletionTimestamp().IsZero() && state == "delete" {
 		replica.SetName(instance.GetName())
@@ -256,11 +260,6 @@ func (r *InstanceReplicator) Reconcile(ctx context.Context, req ctrl.Request) (c
 			"replicaState", replicaState, "replicaLastOperation", replicaLastOperation)
 	}
 
-	if lastErr != nil {
-		// re que if service/plan replication failed
-		return ctrl.Result{}, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -346,7 +345,16 @@ func (r *InstanceReplicator) reconcileNamespace(targetClient client.Client, name
 				return nil
 			}
 			log.Info("creating namespace in target cluster")
-			ns.SetName(namespace)
+			sourceNs := &corev1.Namespace{}
+			err := r.Get(ctx, types.NamespacedName{
+				Name: namespace,
+			}, sourceNs)
+			if err != nil {
+				log.Error(err, "Failed to get namespace in master cluster")
+				return err
+			}
+			ns.SetName(sourceNs.Name)
+			ns.SetLabels(sourceNs.Labels)
 			err = targetClient.Create(ctx, ns)
 			if err != nil {
 				log.Error(err, "Failed to create namespace in target cluster")
@@ -383,8 +391,6 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	planID := instance.Spec.PlanID
 	log := r.Log.WithValues("clusterID", clusterID, "serviceID", serviceID, "planID", planID)
 
-	var lastErr error
-
 	service, serviceReplica := &osbv1alpha1.SFService{}, &osbv1alpha1.SFService{}
 	serviceKey := types.NamespacedName{
 		Name:      serviceID,
@@ -400,7 +406,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	err := r.Get(ctx, serviceKey, service)
 	if err != nil {
 		log.Error(err, "Failed to get SFService from leader")
-		lastErr = err
+		return err
 	}
 
 	err = targetClient.Get(ctx, serviceKey, serviceReplica)
@@ -410,20 +416,20 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 			err = targetClient.Create(ctx, serviceReplica)
 			if err != nil {
 				log.Error(err, "Error occurred while replicating SFService to cluster ")
-				lastErr = err
+				return err
 			} else {
 				log.Info("SFService not found in target cluster. created as copy from leader")
 			}
 		} else if !apiErrors.IsNotFound(err) {
 			log.Error(err, "Failed to fetch SFService from target cluster")
-			lastErr = err
+			return err
 		}
 	} else {
 		replicateSFServiceResourceData(service, serviceReplica)
 		err = targetClient.Update(ctx, serviceReplica)
 		if err != nil {
 			log.Error(err, "Error occurred while updating SFService to cluster")
-			lastErr = err
+			return err
 		} else {
 			log.Info("updated SFService in target cluster")
 		}
@@ -432,7 +438,7 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 	err = r.Get(ctx, planKey, plan)
 	if err != nil {
 		log.Error(err, "Failed to get SFPlan from leader")
-		lastErr = err
+		return err
 	}
 
 	err = targetClient.Get(ctx, planKey, planReplica)
@@ -441,18 +447,18 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 			replicateSFPlanResourceData(plan, planReplica)
 			err = utils.SetOwnerReference(serviceReplica, planReplica, r.Scheme())
 			if err != nil {
-				lastErr = err
+				return err
 			}
 			err = targetClient.Create(ctx, planReplica)
 			if err != nil {
 				log.Error(err, "Error occurred while replicating SFPlan to cluster ")
-				lastErr = err
+				return err
 			} else {
 				log.Info("SFPlan not found in target cluster. created as copy from leader")
 			}
 		} else if !apiErrors.IsNotFound(err) {
 			log.Error(err, "Failed to fetch SFPlan from target cluster")
-			lastErr = err
+			return err
 		}
 	} else {
 		replicateSFPlanResourceData(plan, planReplica)
@@ -463,13 +469,13 @@ func (r *InstanceReplicator) reconcileServicePlan(targetClient client.Client, in
 		err = targetClient.Update(ctx, planReplica)
 		if err != nil {
 			log.Error(err, "Error occurred while replicating SFPlan to cluster")
-			lastErr = err
+			return err
 		} else {
 			log.Info("updated SFPlan in target cluster")
 		}
 	}
 
-	return lastErr
+	return nil
 }
 
 func (r *InstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance, state string) error {
