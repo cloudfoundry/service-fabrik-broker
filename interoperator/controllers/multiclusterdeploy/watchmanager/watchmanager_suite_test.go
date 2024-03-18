@@ -90,7 +90,7 @@ func setupClients(g *gomega.GomegaWithT) {
 	httpClient1, err = rest.HTTPClientFor(cfg1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	mapper1, err = apiutil.NewDiscoveryRESTMapper(cfg1, httpClient1)
+	mapper1, err = apiutil.NewDynamicRESTMapper(cfg1, httpClient1)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	c1, err = client.New(cfg1, client.Options{
@@ -101,7 +101,7 @@ func setupClients(g *gomega.GomegaWithT) {
 
 	httpClient2, err = rest.HTTPClientFor(cfg2)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	mapper2, err = apiutil.NewDiscoveryRESTMapper(cfg2, httpClient2)
+	mapper2, err = apiutil.NewDynamicRESTMapper(cfg2, httpClient2)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
 	c2, err = client.New(cfg2, client.Options{

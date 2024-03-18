@@ -78,14 +78,15 @@ curl -L "$URL"| tar xz -C $TMP_DIR
 echo "Downloaded executable files"
 ls "${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
 
-if [[ -z "${PROW}" ]]; then 
-  MOVE="sudo mv"
-else
+# Check root privileges
+if [[ "$(id -u)" -eq 0 ]]; then 
   MOVE="mv"
+else
+  MOVE="sudo mv"
 fi
 
 echo "Moving files to $KUBEBUILDER_DIR folder\n"
-mv ${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} kubebuilder && sudo mv -f kubebuilder /usr/local/
+mv ${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} kubebuilder && ${MOVE} -f kubebuilder /usr/local/
 
 echo "Add kubebuilder to your path; e.g copy paste in your shell and/or edit your ~/.profile file"
 echo "export PATH=\$PATH:/usr/local/kubebuilder/bin"
