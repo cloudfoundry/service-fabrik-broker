@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 		stdlog.Fatal(err)
 	}
 
-	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig, httpClient)
+	mapper, err = apiutil.NewDynamicRESTMapper(kubeConfig, httpClient)
 	if err != nil {
 		stdlog.Fatal(err)
 	}
