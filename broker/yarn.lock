@@ -532,7 +532,7 @@ __metadata:
     "@sf/oob-manager": "*"
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
-    express: 4.18.2
+    express: 4.19.2
     express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
@@ -654,7 +654,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    express: 4.18.2
+    express: 4.19.2
     express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
@@ -706,7 +706,7 @@ __metadata:
     basic-auth: 2.0.1
     body-parser: 1.20.2
     connect-timeout: 1.9.0
-    express: 4.18.2
+    express: 4.19.2
     express-interceptor: 1.2.0
     helmet: 7.1.0
     js-yaml: 4.1.0
@@ -736,7 +736,7 @@ __metadata:
     "@sf/models": "*"
     "@sf/provisioner-services": "*"
     bluebird: 3.7.2
-    express: 4.18.2
+    express: 4.19.2
     express-jwt: 8.4.1
     express-session: 1.17.1
     js-yaml: 4.1.0
@@ -883,7 +883,7 @@ __metadata:
     ajv-draft-04: 1.0.0
     bluebird: 3.7.2
     camelcase-keys: 7.0.2
-    express: 4.18.2
+    express: 4.19.2
     lodash: 4.17.21
   languageName: unknown
   linkType: soft
@@ -934,7 +934,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     "@sf/quota": "*"
-    express: 4.18.2
+    express: 4.19.2
     lodash: 4.17.21
   languageName: unknown
   linkType: soft
@@ -965,7 +965,7 @@ __metadata:
     "@sf/express-commons": "*"
     "@sf/logger": "*"
     bluebird: 3.7.2
-    express: 4.18.2
+    express: 4.19.2
     express-jwt: 8.4.1
     lodash: 4.17.21
   languageName: unknown
@@ -2353,26 +2353,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"body-parser@npm:1.20.1":
-  version: 1.20.1
-  resolution: "body-parser@npm:1.20.1"
-  dependencies:
-    bytes: 3.1.2
-    content-type: ~1.0.4
-    debug: 2.6.9
-    depd: 2.0.0
-    destroy: 1.2.0
-    http-errors: 2.0.0
-    iconv-lite: 0.4.24
-    on-finished: 2.4.1
-    qs: 6.11.0
-    raw-body: 2.5.1
-    type-is: ~1.6.18
-    unpipe: 1.0.0
-  checksum: 473245b1ff1828a1c0b0aee08f6503aefba9ea5e0de21bf65f014295c262f4177e4d6e60f97e11eab15fb1dafdfeaaa9f5f99cbbf55682c3521905c68f593684
-  languageName: node
-  linkType: hard
-
 "body-parser@npm:1.20.2":
   version: 1.20.2
   resolution: "body-parser@npm:1.20.2"
@@ -3073,10 +3053,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cookie@npm:0.5.0":
-  version: 0.5.0
-  resolution: "cookie@npm:0.5.0"
-  checksum: d8775419ba4dd8cc169aa7e070b0d33ca3d9d9a456b0c871b15f492a2032962f7c436c7f1fa81d9275c6b3af27611e68f70714da9ff3c15ebf6bb69ed9e0333a
+"cookie@npm:0.6.0":
+  version: 0.6.0
+  resolution: "cookie@npm:0.6.0"
+  checksum: 66870d204a3df607053f277b2e2c17fa39c9b2ea94e0b0c208528169b7b00e08b07729947f2e6a7644460dcfe985babf62f9a46fe796c5422e788201fd20490c
   languageName: node
   linkType: hard
 
@@ -4360,16 +4340,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:4.18.2":
-  version: 4.18.2
-  resolution: "express@npm:4.18.2"
+"express@npm:4.19.2":
+  version: 4.19.2
+  resolution: "express@npm:4.19.2"
   dependencies:
     accepts: ~1.3.8
     array-flatten: 1.1.1
-    body-parser: 1.20.1
+    body-parser: 1.20.2
     content-disposition: 0.5.4
     content-type: ~1.0.4
-    cookie: 0.5.0
+    cookie: 0.6.0
     cookie-signature: 1.0.6
     debug: 2.6.9
     depd: 2.0.0
@@ -4395,7 +4375,7 @@ __metadata:
     type-is: ~1.6.18
     utils-merge: 1.0.1
     vary: ~1.1.2
-  checksum: b3675a74759b8b38c4341507d26d50f01eda9e86d71ec03ff695b016fd7573702c591de6a63b28477cced061a9093603b8251e81da4a5b2081b6042a83755f0c
+  checksum: 5b7634882a543d11669bca55e9e4730a4e52cdf0211090c063392811bea05f462fea7d2367da05a8532c7a17e1ca337334fad9a1e56e7fa8355a237048eb9cd0
   languageName: node
   linkType: hard
 
@@ -9000,18 +8980,6 @@ fsevents@^1.0.0:
   version: 1.2.1
   resolution: "range-parser@npm:1.2.1"
   checksum: 05074f5b23dbdc24acdae9821dd684fbc9c0d770cdaa4469ab529d8e0fc1338aa33561a4c7c14a1f9bdcb3b5e9a3770e5a80318258a72289a7ef05fcda72a707
-  languageName: node
-  linkType: hard
-
-"raw-body@npm:2.5.1":
-  version: 2.5.1
-  resolution: "raw-body@npm:2.5.1"
-  dependencies:
-    bytes: 3.1.2
-    http-errors: 2.0.0
-    iconv-lite: 0.4.24
-    unpipe: 1.0.0
-  checksum: aa356884ff024caa889329585b81f0f1f8ddf7ff39b8e10740efe6e4181a054cec2a8af0fc5496e8432e779da56ca85a628199d3edd3cc213b1277f065315321
   languageName: node
   linkType: hard
 
