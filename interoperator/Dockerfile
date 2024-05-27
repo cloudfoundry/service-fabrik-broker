@@ -39,7 +39,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o akc main
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 # FROM gcr.io/distroless/static:nonroot 
 # Using alphine as xmake supports alphine seamlessly
-FROM alpine:3.16
+FROM alpine:3.20
 
 WORKDIR /
 COPY --from=builder /workspace/manager .
