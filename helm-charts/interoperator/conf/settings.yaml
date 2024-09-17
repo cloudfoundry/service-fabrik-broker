@@ -22,11 +22,8 @@ defaults: &defaults
     sm_certificate_subject_pattern: {{ .Values.broker.smConnectionSettings.sm_certificate_subject_pattern }}
     timeout: {{ .Values.broker.smConnectionSettings.timeout }}
     retryCount: {{ .Values.broker.smConnectionSettings.retryCount }}
-    {{- with .Values.broker.smConnectionSettings.landscape_endpoints }}
-    landscape_endpoints:
-      {{ . }}
-    {{- end }}
-  
+    landscape_endpoints: {{ toYaml .Values.broker.smConnectionSettings.landscape_endpoints | nindent 6 }}
+
   ##############################
   # INTERNAL ENDPOINT SETTINGS #
   ##############################
